@@ -1,0 +1,24 @@
+name: Daily Data Inject
+
+on:
+  schedule:
+    - cron: '0 1 * * *' # Every day at 1 AM UTC
+  workflow_dispatch:
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run data inject
+        run: npm run data:inject
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
