@@ -99,64 +99,121 @@ async function fetch_harvest_stuff() {
 
 }
 
+async function getManagerWithProductionSummary(manager: string) {
+  return await prisma.$queryRaw`
+    SELECT 
+      s.manager,
+      s.total_dec_stake_needed,
+      s.total_dec_stake_in_use,
+      s.total_dec_staked,
+      p.*
+    FROM (
+      SELECT 
+          a.manager,
+          a.total_dec_stake_needed,
+          a.total_dec_stake_in_use,
+          b.total_dec_staked
+      FROM (
+          SELECT 
+              manager,
+              SUM(total_dec_stake_needed) AS total_dec_stake_needed,
+              SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
+          FROM (
+              SELECT 
+                  manager,
+                  region_uid,
+                  SUM(total_dec_stake_needed) AS total_dec_stake_needed,
+                  SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
+              FROM 
+                  "StakingDetail"
+              GROUP BY 
+                  manager, region_uid
+          ) AS grouped
+          GROUP BY manager
+      ) a
+      JOIN (
+          SELECT 
+              manager,
+              SUM(total_dec_staked) AS total_dec_staked
+          FROM (
+              SELECT 
+                  manager,
+                  region_uid,
+                  SUM(total_dec_staked) AS total_dec_staked
+              FROM (
+                  SELECT DISTINCT manager, region_uid, total_dec_staked
+                  FROM "StakingDetail"
+              ) AS distinct_rows
+              GROUP BY manager, region_uid
+          ) AS grouped
+          GROUP BY manager
+      ) b ON a.manager = b.manager
+    ) s
+    LEFT JOIN "PlayerProductionSummary" p ON s.manager = p.player
+    WHERE s.manager = ${manager};
+  `;
+}
+
+async function fetch_total_dec() {
+    const combinedQuery = await prisma.$queryRaw`
+    SELECT 
+        a.manager,
+        a.total_dec_stake_needed,
+        a.total_dec_stake_in_use,
+        b.total_dec_staked
+    FROM (
+        SELECT 
+            manager,
+            SUM(total_dec_stake_needed) AS total_dec_stake_needed,
+            SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
+        FROM (
+            SELECT 
+                manager,
+                region_uid,
+                SUM(total_dec_stake_needed) AS total_dec_stake_needed,
+                SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
+            FROM 
+                "StakingDetail"
+            GROUP BY 
+                manager, region_uid
+        ) AS grouped
+        GROUP BY manager
+    ) a
+    JOIN (
+        SELECT 
+            manager,
+            SUM(total_dec_staked) AS total_dec_staked
+        FROM (
+            SELECT 
+                manager,
+                region_uid,
+                SUM(total_dec_staked) AS total_dec_staked
+            FROM (
+                SELECT DISTINCT manager, region_uid, total_dec_staked
+                FROM "StakingDetail"
+            ) AS distinct_rows
+            GROUP BY manager, region_uid
+        ) AS grouped
+        GROUP BY manager
+    ) b ON a.manager = b.manager
+    WHERE a.manager = 'beaker007';
+    `;
+    console.log(combinedQuery);
+}
+
+
+
 async function main() {
     // await fetch_all_joined();
     // await fetch_worksites();
     // await fetch_worksites_including_player();
     // await fetch_harvest_stuff();
-    await fetch_total_dec();
-
-    
+    // await fetch_total_dec();
+    const res = await getManagerWithProductionSummary('beaker007');    
+    console.log(res)
 }
 
 main().catch(err => {
     console.error(err);
     process.exit(1);
 });
-async function fetch_total_dec() {
-const combinedQuery = await prisma.$queryRawUnsafe(`
-SELECT 
-    a.manager,
-    a.total_dec_stake_needed,
-    a.total_dec_stake_in_use,
-    b.total_dec_staked
-FROM (
-    SELECT 
-        manager,
-        SUM(total_dec_stake_needed) AS total_dec_stake_needed,
-        SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
-    FROM (
-        SELECT 
-            manager,
-            region_uid,
-            SUM(total_dec_stake_needed) AS total_dec_stake_needed,
-            SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
-        FROM 
-            "StakingDetail"
-        GROUP BY 
-            manager, region_uid
-    ) AS grouped
-    GROUP BY manager
-) a
-JOIN (
-    SELECT 
-        manager,
-        SUM(total_dec_staked) AS total_dec_staked
-    FROM (
-        SELECT 
-            manager,
-            region_uid,
-            SUM(total_dec_staked) AS total_dec_staked
-        FROM (
-            SELECT DISTINCT manager, region_uid, total_dec_staked
-            FROM "StakingDetail"
-        ) AS distinct_rows
-        GROUP BY manager, region_uid
-    ) AS grouped
-    GROUP BY manager
-) b ON a.manager = b.manager
-WHERE a.manager = 'beaker007';
-`);
-console.log(combinedQuery);;
-}
-

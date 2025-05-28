@@ -9,11 +9,11 @@ import {computeAndStorePlayerProduction} from "@/scripts/lib/metrics/resourcePla
 async function main() {
     const today = getTodayAtMidnight();
 
-    // await fetchAndProcessRegionData()
-    // await computeAndStoreDailyActiveMetrics(today)
-    // await computeAndStoreResourceHubMetrics(today)
-    // await computeAndStoreTotalSupply(today)
-    // await computeAndStoreResourceProduction(today)
+    await fetchAndProcessRegionData()
+    await computeAndStoreDailyActiveMetrics(today)
+    await computeAndStoreResourceHubMetrics(today)
+    await computeAndStoreTotalSupply(today)
+    await computeAndStoreResourceProduction(today)
     await computeAndStorePlayerProduction(today)
 }
 

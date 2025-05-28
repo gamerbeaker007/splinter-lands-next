@@ -39,7 +39,7 @@ export async function fetchResourceSupply(resource: string) {
     const data = res.data?.data;
     if (!data) throw new Error('Invalid response from Splinterlands API');
 
-    return Array.isArray(res?.data)
-        ? (res.data as ResourceSupplyResponse[])
+    return Array.isArray(data)
+        ? (data as ResourceSupplyResponse[])
         : [];
 }
