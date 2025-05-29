@@ -1,12 +1,15 @@
 name: Run DB Migrations
 
 on:
+  workflow_dispatch:
+    inputs: {}
   push:
     branches:
       - main
 
 jobs:
   migrate:
+    if: github.actor == 'gamerbeaker007'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
