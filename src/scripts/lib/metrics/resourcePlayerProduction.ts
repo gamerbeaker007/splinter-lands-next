@@ -39,7 +39,6 @@ export async function computeAndStorePlayerProduction(today: Date) {
   GROUP BY d.region_uid, d.player, w.token_symbol;
 `;
 
-    console.log(` Fetch regionPlayerTokenResult completed, start processing...`);
     const resultsWithCosts = rawResults.map((row: regionPlayerTokenResult) => {
         const costs = calcCosts(row.token_symbol, row.total_base_pp_after_cap);
 
@@ -130,5 +129,5 @@ export async function computeAndStorePlayerProduction(today: Date) {
         data: data,
       });
       
-    console.log(`🧑‍🌾 Stored player production for ${today.toISOString().split('T')[0]}`);
+    console.log(`✅ Stored player production for ${today.toISOString().split('T')[0]}`);
 }
