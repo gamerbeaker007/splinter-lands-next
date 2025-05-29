@@ -50,25 +50,14 @@ async function saveStaking(stakings: StakingDetailUncheckedCreateInput[]) {
 
 async function processRegion(region: number) {
     try {
-        console.log(`Fetch region data for ${region}`);
+        console.log(`Fetch region data for ${region}`)
         const { deeds, worksite_details, staking_details } = await fetchRegionData(region);
-
-        console.log(`Start saving region data for ${region}`);
-        await Promise.all([
-            (async () => {
-                console.log(`Save region data - deeds - for ${region}`);
-                await saveDeeds(deeds);
-            })(),
-            (async () => {
-                console.log(`Save region data - worksites details - for ${region}`);
-                await saveWorksites(worksite_details);
-            })(),
-            (async () => {
-                console.log(`Save region data - staking details - for ${region}`);
-                await saveStaking(staking_details);
-            })(),
-        ]);
-
+        console.log(`Save region data - deeds - for ${region}`)
+        await saveDeeds(deeds);
+        console.log(`Save region data - worksites details - for ${region}`)
+        await saveWorksites(worksite_details);
+        console.log(`Save region data - staking details - for ${region}`)
+        await saveStaking(staking_details);
         console.log(`✅ Region ${region} - ${deeds.length} deeds stored`);
     } catch (error) {
         if (error instanceof Error) {
