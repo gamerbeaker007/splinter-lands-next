@@ -15,30 +15,35 @@ datasource db {
 }
 
 model Active {
-  date                  DateTime @id @db.Date
-  activeBasedOnPp       Int
-  activeBasedOnInUse    Int
+  date                   DateTime @id @db.Date
+  active_based_on_pp     Int
+  active_based_on_in_use Int
+
+  @@map("active")
 }
 
 model ResourceSupply {
-  date                    DateTime @db.Date
-  resource                String
-  total_supply            BigInt
+  date         DateTime @db.Date
+  resource     String
+  total_supply BigInt
+
   @@id([date, resource])
+  @@map("resource_supply")
 }
 
-model ResourceTracking {
+model resourceTracking {
   date                    DateTime @db.Date
   token_symbol            String
   total_harvest_pp        Float
   total_base_pp_after_cap Float
-  rewards_per_hour        Float
-  cost_per_h_grain        Float
-  cost_per_h_wood         Float
-  cost_per_h_stone        Float
-  cost_per_h_iron         Float
+  rewards_per_hour        Float?
+  cost_per_h_grain        Float?
+  cost_per_h_wood         Float?
+  cost_per_h_stone        Float?
+  cost_per_h_iron         Float?
 
   @@id([date, token_symbol])
+  @@map("resource_tracking")
 }
 
 model ResourceHubMetrics {
@@ -58,30 +63,31 @@ model ResourceHubMetrics {
   created_date       DateTime
   last_updated_date  DateTime
 
-   // Added By myself
-  dec_price          Float
-  dec_usd_value      Float
-  grain_equivalent   Float
-  factor             Float
-
+  // Added By myself
+  dec_price        Float
+  dec_usd_value    Float
+  grain_equivalent Float
+  factor           Float
 
   @@id([date, token_symbol])
+  @@map("resource_hub_metrics")
 }
 
-
 model PlayerProductionSummary {
-  player                     String @id
-  total_harvest_pp           Float
-  total_base_pp_after_cap    Float
-  count                      Int
-  total_dec                  Float
-  dec_grain                  Float    @default(0)
-  dec_wood                   Float    @default(0)
-  dec_stone                  Float    @default(0)
-  dec_iron                   Float    @default(0)
-  dec_research               Float    @default(0)
-  dec_aura                   Float    @default(0)
-  dec_sps                    Float    @default(0)
+  player                  String @id
+  total_harvest_pp        Float
+  total_base_pp_after_cap Float
+  count                   Int
+  total_dec               Float
+  dec_grain               Float  @default(0)
+  dec_wood                Float  @default(0)
+  dec_stone               Float  @default(0)
+  dec_iron                Float  @default(0)
+  dec_research            Float  @default(0)
+  dec_aura                Float  @default(0)
+  dec_sps                 Float  @default(0)
+
+  @@map("player_production_summary")
 }
 
 model Deed {
@@ -129,10 +135,12 @@ model Deed {
 
   worksiteDetail WorksiteDetail?
   stakingDetail  StakingDetail?
+
+  @@map("deed")
 }
 
 model WorksiteDetail {
-  deed_uid                                  String   @id
+  deed_uid                                  String    @id
   token_symbol                              String
   id                                        Int
   project_type                              String?
@@ -192,6 +200,8 @@ model WorksiteDetail {
   resource_mint_rate                        Float?
 
   deed Deed @relation(fields: [deed_uid], references: [deed_uid], onDelete: Cascade)
+
+  @@map("worksite_detail")
 }
 
 model StakingDetail {
@@ -244,4 +254,6 @@ model StakingDetail {
   total_dec_staked                   Float?
 
   deed Deed @relation(fields: [deed_uid], references: [deed_uid], onDelete: Cascade)
+
+  @@map("staking_detail")
 }

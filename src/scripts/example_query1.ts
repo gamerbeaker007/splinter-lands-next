@@ -3,7 +3,7 @@ import { PrismaClient } from '@/generated/prisma';
 const prisma = new PrismaClient();
 
 async function fetch_all_joined() {
-    let start = Date.now();
+    const start = Date.now();
 
     const result = await prisma.deed.findMany({
         include: {
@@ -12,7 +12,7 @@ async function fetch_all_joined() {
         },
     });
 
-    let end = Date.now();
+    const end = Date.now();
 
     console.log(`📦 Joined ${result.length} deeds`);
     console.log(`⏱️ Fetch time: ${(end - start) / 1000}s`);
@@ -204,11 +204,11 @@ async function fetch_total_dec() {
 
 
 async function main() {
-    // await fetch_all_joined();
-    // await fetch_worksites();
-    // await fetch_worksites_including_player();
-    // await fetch_harvest_stuff();
-    // await fetch_total_dec();
+    await fetch_all_joined();
+    await fetch_worksites();
+    await fetch_worksites_including_player();
+    await fetch_harvest_stuff();
+    await fetch_total_dec();
     const res = await getManagerWithProductionSummary('beaker007');    
     console.log(res)
 }

@@ -1,6 +1,7 @@
 import {CONSUME_RATES, CONSUMES_ONLY_GRAIN, MULTIPLE_CONSUMING_RESOURCES, NATURAL_RESOURCES, PRODUCING_RESOURCES} from "@/scripts/lib/utils/statics";
 import {SplPriceData} from "@/lib/types/price";
 import {getMidnightPotionPrice} from "@/lib/api/spl/splLandAPI";
+import { RegionSummary, RegionTrackingRow } from "../types/resource";
 
 const TAX_RATE = 0.9  // 10% tax rate
 
@@ -9,7 +10,14 @@ type CostResult = {
     cost_per_h_wood: number;
     cost_per_h_stone: number;
     cost_per_h_iron: number;
-};
+  };
+
+  type CostKey = 'cost_per_h_grain' | 'cost_per_h_wood' | 'cost_per_h_stone' | 'cost_per_h_iron';
+
+function isCostKey(key: string): key is CostKey {
+  return ['cost_per_h_grain', 'cost_per_h_wood', 'cost_per_h_stone', 'cost_per_h_iron'].includes(key);
+}
+
 
 export function calcCosts(token_symbol: string, total_base_pp_after_cap: number): CostResult {
     const costs: CostResult = {
@@ -33,7 +41,7 @@ export function calcCosts(token_symbol: string, total_base_pp_after_cap: number)
 
 
 export async function getPrice(
-    metrics: any ,
+    metrics: [{token_symbol: string, dec_price: number}] ,
     prices: SplPriceData,
     token: string,
     amount: number
@@ -66,10 +74,9 @@ export async function getPrice(
 
     return amount / matchingMetric.dec_price;
 }
-
-
-function getRegionSummary(data: any) {
-    const summaryMap: Record<string, any> = {};
+ 
+function getRegionSummary(data: RegionTrackingRow[]) {
+    const summaryMap: Record<string, RegionSummary> = {};
 
     for (const row of data) {
         const region = row.region_uid;
@@ -84,31 +91,22 @@ function getRegionSummary(data: any) {
         }
 
         summaryMap[region][producedCol] =
-            (summaryMap[region][producedCol] || 0) + row.rewards_per_hour;
+            (summaryMap[region][producedCol] as number || 0) + row.rewards_per_hour;
 
         NATURAL_RESOURCES.forEach(res => {
             const costCol = `cost_per_h_${res.toLowerCase()}`;
+            const rawCost = isCostKey(costCol) ? row[costCol] : 0;
             summaryMap[region][costCol] =
-                (summaryMap[region][costCol] || 0) + (row[`cost_per_h_${res.toLowerCase()}`] || 0);
+                (summaryMap[region][costCol] as number || 0) + (rawCost || 0);
 
         })
-        // if (MULTIPLE_CONSUMING_RESOURCES.has(symbol)){
-        //     for (const res in NATURAL_RESOURCES) {
-        //         const costCol1 = `cost_per_h_${res.toLowerCase()}`
-        //         summaryMap[region][costCol1] =
-        //             (summaryMap[region][costCol1] || 0) + (row[costCol1] || 0);
-        //     }
-        // } else {
-        //     summaryMap[region][costCol] =
-        //         (summaryMap[region][costCol] || 0) + (row[`cost_per_h_${symbolLower}`] || 0);
-        // }
 
     }
     return summaryMap;
 }
 
 export function prepareSummary(
-    data: any,
+    data: RegionTrackingRow[],
     includeTaxes: boolean,
     includeTransferFee: boolean,
 ) {
@@ -131,8 +129,8 @@ export function prepareSummary(
                 row[netKey] = row[producedKey];
                 row[adjNetKey] = row[netKey];
             } else {
-                row[netKey] = row[producedKey] - row[costKey];
-                row[adjNetKey] = includeTransferFee ? adjustTransferWithFee(row[netKey]) : row[netKey];
+                (row[netKey] as number) = (row[producedKey] as number) - (row[costKey] as number);
+                row[adjNetKey] = includeTransferFee ? adjustTransferWithFee(row[netKey] as number) : row[netKey];
             }
         }
 
@@ -140,7 +138,7 @@ export function prepareSummary(
         if (includeTaxes) {
             for (const res of PRODUCING_RESOURCES) {
                 const producedKey = `prod_per_h_${res.toLowerCase()}`;
-                row[producedKey] *= TAX_RATE;
+                (row[producedKey] as number) *= TAX_RATE;
             }
         }
     }

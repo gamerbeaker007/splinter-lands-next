@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 
 export async function computeAndStoreDailyActiveMetrics(today: Date) {
-    const [activeBasedOnInUse, activeBasedOnPp] = await Promise.all([
+    const [active_based_on_in_use, active_based_on_pp] = await Promise.all([
         prisma.deed.count({
             where: { in_use: true },
         }),
@@ -17,13 +17,13 @@ export async function computeAndStoreDailyActiveMetrics(today: Date) {
     await prisma.active.upsert({
         where: { date: today },
         update: {
-            activeBasedOnInUse,
-            activeBasedOnPp,
+            active_based_on_pp,
+            active_based_on_in_use,
         },
         create: {
             date: today,
-            activeBasedOnInUse,
-            activeBasedOnPp,
+            active_based_on_pp,
+            active_based_on_in_use,
         },
     });
 
