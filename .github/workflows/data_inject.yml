@@ -23,6 +23,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
       - name: Run data inject
         run: npm run data:inject
         env:
