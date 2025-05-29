@@ -11,8 +11,7 @@ on:
 
 jobs:
   inject:
-  inject:
-    if: github.ref == 'refs/heads/main' && github.actor == 'gamerbeaker007'
+    if: ${{ github.ref == 'refs/heads/main' && github.actor == 'gamerbeaker007' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
