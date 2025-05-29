@@ -1,0 +1,259 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Active {
+  date                   DateTime @id @db.Date
+  active_based_on_pp     Int
+  active_based_on_in_use Int
+
+  @@map("active")
+}
+
+model ResourceSupply {
+  date         DateTime @db.Date
+  resource     String
+  total_supply BigInt
+
+  @@id([date, resource])
+  @@map("resource_supply")
+}
+
+model resourceTracking {
+  date                    DateTime @db.Date
+  token_symbol            String
+  total_harvest_pp        Float
+  total_base_pp_after_cap Float
+  rewards_per_hour        Float?
+  cost_per_h_grain        Float?
+  cost_per_h_wood         Float?
+  cost_per_h_stone        Float?
+  cost_per_h_iron         Float?
+
+  @@id([date, token_symbol])
+  @@map("resource_tracking")
+}
+
+model ResourceHubMetrics {
+  date               DateTime @db.Date
+  id                 Int
+  token_symbol       String
+  resource_quantity  String
+  resource_volume    Float
+  resource_volume_1  Float?
+  resource_volume_30 Float?
+  resource_price     Float
+  dec_quantity       String
+  dec_volume         Float
+  dec_volume_1       Float?
+  dec_volume_30      Float?
+  total_shares       String
+  created_date       DateTime
+  last_updated_date  DateTime
+
+  // Added By myself
+  dec_price        Float
+  dec_usd_value    Float
+  grain_equivalent Float
+  factor           Float
+
+  @@id([date, token_symbol])
+  @@map("resource_hub_metrics")
+}
+
+model PlayerProductionSummary {
+  player                  String @id
+  total_harvest_pp        Float
+  total_base_pp_after_cap Float
+  count                   Int
+  total_dec               Float
+  dec_grain               Float  @default(0)
+  dec_wood                Float  @default(0)
+  dec_stone               Float  @default(0)
+  dec_iron                Float  @default(0)
+  dec_research            Float  @default(0)
+  dec_aura                Float  @default(0)
+  dec_sps                 Float  @default(0)
+
+  @@map("player_production_summary")
+}
+
+model Deed {
+  deed_uid                 String    @id
+  map_name                 String?
+  region_id                Int?
+  tract_id                 Int?
+  plot_id                  Int?
+  region_number            Int?
+  tract_number             Int?
+  plot_number              Int?
+  territory                String?
+  region_uid               String?
+  resource_id              Int?
+  resource_symbol          String?
+  magic_type               String?
+  stats                    Json?
+  player                   String?
+  created_date             DateTime?
+  listed                   Boolean?
+  lock_days                Int?
+  unlock_date              DateTime?
+  in_use                   Boolean?
+  deed_type                String?
+  land_stats               Json?
+  region_name              String?
+  market_updated_date      DateTime?
+  market_id                String?
+  listing_price            String?
+  market_listing_id        String?
+  market_listing_status_id Int?
+  castle                   Int?
+  keep                     Int?
+  rarity                   String?
+  plot_status              String?
+  hex_code                 String?
+  tax_rate                 String?
+  item_detail_id           Int?
+  created_block_num        Int?
+  created_tx               String?
+  worksite_type            String?
+  time_crystal_value       Int?
+  rarity_sort_value        Int?
+  is_construction          Boolean?
+
+  worksiteDetail WorksiteDetail?
+  stakingDetail  StakingDetail?
+
+  @@map("deed")
+}
+
+model WorksiteDetail {
+  deed_uid                                  String    @id
+  token_symbol                              String
+  id                                        Int
+  project_type                              String?
+  project_number                            Int?
+  land_work_type_id                         Int?
+  total_time_crystals_used                  Float?
+  pp_balance                                Float?
+  start_date                                DateTime?
+  projected_hours                           Float?
+  projected_end                             DateTime?
+  completed_date                            DateTime?
+  created_date                              DateTime?
+  last_updated_date                         DateTime?
+  trx_id                                    String?
+  block_num                                 Int?
+  resource_id                               Int?
+  pp_required                               Float?
+  hours_to_completion                       Float?
+  elapsed_hours                             Float?
+  pp_spent                                  Float?
+  grain_required                            Float?
+  wood_required                             Float?
+  stone_required                            Float?
+  iron_required                             Float?
+  is_active                                 Boolean?
+  destroyed_date                            DateTime?
+  is_construction                           Boolean?
+  last_action_time                          DateTime?
+  hours_till_next_op                        Float?
+  next_op_allowed_date                      DateTime?
+  pp_staked                                 Float?
+  projected_amount_received                 Float?
+  work_per_hour_per_one_pp                  Float?
+  project_id                                Int?
+  is_harvesting                             Boolean?
+  is_empty                                  Boolean?
+  is_sps_work                               Boolean?
+  sps_mining_reward_debt                    Float?
+  latest_sps_reward_block                   Float?
+  sps_tokens_per_block                      Float?
+  accumulated_sps_rewards_per_share_of_pool Float?
+  land_work_type_total_work_type_pp         Float?
+  captured_tax_rate                         Float?
+  time_crystal_value                        Int?
+  project_created_date                      DateTime?
+  worksite_type                             String?
+  max_tax_rate                              Float?
+  region_uid                                String?
+  hours_since_last_op                       Float?
+  site_efficiency                           Float?
+  is_runi_staked                            Boolean?
+  rewards_per_hour                          Float?
+  grain_req_per_hour                        Float?
+  segments                                  Json?
+  estimated_totem_chance                    Float?
+  resource_recipe                           Json?
+  resource_mint_rate                        Float?
+
+  deed Deed @relation(fields: [deed_uid], references: [deed_uid], onDelete: Cascade)
+
+  @@map("worksite_detail")
+}
+
+model StakingDetail {
+  deed_uid                           String   @id
+  region_uid                         String?
+  is_powered                         Boolean?
+  is_runi_staked                     Boolean?
+  is_power_core_staked               Boolean?
+  max_workers_allowed                Int?
+  runi_boost                         Float?
+  title_boost                        Float?
+  totem_boost                        Float?
+  deed_status_token_boost            Float?
+  deed_rarity_boost                  Float?
+  total_boost                        Float?
+  total_base_pp_cap                  Float?
+  total_base_pp                      Float?
+  total_base_pp_after_cap            Float?
+  total_base_pp_after_cap_percentage Float?
+  total_construction_pp              Float?
+  total_terrain_boost                Float?
+  total_terrain_boost_pp             Float?
+  total_dec_stake_needed             Float?
+  total_dec_stake_in_use             Float?
+  efficiency                         Float?
+  total_deed_rarity_boost            Float?
+  total_deed_rarity_boost_pp         Float?
+  total_deed_status_token_boost      Float?
+  total_deed_status_token_boost_pp   Float?
+  total_runi_boost                   Float?
+  total_runi_boost_pp                Float?
+  total_title_boost                  Float?
+  total_title_boost_pp               Float?
+  total_totem_boost                  Float?
+  total_totem_boost_pp               Float?
+  total_boost_pp                     Float?
+  total_harvest_pp                   Float?
+  total_work_per_hour                Float?
+  powered_worker_count               Int?
+  worker_count                       Int?
+  manager                            String?
+  active_land_project_id             Int?
+  has_completed_first_project        Boolean?
+  red_biome_modifier                 Float?
+  blue_biome_modifier                Float?
+  white_biome_modifier               Float?
+  black_biome_modifier               Float?
+  green_biome_modifier               Float?
+  gold_biome_modifier                Float?
+  total_dec_staked                   Float?
+
+  deed Deed @relation(fields: [deed_uid], references: [deed_uid], onDelete: Cascade)
+
+  @@map("staking_detail")
+}
