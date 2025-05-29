@@ -1,93 +1,70 @@
-import {Prisma} from '@/generated/prisma';
+import { Prisma } from '@/generated/prisma';
 import { fetchRegionData } from '@/lib/api/spl/splLandAPI';
+import { prisma } from '@/lib/prisma';
+
 import DeedUncheckedCreateInput = Prisma.DeedUncheckedCreateInput;
 import WorksiteDetailUncheckedCreateInput = Prisma.WorksiteDetailUncheckedCreateInput;
 import StakingDetailUncheckedCreateInput = Prisma.StakingDetailUncheckedCreateInput;
-import { prisma } from '@/lib/prisma';
 
 function safeDate(input: Date | string | null | undefined): Date | null {
-    if (!input) return null;
-
-    if (typeof input === 'string') {
-        if (input.startsWith('+')) return null;
-        const parsed = new Date(input);
-        return isNaN(parsed.getTime()) ? null : parsed;
-    }
-
-    return isNaN(input.getTime()) ? null : input;
+  if (!input) return null;
+  if (typeof input === 'string') {
+    if (input.startsWith('+')) return null;
+    const parsed = new Date(input);
+    return isNaN(parsed.getTime()) ? null : parsed;
+  }
+  return isNaN(input.getTime()) ? null : input;
 }
 
-async function saveDeeds(deeds: DeedUncheckedCreateInput[]) {
-    for (const deed of deeds) {
-        await prisma.deed.upsert({
-            where: { deed_uid: deed.deed_uid },
-            update: deed,
-            create: deed,
-        });
-    }
-}
+export async function fetchAndProcessRegionData() {
+  const start = Date.now();
 
-async function saveWorksites(worksites: WorksiteDetailUncheckedCreateInput[]) {
-    for (const ws of worksites) {
-        await prisma.worksiteDetail.upsert({
-            where: { deed_uid: ws.deed_uid },
-            update: { ...ws, projected_end: safeDate(ws.projected_end) },
-            create: { ...ws, projected_end: safeDate(ws.projected_end) },
-        });
-    }
-}
+  // Step 0: Wipe all tables
+  console.log(`🧹 Clearing existing data...`);
+  await prisma.stakingDetail.deleteMany();
+  await prisma.worksiteDetail.deleteMany();
+  await prisma.deed.deleteMany();
 
-async function saveStaking(stakings: StakingDetailUncheckedCreateInput[]) {
-    for (const st of stakings) {
-        await prisma.stakingDetail.upsert({
-            where: { deed_uid: st.deed_uid },
-            update: st,
-            create: st,
-        });
-    }
-}
+  const regionNumbers = Array.from({ length: 151 }, (_, i) => i + 1);
 
+  const allDeeds: DeedUncheckedCreateInput[] = [];
+  const allWorksites: WorksiteDetailUncheckedCreateInput[] = [];
+  const allStakings: StakingDetailUncheckedCreateInput[] = [];
 
-async function processRegion(region: number) {
-    try {
-        console.log(`Fetch region data for ${region}`)
+  const concurrency = 10;
+  for (let i = 0; i < regionNumbers.length; i += concurrency) {
+    const batch = regionNumbers.slice(i, i + concurrency);
+
+    await Promise.all(batch.map(async (region) => {
+      try {
+        console.log(`🌍 Fetching region ${region}`);
         const { deeds, worksite_details, staking_details } = await fetchRegionData(region);
-        console.log(`Save region data - deeds - for ${region}`)
-        await saveDeeds(deeds);
-        console.log(`Save region data - worksites details - for ${region}`)
-        await saveWorksites(worksite_details);
-        console.log(`Save region data - staking details - for ${region}`)
-        await saveStaking(staking_details);
-        console.log(`✅ Region ${region} - ${deeds.length} deeds stored`);
-    } catch (error) {
-        if (error instanceof Error) {
-            console.error(`❌ Failed to process region ${region}:`, error.message);
-        } else {
-            console.error(`❌ Failed to process region ${region}:`, error);
-        }
-    }
-}
+        allDeeds.push(...deeds);
+        allWorksites.push(
+          ...worksite_details.map(ws => ({
+            ...ws,
+            projected_end: safeDate(ws.projected_end),
+          }))
+        );
+        allStakings.push(...staking_details);
+        console.log(`⌛ Region ${region}: ${deeds.length} deeds`);
+      } catch (error) {
+        console.error(`❌ Region ${region} failed:`, error instanceof Error ? error.message : error);
+      }
+    }));
+  }
 
-export async function fetchAndProcessRegionData(){
-    const start = Date.now();
+  console.log(`📦 Inserting ${allDeeds.length} deeds...`);
+  await prisma.deed.createMany({ data: allDeeds, skipDuplicates: true });
 
-    // Step 1: Fetch and store all regions in parallel
-    const regionNumbers = Array.from({ length: 151 }, (_, i) => i + 1);
+  console.log(`📦 Inserting ${allWorksites.length} worksites...`);
+  await prisma.worksiteDetail.createMany({ data: allWorksites, skipDuplicates: true });
 
-    const concurrency = 10;
-    for (let i = 0; i < regionNumbers.length; i += concurrency) {
-        const batch = regionNumbers.slice(i, i + concurrency);
-        await Promise.all(batch.map(region => processRegion(region)));
-    }
+  console.log(`📦 Inserting ${allStakings.length} stakings...`);
+  await prisma.stakingDetail.createMany({ data: allStakings, skipDuplicates: true });
 
-    const mid = Date.now();
+  const end = Date.now();
 
-    // Step 2: Measure how long it takes to fetch all stored records
-    const allDeedsStart = Date.now();
-    const allDeeds = await prisma.deed.findMany();
-    const allDeedsEnd = Date.now();
-
-    console.log(`--- ✅ All Done ---`);
-    console.log(`Stored ${allDeeds.length} deeds in ${(mid - start) / 1000}s`);
-    console.log(`Fetched all from DB in ${(allDeedsEnd - allDeedsStart) / 1000}s`);
+  console.log(`--- ✅ All Done ---`);
+  console.log(`Total time: ${(end - start) / 1000}s`);
 }
