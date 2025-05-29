@@ -58,6 +58,8 @@ async  function  computeAndStoreResource(date: Date, resource: string, worksite_
 }
 
 export async function computeAndStoreResourceProduction(today: Date) {
+    console.log(`⌛ --- Start computeAndStoreResourceProduction...`);
+    
     try {
         await Promise.all([
             ...NATURAL_RESOURCES,

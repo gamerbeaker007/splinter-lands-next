@@ -4,6 +4,7 @@ import {prisma} from "@/lib/prisma";
 const LEADERBOARD_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "RESEARCH", "AURA"];
 
 export async function computeAndStoreTotalSupply(today: Date) {
+    console.log(`⌛ --- Start computeAndStoreTotalSupply...`);
 
     const results = await Promise.all(
         LEADERBOARD_RESOURCES.map(async (resource) => {

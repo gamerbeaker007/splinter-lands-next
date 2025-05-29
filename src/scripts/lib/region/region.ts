@@ -37,11 +37,10 @@ export async function fetchAndProcessRegionData() {
 
     await Promise.all(batch.map(async (region) => {
       try {
-        console.log(`🌍 Fetching region ${region}`);
         const { deeds, worksite_details, staking_details } = await fetchRegionData(region);
         allDeeds.push(...deeds);
         allWorksites.push(
-          ...worksite_details.map(ws => ({
+          ...worksite_details.map((ws: WorksiteDetailUncheckedCreateInput) => ({
             ...ws,
             projected_end: safeDate(ws.projected_end),
           }))
@@ -65,6 +64,6 @@ export async function fetchAndProcessRegionData() {
 
   const end = Date.now();
 
-  console.log(`--- ✅ All Done ---`);
+  console.log(`✅ Stored Deeds, Worksites Details and Staking Details ---`);
   console.log(`Total time: ${(end - start) / 1000}s`);
 }

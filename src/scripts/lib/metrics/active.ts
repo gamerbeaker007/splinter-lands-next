@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma';
 
 export async function computeAndStoreDailyActiveMetrics(today: Date) {
+    console.log(`⌛ --- Start computeAndStoreDailyActiveMetrics...`);
+
     const [active_based_on_in_use, active_based_on_pp] = await Promise.all([
         prisma.deed.count({
             where: { in_use: true },
@@ -27,5 +29,5 @@ export async function computeAndStoreDailyActiveMetrics(today: Date) {
         },
     });
 
-    console.log(`📊 Active metrics saved for ${today.toISOString().split('T')[0]}`);
+    console.log(`✅ Stored active metrics for ${today.toISOString().split('T')[0]}`);
 }
