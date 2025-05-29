@@ -1,9 +1,11 @@
+import { Prisma } from '@/generated/prisma';
 import { getLandResourcesPools } from '@/lib/api/spl/splLandAPI';
 import {getPrices} from "@/lib/api/spl/splPricesAPI";
 import {prisma} from "@/lib/prisma";
-import {Prisma} from "@/generated/prisma";
 
 export async function computeAndStoreResourceHubMetrics(today: Date) {
+    console.log(`⌛ --- Start computeAndStoreResourceHubMetrics...`);
+
     const resources = await getLandResourcesPools();
     if (!resources || resources.length === 0) {
         console.warn('⚠️ No land resource pool data available.');
@@ -51,7 +53,7 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
         skipDuplicates: true,
     });
 
-    console.log(`📦 Stored resource hub metrics for ${dataToInsert.length} tokens on ${today.toISOString().split('T')[0]}`);
+    console.log(`✅ Stored resource hub metrics for ${dataToInsert.length} tokens on ${today.toISOString().split('T')[0]}`);
 }
 
 

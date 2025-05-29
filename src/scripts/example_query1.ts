@@ -1,6 +1,5 @@
-import { PrismaClient } from '@/generated/prisma';
-
-const prisma = new PrismaClient();
+import { Prisma } from "@/generated/prisma";
+import { prisma } from "@/lib/prisma";
 
 async function fetch_all_joined() {
     const start = Date.now();
@@ -33,7 +32,18 @@ async function fetch_worksites() {
 async function fetch_worksites_including_player() {
     const start = Date.now();
 
-    const worksites = await prisma.worksiteDetail.findMany({
+    type WorksiteWithDeed = Prisma.WorksiteDetailGetPayload<{
+        include: {
+          deed: {
+            select: {
+              player: true;
+            };
+          };
+        };
+      }>;
+
+
+    const worksites: WorksiteWithDeed[] = await prisma.worksiteDetail.findMany({
         include: {
             deed: {
                 select: { player: true },
@@ -41,6 +51,7 @@ async function fetch_worksites_including_player() {
         },
     });
 
+      
     const result = worksites.map(ws => ({
         ...ws,
         player: ws.deed?.player ?? null,

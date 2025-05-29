@@ -1,27 +1,29 @@
+import { Prisma } from "@/generated/prisma";
 import {prisma} from "@/lib/prisma";
 import {calcCosts, getPrice, prepareSummary} from "@/scripts/lib/utils/productionCosts";
 import {getPrices} from "@/lib/api/spl/splPricesAPI";
 import {getLandResourcesPools} from "@/lib/api/spl/splLandAPI";
 import {PRODUCING_RESOURCES} from "@/scripts/lib/utils/statics";
-import { Prisma } from "@/generated/prisma";
 
 type PlayerProductionSummaryInput = Prisma.PlayerProductionSummaryCreateInput;
 
+type regionPlayerTokenResult = {
+    region_uid: string;
+    player: string;
+    token_symbol: string;
+    rewards_per_hour: number;
+    total_harvest_pp: number;
+    total_base_pp_after_cap: number;
+    count: number;
+}
 
 export async function computeAndStorePlayerProduction(today: Date) {
+    console.log(`⌛ --- Start computeAndStorePlayerProduction...`);
 
     const prices  = await getPrices()
     const metrics = await getLandResourcesPools()
 
-    const rawResults = await prisma.$queryRaw<{
-        region_uid: string;
-        player: string;
-        token_symbol: string;
-        rewards_per_hour: number;
-        total_harvest_pp: number;
-        total_base_pp_after_cap: number;
-        count: number;
-    }[]>`
+    const rawResults = await prisma.$queryRaw<regionPlayerTokenResult[]>`
   SELECT
     d.region_uid,
     d.player,
@@ -37,7 +39,7 @@ export async function computeAndStorePlayerProduction(today: Date) {
   GROUP BY d.region_uid, d.player, w.token_symbol;
 `;
 
-    const resultsWithCosts = rawResults.map(row => {
+    const resultsWithCosts = rawResults.map((row: regionPlayerTokenResult) => {
         const costs = calcCosts(row.token_symbol, row.total_base_pp_after_cap);
 
         return {
@@ -84,9 +86,9 @@ export async function computeAndStorePlayerProduction(today: Date) {
         }
 
         // === Aggregate sums from raw playerRows ===
-        const harvest_sum = playerRows.reduce((acc, row) => acc + row.total_harvest_pp, 0);
-        const base_sum = playerRows.reduce((acc, row) => acc + row.total_base_pp_after_cap, 0);
-        const count_sum = playerRows.reduce((acc, row) => acc + Number(row.count), 0);
+        const harvest_sum = playerRows.reduce((acc: number, row: regionPlayerTokenResult) => acc + (row.total_harvest_pp as number), 0);
+        const base_sum = playerRows.reduce((acc: number, row: regionPlayerTokenResult) => acc + row.total_base_pp_after_cap, 0);
+        const count_sum = playerRows.reduce((acc: number, row: regionPlayerTokenResult) => acc + Number(row.count), 0);
 
         // === Final output ===
         playerSummaries.push({
@@ -105,28 +107,27 @@ export async function computeAndStorePlayerProduction(today: Date) {
           });
     }
 
+    console.log(`🧹 playerProductionSummary - Clearing existing data...`);
     await prisma.playerProductionSummary.deleteMany();
 
-    await prisma.$transaction(
-        playerSummaries.map(summary =>
-            prisma.playerProductionSummary.create({
-            data: {
-                player: summary.player,
-                total_harvest_pp: summary.total_harvest_pp,
-                total_base_pp_after_cap: summary.total_base_pp_after_cap,
-                count: summary.count,
-                total_dec: summary.total_dec,
-                dec_grain: summary.dec_grain || 0,
-                dec_wood: summary.dec_wood || 0,
-                dec_stone: summary.dec_stone || 0,
-                dec_iron: summary.dec_iron || 0,
-                dec_research: summary.dec_research || 0,
-                dec_aura: summary.dec_aura || 0,
-                dec_sps: summary.dec_sps || 0,
-            },
-            })
-        )
-        );
-
-    console.log(`🧑‍🌾 Stored player production for ${today.toISOString().split('T')[0]}`);
+    const data = playerSummaries.map(summary => ({
+        player: summary.player,
+        total_harvest_pp: summary.total_harvest_pp,
+        total_base_pp_after_cap: summary.total_base_pp_after_cap,
+        count: summary.count,
+        total_dec: summary.total_dec,
+        dec_grain: summary.dec_grain || 0,
+        dec_wood: summary.dec_wood || 0,
+        dec_stone: summary.dec_stone || 0,
+        dec_iron: summary.dec_iron || 0,
+        dec_research: summary.dec_research || 0,
+        dec_aura: summary.dec_aura || 0,
+        dec_sps: summary.dec_sps || 0,
+      }))
+    console.log(`📦 Inserting ${data.length} playerSummaries...`);    
+    await prisma.playerProductionSummary.createMany({
+        data: data,
+      });
+      
+    console.log(`✅ Stored player production for ${today.toISOString().split('T')[0]}`);
 }
