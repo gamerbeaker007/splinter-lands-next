@@ -6,6 +6,10 @@ import {computeAndStoreResourceProduction} from "@/scripts/lib/metrics/resourceP
 import {getTodayAtMidnight} from "@/scripts/lib/utils/date";
 import {computeAndStorePlayerProduction} from "@/scripts/lib/metrics/resourcePlayerProduction";
 import { prisma } from "@/lib/prisma";
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 
 async function main() {
     const start = Date.now();
