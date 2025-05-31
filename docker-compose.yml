@@ -9,7 +9,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - spl_db_data_local:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
@@ -33,4 +33,4 @@ services:
       - NODE_ENV=production
 
 volumes:
-  db_data:
+  spl_db_data_local:
