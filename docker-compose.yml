@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17
+    container_name: db
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -13,6 +14,7 @@ services:
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -24,6 +26,7 @@ services:
 
   web:
     build: .
+    container_name: spl-next
     volumes:
       - .env:/app/.env:ro
       - ./cron.log:/var/log/cron.log
