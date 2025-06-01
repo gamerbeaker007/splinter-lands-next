@@ -43,7 +43,7 @@ export default function SideBar() {
           <FiMenu size={20} />
         </button>
       </div>
-      <ul className="menu px-2">
+      <ul className="menu px-5">
         {mounted &&
           links.map(({ href, label, icon }) => (
             <li key={href}>

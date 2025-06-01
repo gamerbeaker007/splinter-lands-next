@@ -2,27 +2,47 @@
 import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
+  const [isDark, setIsDark] = useState(false);
 
-  // Load theme from sessionStorage or default to "dark"
+  // Read from localStorage and system preference on client
   useEffect(() => {
-    const stored = sessionStorage.getItem("theme") as "light" | "dark" | null;
-    const initialTheme = stored || "dark";
-    setTheme(initialTheme);
-    document.documentElement.setAttribute("data-theme", initialTheme);
+    const stored = localStorage.getItem("theme");
+    if (stored) {
+      setIsDark(stored === "dark");
+    } else {
+      setIsDark(window.matchMedia("(prefers-color-scheme: dark)").matches);
+    }
   }, []);
 
-  // Toggle theme
-  const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    sessionStorage.setItem("theme", newTheme);
-    document.documentElement.setAttribute("data-theme", newTheme);
-  };
+  // Apply theme whenever it changes
+  useEffect(() => {
+    const theme = isDark ? "dark" : "light";
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("theme", theme);
+  }, [isDark]);
 
   return (
-    <button onClick={toggleTheme} className="btn btn-ghost">
-      {theme === "dark" ? "🌙" : "☀️"}
+    <button
+      className="fixed top-4 right-4 lg:right-6 z-30 btn btn-ghost btn-circle text-base-content"
+      onClick={() => setIsDark(!isDark)}
+      aria-label="Toggle theme"
+    >
+      <div className="relative w-6 h-6 grid place-items-center">
+        <div
+          className={`absolute transition-all duration-500 ${
+            isDark ? "-rotate-90 opacity-0" : "rotate-0 opacity-100"
+          }`}
+        >
+          ☀️
+        </div>
+        <div
+          className={`absolute transition-all duration-500 ${
+            isDark ? "rotate-0 opacity-100" : "rotate-90 opacity-0"
+          }`}
+        >
+          🌙
+        </div>
+      </div>
     </button>
   );
 }

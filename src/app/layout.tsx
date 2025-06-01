@@ -8,17 +8,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html data-theme="light">
+    <html>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
       <body>
+        <div className="flex flex-col flex-grow">
+          <TopBar />
+        </div>
         <div className="flex h-screen overflow-hidden">
           <SideBar />
-          <div className="flex flex-col flex-grow">
-            <TopBar />
-            <main className="p-4 flex-grow overflow-auto">{children}</main>
-          </div>
+          <main className="p-4 flex-grow overflow-auto">{children}</main>
         </div>
       </body>
     </html>
