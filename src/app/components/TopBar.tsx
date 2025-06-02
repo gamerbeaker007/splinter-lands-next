@@ -1,14 +1,14 @@
 "use client";
+import ActiveTile from "@/app/components/ActiveTile";
 import ThemeToggle from "./ThemeToggle";
-import DataTile from "@/app/components/DataTile";
 
 export default function TopBar() {
-  return (
-      <div className="navbar bg-base-100 border-b">
-          <DataTile/>
-          <div className="ml-auto">
-              <ThemeToggle/>
-          </div>
-      </div>
-  );
+    return (
+        <div className="navbar bg-base-100 border-b">
+            <ActiveTile />
+            <div className="ml-auto">
+                <ThemeToggle />
+            </div>
+        </div>
+    );
 }   
