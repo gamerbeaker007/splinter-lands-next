@@ -1,6 +1,6 @@
+import SideBar from "@/app/components/SideBar";
+import TopBar from "@/app/components/TopBar";
 import "./globals.css";
-import SideBar from "@/components/SideBar";
-import TopBar from "@/components/TopBar";
 
 export default function RootLayout({
   children,

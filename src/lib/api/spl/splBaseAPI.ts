@@ -1,6 +1,6 @@
+import { ResourceSupplyResponse } from '@/types/resourceSupplyResponse';
 import axios from 'axios';
 import * as rax from 'retry-axios';
-import {ResourceSupplyResponse} from "@/lib/types/resourceSupplyResponse";
 
 const splLandClient = axios.create({
     baseURL: 'https://vapi.splinterlands.com',

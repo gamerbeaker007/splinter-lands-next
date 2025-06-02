@@ -1,7 +1,7 @@
 import {CONSUME_RATES, CONSUMES_ONLY_GRAIN, MULTIPLE_CONSUMING_RESOURCES, NATURAL_RESOURCES, PRODUCING_RESOURCES} from "@/scripts/lib/utils/statics";
-import {SplPriceData} from "@/lib/types/price";
 import {getMidnightPotionPrice} from "@/lib/api/spl/splLandAPI";
 import { RegionSummary, RegionTrackingRow } from "../types/resource";
+import { SplPriceData } from "@/types/price";
 
 const TAX_RATE = 0.9  // 10% tax rate
 

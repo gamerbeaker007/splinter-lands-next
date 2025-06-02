@@ -1,5 +1,5 @@
-import DefaultPageTile from "@/components/DefaultPageTile";
-import PlayerPageTile from "@/components/PlayerPageTile";
+import DefaultPageTile from "@/app/components/DefaultPageTile";
+import PlayerPageTile from "@/app/components/PlayerPageTile";
 
 const temp_image =
   "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
