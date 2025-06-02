@@ -27,13 +27,10 @@ services:
   web:
     build: .
     container_name: spl-next
+    env_file: .env
     volumes:
-      - .env:/app/.env:ro
       - ./cron.log:/var/log/cron.log
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-
 volumes:
   spl_db_data_local:
