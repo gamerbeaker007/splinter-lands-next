@@ -1,6 +1,7 @@
-import SideBar from "@/app/components/SideBar";
-import TopBar from "@/app/components/TopBar";
 import "./globals.css";
+import SideBar from "@/components/side-bar/SideBar";
+import ThemeInitScript from "@/components/top-bar/ThemInitScript";
+import TopBar from "@/components/top-bar/TopBar";
 
 export default function RootLayout({
   children,
@@ -9,6 +10,9 @@ export default function RootLayout({
 }) {
   return (
     <html>
+      <head>
+        <ThemeInitScript />
+      </head>
       <body>
         <div className="flex h-screen overflow-hidden">
           <SideBar />
