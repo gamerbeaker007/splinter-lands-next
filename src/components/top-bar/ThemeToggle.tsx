@@ -2,6 +2,8 @@
 import { useEffect, useState } from "react";
 import { LuMoon, LuSun } from "react-icons/lu";
 
+const themes = ["dark", "light"];
+
 export default function ThemeToggle() {
   const [isDark, setIsDark] = useState<boolean | null>(null);
 
@@ -11,23 +13,23 @@ export default function ThemeToggle() {
     const prefersDark = window.matchMedia(
       "(prefers-color-scheme: dark)",
     ).matches;
-    const theme = stored ?? (prefersDark ? "dark" : "light");
-    setIsDark(theme === "dark");
+    const theme = stored ?? (prefersDark ? themes[0] : themes[1]);
+    setIsDark(theme === themes[0]);
 
     // Apply immediately
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    document.documentElement.classList.toggle(themes[0], theme === themes[0]);
     document.documentElement.setAttribute(
       "data-theme",
-      theme === "dark" ? "dark" : "cupcake",
+      theme === themes[0] ? themes[0] : themes[1],
     );
   }, []);
 
   // Update on toggle
   useEffect(() => {
     if (isDark === null) return;
-    const theme = isDark ? "dark" : "cupcake";
+    const theme = isDark ? themes[0] : themes[1];
     localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.classList.toggle(themes[0], isDark);
     document.documentElement.setAttribute("data-theme", theme);
   }, [isDark]);
 
