@@ -1,5 +1,6 @@
 "use client";
 import ActiveTile from "./ActiveTile";
+import CacheStatusDot from "./CacheStatusDot";
 import ThemeToggle from "./ThemeToggle";
 
 export default function TopBar() {
@@ -10,6 +11,7 @@ export default function TopBar() {
 
       {/* Right side */}
       <div className="flex items-center space-x-4">
+        <CacheStatusDot />
         <ActiveTile />
         <ThemeToggle />
       </div>

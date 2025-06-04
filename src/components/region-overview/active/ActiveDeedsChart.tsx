@@ -1,0 +1,90 @@
+"use client";
+
+import { ResponsiveBar } from "@nivo/bar";
+import { useEffect, useState } from "react";
+
+type RegionStats = {
+  region: string;
+  active: number;
+  inactive: number;
+};
+
+export default function ActiveDeedsChart() {
+  const [data, setData] = useState<RegionStats[]>([]);
+
+  useEffect(() => {
+    fetch("/api/deed/active")
+      .then((res) => res.json())
+      .then((raw) => {
+        const transformed = Object.entries(raw).map(([region, count]) => ({
+          region,
+          active: Number(count),
+          inactive: 1000 - Number(count),
+        }));
+        setData(transformed);
+      })
+      .catch(console.error);
+  }, []);
+
+  return (
+    <div style={{ height: 500 }}>
+      <ResponsiveBar
+        data={data}
+        keys={["active", "inactive"]}
+        indexBy="region"
+        margin={{ top: 20, right: 30, bottom: 50, left: 60 }}
+        padding={0.3}
+        groupMode="stacked"
+        colors={({ id }) => (id === "active" ? "steelblue" : "#94a3b8")} // slate-400 for inactive
+        axisBottom={{
+          tickRotation: 45,
+          legend: "Region",
+          legendPosition: "middle",
+          legendOffset: 40,
+          tickSize: 5,
+          tickPadding: 5,
+          tickValues: data.length > 30 ? 30 : undefined,
+        }}
+        axisLeft={{
+          legend: "Plots",
+          legendPosition: "middle",
+          legendOffset: -40,
+        }}
+        enableLabel={false}
+        tooltip={({ id, value, data }) => (
+          <div className="bg-base-200 text-sm text-base-content border border-base-300 rounded-md px-3 py-2 shadow-md">
+            <div className="font-semibold">Region: {data.region}</div>
+            <div>
+              {id}: <strong>{value}</strong>
+            </div>
+          </div>
+        )}
+        theme={{
+          axis: {
+            ticks: {
+              text: {
+                fill: "#d1d5db", // tailwind slate-300 for dark mode
+              },
+            },
+            legend: {
+              text: {
+                fill: "#d1d5db",
+              },
+            },
+          },
+          tooltip: {
+            container: {
+              background: "#1f2937", // bg-gray-800
+              color: "#f9fafb", // text-gray-100
+              borderRadius: "6px",
+              padding: "8px 12px",
+            },
+          },
+        }}
+        animate
+        role="application"
+        ariaLabel="Active vs Inactive Deeds"
+      />
+    </div>
+  );
+}

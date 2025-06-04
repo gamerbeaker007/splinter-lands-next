@@ -36,7 +36,7 @@ export default function WorksiteTypeTile() {
   const [worksiteType, setWorksiteType] = useState<JSON | null>(null);
 
   useEffect(() => {
-    fetch("/api/deed")
+    fetch("/api/deed/worksite-types")
       .then((res) => res.json())
       .then(setWorksiteType)
       .catch(console.error);
@@ -44,7 +44,8 @@ export default function WorksiteTypeTile() {
 
   return (
     <>
-      <div className="card bg-accent-content rounded-3xl shadow-md p-4">
+      <div className="card rounded-3xl shadow-md p-4">
+        <div className="text-lg font-bold">Worksite Types:</div>
         {worksiteType ? (
           <div className="flex flex-wrap gap-4 justify-start">
             {Object.entries(worksiteType).map(([type, count]) => {

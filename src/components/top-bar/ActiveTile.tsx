@@ -17,10 +17,10 @@ export default function ActiveTile() {
   return (
     <>
       <div
-        className="card bg-accent-content rounded-3xl shadow-md pl-3 pr-3 w-[65px] h-[22px]"
+        className="card bg-accent-content rounded-3xl shadow-md flex items-center justify-center  w-[65px] h-[22px]"
         title="Percentage of active land based on PP"
       >
-        <span>
+        <span className="text-xs">
           {(((activeLatest?.activeBasedOnPp ?? 0) / MAX_PLOTS) * 100).toFixed(
             1,
           )}
