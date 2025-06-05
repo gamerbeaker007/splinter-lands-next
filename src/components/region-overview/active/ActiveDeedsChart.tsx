@@ -27,23 +27,31 @@ export default function ActiveDeedsChart() {
   }, []);
 
   return (
-    <div style={{ height: 500 }}>
+    <div style={{ height: 550 }}>
+      {/* Optional: Render live theme color preview */}
+      <div className="hidden bg-base-100 text-base-content text-primary" />
+
       <ResponsiveBar
         data={data}
         keys={["active", "inactive"]}
         indexBy="region"
-        margin={{ top: 20, right: 30, bottom: 50, left: 60 }}
+        margin={{ top: 20, right: 30, bottom: 100, left: 60 }}
         padding={0.3}
         groupMode="stacked"
-        colors={({ id }) => (id === "active" ? "steelblue" : "#94a3b8")} // slate-400 for inactive
+        colors={({ id }) => (id === "active" ? "steelblue" : "#94a3b8")}
         axisBottom={{
           tickRotation: 45,
           legend: "Region",
           legendPosition: "middle",
-          legendOffset: 40,
+          legendOffset: 75,
           tickSize: 5,
           tickPadding: 5,
-          tickValues: data.length > 30 ? 30 : undefined,
+          tickValues:
+            data.length > 30
+              ? data
+                  .filter((_, i) => i % Math.ceil(data.length / 30) === 0)
+                  .map((d) => d.region)
+              : undefined,
         }}
         axisLeft={{
           legend: "Plots",
@@ -52,35 +60,13 @@ export default function ActiveDeedsChart() {
         }}
         enableLabel={false}
         tooltip={({ id, value, data }) => (
-          <div className="bg-base-200 text-sm text-base-content border border-base-300 rounded-md px-3 py-2 shadow-md">
+          <div className="bg-base-200 text-sm text-base-content border border-base-300 rounded-md px-3 py-2 shadow-md w-[175px]">
             <div className="font-semibold">Region: {data.region}</div>
             <div>
               {id}: <strong>{value}</strong>
             </div>
           </div>
         )}
-        theme={{
-          axis: {
-            ticks: {
-              text: {
-                fill: "#d1d5db", // tailwind slate-300 for dark mode
-              },
-            },
-            legend: {
-              text: {
-                fill: "#d1d5db",
-              },
-            },
-          },
-          tooltip: {
-            container: {
-              background: "#1f2937", // bg-gray-800
-              color: "#f9fafb", // text-gray-100
-              borderRadius: "6px",
-              padding: "8px 12px",
-            },
-          },
-        }}
         animate
         role="application"
         ariaLabel="Active vs Inactive Deeds"
