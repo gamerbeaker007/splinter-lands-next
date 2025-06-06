@@ -1,6 +1,6 @@
+import { PRICE_KEYS, SplPriceData } from '@/types/price';
 import axios from 'axios';
 import * as rax from 'retry-axios';
-import {PRICE_KEYS, SplPriceData} from "@/lib/types/price";
 
 
 const splPricesClient = axios.create({

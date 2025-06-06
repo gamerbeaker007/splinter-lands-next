@@ -1,12 +1,12 @@
-import {prisma} from "@/lib/prisma";
-import {calcCosts} from "@/scripts/lib/utils/productionCosts";
-import {MULTIPLE_CONSUMING_RESOURCES, NATURAL_RESOURCES} from "@/scripts/lib/utils/statics";
+import { prisma } from "@/lib/prisma";
+import { calcCosts } from "@/scripts/lib/utils/productionCosts";
+import { MULTIPLE_CONSUMING_RESOURCES, NATURAL_RESOURCES } from "@/scripts/lib/utils/statics";
 
 
 
 
-async  function  computeAndStoreResource(date: Date, resource: string, worksite_type?: string){
-    const key = worksite_type ? `${resource}_${worksite_type}` : resource;
+async function computeAndStoreResource(date: Date, resource: string, worksite_type?: string) {
+    const key = worksite_type ? `${resource} ${worksite_type}` : resource;
 
     try {
         const worksiteWhere = Object.assign(
@@ -59,7 +59,7 @@ async  function  computeAndStoreResource(date: Date, resource: string, worksite_
 
 export async function computeAndStoreResourceProduction(today: Date) {
     console.log(`⌛ --- Start computeAndStoreResourceProduction...`);
-    
+
     try {
         await Promise.all([
             ...NATURAL_RESOURCES,

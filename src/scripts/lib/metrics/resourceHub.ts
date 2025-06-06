@@ -2,6 +2,7 @@ import { Prisma } from '@/generated/prisma';
 import { getLandResourcesPools } from '@/lib/api/spl/splLandAPI';
 import {getPrices} from "@/lib/api/spl/splPricesAPI";
 import {prisma} from "@/lib/prisma";
+import { GRAIN_CONVERSION_RATIOS } from '../utils/statics';
 
 export async function computeAndStoreResourceHubMetrics(today: Date) {
     console.log(`⌛ --- Start computeAndStoreResourceHubMetrics...`);
@@ -21,7 +22,8 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
 
     const dataToInsert = resources.map((row: Prisma.ResourceHubMetricsCreateInput) => {
         const resourcePrice = row.resource_price;
-        const { grainEquivalent, factor } = calculateGrainEquivalentAndFactor(resourcePrice, grainPrice);
+        const resource = row.token_symbol
+        const { grainEquivalent, factor } = calculateGrainEquivalentAndFactor(resource, resourcePrice, grainPrice);
         return {
             date: today,
             id: row.id,
@@ -57,12 +59,30 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
 }
 
 
-function calculateGrainEquivalentAndFactor(resourcePrice: number, grainPrice: number) {
-    if (grainPrice <= 0) {
-        console.warn('⚠️ Grain price is zero or invalid. Defaulting to 0 for equivalents.');
-        return { grainEquivalent: 0, factor: 0 };
+
+function calculateGrainEquivalentAndFactor(
+    tokenSymbol: string,
+    resourcePrice: number,
+    grainPrice: number
+  ): { grainEquivalent: number | null; factor: number | null } {
+    if (tokenSymbol === 'GRAIN') {
+      return { grainEquivalent: 1, factor: 1 };
     }
+  
+    if (!grainPrice || grainPrice <= 0) {
+      console.warn('⚠️ Grain price is zero or invalid.');
+      return { grainEquivalent: null, factor: null };
+    }
+  
+    const conversionRatio = GRAIN_CONVERSION_RATIOS[tokenSymbol];
+    if (!conversionRatio) {
+      console.warn(`⚠️ Unknown token symbol: ${tokenSymbol}`);
+      return { grainEquivalent: null, factor: null };
+    }
+  
     const grainEquivalent = resourcePrice / grainPrice;
-    const factor = 1 / grainEquivalent;
+    const factor = grainEquivalent / conversionRatio;
+  
     return { grainEquivalent, factor };
 }
+  

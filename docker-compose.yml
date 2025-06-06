@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17
+    container_name: db
     restart: always
     environment:
       POSTGRES_USER: postgres
@@ -9,10 +10,11 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - db_data:/var/lib/postgresql/data
+      - spl_db_data_local:/var/lib/postgresql/data
 
   pgadmin:
     image: dpage/pgadmin4
+    container_name: pgadmin
     restart: always
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@admin.com
@@ -24,13 +26,11 @@ services:
 
   web:
     build: .
+    container_name: spl-next
+    env_file: .env
     volumes:
-      - .env:/app/.env:ro
       - ./cron.log:/var/log/cron.log
     ports:
       - "3000:3000"
-    environment:
-      - NODE_ENV=production
-
 volumes:
-  db_data:
+  spl_db_data_local:
