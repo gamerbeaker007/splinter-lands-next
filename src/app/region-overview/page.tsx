@@ -8,7 +8,7 @@ export default async function RegionOverviewPage() {
   return (
     <FilterProvider>
       <Container>
-        <Typography variant="h5">Regoin OVerview</Typography>
+        <Typography variant="h5">Region Overview</Typography>
         <FilterDrawer />
         <WorksiteTypeTile />
         <ActiveDeedsChart />
