@@ -1,7 +1,8 @@
-import "./globals.css";
+// app/layout.tsx
+import { ThemeProviderWrapper } from "@/lib/context/ThemeContext"; // Adjust path as needed
 import SideBar from "@/components/side-bar/SideBar";
-import ThemeInitScript from "@/components/top-bar/ThemInitScript";
 import TopBar from "@/components/top-bar/TopBar";
+import Box from "@mui/material/Box";
 
 export default function RootLayout({
   children,
@@ -9,18 +10,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
-      <head>
-        <ThemeInitScript />
-      </head>
+    <html lang="en">
       <body>
-        <div className="flex h-screen overflow-hidden">
-          <SideBar />
-          <div className="flex flex-col flex-grow">
-            <TopBar />
-            <main className="p-2 flex-grow overflow-auto">{children}</main>
-          </div>
-        </div>
+        <ThemeProviderWrapper>
+          <Box display="flex" height="100vh" overflow="hidden">
+            <SideBar />
+            <Box display="flex" flexDirection="column" flexGrow={1}>
+              <TopBar />
+              <Box component="main" p={2} flexGrow={1} overflow="auto">
+                {children}
+              </Box>
+            </Box>
+          </Box>
+        </ThemeProviderWrapper>
       </body>
     </html>
   );

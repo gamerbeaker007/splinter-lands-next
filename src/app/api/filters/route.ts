@@ -1,11 +1,9 @@
-import { getActiveDeedCountByRegion } from "@/lib/api/internal/deed-data";
-import { FilterInput } from "@/types/filters";
 import { NextResponse } from "next/server";
+import { getAvailableFilterValues } from "@/lib/api/internal/deed-data";
 
-export async function POST(req: Request) {
+export async function GET() {
   try {
-    const filters: FilterInput = await req.json();
-    const result = await getActiveDeedCountByRegion(filters);
+    const result = await getAvailableFilterValues();
 
     if (!result)
       return NextResponse.json({ error: "No data found" }, { status: 404 });

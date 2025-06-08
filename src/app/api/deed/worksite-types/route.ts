@@ -1,14 +1,16 @@
-import { getWorksiteTypeCountsFromBlob } from "@/lib/api/internal/deed_data";
 import { NextResponse } from "next/server";
+import { FilterInput } from "@/types/filters";
+import { getWorksiteTypeCountsFromBlob } from "@/lib/api/internal/deed-data";
 
-export async function GET() {
+export async function POST(req: Request) {
   try {
-    const latest = await getWorksiteTypeCountsFromBlob();
-    if (!latest)
+    const filters: FilterInput = await req.json();
+    const result = await getWorksiteTypeCountsFromBlob(filters);
+
+    if (!result)
       return NextResponse.json({ error: "No data found" }, { status: 404 });
 
-    // const dto = toActiveDto(latest);
-    return NextResponse.json(latest);
+    return NextResponse.json(result);
   } catch (err) {
     console.error(err);
     return NextResponse.json(

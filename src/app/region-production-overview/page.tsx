@@ -1,4 +1,5 @@
+import { Typography } from "@mui/material";
+
 export default function RegionOverviewPage() {
-    return <div className="text-xl">Region Overview Page</div>
-  }
-  
+  return <Typography variant="h5">Region Overview Page</Typography>;
+}

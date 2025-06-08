@@ -1,6 +1,6 @@
 import { Prisma } from "@/generated/prisma";
-import { getLandResourcesPools } from "@/lib/api/spl/splLandAPI";
-import { getPrices } from "@/lib/api/spl/splPricesAPI";
+import { getLandResourcesPools } from "@/lib/api/spl/spl-land-api";
+import { getPrices } from "@/lib/api/spl/spl-prices-api";
 import { prisma } from "@/lib/prisma";
 import {
   calcCosts,
