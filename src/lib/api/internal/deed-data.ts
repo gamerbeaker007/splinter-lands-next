@@ -58,10 +58,7 @@ async function getCachedDeedData(): Promise<DeedComplete[]> {
 
 export async function getWorksiteTypeCountsFromBlob(filters: FilterInput) {
   const blob = await getCachedDeedData();
-  console.log("Start filter");
-  console.time("Filtering");
   const filteredDeeds = filterDeeds(blob, filters);
-  console.timeEnd("Filtering");
 
   const counts: Record<string, number> = {};
   for (const deed of filteredDeeds) {
@@ -106,20 +103,31 @@ export async function getUniquePlayerCountFromBlob() {
   return uniquePlayers.size;
 }
 
-export async function getActiveDeedCountByRegion() {
+export async function getActiveDeedCountByRegion(filters: FilterInput) {
   const blob = await getCachedDeedData();
-  const counts: Record<string, number> = {};
 
-  for (const deed of blob) {
-    const region = deed.region_uid;
+  //Only the region filter will have effect unless one region is selected
+  const regionFilter = filters.filter_regions ?? [];
+
+  // If exactly one region is selected, fall back to counting by tract
+  const countByTract = regionFilter.length === 1;
+
+  const filteredDeeds = filterDeeds(blob, { filter_regions: regionFilter });
+
+  const counts: Record<string, number> = {};
+  for (const deed of filteredDeeds) {
+    const groupKey = countByTract
+      ? deed.tract_number // Use tract instead of region
+      : deed.region_uid;
+
     const totalHarvest = deed.stakingDetail?.total_harvest_pp ?? 0;
 
-    if (region && totalHarvest > 0) {
-      counts[region] = (counts[region] ?? 0) + 1;
+    if (groupKey && totalHarvest > 0) {
+      counts[groupKey] = (counts[groupKey] ?? 0) + 1;
     }
   }
 
-  // Sort the entries by count ascending
+  // Sort the entries by count descending
   const sortedCounts = Object.fromEntries(
     Object.entries(counts).sort(([, a], [, b]) => b - a),
   );
@@ -136,9 +144,9 @@ export async function getAvailableFilterValues(): Promise<
   const blob = await getCachedDeedData();
 
   const values = {
-    filter_regions: new Set<string>(),
-    filter_tracts: new Set<string>(),
-    filter_plots: new Set<string>(),
+    filter_regions: new Set<number>(),
+    filter_tracts: new Set<number>(),
+    filter_plots: new Set<number>(),
     filter_rarity: new Set<string>(),
     filter_resources: new Set<string>(),
     filter_worksites: new Set<string>(),
@@ -148,14 +156,12 @@ export async function getAvailableFilterValues(): Promise<
   };
 
   for (const deed of blob) {
-    if (deed.region_uid) values.filter_regions.add(deed.region_uid);
-    if (deed.tract_number != null)
-      values.filter_tracts.add(deed.tract_number.toString());
-    if (deed.plot_number != null)
-      values.filter_plots.add(deed.plot_number.toString());
-    if (deed.rarity != null) values.filter_rarity.add(deed.rarity.toString());
+    if (deed.region_number) values.filter_regions.add(deed.region_number);
+    if (deed.tract_number != null) values.filter_tracts.add(deed.tract_number);
+    if (deed.plot_number != null) values.filter_plots.add(deed.plot_number);
+    if (deed.rarity != null) values.filter_rarity.add(deed.rarity);
     if (deed.worksiteDetail?.token_symbol)
-      values.filter_resources.add(deed.worksiteDetail.token_symbol.toString());
+      values.filter_resources.add(deed.worksiteDetail.token_symbol);
     if (deed.worksite_type) values.filter_worksites.add(deed.worksite_type);
     if (deed.deed_type) values.filter_deed_type.add(deed.deed_type);
     if (deed.plot_status) values.filter_plot_status.add(deed.plot_status);
@@ -163,14 +169,14 @@ export async function getAvailableFilterValues(): Promise<
   }
 
   return {
-    filter_regions: [...values.filter_regions],
-    filter_tracts: [...values.filter_tracts],
-    filter_plots: [...values.filter_plots],
-    filter_rarity: [...values.filter_rarity],
-    filter_resources: [...values.filter_resources],
-    filter_worksites: [...values.filter_worksites],
-    filter_deed_type: [...values.filter_deed_type],
-    filter_plot_status: [...values.filter_plot_status],
-    filter_players: [...values.filter_players],
+    filter_regions: [...values.filter_regions].sort((a, b) => a - b),
+    filter_tracts: [...values.filter_tracts].sort((a, b) => a - b),
+    filter_plots: [...values.filter_plots].sort((a, b) => a - b),
+    filter_rarity: [...values.filter_rarity].sort(),
+    filter_resources: [...values.filter_resources].sort(),
+    filter_worksites: [...values.filter_worksites].sort(),
+    filter_deed_type: [...values.filter_deed_type].sort(),
+    filter_plot_status: [...values.filter_plot_status].sort(),
+    filter_players: [...values.filter_players].sort(),
   };
 }

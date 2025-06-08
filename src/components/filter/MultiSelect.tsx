@@ -11,22 +11,22 @@ import {
   Select,
 } from "@mui/material";
 
-interface MultiSelectProps {
+interface MultiSelectProps<T extends string | number = string | number> {
   label: string;
-  values: string[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
+  values: T[];
+  selected: T[];
+  onChange: (selected: T[]) => void;
 }
 
-export default function MultiSelect({
+export default function MultiSelect<T extends string | number>({
   label,
   values,
   selected,
   onChange,
-}: MultiSelectProps) {
+}: MultiSelectProps<T>) {
   const labelId = `${label.replace(/\s+/g, "-").toLowerCase()}-label`;
 
-  const handleDelete = (valueToRemove: string) => {
+  const handleDelete = (valueToRemove: T) => {
     onChange(selected.filter((val) => val !== valueToRemove));
   };
 
@@ -41,11 +41,11 @@ export default function MultiSelect({
         labelId={labelId}
         multiple
         value={selected}
-        onChange={(e) => onChange(e.target.value as string[])}
+        onChange={(e) => onChange(e.target.value as T[])}
         input={<OutlinedInput label={label} />}
-        renderValue={(selected) => (
+        renderValue={(selectedItems) => (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-            {(selected as string[]).map((value) => (
+            {(selectedItems as T[]).map((value) => (
               <Chip
                 key={value}
                 label={value}
@@ -53,9 +53,9 @@ export default function MultiSelect({
                 onDelete={() => handleDelete(value)}
               />
             ))}
-            {selected.length > 0 && (
+            {selectedItems.length > 0 && (
               <Chip
-                label="Clear"
+                label="X"
                 size="small"
                 onClick={handleClearAll}
                 onMouseDown={(e) => e.stopPropagation()}

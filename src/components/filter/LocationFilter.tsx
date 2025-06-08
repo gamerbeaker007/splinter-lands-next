@@ -1,0 +1,44 @@
+"use client";
+
+import { FilterInput } from "@/types/filters";
+import { useFilters } from "@/lib/context/FilterContext";
+import MultiSelect from "./MultiSelect";
+import { Box, Typography } from "@mui/material";
+
+type Props = {
+  options: FilterInput;
+};
+
+export default function LocationFilter({ options }: Props) {
+  const { filters, setFilters } = useFilters();
+
+  const update = (field: keyof FilterInput, values: number[]) => {
+    setFilters((prev) => ({ ...prev, [field]: values }));
+  };
+
+  return (
+    <Box>
+      <Typography variant="subtitle1" gutterBottom>
+        Location
+      </Typography>
+      <MultiSelect
+        label="Regions"
+        values={options.filter_regions ?? []}
+        selected={filters?.filter_regions ?? []}
+        onChange={(vals) => update("filter_regions", vals)}
+      />
+      <MultiSelect
+        label="Tracts"
+        values={options.filter_tracts ?? []}
+        selected={filters?.filter_tracts ?? []}
+        onChange={(vals) => update("filter_tracts", vals)}
+      />
+      <MultiSelect
+        label="Plots"
+        values={options.filter_plots ?? []}
+        selected={filters?.filter_plots ?? []}
+        onChange={(vals) => update("filter_plots", vals)}
+      />
+    </Box>
+  );
+}

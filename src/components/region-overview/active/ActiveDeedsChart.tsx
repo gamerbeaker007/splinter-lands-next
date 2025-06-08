@@ -5,41 +5,55 @@ import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { BarChart } from "@mui/x-charts/BarChart";
+import { useFilters } from "@/lib/context/FilterContext";
 
-type RegionStats = {
-  region: string;
+type Stats = {
+  name: string;
   active: number;
   inactive: number;
 };
 
 export default function ActiveDeedsChart() {
-  const [data, setData] = useState<RegionStats[]>([]);
+  const { filters } = useFilters();
+  const [data, setData] = useState<Stats[]>([]);
+  const [xTitle, setXTitle] = useState<string>("");
 
   useEffect(() => {
-    fetch("/api/deed/active")
+    if (!filters) return;
+
+    fetch("/api/deed/active", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(filters),
+    })
       .then((res) => res.json())
       .then((raw) => {
-        const transformed = Object.entries(raw).map(([region, count]) => ({
-          region,
-          active: Number(count),
-          inactive: 1000 - Number(count),
-        }));
-        setData(transformed);
+        const entries = Object.entries(raw);
+
+        if (filters.filter_regions?.length === 1) {
+          const transformed = entries.map(([tract_id, count]) => ({
+            name: tract_id ?? "(unkown tract)",
+            active: Number(count),
+            inactive: 100 - Number(count),
+          }));
+          setXTitle("Tract");
+          setData(transformed);
+        } else {
+          const transformed = entries.map(([region, count]) => ({
+            name: region ?? "(unkown region)",
+            active: Number(count),
+            inactive: 1000 - Number(count),
+          }));
+          setXTitle("Region");
+          setData(transformed);
+        }
       })
       .catch(console.error);
-  }, []);
+  }, [filters]);
 
-  const regionLabels = data.map((d) => d.region);
+  const regionLabels = data.map((d) => d.name);
   const activeCounts = data.map((d) => d.active);
   const inactiveCounts = data.map((d) => d.inactive);
-
-  const maxTicks = 30;
-  const tickInterval = Math.ceil(data.length / maxTicks);
-  const tickRegions =
-    data.length > maxTicks
-      ? data.filter((_, i) => i % tickInterval === 0).map((d) => d.region)
-      : regionLabels;
-  console.log(tickRegions);
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: 4 }}>
@@ -50,14 +64,14 @@ export default function ActiveDeedsChart() {
         <ResponsiveBar
           data={data}
           keys={["active", "inactive"]}
-          indexBy="region"
+          indexBy="name"
           margin={{ top: 20, right: 30, bottom: 100, left: 60 }}
           padding={0.3}
           groupMode="stacked"
           colors={({ id }) => (id === "active" ? "steelblue" : "#94a3b8")}
           axisBottom={{
             tickRotation: 45,
-            legend: "Region",
+            legend: xTitle,
             legendPosition: "middle",
             legendOffset: 75,
             tickSize: 5,
@@ -66,7 +80,7 @@ export default function ActiveDeedsChart() {
               data.length > 30
                 ? data
                     .filter((_, i) => i % Math.ceil(data.length / 30) === 0)
-                    .map((d) => d.region)
+                    .map((d) => d.name)
                 : undefined,
           }}
           axisLeft={{
@@ -89,7 +103,9 @@ export default function ActiveDeedsChart() {
                 color: "text.primary",
               }}
             >
-              <div style={{ fontWeight: 600 }}>Region: {data.region}</div>
+              <div style={{ fontWeight: 600 }}>
+                {xTitle}: {data.name}
+              </div>
               <div>
                 {id}: <strong>{value}</strong>
               </div>
@@ -112,7 +128,7 @@ export default function ActiveDeedsChart() {
               id: "regions",
               data: regionLabels,
               scaleType: "band",
-              label: "Region",
+              label: xTitle,
               tickLabelStyle: {
                 fontSize: 10,
               },

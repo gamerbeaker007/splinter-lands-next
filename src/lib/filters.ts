@@ -2,10 +2,16 @@ import { FilterInput } from "@/types/filters";
 import { DeedComplete } from "@/types/deed";
 
 function isInFilter(
-  filter: ReadonlyArray<string> | undefined,
+  filter: ReadonlyArray<string | number> | undefined,
   value: unknown,
 ): boolean {
-  return !!filter?.length ? filter.includes(String(value)) : true;
+  if (!filter?.length) return true;
+
+  if (typeof value === "string" || typeof value === "number") {
+    return filter.includes(value);
+  }
+
+  return false;
 }
 
 export function filterDeeds(
@@ -13,7 +19,7 @@ export function filterDeeds(
   filters: FilterInput,
 ): DeedComplete[] {
   return data.filter((deed) => {
-    if (!isInFilter(filters.filter_regions, deed.region_uid)) return false;
+    if (!isInFilter(filters.filter_regions, deed.region_number)) return false;
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
     if (!isInFilter(filters.filter_plots, deed.plot_number)) return false;
     if (!isInFilter(filters.filter_rarity, deed.rarity)) return false;
@@ -39,10 +45,6 @@ export function filterDeeds(
     }
     if (filters.filter_has_pp !== undefined) {
       const isPositive = (deed.stakingDetail?.total_harvest_pp ?? 0) > 0;
-      console.log(
-        `Deed pp: ${deed.stakingDetail?.total_harvest_pp ?? "N/A"} (positive ${isPositive})`,
-      );
-      console.log(`check: ${filters.filter_has_pp && !isPositive}`);
       if (filters.filter_has_pp !== isPositive) return false;
     }
 
