@@ -16,7 +16,7 @@ export default function FilterDrawer() {
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/filters`)
+    fetch(`/api/filters`)
       .then((res) => res.json())
       .then(setAvailableOptions)
       .catch(console.error);
