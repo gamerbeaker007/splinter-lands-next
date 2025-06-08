@@ -1,6 +1,5 @@
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import ActiveDeedsChart from "@/components/region-overview/active/ActiveDeedsChart";
-import BubbleScatterChart from "@/components/region-overview/demo/BubbleScatterChart";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
 import { FilterProvider } from "@/lib/context/FilterContext";
 import { Container, Typography } from "@mui/material";
@@ -13,7 +12,6 @@ export default async function RegionOverviewPage() {
         <FilterDrawer />
         <WorksiteTypeTile />
         <ActiveDeedsChart />
-        <BubbleScatterChart />
       </Container>
     </FilterProvider>
   );
