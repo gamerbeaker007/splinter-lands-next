@@ -1,12 +1,8 @@
-// lib/ThemeContext.tsx or context/ThemeContext.tsx
 "use client";
 
+import { CssBaseline, ThemeProvider as MuiThemeProvider } from "@mui/material";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import {
-  ThemeProvider as MuiThemeProvider,
-  createTheme,
-  CssBaseline,
-} from "@mui/material";
+import { getCustomTheme } from "../themes/themes";
 
 type ThemeMode = "light" | "dark";
 
@@ -55,13 +51,7 @@ export function ThemeProviderWrapper({
     setMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  const muiTheme = useMemo(
-    () =>
-      createTheme({
-        palette: { mode },
-      }),
-    [mode],
-  );
+  const muiTheme = useMemo(() => getCustomTheme(mode), [mode]);
 
   if (!mounted) {
     return null; // ⛔️ prevent any UI until theme is ready
