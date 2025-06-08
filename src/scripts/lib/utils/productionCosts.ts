@@ -1,4 +1,4 @@
-import { getMidnightPotionPrice } from "@/lib/api/spl/splLandAPI";
+import { getMidnightPotionPrice } from "@/lib/api/spl/spl-land-api";
 import {
   CONSUME_RATES,
   CONSUMES_ONLY_GRAIN,

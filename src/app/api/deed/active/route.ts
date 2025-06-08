@@ -1,4 +1,4 @@
-import { getActiveDeedCountByRegion } from "@/lib/api/internal/deed_data";
+import { getActiveDeedCountByRegion } from "@/lib/api/internal/deed-data";
 import { NextResponse } from "next/server";
 
 export async function GET() {

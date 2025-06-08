@@ -1,6 +1,6 @@
-import { Prisma } from '@/generated/prisma';
-import { fetchRegionData } from '@/lib/api/spl/splLandAPI';
-import { prisma } from '@/lib/prisma';
+import { Prisma } from "@/generated/prisma";
+import { fetchRegionData } from "@/lib/api/spl/spl-land-api";
+import { prisma } from "@/lib/prisma";
 
 import DeedUncheckedCreateInput = Prisma.DeedUncheckedCreateInput;
 import WorksiteDetailUncheckedCreateInput = Prisma.WorksiteDetailUncheckedCreateInput;
@@ -8,8 +8,8 @@ import StakingDetailUncheckedCreateInput = Prisma.StakingDetailUncheckedCreateIn
 
 function safeDate(input: Date | string | null | undefined): Date | null {
   if (!input) return null;
-  if (typeof input === 'string') {
-    if (input.startsWith('+')) return null;
+  if (typeof input === "string") {
+    if (input.startsWith("+")) return null;
     const parsed = new Date(input);
     return isNaN(parsed.getTime()) ? null : parsed;
   }
@@ -35,32 +35,46 @@ export async function fetchAndProcessRegionData() {
   for (let i = 0; i < regionNumbers.length; i += concurrency) {
     const batch = regionNumbers.slice(i, i + concurrency);
 
-    await Promise.all(batch.map(async (region) => {
-      try {
-        const { deeds, worksite_details, staking_details } = await fetchRegionData(region);
-        allDeeds.push(...deeds);
-        allWorksites.push(
-          ...worksite_details.map((ws: WorksiteDetailUncheckedCreateInput) => ({
-            ...ws,
-            projected_end: safeDate(ws.projected_end),
-          }))
-        );
-        allStakings.push(...staking_details);
-        console.log(`⌛ Region ${region}: ${deeds.length} deeds`);
-      } catch (error) {
-        console.error(`❌ Region ${region} failed:`, error instanceof Error ? error.message : error);
-      }
-    }));
+    await Promise.all(
+      batch.map(async (region) => {
+        try {
+          const { deeds, worksite_details, staking_details } =
+            await fetchRegionData(region);
+          allDeeds.push(...deeds);
+          allWorksites.push(
+            ...worksite_details.map(
+              (ws: WorksiteDetailUncheckedCreateInput) => ({
+                ...ws,
+                projected_end: safeDate(ws.projected_end),
+              }),
+            ),
+          );
+          allStakings.push(...staking_details);
+          console.log(`⌛ Region ${region}: ${deeds.length} deeds`);
+        } catch (error) {
+          console.error(
+            `❌ Region ${region} failed:`,
+            error instanceof Error ? error.message : error,
+          );
+        }
+      }),
+    );
   }
 
   console.log(`📦 Inserting ${allDeeds.length} deeds...`);
   await prisma.deed.createMany({ data: allDeeds, skipDuplicates: true });
 
   console.log(`📦 Inserting ${allWorksites.length} worksites...`);
-  await prisma.worksiteDetail.createMany({ data: allWorksites, skipDuplicates: true });
+  await prisma.worksiteDetail.createMany({
+    data: allWorksites,
+    skipDuplicates: true,
+  });
 
   console.log(`📦 Inserting ${allStakings.length} stakings...`);
-  await prisma.stakingDetail.createMany({ data: allStakings, skipDuplicates: true });
+  await prisma.stakingDetail.createMany({
+    data: allStakings,
+    skipDuplicates: true,
+  });
 
   const end = Date.now();
 

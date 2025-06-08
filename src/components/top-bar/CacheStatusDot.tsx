@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Box from "@mui/material/Box";
+import Tooltip from "@mui/material/Tooltip";
+import Typography from "@mui/material/Typography";
+import CircularProgress from "@mui/material/CircularProgress";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -28,29 +32,50 @@ export default function CacheStatusDot() {
       .catch(() => setStatus("error"));
   }, []);
 
-  const color = {
-    idle: "bg-gray-400",
-    loading: "bg-yellow-400 animate-pulse",
-    success: "bg-green-500",
-    error: "bg-red-500",
-  }[status];
+  const colorMap: Record<Status, string> = {
+    idle: "grey.400",
+    loading: "warning.main",
+    success: "success.main",
+    error: "error.main",
+  };
+
+  const dot = (
+    <Box
+      sx={{
+        width: 12,
+        height: 12,
+        borderRadius: "50%",
+        bgcolor: colorMap[status],
+      }}
+    />
+  );
+
+  const loadingDot = (
+    <CircularProgress size={12} thickness={5} sx={{ color: "warning.main" }} />
+  );
+
+  const tooltipContent = (
+    <Box p={1}>
+      <Typography variant="caption" display="block" fontWeight="bold">
+        Data cached:
+      </Typography>
+      <Typography variant="caption">
+        {info?.lastUpdate
+          ? new Date(info.lastUpdate).toLocaleDateString()
+          : "N/A"}
+      </Typography>
+      <Typography variant="caption" fontWeight="bold" display="block" mt={1}>
+        Unique Players:
+      </Typography>
+      <Typography variant="caption">{info?.uniquePlayers ?? 0}</Typography>
+    </Box>
+  );
 
   return (
-    <div className="relative group">
-      <div className={`w-3 h-3 rounded-full ${color}`} />
-
-      <div className="absolute left-1/2 top-full z-10 hidden w-max -translate-x-1/2 rounded-lg bg-base-200 p-2 text-xs shadow-md group-hover:block">
-        <div>
-          <strong>Data cached:</strong>
-          <br />
-          {new Date(info?.lastUpdate || "N/A").toLocaleDateString()}
-        </div>
-        <div className="mt-1">
-          <strong>Unique Players:</strong>
-          <br />
-          {info?.uniquePlayers || 0}
-        </div>
-      </div>
-    </div>
+    <Tooltip title={tooltipContent} arrow placement="bottom">
+      <Box display="inline-block" sx={{ cursor: "pointer" }}>
+        {status === "loading" ? loadingDot : dot}
+      </Box>
+    </Tooltip>
   );
 }

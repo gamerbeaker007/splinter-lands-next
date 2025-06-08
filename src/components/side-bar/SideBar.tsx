@@ -3,6 +3,18 @@
 import { useState } from "react";
 import Link from "next/link";
 import { FiMenu, FiHome, FiMap, FiUsers, FiDatabase } from "react-icons/fi";
+import {
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
+  Toolbar,
+  Divider,
+} from "@mui/material";
 
 const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
@@ -16,39 +28,74 @@ const links = [
   { href: "/player-overview", label: "Player Overview", icon: <FiUsers /> },
 ];
 
+const SIDEBAR_WIDTH_EXPANDED = 240;
+const SIDEBAR_WIDTH_COLLAPSED = 72;
+
 export default function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
 
+  const drawerWidth = collapsed
+    ? SIDEBAR_WIDTH_COLLAPSED
+    : SIDEBAR_WIDTH_EXPANDED;
+
   return (
-    <div
-      className={`bg-base-200 text-base-content h-full transition-all duration-300 ease-in-out ${collapsed ? "w-20" : "w-64"}`}
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: drawerWidth,
+        flexShrink: 0,
+        [`& .MuiDrawer-paper`]: {
+          width: drawerWidth,
+          boxSizing: "border-box",
+          transition: "width 0.3s ease-in-out",
+          overflowX: "hidden",
+        },
+      }}
     >
-      <div className="flex items-center justify-between p-4">
+      <Toolbar
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          px: 2,
+        }}
+      >
         {!collapsed && (
-          <span className="text-xl font-bold">
-            <div className="text-xl font-semibold">Land Stats</div>
-          </span>
+          <Typography variant="h6" noWrap>
+            Land Stats
+          </Typography>
         )}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className="btn btn-ghost btn-square"
-        >
-          <FiMenu size={20} />
-        </button>
-      </div>
-      <ul className="menu px-5">
+        <IconButton onClick={() => setCollapsed(!collapsed)}>
+          <FiMenu />
+        </IconButton>
+      </Toolbar>
+      <Divider />
+      <List>
         {links.map(({ href, label, icon }) => (
-          <li key={href}>
-            <Link
+          <ListItem key={href} disablePadding sx={{ display: "block" }}>
+            <ListItemButton
+              component={Link}
               href={href}
-              className="flex items-center gap-3 rounded-md p-2 transition-colors hover:bg-base-300"
+              sx={{
+                minHeight: 48,
+                justifyContent: collapsed ? "center" : "flex-start",
+                px: 2.5,
+              }}
             >
-              {icon}
-              {!collapsed && <span>{label}</span>}
-            </Link>
-          </li>
+              <ListItemIcon
+                sx={{
+                  minWidth: 0,
+                  mr: collapsed ? 0 : 2,
+                  justifyContent: "center",
+                }}
+              >
+                {icon}
+              </ListItemIcon>
+              {!collapsed && <ListItemText primary={label} />}
+            </ListItemButton>
+          </ListItem>
         ))}
-      </ul>
-    </div>
+      </List>
+    </Drawer>
   );
 }

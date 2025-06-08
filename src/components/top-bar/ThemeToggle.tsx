@@ -1,64 +1,74 @@
 "use client";
-import { useEffect, useState } from "react";
-import { LuMoon, LuSun } from "react-icons/lu";
 
-const themes = ["dark", "light"];
+import { useThemeContext } from "@/lib/context/ThemeContext";
+import { LuMoon, LuSun } from "react-icons/lu";
+import IconButton from "@mui/material/IconButton";
+import Box from "@mui/material/Box";
+import { useEffect, useState } from "react";
 
 export default function ThemeToggle() {
-  const [isDark, setIsDark] = useState<boolean | null>(null);
+  const { mode, toggleTheme } = useThemeContext();
+  const [mounted, setMounted] = useState(false);
 
-  // Determine initial theme
   useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    const prefersDark = window.matchMedia(
-      "(prefers-color-scheme: dark)",
-    ).matches;
-    const theme = stored ?? (prefersDark ? themes[0] : themes[1]);
-    setIsDark(theme === themes[0]);
-
-    // Apply immediately
-    document.documentElement.classList.toggle(themes[0], theme === themes[0]);
-    document.documentElement.setAttribute(
-      "data-theme",
-      theme === themes[0] ? themes[0] : themes[1],
-    );
+    setMounted(true);
   }, []);
 
-  // Update on toggle
-  useEffect(() => {
-    if (isDark === null) return;
-    const theme = isDark ? themes[0] : themes[1];
-    localStorage.setItem("theme", theme);
-    document.documentElement.classList.toggle(themes[0], isDark);
-    document.documentElement.setAttribute("data-theme", theme);
-  }, [isDark]);
+  if (!mounted) return null;
 
-  if (isDark === null) return null;
+  const isDark = mode === "dark";
 
   return (
-    <label
-      className="flex top-4 right-4 lg:right-6 z-30 cursor-pointer"
+    <IconButton
       aria-label="Toggle theme"
+      onClick={toggleTheme}
+      sx={{
+        width: 50,
+        height: 24,
+        bgcolor: "skyblue",
+        borderRadius: "999px",
+        px: 0.5,
+        position: "relative",
+        transition: "background-color 0.3s ease-in-out",
+      }}
     >
-      <input
-        type="checkbox"
-        className="hidden"
-        checked={isDark}
-        onChange={() => setIsDark(!isDark)}
+      <Box
+        sx={{
+          position: "absolute",
+          top: 4,
+          left: isDark ? "calc(100% - 20px)" : "4px",
+          width: 16,
+          height: 16,
+          bgcolor: "white",
+          borderRadius: "50%",
+          boxShadow: 2,
+          transition: "left 0.3s ease-in-out",
+        }}
       />
-      <div className="relative w-[50px] h-[22px] bg-sky-700/50 rounded-full transition-colors duration-300">
-        <div
-          className={`absolute top-[3px] w-[16px] h-[16px] bg-white rounded-full shadow-md transform transition-transform duration-300 ${
-            !isDark ? "translate-x-[3px]" : "translate-x-[31px]"
-          }`}
-        />
-        <span className="absolute left-1 top-1/2 -translate-y-1/2 text-xs">
-          <LuSun className="text-white" />
-        </span>
-        <span className="absolute right-1 top-1/2 -translate-y-1/2 text-xs">
-          <LuMoon className="text-white" />
-        </span>
-      </div>
-    </label>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          left: 6,
+          transform: "translateY(-50%)",
+          fontSize: 12,
+          color: "white",
+        }}
+      >
+        <LuSun />
+      </Box>
+      <Box
+        sx={{
+          position: "absolute",
+          top: "50%",
+          right: 6,
+          transform: "translateY(-50%)",
+          fontSize: 12,
+          color: "white",
+        }}
+      >
+        <LuMoon />
+      </Box>
+    </IconButton>
   );
 }

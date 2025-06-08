@@ -1,4 +1,5 @@
+import { Typography } from "@mui/material";
+
 export default function ResourcePage() {
-    return <div className="text-xl">Resource Page</div>
-  }
-  
+  return <Typography variant="h5">Resource Page</Typography>;
+}

@@ -1,4 +1,4 @@
-import { getWorksiteTypeCountsFromBlob } from "@/lib/api/internal/deed_data";
+import { getWorksiteTypeCountsFromBlob } from "@/lib/api/internal/deed-data";
 import { NextResponse } from "next/server";
 
 export async function GET() {

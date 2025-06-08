@@ -1,4 +1,4 @@
-import { getUniquePlayerCountFromBlob as getUniquePlayerCountDeeds } from "@/lib/api/internal/deed_data";
+import { getUniquePlayerCountFromBlob as getUniquePlayerCountDeeds } from "@/lib/api/internal/deed-data";
 import { getLastUpdate } from "@/lib/cache/utils";
 import { NextResponse } from "next/server";
 
