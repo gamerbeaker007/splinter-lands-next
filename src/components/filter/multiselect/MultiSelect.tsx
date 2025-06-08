@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   Box,
   Chip,
@@ -44,22 +43,44 @@ export default function MultiSelect<T extends string | number>({
         onChange={(e) => onChange(e.target.value as T[])}
         input={<OutlinedInput label={label} />}
         renderValue={(selectedItems) => (
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-            {(selectedItems as T[]).map((value) => (
-              <Chip
-                key={value}
-                label={value}
-                size="small"
-                onDelete={() => handleDelete(value)}
-              />
-            ))}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              flexWrap: "wrap",
+              gap: 0.5,
+            }}
+          >
+            <Box
+              sx={{ display: "flex", flexWrap: "wrap", gap: 0.5, flexGrow: 1 }}
+            >
+              {(selectedItems as T[]).map((value) => (
+                <Chip
+                  key={value}
+                  label={value}
+                  size="small"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onDelete={(e) => {
+                    e.stopPropagation();
+                    handleDelete(value);
+                  }}
+                />
+              ))}
+            </Box>
+
             {selectedItems.length > 0 && (
               <Chip
                 label="X"
                 size="small"
                 onClick={handleClearAll}
                 onMouseDown={(e) => e.stopPropagation()}
-                sx={{ bgcolor: "error.main", color: "white" }}
+                sx={{
+                  bgcolor: "error.main",
+                  color: "white",
+                  fontSize: "0.625rem", // ~10px = XS
+                  ml: 1,
+                  height: 20,
+                }}
               />
             )}
           </Box>
