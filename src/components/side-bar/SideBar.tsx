@@ -29,7 +29,7 @@ const links = [
 ];
 
 const SIDEBAR_WIDTH_EXPANDED = 240;
-const SIDEBAR_WIDTH_COLLAPSED = 72;
+const SIDEBAR_WIDTH_COLLAPSED = 50;
 
 export default function SideBar() {
   const [collapsed, setCollapsed] = useState(false);
@@ -55,9 +55,11 @@ export default function SideBar() {
       <Toolbar
         sx={{
           display: "flex",
-          justifyContent: "space-between",
+          flexDirection: collapsed ? "column" : "row", // align vertically in collapsed mode
           alignItems: "center",
-          px: 2,
+          justifyContent: collapsed ? "center" : "space-between",
+          minHeight: 64,
+          px: collapsed ? 1 : 2,
         }}
       >
         {!collapsed && (
@@ -79,7 +81,7 @@ export default function SideBar() {
               sx={{
                 minHeight: 48,
                 justifyContent: collapsed ? "center" : "flex-start",
-                px: 2.5,
+                px: 2,
               }}
             >
               <ListItemIcon

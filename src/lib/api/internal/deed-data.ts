@@ -1,22 +1,14 @@
-import { Deed, StakingDetail, WorksiteDetail } from "@/generated/prisma";
 import { getLastUpdate } from "@/lib/cache/utils";
 import { prisma } from "@/lib/prisma";
+import { DeedComplete } from "@/types/deed";
+import { FilterInput } from "@/types/filters";
+import { filterDeeds } from "@/lib/filters";
 
-let cachedDeedData:
-  | (Deed & {
-      worksiteDetail: WorksiteDetail | null;
-      stakingDetail: StakingDetail | null;
-    })[]
-  | null = null;
+let cachedDeedData: DeedComplete[] | null = null;
 let cachedDeedTimestamp: Date | null = null;
 let refreshPromise: Promise<void> | null = null;
 
-async function getAllDeedData(): Promise<
-  (Deed & {
-    worksiteDetail: WorksiteDetail | null;
-    stakingDetail: StakingDetail | null;
-  })[]
-> {
+async function getAllDeedData(): Promise<DeedComplete[]> {
   console.log("getAllDeedData...");
   return prisma.deed.findMany({
     include: {
@@ -50,12 +42,7 @@ async function triggerRefreshIfStale(): Promise<void> {
   }
 }
 
-async function getCachedDeedData(): Promise<
-  (Deed & {
-    worksiteDetail: WorksiteDetail | null;
-    stakingDetail: StakingDetail | null;
-  })[]
-> {
+async function getCachedDeedData(): Promise<DeedComplete[]> {
   // Trigger background refresh, but don't wait for it
   triggerRefreshIfStale().catch(console.error);
 
@@ -69,10 +56,15 @@ async function getCachedDeedData(): Promise<
   return cachedDeedData!;
 }
 
-export async function getWorksiteTypeCountsFromBlob() {
+export async function getWorksiteTypeCountsFromBlob(filters: FilterInput) {
   const blob = await getCachedDeedData();
+  console.log("Start filter");
+  console.time("Filtering");
+  const filteredDeeds = filterDeeds(blob, filters);
+  console.timeEnd("Filtering");
+
   const counts: Record<string, number> = {};
-  for (const deed of blob) {
+  for (const deed of filteredDeeds) {
     const type = deed.worksite_type ?? "unknown";
     counts[type] = (counts[type] ?? 0) + 1;
   }
@@ -133,4 +125,52 @@ export async function getActiveDeedCountByRegion() {
   );
 
   return sortedCounts;
+}
+
+export async function getAvailableFilterValues(): Promise<
+  Omit<
+    FilterInput,
+    "filter_developed" | "filter_under_construction" | "filter_has_pp"
+  >
+> {
+  const blob = await getCachedDeedData();
+
+  const values = {
+    filter_regions: new Set<string>(),
+    filter_tracts: new Set<string>(),
+    filter_plots: new Set<string>(),
+    filter_rarity: new Set<string>(),
+    filter_resources: new Set<string>(),
+    filter_worksites: new Set<string>(),
+    filter_deed_type: new Set<string>(),
+    filter_plot_status: new Set<string>(),
+    filter_players: new Set<string>(),
+  };
+
+  for (const deed of blob) {
+    if (deed.region_uid) values.filter_regions.add(deed.region_uid);
+    if (deed.tract_number != null)
+      values.filter_tracts.add(deed.tract_number.toString());
+    if (deed.plot_number != null)
+      values.filter_plots.add(deed.plot_number.toString());
+    if (deed.rarity != null) values.filter_rarity.add(deed.rarity.toString());
+    if (deed.worksiteDetail?.token_symbol)
+      values.filter_resources.add(deed.worksiteDetail.token_symbol.toString());
+    if (deed.worksite_type) values.filter_worksites.add(deed.worksite_type);
+    if (deed.deed_type) values.filter_deed_type.add(deed.deed_type);
+    if (deed.plot_status) values.filter_plot_status.add(deed.plot_status);
+    if (deed.player) values.filter_players.add(deed.player);
+  }
+
+  return {
+    filter_regions: [...values.filter_regions],
+    filter_tracts: [...values.filter_tracts],
+    filter_plots: [...values.filter_plots],
+    filter_rarity: [...values.filter_rarity],
+    filter_resources: [...values.filter_resources],
+    filter_worksites: [...values.filter_worksites],
+    filter_deed_type: [...values.filter_deed_type],
+    filter_plot_status: [...values.filter_plot_status],
+    filter_players: [...values.filter_players],
+  };
 }

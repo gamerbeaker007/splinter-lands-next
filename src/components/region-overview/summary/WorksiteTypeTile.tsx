@@ -21,6 +21,7 @@ import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Paper from "@mui/material/Paper";
+import { FilterInput } from "@/types/filters";
 
 const worksiteTypeMapping: { [key: string]: string } = {
   "Grain Farm": land_grain_farm_icon_url,
@@ -39,7 +40,28 @@ export default function WorksiteTypeTile() {
   const [worksiteType, setWorksiteType] = useState<JSON | null>(null);
 
   useEffect(() => {
-    fetch("/api/deed/worksite-types")
+    const filters: FilterInput = {
+      filter_players: ["beaker007"],
+      filter_regions: [],
+      filter_tracts: [],
+      filter_plots: [],
+      filter_rarity: [],
+      filter_resources: [],
+      filter_worksites: [],
+      filter_deed_type: [],
+      filter_plot_status: [],
+      // filter_developed: false,
+      // filter_under_construction: true ,
+      // filter_has_pp:  false,
+    };
+
+    fetch("/api/deed/worksite-types", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(filters),
+    })
       .then((res) => res.json())
       .then(setWorksiteType)
       .catch(console.error);
