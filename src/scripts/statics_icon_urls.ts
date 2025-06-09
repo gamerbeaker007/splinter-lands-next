@@ -1,4 +1,4 @@
-const WEB_URL = `https://d36mxiodymuqjm.cloudfront.net/`;
+export const WEB_URL = `https://d36mxiodymuqjm.cloudfront.net/`;
 
 export const land_hammer_icon_url = `${WEB_URL}website/land/deedOverview/hammer.svg`;
 export const land_grain_farm_icon_url = `${WEB_URL}website/land/worksite/img_worksite_grain_v2.webp`;
@@ -11,3 +11,12 @@ export const land_shard_mine_icon_url = `${WEB_URL}website/land/worksite/img_wor
 export const land_keep_icon_url = `https://files.peakd.com/file/peakd-hive/beaker007/23tbKK6vhanQqScaFhakcFqXC68fpRjvinR6c9m34XLSYQpoHJAdUU7TM8mvrhH3TuuPP.png`;
 export const land_castle_icon_url = `https://files.peakd.com/file/peakd-hive/beaker007/23uFKKCjmeLHRVFz2EKnf8EazaPX7Ep1RhTiqWS6Hbv2HTLnsW1LFLg2jmTafgQQDdkEy.png`;
 export const land_under_construction_icon_url = `https://files.peakd.com/file/peakd-hive/beaker007/AJg3Ws5boAJF5cdekBgVCzVRbBcLKjVuDYqXqTLAbgo6XoAVXTGuVYh8Ggn22S1.png`;
+
+export const resource_grain_icon_url = `${WEB_URL}website/land/resources/grain.png`;
+export const resource_stone_icon_url = `${WEB_URL}website/land/resources/stone_500.webp`;
+export const resource_wood_icon_url = `${WEB_URL}website/land/resources/wood_500.webp`;
+export const resource_iron_icon_url = `${WEB_URL}website/land/resources/iron_500.webp`;
+export const resource_aura_icon_url = `${WEB_URL}website/land/resources/aura_500.webp`;
+export const resource_research_icon_url = `${WEB_URL}website/land/resources/research.png`;
+export const resource_tax_icon_url = `${WEB_URL}website/nav/icon_nav_items_active@2x.png`;
+export const resource_sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;

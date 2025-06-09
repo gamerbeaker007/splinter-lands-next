@@ -9,7 +9,10 @@ import {
   FormGroup,
   Typography,
 } from "@mui/material";
-import MultiSelect from "./multiselect/MultiSelect";
+import FilterRarityGroup from "./rarity/FilterRarityGroup";
+import FilterResourceGroup from "./resource/FilterResourceGroup";
+import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
+import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 
 type Props = {
   options: FilterInput;
@@ -22,10 +25,6 @@ type BooleanFilterKey =
 
 export default function AttributeFilter({ options }: Props) {
   const { filters, setFilters } = useFilters();
-
-  const update = (field: keyof FilterInput, values: string[]) => {
-    setFilters((prev) => ({ ...prev, [field]: values }));
-  };
 
   const toggleBoolean = (key: BooleanFilterKey) => {
     setFilters((prev) => {
@@ -45,36 +44,10 @@ export default function AttributeFilter({ options }: Props) {
         Attributes
       </Typography>
 
-      <MultiSelect
-        label="Rarity"
-        values={options.filter_rarity ?? []}
-        selected={filters?.filter_rarity ?? []}
-        onChange={(vals) => update("filter_rarity", vals)}
-      />
-      <MultiSelect
-        label="Resources"
-        values={options.filter_resources ?? []}
-        selected={filters?.filter_resources ?? []}
-        onChange={(vals) => update("filter_resources", vals)}
-      />
-      <MultiSelect
-        label="Worksites"
-        values={options.filter_worksites ?? []}
-        selected={filters?.filter_worksites ?? []}
-        onChange={(vals) => update("filter_worksites", vals)}
-      />
-      <MultiSelect
-        label="Deed Type"
-        values={options.filter_deed_type ?? []}
-        selected={filters?.filter_deed_type ?? []}
-        onChange={(vals) => update("filter_deed_type", vals)}
-      />
-      <MultiSelect
-        label="Plot Status"
-        values={options.filter_plot_status ?? []}
-        selected={filters?.filter_plot_status ?? []}
-        onChange={(vals) => update("filter_plot_status", vals)}
-      />
+      <FilterRarityGroup options={options.filter_rarity ?? []} />
+      <FilterResourceGroup options={options.filter_resources ?? []} />
+      <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
+      <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
 
       <FormGroup sx={{ mt: 2 }}>
         {(
