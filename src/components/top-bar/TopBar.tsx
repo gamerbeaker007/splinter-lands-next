@@ -5,9 +5,9 @@ import CacheStatusDot from "./CacheStatusDot";
 import ThemeToggle from "./ThemeToggle";
 
 import AppBar from "@mui/material/AppBar";
+import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
 
 export default function TopBar() {
   return (

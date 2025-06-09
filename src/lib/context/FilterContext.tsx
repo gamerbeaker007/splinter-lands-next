@@ -4,7 +4,7 @@ import { createContext, useContext, useState, ReactNode } from "react";
 import { FilterInput } from "@/types/filters";
 
 type FilterContextType = {
-  filters: FilterInput | null;
+  filters: FilterInput;
   setFilters: React.Dispatch<React.SetStateAction<FilterInput>>;
 };
 

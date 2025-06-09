@@ -8,6 +8,7 @@ import Button from "@mui/material/Button";
 import LocationFilter from "./LocationFilter";
 import AttributeFilter from "./AttributeFilter";
 import PlayerFilter from "./PlayerFilter";
+import ResetFiltersButton from "./reset-filters/ResetFiltersButton";
 
 export default function FilterDrawer() {
   const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
@@ -89,6 +90,7 @@ export default function FilterDrawer() {
           <AttributeFilter options={availableOptions} />
           <PlayerFilter options={availableOptions} />
         </Box>
+        <ResetFiltersButton />
       </Drawer>
     </>
   );

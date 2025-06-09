@@ -1,9 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
-import { FiMenu, FiHome, FiMap, FiUsers, FiDatabase } from "react-icons/fi";
 import {
+  Divider,
   Drawer,
   IconButton,
   List,
@@ -11,10 +9,12 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  Typography,
   Toolbar,
-  Divider,
+  Typography,
 } from "@mui/material";
+import Link from "next/link";
+import { useState } from "react";
+import { FiDatabase, FiHome, FiMap, FiMenu, FiUsers } from "react-icons/fi";
 
 const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
@@ -32,7 +32,7 @@ const SIDEBAR_WIDTH_EXPANDED = 240;
 const SIDEBAR_WIDTH_COLLAPSED = 50;
 
 export default function SideBar() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   const drawerWidth = collapsed
     ? SIDEBAR_WIDTH_COLLAPSED

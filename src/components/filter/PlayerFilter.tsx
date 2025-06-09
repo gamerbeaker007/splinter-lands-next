@@ -1,9 +1,9 @@
 "use client";
 
-import { FilterInput } from "@/types/filters";
 import { useFilters } from "@/lib/context/FilterContext";
-import MultiSelect from "./MultiSelect";
+import { FilterInput } from "@/types/filters";
 import { Box, Typography } from "@mui/material";
+import MultiSelect from "./multiselect/MultiSelect";
 
 type Props = {
   options: FilterInput;
