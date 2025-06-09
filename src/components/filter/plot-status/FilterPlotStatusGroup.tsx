@@ -23,7 +23,7 @@ export default function FilterPlotStatusGroup({ options }: Props) {
 
   return (
     <>
-      <Typography variant="body2">Rarity:</Typography>
+      <Typography variant="body2">Land Type:</Typography>
 
       <Box sx={{ display: "flow", gap: 1 }}>
         {sortedOptions.map((plotStatus) => (

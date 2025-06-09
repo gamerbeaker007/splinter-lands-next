@@ -8,7 +8,7 @@ type Props = {
 export default function FilterDeedTypeGroup({ options }: Props) {
   return (
     <>
-      <Typography variant="body2">Resource:</Typography>
+      <Typography variant="body2">Geography:</Typography>
 
       <Box sx={{ display: "flow", gap: 1 }}>
         {options.map((deedType) => (
