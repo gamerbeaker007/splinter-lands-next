@@ -1,8 +1,8 @@
 import { getLastUpdate } from "@/lib/cache/utils";
+import { filterDeeds } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { filterDeeds } from "@/lib/filters";
 import { RegionSummary } from "@/types/regionSummary";
 
 let cachedDeedData: DeedComplete[] | null = null;
@@ -32,25 +32,32 @@ async function refreshDeedCache(): Promise<void> {
   return refreshPromise;
 }
 
-async function triggerRefreshIfStale(): Promise<void> {
+async function triggerRefreshIfStale(
+  forceWait: boolean = false,
+): Promise<boolean> {
   const lastUpdate = await getLastUpdate();
-  if (
-    !cachedDeedData ||
-    !cachedDeedTimestamp ||
-    cachedDeedTimestamp < lastUpdate
-  ) {
-    void refreshDeedCache(); // Fire-and-forget
+
+  const needsRefresh =
+    !cachedDeedData || !cachedDeedTimestamp || cachedDeedTimestamp < lastUpdate;
+
+  if (needsRefresh) {
+    if (forceWait) {
+      await refreshDeedCache();
+    } else {
+      void refreshDeedCache(); // Fire-and-forget
+    }
   }
+
+  return needsRefresh;
 }
 
-async function getCachedDeedData(): Promise<DeedComplete[]> {
-  // Trigger background refresh, but don't wait for it
-  triggerRefreshIfStale().catch(console.error);
+async function getCachedDeedData(
+  forceWait: boolean = false,
+): Promise<DeedComplete[]> {
+  await triggerRefreshIfStale(forceWait);
 
-  // Always return what we have immediately
   if (!cachedDeedData) {
-    // If no cached data at all, block and fetch once
-    console.log("No cache wait refreshDeedCache()...");
+    console.log("No cache yet – forcing wait for refresh...");
     await refreshDeedCache();
   }
 
@@ -140,8 +147,9 @@ export async function getRegionSummary(
   };
 }
 
-export async function getUniquePlayerCountFromBlob() {
-  const blob = await getCachedDeedData();
+export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
+  const blob = await getCachedDeedData(forceWait);
+
   const uniquePlayers = new Set<string>();
 
   for (const deed of blob) {

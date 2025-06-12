@@ -1,5 +1,6 @@
 "use client";
 
+import { usePageTitle } from "@/lib/context/PageTitleContext";
 import ActiveTile from "./ActiveTile";
 import CacheStatusDot from "./CacheStatusDot";
 import ThemeToggle from "./ThemeToggle";
@@ -10,6 +11,8 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 
 export default function TopBar() {
+  const { title } = usePageTitle();
+
   return (
     <AppBar
       position="static"
@@ -20,7 +23,7 @@ export default function TopBar() {
       <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
         {/* Left side */}
         <Typography variant="h6" fontWeight="bold">
-          Dashboard
+          {title}
         </Typography>
 
         {/* Right side */}

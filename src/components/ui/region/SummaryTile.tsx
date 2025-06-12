@@ -25,8 +25,8 @@ export default function SummaryTile({
         key={type}
         elevation={2}
         sx={{
-          width: 100,
-          height: 160,
+          width: 75,
+          height: 125,
           p: 1,
           borderRadius: 2,
           display: "flex",
@@ -39,8 +39,8 @@ export default function SummaryTile({
           sx={{
             position: "relative",
             width: "100%",
-            height: 60,
-            minHeight: 60,
+            height: 40,
+            minHeight: 40,
             mb: 1,
             borderRadius: 1,
             overflow: "hidden",

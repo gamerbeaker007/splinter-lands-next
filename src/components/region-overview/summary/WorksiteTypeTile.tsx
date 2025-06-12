@@ -1,9 +1,6 @@
 "use client";
 
 import SummaryTile from "@/components/ui/region/SummaryTile";
-import { Box } from "@mui/material";
-import Paper from "@mui/material/Paper";
-import Typography from "@mui/material/Typography";
 import {
   land_aura_lab_icon_url,
   land_castle_icon_url,
@@ -16,6 +13,9 @@ import {
   land_shard_mine_icon_url,
   land_under_construction_icon_url,
 } from "@/scripts/statics_icon_urls";
+import { Box } from "@mui/material";
+import Paper from "@mui/material/Paper";
+import Typography from "@mui/material/Typography";
 
 const worksiteTypeMapping: { [key: string]: string } = {
   "Grain Farm": land_grain_farm_icon_url,
@@ -41,7 +41,7 @@ export default function WorksiteTypeTile({ data }: WorksiteTypeTileProps) {
         Worksite Types:
       </Typography>
 
-      <Box display="flex" flexWrap="wrap" gap={2}>
+      <Box display="flex" flexWrap="wrap" gap={1}>
         {Object.entries(data ?? {}).map(([type, count]) => {
           const imageUrl =
             worksiteTypeMapping[type] ?? worksiteTypeMapping["Undeveloped"];
