@@ -3,7 +3,7 @@
 import { useFilters } from "@/lib/context/FilterContext";
 import { FilterInput } from "@/types/filters";
 import { Box, Typography } from "@mui/material";
-import MultiSelect from "./multiselect/MultiSelect";
+import MultiSelect from "../ui/multiselect/MultiSelect";
 
 type Props = {
   options: FilterInput;

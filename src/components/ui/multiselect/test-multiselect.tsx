@@ -1,6 +1,6 @@
 "use client";
 
-import MultiSelect from "@/components/filter/multiselect/MultiSelect";
+import MultiSelect from "@/components/ui/multiselect/MultiSelect";
 import { Container, Typography } from "@mui/material";
 import { useState } from "react";
 

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { filterDeeds } from "@/lib/filters";
+import { RegionSummary } from "@/types/regionSummary";
 
 let cachedDeedData: DeedComplete[] | null = null;
 let cachedDeedTimestamp: Date | null = null;
@@ -56,17 +57,56 @@ async function getCachedDeedData(): Promise<DeedComplete[]> {
   return cachedDeedData!;
 }
 
-export async function getWorksiteTypeCountsFromBlob(filters: FilterInput) {
+export async function getRegionSummary(
+  filters: FilterInput,
+): Promise<RegionSummary> {
   const blob = await getCachedDeedData();
   const filteredDeeds = filterDeeds(blob, filters);
 
-  const counts: Record<string, number> = {};
+  // Initialize all count buckets
+  const worksiteCounts: Record<string, number> = {};
+  const playerCounts: Record<string, number> = {};
+  const rarityCounts: Record<string, number> = {};
+  const deedTypeCounts: Record<string, number> = {};
+  const plotStatusCounts: Record<string, number> = {};
+  const runiBoostCounts: Record<string, number> = {};
+  const totemBoostCounts: Record<string, number> = {};
+  const titleBoostCounts: Record<string, number> = {};
+  const deedRarityBoostCounts: Record<string, number> = {};
+
   for (const deed of filteredDeeds) {
-    const type = deed.worksite_type ?? "unknown";
-    counts[type] = (counts[type] ?? 0) + 1;
+    const worksite = deed.worksite_type ?? "unknown";
+    worksiteCounts[worksite] = (worksiteCounts[worksite] ?? 0) + 1;
+
+    const player = deed.player ?? "unknown";
+    playerCounts[player] = (playerCounts[player] ?? 0) + 1;
+
+    const rarity = deed.rarity ?? "unknown";
+    rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1;
+
+    const deedType = deed.deed_type ?? "unknown";
+    deedTypeCounts[deedType] = (deedTypeCounts[deedType] ?? 0) + 1;
+
+    const plotStatus = deed.plot_status ?? "unknown";
+    plotStatusCounts[plotStatus] = (plotStatusCounts[plotStatus] ?? 0) + 1;
+
+    const staking = deed.stakingDetail;
+    if (staking) {
+      const runiBoost = staking.runi_boost ?? 0;
+      runiBoostCounts[runiBoost] = (runiBoostCounts[runiBoost] ?? 0) + 1;
+
+      const totemBoost = staking.totem_boost ?? 0;
+      totemBoostCounts[totemBoost] = (totemBoostCounts[totemBoost] ?? 0) + 1;
+
+      const titleBoost = staking.title_boost ?? 0;
+      titleBoostCounts[titleBoost] = (titleBoostCounts[titleBoost] ?? 0) + 1;
+
+      const rarityBoost = staking.deed_rarity_boost ?? 0;
+      deedRarityBoostCounts[rarityBoost] =
+        (deedRarityBoostCounts[rarityBoost] ?? 0) + 1;
+    }
   }
-  // Order by keys in worksite_type_mapping
-  const orderedCounts: Record<string, number> = {};
+
   const orderedKeys = [
     "Grain Farm",
     "Logging Camp",
@@ -80,13 +120,24 @@ export async function getWorksiteTypeCountsFromBlob(filters: FilterInput) {
     "",
   ];
 
+  const orderedWorksiteCounts: Record<string, number> = {};
   for (const key of orderedKeys) {
-    if (counts[key]) {
-      orderedCounts[key] = counts[key];
+    if (worksiteCounts[key]) {
+      orderedWorksiteCounts[key] = worksiteCounts[key];
     }
   }
 
-  return orderedCounts;
+  return {
+    worksites: orderedWorksiteCounts,
+    players: playerCounts,
+    rarities: rarityCounts,
+    deedTypes: deedTypeCounts,
+    plotStatuses: plotStatusCounts,
+    runiBoosts: runiBoostCounts,
+    totemBoosts: totemBoostCounts,
+    titleBoosts: titleBoostCounts,
+    deedRarityBoosts: deedRarityBoostCounts,
+  };
 }
 
 export async function getUniquePlayerCountFromBlob() {

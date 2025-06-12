@@ -3,7 +3,7 @@ import { useState } from "react";
 import MultiSelect from "./MultiSelect";
 
 const meta: Meta<typeof MultiSelect> = {
-  title: "Components/MultiSelect",
+  title: "Components/UI/MultiSelect",
   component: MultiSelect,
 };
 
