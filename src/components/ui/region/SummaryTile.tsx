@@ -25,8 +25,8 @@ export default function SummaryTile({
         key={type}
         elevation={2}
         sx={{
-          width: 75,
-          height: 125,
+          width: 70,
+          height: 115,
           p: 1,
           borderRadius: 2,
           display: "flex",
@@ -54,19 +54,31 @@ export default function SummaryTile({
             style={{ objectFit: "contain" }}
           />
         </Box>
-        <Typography variant="caption" color="text.secondary" align="center">
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          align="center"
+          fontSize={12}
+          sx={{ minHeight: 20 }}
+        >
           ({formatNumber(count)})
         </Typography>
         <Typography
           variant="body2"
           fontWeight="bold"
           align="center"
-          sx={{ minHeight: 40 }}
+          fontSize={12}
+          sx={{ minHeight: 20 }}
         >
           {toPascalCaseLabel(type)}
         </Typography>
         {info ? (
-          <Typography variant="caption" align="center" sx={{ minHeight: 20 }}>
+          <Typography
+            variant="caption"
+            align="center"
+            fontSize={10}
+            sx={{ minHeight: 25 }}
+          >
             {info}
           </Typography>
         ) : (

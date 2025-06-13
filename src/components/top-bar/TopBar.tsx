@@ -20,14 +20,28 @@ export default function TopBar() {
       elevation={0}
       sx={{ borderBottom: 1, borderColor: "divider" }}
     >
-      <Toolbar sx={{ justifyContent: "space-between", px: 2 }}>
+      <Toolbar
+        sx={{
+          display: { xs: "flow", sm: "flex" },
+          justifyContent: "space-between",
+          py: 1,
+        }}
+      >
         {/* Left side */}
         <Typography variant="h6" fontWeight="bold">
           {title}
         </Typography>
 
         {/* Right side */}
-        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            flexShrink: 0,
+            flexWrap: "wrap",
+          }}
+        >
           <CacheStatusDot />
           <ActiveTile />
           <ThemeToggle />

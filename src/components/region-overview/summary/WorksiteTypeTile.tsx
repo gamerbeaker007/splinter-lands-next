@@ -34,6 +34,19 @@ type WorksiteTypeTileProps = {
   data: Record<string, number>;
 };
 
+const orderedKeys = [
+  "Grain Farm",
+  "Logging Camp",
+  "Ore Mine",
+  "Quarry",
+  "Research Hut",
+  "Aura Lab",
+  "Shard Mine",
+  "KEEP",
+  "CASTLE",
+  "",
+];
+
 export default function WorksiteTypeTile({ data }: WorksiteTypeTileProps) {
   return (
     <Paper elevation={3} sx={{ p: 2, borderRadius: 3 }}>
@@ -42,18 +55,21 @@ export default function WorksiteTypeTile({ data }: WorksiteTypeTileProps) {
       </Typography>
 
       <Box display="flex" flexWrap="wrap" gap={1}>
-        {Object.entries(data ?? {}).map(([type, count]) => {
-          const imageUrl =
-            worksiteTypeMapping[type] ?? worksiteTypeMapping["Undeveloped"];
-          return (
-            <SummaryTile
-              key={type}
-              type={type}
-              imageUrl={imageUrl}
-              count={Number(count)}
-            />
-          );
-        })}
+        {Object.entries(data ?? {})
+          .sort(([a], [b]) => orderedKeys.indexOf(a) - orderedKeys.indexOf(b))
+          .map(([type, count]) => {
+            const imageUrl =
+              worksiteTypeMapping[type] ?? worksiteTypeMapping["Undeveloped"];
+
+            return (
+              <SummaryTile
+                key={type}
+                type={type === "" ? "Unkown" : type}
+                imageUrl={imageUrl}
+                count={Number(count)}
+              />
+            );
+          })}
       </Box>
     </Paper>
   );

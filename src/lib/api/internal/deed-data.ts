@@ -114,28 +114,8 @@ export async function getRegionSummary(
     }
   }
 
-  const orderedKeys = [
-    "Grain Farm",
-    "Logging Camp",
-    "Ore Mine",
-    "Quarry",
-    "Research Hut",
-    "Aura Lab",
-    "Shard Mine",
-    "KEEP",
-    "CASTLE",
-    "",
-  ];
-
-  const orderedWorksiteCounts: Record<string, number> = {};
-  for (const key of orderedKeys) {
-    if (worksiteCounts[key]) {
-      orderedWorksiteCounts[key] = worksiteCounts[key];
-    }
-  }
-
   return {
-    worksites: orderedWorksiteCounts,
+    worksites: worksiteCounts,
     players: playerCounts,
     rarities: rarityCounts,
     deedTypes: deedTypeCounts,

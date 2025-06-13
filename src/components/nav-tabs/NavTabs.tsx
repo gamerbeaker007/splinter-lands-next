@@ -32,7 +32,7 @@ export default function NavTabs({ pages }: NavTabsProps) {
 
   return (
     <>
-      <Box sx={{ display: "flex", justifyContent: "center", px: 2, pt: 2 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", px: 1, pt: 1 }}>
         {isMobile ? (
           <Select
             value={pages[value].label}
@@ -61,7 +61,7 @@ export default function NavTabs({ pages }: NavTabsProps) {
           </Tabs>
         )}
       </Box>
-      <Box sx={{ mt: 4, px: 2 }}>{pages[value].component}</Box>
+      <Box>{pages[value].component}</Box>
     </>
   );
 }

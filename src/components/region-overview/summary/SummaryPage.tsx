@@ -7,7 +7,8 @@ import { Box, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import DeedRarityTile from "./DeedRarityTile";
 import DeedTypeTile from "./DeedTypeTile";
-import WorksiteBoostTile from "./WorksiteTitleBoostTile";
+import BoostTile from "./BoostTile";
+import DeedStatusTile from "./DeedStatusTile";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState<RegionSummary | null>(null);
@@ -29,13 +30,14 @@ export default function SummaryPage() {
   }, [filters]);
 
   return (
-    <Box px={{ xs: 2, sm: 4, md: 6 }} py={2} maxWidth="1000px" mx="auto">
+    <Box px={{ xs: 2, sm: 4, md: 6, lg: 0 }} py={2}>
       {summary ? (
         <Stack spacing={3}>
           <WorksiteTypeTile data={summary.worksites ?? {}} />
           <DeedTypeTile data={summary.deedTypes ?? {}} />
           <DeedRarityTile data={summary.rarities ?? {}} />
-          <WorksiteBoostTile
+          <DeedStatusTile data={summary.plotStatuses ?? {}} />
+          <BoostTile
             titleBoosts={summary.titleBoosts ?? {}}
             totemBoosts={summary.totemBoosts ?? {}}
             runiBoosts={summary.runiBoosts ?? {}}
