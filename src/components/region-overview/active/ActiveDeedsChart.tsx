@@ -6,6 +6,8 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { BarChart } from "@mui/x-charts/BarChart";
 import { useFilters } from "@/lib/context/FilterContext";
+import Plot from "react-plotly.js";
+import { useTheme } from "@mui/material";
 
 type Stats = {
   name: string;
@@ -17,6 +19,8 @@ export default function ActiveDeedsChart() {
   const { filters } = useFilters();
   const [data, setData] = useState<Stats[]>([]);
   const [xTitle, setXTitle] = useState<string>("");
+  const theme = useTheme();
+  const backgroundColor = theme.palette.background.default;
 
   useEffect(() => {
     if (!filters) return;
@@ -150,6 +154,48 @@ export default function ActiveDeedsChart() {
           ]}
           yAxis={[{ label: "Plots" }]}
           margin={{ bottom: 100 }}
+        />
+      </Box>
+
+      <Box sx={{ height: 550 }}>
+        <Typography variant="h6" gutterBottom>
+          Plotly Bar Chart (Stacked, Limited Ticks)
+        </Typography>
+
+        <Plot
+          data={[
+            {
+              x: regionLabels,
+              y: activeCounts,
+              name: "Active",
+              type: "bar",
+              marker: { color: "steelblue" },
+            },
+            {
+              x: regionLabels,
+              y: inactiveCounts,
+              name: "Inactive",
+              type: "bar",
+              marker: { color: "#94a3b8" },
+            },
+          ]}
+          layout={{
+            barmode: "stack",
+            height: 500,
+            margin: { b: 100 },
+            xaxis: {
+              title: { text: xTitle },
+              tickfont: { size: 10 },
+            },
+            yaxis: {
+              title: { text: "Plots" },
+            },
+            plot_bgcolor: backgroundColor,
+            paper_bgcolor: backgroundColor,
+            legend: { orientation: "h", y: -0.3 },
+          }}
+          style={{ width: "100%" }}
+          config={{ responsive: true }}
         />
       </Box>
     </Box>

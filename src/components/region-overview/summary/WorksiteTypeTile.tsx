@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  formatNumber,
-  toPascalCaseLabel,
-} from "@/scripts/lib/utils/string_util";
+import SummaryTile from "@/components/ui/region/SummaryTile";
 import {
   land_aura_lab_icon_url,
   land_castle_icon_url,
@@ -16,12 +13,9 @@ import {
   land_shard_mine_icon_url,
   land_under_construction_icon_url,
 } from "@/scripts/statics_icon_urls";
-import Image from "next/image";
-import { useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
+import { Box } from "@mui/material";
 import Paper from "@mui/material/Paper";
-import { useFilters } from "@/lib/context/FilterContext";
+import Typography from "@mui/material/Typography";
 
 const worksiteTypeMapping: { [key: string]: string } = {
   "Grain Farm": land_grain_farm_icon_url,
@@ -36,94 +30,47 @@ const worksiteTypeMapping: { [key: string]: string } = {
   Undeveloped: land_under_construction_icon_url,
 };
 
-export default function WorksiteTypeTile() {
-  const [worksiteType, setWorksiteType] = useState<JSON | null>(null);
-  const { filters } = useFilters();
+type WorksiteTypeTileProps = {
+  data: Record<string, number>;
+};
 
-  useEffect(() => {
-    if (!filters) return;
+const orderedKeys = [
+  "Grain Farm",
+  "Logging Camp",
+  "Ore Mine",
+  "Quarry",
+  "Research Hut",
+  "Aura Lab",
+  "Shard Mine",
+  "KEEP",
+  "CASTLE",
+  "",
+];
 
-    fetch("/api/deed/worksite-types", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then(setWorksiteType)
-      .catch(console.error);
-  }, [filters]);
-
+export default function WorksiteTypeTile({ data }: WorksiteTypeTileProps) {
   return (
     <Paper elevation={3} sx={{ p: 2, borderRadius: 3 }}>
       <Typography variant="h6" fontWeight="bold" gutterBottom>
         Worksite Types:
       </Typography>
 
-      {worksiteType ? (
-        <Box display="flex" flexWrap="wrap" gap={2}>
-          {Object.entries(worksiteType).map(([type, count]) => {
+      <Box display="flex" flexWrap="wrap" gap={1}>
+        {Object.entries(data ?? {})
+          .sort(([a], [b]) => orderedKeys.indexOf(a) - orderedKeys.indexOf(b))
+          .map(([type, count]) => {
             const imageUrl =
               worksiteTypeMapping[type] ?? worksiteTypeMapping["Undeveloped"];
+
             return (
-              <Paper
+              <SummaryTile
                 key={type}
-                elevation={2}
-                sx={{
-                  width: 100,
-                  height: 200,
-                  p: 2,
-                  borderRadius: 2,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-                title={type || "Undeveloped"}
-              >
-                <Box
-                  sx={{
-                    position: "relative",
-                    width: "100%",
-                    height: 80,
-                    mb: 1,
-                    borderRadius: 1,
-                    overflow: "hidden",
-                  }}
-                >
-                  <Image
-                    src={imageUrl}
-                    alt={type}
-                    fill
-                    sizes="100px"
-                    style={{ objectFit: "contain" }}
-                  />
-                </Box>
-                <Typography
-                  variant="body2"
-                  fontWeight="bold"
-                  align="center"
-                  sx={{ minHeight: 32 }}
-                >
-                  {toPascalCaseLabel(type)}
-                </Typography>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  align="center"
-                >
-                  Count: {formatNumber(count)}
-                </Typography>
-              </Paper>
+                type={type === "" ? "Unkown" : type}
+                imageUrl={imageUrl}
+                count={Number(count)}
+              />
             );
           })}
-        </Box>
-      ) : (
-        <Typography variant="body2" color="text.secondary" align="center">
-          Loading worksite data...
-        </Typography>
-      )}
+      </Box>
     </Paper>
   );
 }

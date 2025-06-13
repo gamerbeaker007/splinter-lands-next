@@ -1,14 +1,13 @@
-import React from "react";
 import { useFilters } from "@/lib/context/FilterContext";
-import { WEB_URL } from "@/scripts/statics_icon_urls";
+import {
+  land_default_icon_url_placeholder,
+  land_mythic_icon_url,
+} from "@/scripts/statics_icon_urls";
 import FilterIcon from "../FilterIcon";
 
 type FilterIconProps = {
   name: string;
 };
-
-const land_rarity_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
-const land_mythic_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/legendaryOff.svg`;
 
 export default function FilterRarityIcon({ name }: FilterIconProps) {
   const { filters, setFilters } = useFilters();
@@ -21,7 +20,10 @@ export default function FilterRarityIcon({ name }: FilterIconProps) {
   const image =
     name == "mythic"
       ? land_mythic_icon_url
-      : land_rarity_icon_url.replace("__NAME__", name.toLowerCase());
+      : land_default_icon_url_placeholder.replace(
+          "__NAME__",
+          name.toLowerCase(),
+        );
 
   const value = filters.filter_rarity;
   const isArray = Array.isArray(value);

@@ -1,8 +1,9 @@
 import { getLastUpdate } from "@/lib/cache/utils";
+import { filterDeeds } from "@/lib/filters";
 import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { filterDeeds } from "@/lib/filters";
+import { RegionSummary } from "@/types/regionSummary";
 
 let cachedDeedData: DeedComplete[] | null = null;
 let cachedDeedTimestamp: Date | null = null;
@@ -31,66 +32,104 @@ async function refreshDeedCache(): Promise<void> {
   return refreshPromise;
 }
 
-async function triggerRefreshIfStale(): Promise<void> {
+async function triggerRefreshIfStale(
+  forceWait: boolean = false,
+): Promise<boolean> {
   const lastUpdate = await getLastUpdate();
-  if (
-    !cachedDeedData ||
-    !cachedDeedTimestamp ||
-    cachedDeedTimestamp < lastUpdate
-  ) {
-    void refreshDeedCache(); // Fire-and-forget
+
+  const needsRefresh =
+    !cachedDeedData || !cachedDeedTimestamp || cachedDeedTimestamp < lastUpdate;
+
+  if (needsRefresh) {
+    if (forceWait) {
+      await refreshDeedCache();
+    } else {
+      void refreshDeedCache(); // Fire-and-forget
+    }
   }
+
+  return needsRefresh;
 }
 
-async function getCachedDeedData(): Promise<DeedComplete[]> {
-  // Trigger background refresh, but don't wait for it
-  triggerRefreshIfStale().catch(console.error);
+async function getCachedDeedData(
+  forceWait: boolean = false,
+): Promise<DeedComplete[]> {
+  await triggerRefreshIfStale(forceWait);
 
-  // Always return what we have immediately
   if (!cachedDeedData) {
-    // If no cached data at all, block and fetch once
-    console.log("No cache wait refreshDeedCache()...");
+    console.log("No cache yet – forcing wait for refresh...");
     await refreshDeedCache();
   }
 
   return cachedDeedData!;
 }
 
-export async function getWorksiteTypeCountsFromBlob(filters: FilterInput) {
+export async function getRegionSummary(
+  filters: FilterInput,
+): Promise<RegionSummary> {
   const blob = await getCachedDeedData();
   const filteredDeeds = filterDeeds(blob, filters);
 
-  const counts: Record<string, number> = {};
-  for (const deed of filteredDeeds) {
-    const type = deed.worksite_type ?? "unknown";
-    counts[type] = (counts[type] ?? 0) + 1;
-  }
-  // Order by keys in worksite_type_mapping
-  const orderedCounts: Record<string, number> = {};
-  const orderedKeys = [
-    "Grain Farm",
-    "Logging Camp",
-    "Ore Mine",
-    "Quarry",
-    "Research Hut",
-    "Aura Lab",
-    "Shard Mine",
-    "KEEP",
-    "CASTLE",
-    "",
-  ];
+  // Initialize all count buckets
+  const worksiteCounts: Record<string, number> = {};
+  const playerCounts: Record<string, number> = {};
+  const rarityCounts: Record<string, number> = {};
+  const deedTypeCounts: Record<string, number> = {};
+  const plotStatusCounts: Record<string, number> = {};
+  const runiBoostCounts: Record<string, number> = {};
+  const totemBoostCounts: Record<string, number> = {};
+  const titleBoostCounts: Record<string, number> = {};
+  const deedRarityBoostCounts: Record<string, number> = {};
 
-  for (const key of orderedKeys) {
-    if (counts[key]) {
-      orderedCounts[key] = counts[key];
+  for (const deed of filteredDeeds) {
+    const worksite = deed.worksite_type ?? "unknown";
+    worksiteCounts[worksite] = (worksiteCounts[worksite] ?? 0) + 1;
+
+    const player = deed.player ?? "unknown";
+    playerCounts[player] = (playerCounts[player] ?? 0) + 1;
+
+    const rarity = deed.rarity ?? "unknown";
+    rarityCounts[rarity] = (rarityCounts[rarity] ?? 0) + 1;
+
+    const deedType = deed.deed_type ?? "unknown";
+    deedTypeCounts[deedType] = (deedTypeCounts[deedType] ?? 0) + 1;
+
+    const plotStatus = deed.plot_status ?? "unknown";
+    plotStatusCounts[plotStatus] = (plotStatusCounts[plotStatus] ?? 0) + 1;
+
+    const staking = deed.stakingDetail;
+    if (staking) {
+      const runiBoost = staking.runi_boost ?? 0;
+      runiBoostCounts[runiBoost] = (runiBoostCounts[runiBoost] ?? 0) + 1;
+
+      const totemBoost = staking.totem_boost ?? 0;
+      totemBoostCounts[totemBoost] = (totemBoostCounts[totemBoost] ?? 0) + 1;
+
+      const titleBoost = staking.title_boost ?? 0;
+      titleBoostCounts[titleBoost] = (titleBoostCounts[titleBoost] ?? 0) + 1;
+
+      const rarityBoost = staking.deed_rarity_boost ?? 0;
+      deedRarityBoostCounts[rarityBoost] =
+        (deedRarityBoostCounts[rarityBoost] ?? 0) + 1;
     }
   }
 
-  return orderedCounts;
+  return {
+    worksites: worksiteCounts,
+    players: playerCounts,
+    rarities: rarityCounts,
+    deedTypes: deedTypeCounts,
+    plotStatuses: plotStatusCounts,
+    runiBoosts: runiBoostCounts,
+    totemBoosts: totemBoostCounts,
+    titleBoosts: titleBoostCounts,
+    deedRarityBoosts: deedRarityBoostCounts,
+  };
 }
 
-export async function getUniquePlayerCountFromBlob() {
-  const blob = await getCachedDeedData();
+export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
+  const blob = await getCachedDeedData(forceWait);
+
   const uniquePlayers = new Set<string>();
 
   for (const deed of blob) {

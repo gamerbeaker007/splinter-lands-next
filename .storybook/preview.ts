@@ -7,7 +7,7 @@ export const globalTypes = {
   themeMode: {
     name: "Theme",
     description: "Global theme for components",
-    defaultValue: "light",
+    defaultValue: "dark",
     toolbar: {
       icon: "circlehollow",
       items: [
