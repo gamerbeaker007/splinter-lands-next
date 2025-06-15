@@ -1,4 +1,4 @@
-import { getActiveDeedCountByRegion } from "@/lib/api/internal/deed-data";
+import { getActiveDeedCountByRegion } from "@/lib/services/regionService";
 import { FilterInput } from "@/types/filters";
 import { NextResponse } from "next/server";
 

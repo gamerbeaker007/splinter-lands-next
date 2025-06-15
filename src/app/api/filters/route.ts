@@ -1,5 +1,5 @@
+import { getAvailableFilterValues } from "@/lib/services/regionService";
 import { NextResponse } from "next/server";
-import { getAvailableFilterValues } from "@/lib/api/internal/deed-data";
 
 export async function GET() {
   try {

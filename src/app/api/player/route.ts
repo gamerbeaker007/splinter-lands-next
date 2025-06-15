@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { FilterInput } from "@/types/filters";
-import { RegionSummary } from "@/types/regionSummary";
-import { getRegionSummary } from "@/lib/services/regionService";
+import { getPlayerData } from "@/lib/api/internal/player-data";
+import { DeedComplete } from "@/types/deed";
 
 export async function POST(req: Request) {
   try {
-    const filters: FilterInput = await req.json();
-    const result: RegionSummary = await getRegionSummary(filters);
+    const { filters, player } = await req.json();
+    const result: DeedComplete[] = await getPlayerData(player, filters);
 
     if (!result)
       return NextResponse.json({ error: "No data found" }, { status: 404 });

@@ -6,19 +6,17 @@ import SummaryPage from "@/components/region-overview/summary/SummaryPage";
 import { FilterProvider } from "@/lib/context/FilterContext";
 import { usePageTitle } from "@/lib/context/PageTitleContext";
 import { Page } from "@/types/Page";
-import { Container } from "@mui/material";
-import { useEffect } from "react";
+import { Box, Container } from "@mui/material";
+import { useEffect, useState } from "react";
 
 const pages: Page[] = [
   { label: "Activity", component: <ActiveDeedsChart /> },
   { label: "Summary", component: <SummaryPage /> },
-  { label: "Production", component: <div>Testing</div> },
-  { label: "Test", component: <div>Teting 2</div> },
-  { label: "Test2", component: <div>Testing</div> },
 ];
 
 export default function RegionOverviewPage() {
   const { setTitle } = usePageTitle();
+  const [activeTab, setActiveTab] = useState<number>(0);
 
   useEffect(() => {
     setTitle("Region Overview");
@@ -28,7 +26,12 @@ export default function RegionOverviewPage() {
     <FilterProvider>
       <Container>
         <FilterDrawer />
-        <NavTabs pages={pages} />
+        <NavTabs
+          pages={pages}
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+        />
+        <Box mt={4}>{pages[activeTab].component}</Box>
       </Container>
     </FilterProvider>
   );

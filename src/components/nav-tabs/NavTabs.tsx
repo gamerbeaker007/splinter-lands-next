@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   Box,
   Tabs,
@@ -15,53 +14,57 @@ import { Page } from "@/types/Page";
 
 type NavTabsProps = {
   pages: Page[];
+  value: number;
+  onChange: (
+    event: React.SyntheticEvent | SelectChangeEvent,
+    newValue: number,
+  ) => void;
 };
 
-export default function NavTabs({ pages }: NavTabsProps) {
-  const [value, setValue] = useState(0);
+export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  const handleChange = (event: SelectChangeEvent | number) => {
-    const newIndex =
-      typeof event === "number"
-        ? event
-        : pages.findIndex((p) => p.label === event.target.value);
-    setValue(newIndex);
+  const handleSelectChange = (event: SelectChangeEvent) => {
+    const newIndex = pages.findIndex((p) => p.label === event.target.value);
+    if (newIndex !== -1) {
+      onChange(event, newIndex);
+    }
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    onChange(event, newValue);
   };
 
   return (
-    <>
-      <Box sx={{ display: "flex", justifyContent: "center", px: 1, pt: 1 }}>
-        {isMobile ? (
-          <Select
-            value={pages[value].label}
-            onChange={handleChange}
-            fullWidth
-            size="small"
-          >
-            {pages.map((page) => (
-              <MenuItem key={page.label} value={page.label}>
-                {page.label}
-              </MenuItem>
-            ))}
-          </Select>
-        ) : (
-          <Tabs
-            value={value}
-            onChange={(_, newValue) => handleChange(newValue)}
-            aria-label="nav tabs"
-            variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-          >
-            {pages.map((page) => (
-              <GlowingTab key={page.label} label={page.label} />
-            ))}
-          </Tabs>
-        )}
-      </Box>
-      <Box>{pages[value].component}</Box>
-    </>
+    <Box sx={{ display: "flex", justifyContent: "center", px: 1, pt: 1 }}>
+      {isMobile ? (
+        <Select
+          value={pages[value].label}
+          onChange={handleSelectChange}
+          fullWidth
+          size="small"
+        >
+          {pages.map((page) => (
+            <MenuItem key={page.label} value={page.label}>
+              {page.label}
+            </MenuItem>
+          ))}
+        </Select>
+      ) : (
+        <Tabs
+          value={value}
+          onChange={handleTabChange}
+          aria-label="nav tabs"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+        >
+          {pages.map((page) => (
+            <GlowingTab key={page.label} label={page.label} />
+          ))}
+        </Tabs>
+      )}
+    </Box>
   );
 }

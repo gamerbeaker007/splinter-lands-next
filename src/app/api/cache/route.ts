@@ -1,11 +1,11 @@
-import { getUniquePlayerCountFromBlob as getUniquePlayerCountDeeds } from "@/lib/api/internal/deed-data";
 import { getLastUpdate } from "@/lib/cache/utils";
+import { getUniquePlayerCountFromBlob } from "@/lib/services/regionService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const [uniquePlayers, lastUpdate] = await Promise.all([
-      getUniquePlayerCountDeeds(true),
+      getUniquePlayerCountFromBlob(true),
       getLastUpdate(),
       // otherCacheRefreshers()
     ]);

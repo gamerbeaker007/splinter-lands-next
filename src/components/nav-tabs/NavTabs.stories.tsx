@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
 import NavTabs from "./NavTabs";
 import { Page } from "@/types/Page";
+import { useState } from "react";
+import { Box } from "@mui/material";
 
 const meta: Meta<typeof NavTabs> = {
   title: "Components/Tabs",
@@ -35,6 +37,17 @@ const pages: Page[] = [
 
 export const Default: Story = {
   render: () => {
-    return <NavTabs pages={pages} />;
+    const [activeTab, setActiveTab] = useState<number>(0);
+
+    return (
+      <>
+        <NavTabs
+          pages={pages}
+          value={activeTab}
+          onChange={(_, newValue) => setActiveTab(newValue)}
+        />
+        <Box mt={4}>{pages[activeTab].component}</Box>
+      </>
+    );
   },
 };
