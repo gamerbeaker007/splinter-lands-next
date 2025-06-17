@@ -1,4 +1,4 @@
-import { fetchResourceSupply } from "@/lib/api/spl/spl-base-api";
+import { fetchResourceSupply } from "@/lib/api/spl/spl-land-api";
 import { prisma } from "@/lib/prisma";
 
 const LEADERBOARD_RESOURCES = [

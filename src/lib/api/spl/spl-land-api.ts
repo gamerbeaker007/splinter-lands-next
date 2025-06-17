@@ -1,4 +1,5 @@
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
+import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
 import axios from "axios";
 import * as rax from "retry-axios";
 
@@ -79,6 +80,24 @@ export async function getLandResourcesPools() {
   const data = res.data?.data;
   if (!data) throw new Error("Invalid response from Splinterlands API");
   return data || [];
+}
+
+export async function fetchResourceSupply(resource: string) {
+  const url = "/land/resources/leaderboards";
+  const params = new URLSearchParams({
+    territory: "",
+    region: "",
+    resource,
+    player: "",
+    limit: "150000",
+  });
+
+  const res = await splLandClient.get(url, { params: params });
+
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return Array.isArray(data) ? (data as ResourceSupplyResponse[]) : [];
 }
 
 export async function getMidnightPotionPrice(): Promise<number> {

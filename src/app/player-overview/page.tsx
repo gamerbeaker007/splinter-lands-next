@@ -1,13 +1,13 @@
 "use client";
 
+import FilterDrawer from "@/components/filter/FilterDrawer";
 import NavTabs from "@/components/nav-tabs/NavTabs";
-import PlayerInput from "@/components/player-overview/PlayerInput";
 import DeedOverview from "@/components/player-overview/DeedOverview";
+import PlayerInput from "@/components/player-overview/PlayerInput";
 import { FilterProvider } from "@/lib/context/FilterContext";
 import { usePageTitle } from "@/lib/context/PageTitleContext";
-import { Container, Box } from "@mui/material";
+import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
-import FilterDrawer from "@/components/filter/FilterDrawer";
 
 export default function PlayerPage() {
   const { setTitle } = usePageTitle();
@@ -30,7 +30,7 @@ export default function PlayerPage() {
   return (
     <FilterProvider>
       <Container>
-        <FilterDrawer />
+        {selectedPlayer && <FilterDrawer player={selectedPlayer} />}
 
         <NavTabs
           pages={pages}

@@ -1,27 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { FilterInput } from "@/types/filters";
-import Drawer from "@mui/material/Drawer";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
-import LocationFilter from "./LocationFilter";
+import Drawer from "@mui/material/Drawer";
+import { useEffect, useState } from "react";
 import AttributeFilter from "./AttributeFilter";
+import LocationFilter from "./LocationFilter";
 import PlayerFilter from "./PlayerFilter";
 import ResetFiltersButton from "./reset-filters/ResetFiltersButton";
 
-export default function FilterDrawer() {
+type Props = {
+  player?: string | null;
+};
+export default function FilterDrawer({ player }: Props) {
   const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
     null,
   );
   const [drawerOpen, setDrawerOpen] = useState(true);
-
+  const query = player ? `?player=${encodeURIComponent(player)}` : "";
+  console.log(`FilterDrawer player:  ${player}`);
   useEffect(() => {
-    fetch(`/api/filters`)
+    fetch(`/api/filters${query}`)
       .then((res) => res.json())
       .then(setAvailableOptions)
       .catch(console.error);
-  }, []);
+  }, [query]);
 
   useEffect(() => {
     const isLarge = window.innerWidth >= 1024;

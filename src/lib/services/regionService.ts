@@ -113,13 +113,13 @@ export async function getActiveDeedCountByRegion(filters: FilterInput) {
   return sortedCounts;
 }
 
-export async function getAvailableFilterValues(): Promise<
-  Omit<
-    FilterInput,
-    "filter_developed" | "filter_under_construction" | "filter_has_pp"
-  >
-> {
-  const blob = await getCachedRegionData();
+export async function getAvailableFilterValues(
+  player: string | null,
+): Promise<FilterInput> {
+  let blob = await getCachedRegionData();
+  if (player) {
+    blob = filterDeeds(blob, { filter_players: [player] });
+  }
 
   const values = {
     filter_regions: new Set<number>(),

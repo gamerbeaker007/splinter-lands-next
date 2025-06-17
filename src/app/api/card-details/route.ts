@@ -1,11 +1,9 @@
-import { getAvailableFilterValues } from "@/lib/services/regionService";
+import { getCachedCardDetailsData } from "@/lib/services/cardService";
 import { NextResponse } from "next/server";
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(request.url);
-    const player = searchParams.get("player") || null;
-    const result = await getAvailableFilterValues(player);
+    const result = await getCachedCardDetailsData();
 
     if (!result)
       return NextResponse.json({ error: "No data found" }, { status: 404 });

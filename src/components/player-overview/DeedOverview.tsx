@@ -1,14 +1,16 @@
 "use client";
 
+import DeedOverviewTile from "@/components/player-overview/deed-overview-tile/DeedOverviewTile";
 import { useFilters } from "@/lib/context/FilterContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
+import { SplCardDetails } from "@/types/splCardDetails";
 import {
-  Container,
-  Typography,
-  LinearProgress,
-  Box,
   Alert,
+  Box,
+  Container,
+  LinearProgress,
+  Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -25,7 +27,20 @@ export default function DeedOverview({ player }: Props) {
   const [total, setTotal] = useState<number>(0);
   const [warning, setWarning] = useState<string | null>(null);
 
+  const [cardDetails, setCardDetails] = useState<SplCardDetails[] | null>(null);
+
   const { filters } = useFilters();
+  useEffect(() => {
+    fetch("/api/card-details", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.json())
+      .then(setCardDetails)
+      .catch(console.error);
+  }, [filters, player]);
 
   useEffect(() => {
     if (!filters) return;
@@ -91,8 +106,14 @@ export default function DeedOverview({ player }: Props) {
               {warning}
             </Alert>
           )}
-          {data && data.length > 0 ? (
-            data.map((deed) => <div key={deed.deed_uid}>{deed.deed_uid}</div>)
+          {cardDetails && data && data.length > 0 ? (
+            data.map((deed) => (
+              <DeedOverviewTile
+                key={deed.deed_uid}
+                data={deed}
+                cardDetails={cardDetails}
+              />
+            ))
           ) : (
             <div></div>
           )}
