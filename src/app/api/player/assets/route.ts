@@ -1,6 +1,7 @@
-import pLimit from "p-limit";
-import { getCachedStakedAssets } from "@/lib/services/playerService";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getCachedStakedAssets } from "@/lib/backend/services/playerService";
 import { DeedComplete } from "@/types/deed";
+import pLimit from "p-limit";
 
 export async function POST(req: Request) {
   const { deeds, force } = await req.json();
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
         const enriched = { ...deed, stakedAssets };
         return { index: i + 1, total: deeds.length, deed: enriched };
       } catch (err) {
-        console.error(`Error with deed ${deed.deed_uid}`, err);
+        logError(`Error with deed ${deed.deed_uid}`, err);
         return {
           index: i + 1,
           total: deeds.length,

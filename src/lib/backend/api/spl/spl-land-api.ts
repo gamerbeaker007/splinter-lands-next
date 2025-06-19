@@ -1,7 +1,9 @@
+import { logger } from "@/lib/backend/log/logger";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
 import axios from "axios";
 import * as rax from "retry-axios";
+import { logError } from "../../log/logUtils";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -24,7 +26,7 @@ splLandClient.defaults.raxConfig = {
   ],
   onRetryAttempt: (err) => {
     const cfg = rax.getConfig(err);
-    console.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
+    logger.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
   },
 };
 
@@ -53,6 +55,7 @@ export async function fetchRegionDataPlayer(
     params: { player: player },
   });
 
+  logger.info(`SPL API - fetch land deed for: ${player}`);
   const data = res.data?.data;
   if (!data) throw new Error("Invalid response from Splinterlands API");
 
@@ -109,7 +112,7 @@ export async function getMidnightPotionPrice(): Promise<number> {
 
     const assets = res.data?.data?.assets;
     if (!Array.isArray(assets)) {
-      console.warn("⚠️ No assets array found in response.");
+      logger.warn("⚠️ No assets array found in response.");
       return 0;
     }
 
@@ -121,10 +124,10 @@ export async function getMidnightPotionPrice(): Promise<number> {
       return price;
     }
 
-    console.warn("⚠️ Midnight Potion not found or missing price.");
+    logger.warn("⚠️ Midnight Potion not found or missing price.");
     return 0;
   } catch (error) {
-    console.error("❌ Failed to fetch Midnight Potion price:", error);
+    logError("❌ Failed to fetch Midnight Potion price:", error);
     return 0;
   }
 }

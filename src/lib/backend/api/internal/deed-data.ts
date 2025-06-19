@@ -1,4 +1,5 @@
-import { getLastUpdate } from "@/lib/cache/utils";
+import { getLastUpdate } from "@/lib/backend/cache/utils";
+import { logger } from "@/lib/backend/log/logger";
 import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
 
@@ -7,7 +8,7 @@ let cachedDeedTimestamp: Date | null = null;
 let refreshPromise: Promise<void> | null = null;
 
 async function getAllDeedData(): Promise<DeedComplete[]> {
-  console.log("getAllDeedData...");
+  logger.info("getAllDeedData...");
   return prisma.deed.findMany({
     include: {
       worksiteDetail: true,
@@ -20,7 +21,7 @@ async function refreshDeedCache(): Promise<void> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const lastUpdate = await getLastUpdate();
-      console.log("Refreshing deed data...");
+      logger.info("Refreshing deed data...");
       cachedDeedData = await getAllDeedData();
       cachedDeedTimestamp = lastUpdate;
       refreshPromise = null;
@@ -54,7 +55,7 @@ export async function getCachedRegionData(
   await triggerRefreshIfStale(forceWait);
 
   if (!cachedDeedData) {
-    console.log("No cache yet – forcing wait for refresh...");
+    logger.info("No cache yet – forcing wait for refresh...");
     await refreshDeedCache();
   }
 

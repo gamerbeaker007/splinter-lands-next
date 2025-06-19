@@ -1,7 +1,7 @@
 "use client";
 
 import DeedOverviewTile from "@/components/player-overview/deed-overview-tile/DeedOverviewTile";
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { SplCardDetails } from "@/types/splCardDetails";

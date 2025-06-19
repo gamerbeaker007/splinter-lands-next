@@ -1,3 +1,4 @@
+import { logger } from "@/lib/backend/log/logger";
 import { SplCardDetails } from "@/types/splCardDetails";
 import axios from "axios";
 import * as rax from "retry-axios";
@@ -23,7 +24,7 @@ splBaseClient.defaults.raxConfig = {
   ],
   onRetryAttempt: (err) => {
     const cfg = rax.getConfig(err);
-    console.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
+    logger.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
   },
 };
 

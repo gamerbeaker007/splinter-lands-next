@@ -1,5 +1,6 @@
-import { getLastUpdate } from "@/lib/cache/utils";
-import { getUniquePlayerCountFromBlob } from "@/lib/services/regionService";
+import { getLastUpdate } from "@/lib/backend/cache/utils";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getUniquePlayerCountFromBlob } from "@/lib/backend/services/regionService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -16,7 +17,7 @@ export async function GET() {
       lastUpdate,
     });
   } catch (e) {
-    console.error("Error refreshing caches:", e);
+    logError("Error refreshing caches:", e);
     return NextResponse.json(
       { status: "Error refreshing caches" },
       { status: 501 },

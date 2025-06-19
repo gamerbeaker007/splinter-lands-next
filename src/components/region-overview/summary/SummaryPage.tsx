@@ -1,7 +1,7 @@
 "use client";
 
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionSummary } from "@/types/regionSummary";
 import { Box, Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";

@@ -1,4 +1,5 @@
-import { getAvailableFilterValues } from "@/lib/services/regionService";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getAvailableFilterValues } from "@/lib/backend/services/regionService";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
@@ -12,9 +13,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error(err);
+    logError("Failed to load filter data", err);
     return NextResponse.json(
-      { error: "Failed to load worksite data" },
+      { error: "Failed to load filter data" },
       { status: 501 },
     );
   }

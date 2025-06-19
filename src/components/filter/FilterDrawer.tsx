@@ -19,7 +19,6 @@ export default function FilterDrawer({ player }: Props) {
   );
   const [drawerOpen, setDrawerOpen] = useState(true);
   const query = player ? `?player=${encodeURIComponent(player)}` : "";
-  console.log(`FilterDrawer player:  ${player}`);
   useEffect(() => {
     fetch(`/api/filters${query}`)
       .then((res) => res.json())

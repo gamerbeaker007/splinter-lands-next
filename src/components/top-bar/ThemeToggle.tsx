@@ -1,6 +1,6 @@
 "use client";
 
-import { useThemeContext } from "@/lib/context/ThemeContext";
+import { useThemeContext } from "@/lib/frontend/context/ThemeContext";
 import { LuMoon, LuSun } from "react-icons/lu";
 import IconButton from "@mui/material/IconButton";
 import Box from "@mui/material/Box";

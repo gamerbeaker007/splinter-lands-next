@@ -1,6 +1,7 @@
-import { getLatestActiveEntry } from "@/lib/api/internal/active-data";
+import { getLatestActiveEntry } from "@/lib/backend/api/internal/active-data";
+import { logError } from "@/lib/backend/log/logUtils";
+import { toActiveDto } from "@/lib/backend/mappers/active-mapper";
 import { NextResponse } from "next/server";
-import { toActiveDto } from "@/lib/mappers/active-mapper";
 
 export async function GET() {
   try {
@@ -11,7 +12,7 @@ export async function GET() {
     const dto = toActiveDto(latest);
     return NextResponse.json(dto);
   } catch (err) {
-    console.error(err);
+    logError("Failed to load latest data", err);
     return NextResponse.json(
       { error: "Failed to load latest data" },
       { status: 501 },

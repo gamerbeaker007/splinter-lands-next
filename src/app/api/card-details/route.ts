@@ -1,4 +1,5 @@
-import { getCachedCardDetailsData } from "@/lib/services/cardService";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
@@ -10,7 +11,7 @@ export async function GET() {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error(err);
+    logError("Failed to load worksite data", err);
     return NextResponse.json(
       { error: "Failed to load worksite data" },
       { status: 501 },

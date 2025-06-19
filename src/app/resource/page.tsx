@@ -1,5 +1,5 @@
 "use client";
-import { usePageTitle } from "@/lib/context/PageTitleContext";
+import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Typography } from "@mui/material";
 import { useEffect } from "react";
 

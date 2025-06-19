@@ -1,6 +1,6 @@
-import { fetchCardDetails } from "@/lib/api/spl/spl-base-api";
-import { dailyCache } from "@/lib/cache/cache";
+import { dailyCache } from "@/lib/backend/cache/cache";
 import { SplCardDetails } from "@/types/splCardDetails";
+import { fetchCardDetails } from "../api/spl/spl-base-api";
 
 export async function getCachedCardDetailsData(
   force = false,

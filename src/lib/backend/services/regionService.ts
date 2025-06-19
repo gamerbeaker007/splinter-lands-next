@@ -1,7 +1,7 @@
 import { FilterInput } from "@/types/filters";
 import { RegionSummary } from "@/types/regionSummary";
 import { getCachedRegionData } from "../api/internal/deed-data";
-import { filterDeeds } from "../filters";
+import { filterDeeds } from "../../filters";
 
 export async function getRegionSummary(
   filters: FilterInput,

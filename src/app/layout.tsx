@@ -1,8 +1,8 @@
 // app/layout.tsx
 import SideBar from "@/components/side-bar/SideBar";
 import TopBar from "@/components/top-bar/TopBar";
-import { PageTitleProvider } from "@/lib/context/PageTitleContext";
-import { ThemeProviderWrapper } from "@/lib/context/ThemeContext"; // Adjust path as needed
+import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
+import { ThemeProviderWrapper } from "@/lib/frontend/context/ThemeContext"; // Adjust path as needed
 import Box from "@mui/material/Box";
 
 export default function RootLayout({

@@ -4,8 +4,8 @@ import FilterDrawer from "@/components/filter/FilterDrawer";
 import NavTabs from "@/components/nav-tabs/NavTabs";
 import DeedOverview from "@/components/player-overview/DeedOverview";
 import PlayerInput from "@/components/player-overview/PlayerInput";
-import { FilterProvider } from "@/lib/context/FilterContext";
-import { usePageTitle } from "@/lib/context/PageTitleContext";
+import { FilterProvider } from "@/lib/frontend/context/FilterContext";
+import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 

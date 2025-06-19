@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma";
-import { getLandResourcesPools } from "@/lib/api/spl/spl-land-api";
-import { getPrices } from "@/lib/api/spl/spl-prices-api";
+import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
+import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
+import { logger } from "@/lib/backend/log/logger";
 import { prisma } from "@/lib/prisma";
 import {
   calcCosts,
@@ -22,7 +23,7 @@ type regionPlayerTokenResult = {
 };
 
 export async function computeAndStorePlayerProduction(today: Date) {
-  console.log(`⌛ --- Start computeAndStorePlayerProduction...`);
+  logger.info(`⌛ --- Start computeAndStorePlayerProduction...`);
 
   const prices = await getPrices();
   const metrics = await getLandResourcesPools();
@@ -124,7 +125,7 @@ export async function computeAndStorePlayerProduction(today: Date) {
     });
   }
 
-  console.log(`🧹 playerProductionSummary - Clearing existing data...`);
+  logger.info(`🧹 playerProductionSummary - Clearing existing data...`);
   await prisma.playerProductionSummary.deleteMany();
 
   const data = playerSummaries.map((summary) => ({
@@ -141,12 +142,12 @@ export async function computeAndStorePlayerProduction(today: Date) {
     dec_aura: summary.dec_aura || 0,
     dec_sps: summary.dec_sps || 0,
   }));
-  console.log(`📦 Inserting ${data.length} playerSummaries...`);
+  logger.info(`📦 Inserting ${data.length} playerSummaries...`);
   await prisma.playerProductionSummary.createMany({
     data: data,
   });
 
-  console.log(
+  logger.info(
     `✅ Stored player production for ${today.toISOString().split("T")[0]}`,
   );
 }

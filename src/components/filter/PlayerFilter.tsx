@@ -1,6 +1,6 @@
 "use client";
 
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { FilterInput } from "@/types/filters";
 import { Box, Typography } from "@mui/material";
 import MultiSelect from "../ui/multiselect/MultiSelect";
