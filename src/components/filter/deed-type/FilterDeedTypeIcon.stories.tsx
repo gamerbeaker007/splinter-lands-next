@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
 import { Box } from "@mui/material";
-import { FilterProvider } from "@/lib/context/FilterContext";
+import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import FilterDeedTypeIcon from "./FilterDeedTypeIcon";
 
 const meta: Meta<typeof FilterDeedTypeIcon> = {

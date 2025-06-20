@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs";
-import { FilterProvider } from "@/lib/context/FilterContext";
+import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import FilterRarityGroup from "./FilterRarityGroup";
 
 const meta: Meta<typeof FilterRarityGroup> = {

@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getRegionSummary } from "@/lib/backend/services/regionService";
 import { FilterInput } from "@/types/filters";
-import { getRegionSummary } from "@/lib/api/internal/deed-data";
 import { RegionSummary } from "@/types/regionSummary";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -13,9 +14,9 @@ export async function POST(req: Request) {
 
     return NextResponse.json(result);
   } catch (err) {
-    console.error(err);
+    logError("Failed to load summary data", err);
     return NextResponse.json(
-      { error: "Failed to load worksite data" },
+      { error: "Failed to load summary data" },
       { status: 501 },
     );
   }

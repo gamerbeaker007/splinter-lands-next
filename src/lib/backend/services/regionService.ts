@@ -1,73 +1,12 @@
-import { getLastUpdate } from "@/lib/cache/utils";
-import { filterDeeds } from "@/lib/filters";
-import { prisma } from "@/lib/prisma";
-import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { RegionSummary } from "@/types/regionSummary";
-
-let cachedDeedData: DeedComplete[] | null = null;
-let cachedDeedTimestamp: Date | null = null;
-let refreshPromise: Promise<void> | null = null;
-
-async function getAllDeedData(): Promise<DeedComplete[]> {
-  console.log("getAllDeedData...");
-  return prisma.deed.findMany({
-    include: {
-      worksiteDetail: true,
-      stakingDetail: true,
-    },
-  });
-}
-
-async function refreshDeedCache(): Promise<void> {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const lastUpdate = await getLastUpdate();
-      console.log("Refreshing deed data...");
-      cachedDeedData = await getAllDeedData();
-      cachedDeedTimestamp = lastUpdate;
-      refreshPromise = null;
-    })();
-  }
-  return refreshPromise;
-}
-
-async function triggerRefreshIfStale(
-  forceWait: boolean = false,
-): Promise<boolean> {
-  const lastUpdate = await getLastUpdate();
-
-  const needsRefresh =
-    !cachedDeedData || !cachedDeedTimestamp || cachedDeedTimestamp < lastUpdate;
-
-  if (needsRefresh) {
-    if (forceWait) {
-      await refreshDeedCache();
-    } else {
-      void refreshDeedCache(); // Fire-and-forget
-    }
-  }
-
-  return needsRefresh;
-}
-
-async function getCachedDeedData(
-  forceWait: boolean = false,
-): Promise<DeedComplete[]> {
-  await triggerRefreshIfStale(forceWait);
-
-  if (!cachedDeedData) {
-    console.log("No cache yet – forcing wait for refresh...");
-    await refreshDeedCache();
-  }
-
-  return cachedDeedData!;
-}
+import { getCachedRegionData } from "../api/internal/deed-data";
+import { filterDeeds } from "../../filters";
 
 export async function getRegionSummary(
   filters: FilterInput,
 ): Promise<RegionSummary> {
-  const blob = await getCachedDeedData();
+  const blob = await getCachedRegionData();
   const filteredDeeds = filterDeeds(blob, filters);
 
   // Initialize all count buckets
@@ -128,7 +67,7 @@ export async function getRegionSummary(
 }
 
 export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
-  const blob = await getCachedDeedData(forceWait);
+  const blob = await getCachedRegionData(forceWait);
 
   const uniquePlayers = new Set<string>();
 
@@ -143,7 +82,7 @@ export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
 }
 
 export async function getActiveDeedCountByRegion(filters: FilterInput) {
-  const blob = await getCachedDeedData();
+  const blob = await getCachedRegionData();
 
   //Only the region filter will have effect unless one region is selected
   const regionFilter = filters.filter_regions ?? [];
@@ -174,13 +113,13 @@ export async function getActiveDeedCountByRegion(filters: FilterInput) {
   return sortedCounts;
 }
 
-export async function getAvailableFilterValues(): Promise<
-  Omit<
-    FilterInput,
-    "filter_developed" | "filter_under_construction" | "filter_has_pp"
-  >
-> {
-  const blob = await getCachedDeedData();
+export async function getAvailableFilterValues(
+  player: string | null,
+): Promise<FilterInput> {
+  let blob = await getCachedRegionData();
+  if (player) {
+    blob = filterDeeds(blob, { filter_players: [player] });
+  }
 
   const values = {
     filter_regions: new Set<number>(),

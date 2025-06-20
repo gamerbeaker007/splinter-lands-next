@@ -1,6 +1,6 @@
 "use client";
 
-import { usePageTitle } from "@/lib/context/PageTitleContext";
+import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import ActiveTile from "./ActiveTile";
 import CacheStatusDot from "./CacheStatusDot";
 import ThemeToggle from "./ThemeToggle";

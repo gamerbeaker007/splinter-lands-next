@@ -1,4 +1,4 @@
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
   land_default_icon_url_placeholder,
   land_mythic_icon_url,

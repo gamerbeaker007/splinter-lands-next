@@ -1,4 +1,5 @@
-import { fetchResourceSupply } from "@/lib/api/spl/spl-base-api";
+import { fetchResourceSupply } from "@/lib/backend/api/spl/spl-land-api";
+import { logger } from "@/lib/backend/log/logger";
 import { prisma } from "@/lib/prisma";
 
 const LEADERBOARD_RESOURCES = [
@@ -11,7 +12,7 @@ const LEADERBOARD_RESOURCES = [
 ];
 
 export async function computeAndStoreTotalSupply(today: Date) {
-  console.log(`⌛ --- Start computeAndStoreTotalSupply...`);
+  logger.info(`⌛ --- Start computeAndStoreTotalSupply...`);
 
   const results = await Promise.all(
     LEADERBOARD_RESOURCES.map(async (resource) => {
@@ -48,7 +49,7 @@ export async function computeAndStoreTotalSupply(today: Date) {
     });
   }
 
-  console.log(
+  logger.info(
     `✅ Stored resource supply for ${today.toISOString().split("T")[0]}`,
   );
 }

@@ -1,15 +1,16 @@
 import { Prisma } from "@/generated/prisma";
-import { getLandResourcesPools } from "@/lib/api/spl/spl-land-api";
-import { getPrices } from "@/lib/api/spl/spl-prices-api";
+import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
+import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import { prisma } from "@/lib/prisma";
 import { GRAIN_CONVERSION_RATIOS } from "../utils/statics";
+import { logger } from "@/lib/backend/log/logger";
 
 export async function computeAndStoreResourceHubMetrics(today: Date) {
-  console.log(`⌛ --- Start computeAndStoreResourceHubMetrics...`);
+  logger.info(`⌛ --- Start computeAndStoreResourceHubMetrics...`);
 
   const resources = await getLandResourcesPools();
   if (!resources || resources.length === 0) {
-    console.warn("⚠️ No land resource pool data available.");
+    logger.warn("⚠️ No land resource pool data available.");
     return;
   }
 
@@ -62,7 +63,7 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
     skipDuplicates: true,
   });
 
-  console.log(
+  logger.info(
     `✅ Stored resource hub metrics for ${dataToInsert.length} tokens on ${today.toISOString().split("T")[0]}`,
   );
 }
@@ -77,13 +78,13 @@ function calculateGrainEquivalentAndFactor(
   }
 
   if (!grainPrice || grainPrice <= 0) {
-    console.warn("⚠️ Grain price is zero or invalid.");
+    logger.warn("⚠️ Grain price is zero or invalid.");
     return { grainEquivalent: null, factor: null };
   }
 
   const conversionRatio = GRAIN_CONVERSION_RATIOS[tokenSymbol];
   if (!conversionRatio) {
-    console.warn(`⚠️ Unknown token symbol: ${tokenSymbol}`);
+    logger.warn(`⚠️ Unknown token symbol: ${tokenSymbol}`);
     return { grainEquivalent: null, factor: null };
   }
 

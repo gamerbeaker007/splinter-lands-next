@@ -1,5 +1,5 @@
 import React from "react";
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
   land_under_construction_icon_url,
   WEB_URL,

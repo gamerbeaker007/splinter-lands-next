@@ -1,11 +1,12 @@
-import { getUniquePlayerCountFromBlob as getUniquePlayerCountDeeds } from "@/lib/api/internal/deed-data";
-import { getLastUpdate } from "@/lib/cache/utils";
+import { getLastUpdate } from "@/lib/backend/cache/utils";
+import { logError } from "@/lib/backend/log/logUtils";
+import { getUniquePlayerCountFromBlob } from "@/lib/backend/services/regionService";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
     const [uniquePlayers, lastUpdate] = await Promise.all([
-      getUniquePlayerCountDeeds(true),
+      getUniquePlayerCountFromBlob(true),
       getLastUpdate(),
       // otherCacheRefreshers()
     ]);
@@ -16,7 +17,7 @@ export async function GET() {
       lastUpdate,
     });
   } catch (e) {
-    console.error("Error refreshing caches:", e);
+    logError("Error refreshing caches:", e);
     return NextResponse.json(
       { status: "Error refreshing caches" },
       { status: 501 },

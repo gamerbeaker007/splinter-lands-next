@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@mui/material";
-import { useFilters } from "@/lib/context/FilterContext";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 
 export default function ResetFiltersButton() {
   const { setFilters } = useFilters();
