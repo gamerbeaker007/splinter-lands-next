@@ -55,7 +55,7 @@ export async function fetchRegionDataPlayer(
     params: { player: player },
   });
 
-  logger.info(`SPL API - fetch land deed for: ${player}`);
+  logger.info(`SPL API - fetch land deeds for: ${player}`);
   const data = res.data?.data;
   if (!data) throw new Error("Invalid response from Splinterlands API");
 

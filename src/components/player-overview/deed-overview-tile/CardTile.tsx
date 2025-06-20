@@ -1,9 +1,11 @@
 import { formatLargeNumber } from "@/lib/formatters";
 import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
 import { land_hammer_icon_url } from "@/scripts/statics_icon_urls";
+import { Rarity } from "@/types/rarity";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
+import PPMultiplierDot from "./PPMultiplierDot";
 
 type Props = {
   name: string;
@@ -82,6 +84,14 @@ export default function CardTile({
             borderRadius="50%"
             border={1}
             bgcolor={RarityColor[rarity]}
+          />
+
+          {/* bottom-left multiplier dot (placeholder logic) */}
+          <PPMultiplierDot
+            rarity={rarity as Rarity}
+            foil={foil}
+            bcx={actual_bcx}
+            basePP={base_pp}
           />
 
           {/* Bottom-right warning if terrain boost is negative */}

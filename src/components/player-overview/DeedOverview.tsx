@@ -87,7 +87,7 @@ export default function DeedOverview({ player }: Props) {
   }, [filters, player]);
 
   return (
-    <Container>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
       {loadingText ? (
         <Box sx={{ mt: 2 }}>
           <Typography variant="body1">{loadingText}</Typography>
@@ -102,21 +102,35 @@ export default function DeedOverview({ player }: Props) {
       ) : (
         <>
           {warning && (
-            <Alert severity="warning" sx={{ mt: 2 }}>
+            <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
               {warning}
             </Alert>
           )}
-          {cardDetails && data && data.length > 0 ? (
-            data.map((deed) => (
-              <DeedOverviewTile
-                key={deed.deed_uid}
-                data={deed}
-                cardDetails={cardDetails}
-              />
-            ))
-          ) : (
-            <div></div>
-          )}
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 2, // space between tiles
+              justifyContent: "center",
+            }}
+          >
+            {cardDetails && data && data.length > 0 ? (
+              data.map((deed) => (
+                <Box
+                  key={deed.deed_uid}
+                  sx={{
+                    border: "1px solid #ccc",
+                    borderRadius: 2,
+                    padding: 1,
+                  }}
+                >
+                  <DeedOverviewTile data={deed} cardDetails={cardDetails} />
+                </Box>
+              ))
+            ) : (
+              <Typography>No data</Typography>
+            )}
+          </Box>
         </>
       )}
     </Container>

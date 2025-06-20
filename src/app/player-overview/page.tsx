@@ -29,7 +29,7 @@ export default function PlayerPage() {
 
   return (
     <FilterProvider>
-      <Container>
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         {selectedPlayer && <FilterDrawer player={selectedPlayer} />}
 
         <NavTabs

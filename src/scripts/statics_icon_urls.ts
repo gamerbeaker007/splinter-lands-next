@@ -1,4 +1,5 @@
 export const WEB_URL = `https://d36mxiodymuqjm.cloudfront.net/`;
+export const SPL_WEB_URL = `https://next.splinterlands.com/`;
 
 export const land_hammer_icon_url = `${WEB_URL}website/land/deedOverview/hammer.svg`;
 export const land_grain_farm_icon_url = `${WEB_URL}website/land/worksite/img_worksite_grain_v2.webp`;
@@ -37,3 +38,7 @@ export const land_common_totem_icon_url_placeholder = `${WEB_URL}website/icons/i
 export const land_rare_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_2_rare_300.png`;
 export const land_epic_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_3_epic_300.png`;
 export const land_legendary_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_4_legendary_300.png`;
+
+export const land_region_icon_url = `${WEB_URL}website/icons/icon_claim_region.svg`;
+export const land_tract_icon_url = `${WEB_URL}website/icons/icon_claim_tract.svg`;
+export const land_plot_icon_url = `${WEB_URL}website/icons/icon_claim_plot.svg`;
