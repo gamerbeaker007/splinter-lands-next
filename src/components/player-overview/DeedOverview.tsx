@@ -44,6 +44,11 @@ export default function DeedOverview({ player }: Props) {
 
   useEffect(() => {
     if (!filters) return;
+    if (!player || player == "") {
+      setData(null);
+      setLoadingText(null);
+      return;
+    }
 
     const run = async () => {
       try {
@@ -122,6 +127,7 @@ export default function DeedOverview({ player }: Props) {
                     border: "1px solid #ccc",
                     borderRadius: 2,
                     padding: 1,
+                    minWidth: 250,
                   }}
                 >
                   <DeedOverviewTile data={deed} cardDetails={cardDetails} />

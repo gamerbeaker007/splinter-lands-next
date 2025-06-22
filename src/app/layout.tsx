@@ -19,7 +19,7 @@ export default function RootLayout({
               <SideBar />
               <Box display="flex" flexDirection="column" flexGrow={1}>
                 <TopBar />
-                <Box component="main" p={2} flexGrow={1} overflow="auto">
+                <Box component="main" flexGrow={1} overflow="auto">
                   {children}
                 </Box>
               </Box>

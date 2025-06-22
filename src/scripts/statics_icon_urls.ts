@@ -42,3 +42,45 @@ export const land_legendary_totem_icon_url_placeholder = `${WEB_URL}website/icon
 export const land_region_icon_url = `${WEB_URL}website/icons/icon_claim_region.svg`;
 export const land_tract_icon_url = `${WEB_URL}website/icons/icon_claim_tract.svg`;
 export const land_plot_icon_url = `${WEB_URL}website/icons/icon_claim_plot.svg`;
+
+export const fire_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_fire_on.png`;
+export const water_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_water_on.png`;
+export const death_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_death_on.png`;
+export const life_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_life_on.png`;
+export const earth_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_earth_on.png`;
+export const dragon_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_dragon_on.png`;
+export const neutral_element_icon_url = `${SPL_WEB_URL}assets/cards/icon_element_neutral_on.png`;
+
+export const title_untamed_icon_url = `${WEB_URL}website/icons/icon_active_untamed.svg`;
+export const title_praetorian_icon_url = `${WEB_URL}website/icons/icon_active_praetorian.svg`;
+export const title_explorer_icon_url = `${WEB_URL}website/icons/icon_active_explorer.svg`;
+export const title_grandmaster_icon_url = `${WEB_URL}website/icons/icon_active_grandmaster.svg`;
+export const title_legionnaire_icon_url = `${WEB_URL}website/icons/icon_active_legionnaire.svg`;
+export const title_watcher_icon_url = `${WEB_URL}website/icons/icon_active_thewatcher.svg`;
+export const title_gambler_icon_url = `${WEB_URL}website/icons/icon_active_thegambler.svg`;
+export const title_high_roller_icon_url = `${WEB_URL}website/icons/icon_active_highroller.svg`;
+export const title_burninator_icon_url = `${WEB_URL}website/icons/icon_active_burninator.svg`;
+export const title_incinerator_icon_url = `${WEB_URL}website/icons/icon_active_incinerator.svg`;
+export const title_scorcher_icon_url = `${WEB_URL}website/icons/icon_active_scorcher.svg`;
+export const title_rebel_icon_url = `${WEB_URL}website/icons/icon_active_rebel.svg`;
+export const title_defiant_icon_url = `${WEB_URL}website/icons/icon_active_defiant.svg`;
+export const title_dawnbringer_icon_url = `${WEB_URL}website/icons/icon_active_dawnbringer.svg`;
+export const title_tower_mage_icon_url = `${WEB_URL}website/icons/icon_active_thetowermage.svg`;
+export const title_renowned_icon_url = `${WEB_URL}website/icons/icon_title_renown.svg`;
+export const title_veteran_icon_url = `${WEB_URL}website/icons/icon_title_veteran.svg`;
+export const title_proven_icon_url = `${WEB_URL}website/icons/icon_title_proven.svg`;
+export const title_myth_hunter_icon_url = `${WEB_URL}website/icons/icon_active_myth%20hunter.svg`;
+export const title_fable_scout_icon_url = `${WEB_URL}website/icons/icon_active_fable%20scout.svg`;
+export const title_saga_seeker_icon_url = `${WEB_URL}website/icons/icon_active_saga%20seeker.svg`;
+export const title_emissary_icon_url = `${WEB_URL}website/icons/icon_active_emissary.svg`;
+
+export const grain_icon_url = `${WEB_URL}website/land/resources/grain.png`;
+export const stone_icon_url = `${WEB_URL}website/land/resources/stone_500.webp`;
+export const wood_icon_url = `${WEB_URL}website/land/resources/wood_500.webp`;
+export const iron_icon_url = `${WEB_URL}website/land/resources/iron_500.webp`;
+export const aura_icon_url = `${WEB_URL}website/land/resources/aura_500.webp`;
+export const research_icon_url = `${WEB_URL}website/land/resources/research.png`;
+export const tax_icon_url = `${WEB_URL}website/nav/icon_nav_items_active@2x.png`;
+
+export const dec_icon_url = `${WEB_URL}website/icon_dec.png`;
+export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;

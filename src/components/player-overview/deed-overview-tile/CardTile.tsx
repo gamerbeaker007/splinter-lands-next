@@ -17,6 +17,7 @@ type Props = {
   max_bcx: number | string;
   base_pp: number;
   boosted_pp: number;
+  uid: string;
 };
 
 export default function CardTile({
@@ -29,9 +30,14 @@ export default function CardTile({
   max_bcx,
   base_pp,
   boosted_pp,
+  uid,
 }: Props) {
   const isFoil = foil === 1 || foil === 2;
   const hasNegativeTerrain = terrain_boost < 0;
+  const img =
+    name === "Runi"
+      ? `https://runi.splinterlands.com/cards/${uid}.jpg`
+      : getCardImg(name, edition, foil);
 
   return (
     <>
@@ -48,10 +54,9 @@ export default function CardTile({
           {/* Top cropped card image */}
           <Box height={150} position="relative">
             <Image
-              src={getCardImg(name, edition, foil)}
+              src={img}
               alt={name}
               fill
-              sizes={"yxz"}
               style={{
                 objectFit: "cover",
                 objectPosition: "top center",

@@ -9,6 +9,7 @@ import AttributeFilter from "./AttributeFilter";
 import LocationFilter from "./LocationFilter";
 import PlayerFilter from "./PlayerFilter";
 import ResetFiltersButton from "./reset-filters/ResetFiltersButton";
+import { Typography } from "@mui/material";
 
 type Props = {
   player?: string | null;
@@ -44,24 +45,39 @@ export default function FilterDrawer({ player }: Props) {
           top: "100px",
           right: drawerOpen ? 300 : 0,
           zIndex: 1301,
-          height: 125,
+          height: 100,
         }}
       >
         <Button
           variant="contained"
           color="error"
           onClick={toggleDrawer}
+          disableRipple
+          disableElevation
           sx={{
-            width: 20,
-            minWidth: "auto",
+            width: 30,
+            minWidth: "30px",
+            padding: 0,
             height: "100%",
-            borderRadius: "10px 0 0 10px",
+            borderRadius: "15px 0 0 15px",
             writingMode: "vertical-rl",
             textOrientation: "sideways",
             boxShadow: 3,
+            overflow: "hidden",
           }}
         >
-          Filter
+          <Typography
+            variant="body1"
+            fontSize={14}
+            fontWeight="bold"
+            sx={{
+              transition: "all 0.3s ease-in-out",
+              transform: drawerOpen ? "scale(1)" : "scale(0.8)",
+              opacity: drawerOpen ? 1 : 0.5,
+            }}
+          >
+            Filter
+          </Typography>
         </Button>
       </Box>
 

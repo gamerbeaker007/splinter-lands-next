@@ -6,6 +6,8 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
 import DeedTypeCard from "./DeedTypeCard";
+import BoostsOverviewTile from "./boosts/BoostsOverviewTile";
+import { ProductionCard } from "./production/ProductionCard";
 
 type Props = {
   data: DeedComplete;
@@ -29,17 +31,19 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
         worksiteType={data.worksite_type!}
         plotId={data.plot_id!}
       />
-
-      <Typography variant="h6" component="h3">
+      <BoostsOverviewTile data={data} cardDetails={cardDetails} />
+      <Typography variant="h6" component="h3" sx={{ mt: 1 }}>
         Cards:
       </Typography>
-
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
         {data.stakedAssets?.cards?.map((card) => {
           const { name, rarity } = determineCardInfo(
             card.card_detail_id,
             cardDetails,
           );
+
+          if (name === "Runi") return null;
+
           const max_bcx = determineCardMaxBCX(
             card.card_detail_id,
             card.edition,
@@ -59,10 +63,26 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
               max_bcx={max_bcx}
               base_pp={Number(card.base_pp_after_cap)}
               boosted_pp={Number(card.total_harvest_pp)}
+              uid={card.uid}
             />
           );
         })}
       </Box>
+
+      <Typography variant="h6" component="h3" sx={{ mt: 1 }}>
+        Production:
+      </Typography>
+      <ProductionCard
+        worksiteType={data.worksiteDetail?.worksite_type ?? "Undeveloped"}
+        basePP={data.stakingDetail?.total_base_pp_after_cap ?? 0}
+        boostedPP={data.stakingDetail?.total_harvest_pp ?? 0}
+        rawPerHour={data.worksiteDetail?.rewards_per_hour ?? 0}
+        resource={data.worksiteDetail?.token_symbol ?? ""}
+        includeTax={true}
+        hoursSinceLastOperation={data.worksiteDetail?.hours_since_last_op ?? 0}
+        projectCreatedDate={data.worksiteDetail?.project_created_date ?? null}
+        projectedEndDate={data.worksiteDetail?.projected_end ?? null}
+      />
     </Box>
   );
 }
