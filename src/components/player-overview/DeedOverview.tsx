@@ -106,7 +106,12 @@ export default function DeedOverview({ player }: Props) {
               {warning}
             </Alert>
           )}
-          <DeedCount deedCount={data?.length ?? 0} />
+          {data && data.length > 0 ? (
+            <DeedCount deedCount={data?.length ?? 0} />
+          ) : (
+            <></>
+          )}
+
           <Box
             sx={{
               display: "flex",
