@@ -1,9 +1,9 @@
 import { Prisma } from "@/generated/prisma";
 import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
+import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 import { GRAIN_CONVERSION_RATIOS } from "../utils/statics";
-import { logger } from "@/lib/backend/log/logger";
 
 export async function computeAndStoreResourceHubMetrics(today: Date) {
   logger.info(`⌛ --- Start computeAndStoreResourceHubMetrics...`);

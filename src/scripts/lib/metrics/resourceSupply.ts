@@ -1,5 +1,5 @@
 import { fetchResourceSupply } from "@/lib/backend/api/spl/spl-land-api";
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 
 const LEADERBOARD_RESOURCES = [

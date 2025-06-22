@@ -1,4 +1,4 @@
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 
 export async function computeAndStoreDailyActiveMetrics(today: Date) {

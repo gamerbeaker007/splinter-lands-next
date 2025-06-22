@@ -1,13 +1,10 @@
 import { Prisma } from "@/generated/prisma";
 import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
-import {
-  calcCosts,
-  getPrice,
-  prepareSummary,
-} from "@/scripts/lib/utils/productionCosts";
+import { calcCosts } from "@/lib/shared/costCalc";
+import { getPrice, prepareSummary } from "@/scripts/lib/utils/productionCosts";
 import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
 
 type PlayerProductionSummaryInput = Prisma.PlayerProductionSummaryCreateInput;

@@ -1,7 +1,7 @@
-import { logger } from "@/lib/backend/log/logger";
 import { SplCardDetails } from "@/types/splCardDetails";
 import axios from "axios";
 import * as rax from "retry-axios";
+import logger from "../../log/logger.server";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",

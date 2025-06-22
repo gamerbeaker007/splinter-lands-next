@@ -118,13 +118,7 @@ export default function CardTile({
             </Tooltip>
           )}
         </Box>
-        <Box
-          p={1}
-          display="flex"
-          flexDirection="column"
-          alignItems="start"
-          gap={0.5}
-        >
+        <Box display="flex" flexDirection="column" alignItems="center" mt={0.5}>
           <Box display="flex" alignItems="center" gap={0.5}>
             <Image
               src={land_hammer_icon_url}

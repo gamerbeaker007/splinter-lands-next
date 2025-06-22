@@ -3,8 +3,8 @@ import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box } from "@mui/system";
 import { Typography } from "@mui/material";
+import { Box } from "@mui/system";
 import DeedTypeCard from "./DeedTypeCard";
 import BoostsOverviewTile from "./boosts/BoostsOverviewTile";
 import { ProductionCard } from "./production/ProductionCard";
@@ -32,7 +32,7 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
         plotId={data.plot_id!}
       />
       <BoostsOverviewTile data={data} cardDetails={cardDetails} />
-      <Typography variant="h6" component="h3" sx={{ mt: 1 }}>
+      <Typography variant="h6" component="h3" sx={{ mt: -2 }}>
         Cards:
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>

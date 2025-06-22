@@ -1,14 +1,14 @@
-import { computeAndStoreResourceHubMetrics } from "@/scripts/lib/metrics/resourceHub";
-import { computeAndStoreDailyActiveMetrics } from "@/scripts/lib/metrics/active";
-import { fetchAndProcessRegionData } from "@/scripts/lib/region/region";
-import { computeAndStoreTotalSupply } from "@/scripts/lib/metrics/resourceSupply";
-import { computeAndStoreResourceProduction } from "@/scripts/lib/metrics/resourceProduction";
-import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
-import { computeAndStorePlayerProduction } from "@/scripts/lib/metrics/resourcePlayerProduction";
-import { prisma } from "@/lib/prisma";
-import dotenv from "dotenv";
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
+import { prisma } from "@/lib/prisma";
+import { computeAndStoreDailyActiveMetrics } from "@/scripts/lib/metrics/active";
+import { computeAndStoreResourceHubMetrics } from "@/scripts/lib/metrics/resourceHub";
+import { computeAndStorePlayerProduction } from "@/scripts/lib/metrics/resourcePlayerProduction";
+import { computeAndStoreResourceProduction } from "@/scripts/lib/metrics/resourceProduction";
+import { computeAndStoreTotalSupply } from "@/scripts/lib/metrics/resourceSupply";
+import { fetchAndProcessRegionData } from "@/scripts/lib/region/region";
+import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
+import dotenv from "dotenv";
 
 dotenv.config();
 

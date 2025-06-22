@@ -1,31 +1,31 @@
-import React from "react";
-import { Box, Typography, Tooltip, Stack } from "@mui/material";
+import { formatLargeNumber } from "@/lib/formatters";
+import { getProgressInfo } from "@/lib/frontend/ProductionUtils";
+import { calcCosts } from "@/lib/shared/costCalc";
 import {
-  land_grain_farm_icon_url,
-  land_logging_camp_icon_url,
-  land_ore_mine_icon_url,
-  land_quarry_icon_url,
-  land_research_hut_icon_url,
-  land_aura_lab_icon_url,
-  land_shard_mine_icon_url,
-  land_keep_icon_url,
-  land_castle_icon_url,
-  land_under_construction_icon_url,
-  land_hammer_icon_url,
   aura_icon_url,
   dec_icon_url,
   grain_icon_url,
   iron_icon_url,
+  land_aura_lab_icon_url,
+  land_castle_icon_url,
+  land_grain_farm_icon_url,
+  land_hammer_icon_url,
+  land_keep_icon_url,
+  land_logging_camp_icon_url,
+  land_ore_mine_icon_url,
+  land_quarry_icon_url,
+  land_research_hut_icon_url,
+  land_shard_mine_icon_url,
+  land_under_construction_icon_url,
   research_icon_url,
   sps_icon_url,
   stone_icon_url,
   tax_icon_url,
   wood_icon_url,
 } from "@/scripts/statics_icon_urls";
-import { getProgressInfo } from "@/lib/frontend/ProductionUtils";
-import { calcCostsFE } from "@/lib/frontend/costCalc";
+import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
-import { formatLargeNumber } from "@/lib/formatters";
+import React from "react";
 
 type ProductionCardProps = {
   worksiteType: string;
@@ -91,12 +91,36 @@ const ProgressBar = ({
     <Box mt={1} width="100%" position="relative">
       <Box
         sx={{
-          width: `${percentage}%`,
-          height: 10,
-          backgroundColor: color,
+          width: "100%",
+          height: 15,
+          backgroundColor: "grey.300",
+          borderRadius: 1,
+          overflow: "hidden", // ensures inner bar doesn't overflow corners
         }}
-      />
-      <Typography variant="caption" position="absolute" top={0} left={4}>
+      >
+        <Box
+          sx={{
+            width: `${percentage}%`,
+            height: "100%",
+            backgroundColor: color,
+            transition: "width 0.3s ease",
+          }}
+        />
+      </Box>
+
+      <Typography
+        variant="caption"
+        position="absolute"
+        top="50%"
+        left="50%"
+        sx={{
+          transform: "translate(-50%, -50%)",
+          lineHeight: 1,
+          color: "black",
+          fontWeight: 500,
+          pointerEvents: "none",
+        }}
+      >
         {label}
       </Typography>
     </Box>
@@ -115,7 +139,7 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
   projectedEndDate,
 }) => {
   const [extraText, taxedPerHour] = calculateTaxes(includeTax, rawPerHour);
-  const cost = calcCostsFE(resource, basePP);
+  const cost = calcCosts(resource, basePP);
 
   const info = getProgressInfo(
     hoursSinceLastOperation,
@@ -131,17 +155,20 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
   return (
     <Box mt={1} mb={2}>
       <Stack direction="row" spacing={2}>
-        <Box>
+        <Box justifyItems={"center"}>
           <Box
             sx={{
-              width: 200,
+              width: 100,
               height: 100,
+              borderRadius: "10px",
+              border: "2px solid #ccc",
               backgroundImage: `url(${worksiteImage})`,
-              backgroundSize: "cover",
+              backgroundSize: "90%",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center center",
               mb: 1,
             }}
           />
-
           <Box display="flex" alignItems="center" gap={0.5}>
             <Image
               src={land_hammer_icon_url}
@@ -167,44 +194,68 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
         </Box>
 
         <Box flex={1}>
-          <Typography fontWeight="bold">Worksite:</Typography>
-          <Typography>{worksiteType}</Typography>
-
-          <Typography fontWeight="bold" mt={1}>
-            Production:
+          <Typography fontSize="12pt" fontWeight="bold" mb={0.2}>
+            Worksite: {worksiteType}
           </Typography>
-          <Typography>
-            <Image src={prodIcon} alt={resource} width={20} height={20} />{" "}
-            {taxedPerHour.toFixed(1)}/h {extraText}
-          </Typography>
-
-          <Typography fontWeight="bold" mt={1}>
-            Cost:
-          </Typography>
-          {Object.entries(cost)
-            .filter(([, value]) => value > 0)
-            .map(([key, value]) => {
-              const symbol = key.split("_").pop()?.toUpperCase() || "";
-              const icon = resourceIconMap[symbol];
-              return (
-                <Typography key={key}>
-                  {icon && (
-                    <Image src={icon} alt={symbol} width={20} height={20} />
-                  )}{" "}
-                  {value.toFixed(1)}/h
-                </Typography>
-              );
-            })}
+          <Box display={"flex"} gap={4}>
+            <Box>
+              <Typography fontSize="0.8rem" fontWeight="bold">
+                Cost:
+              </Typography>
+              {Object.entries(cost)
+                .filter(([, value]) => value > 0)
+                .map(([key, value]) => {
+                  const symbol = key.split("_").pop()?.toUpperCase() || "";
+                  const icon = resourceIconMap[symbol];
+                  return (
+                    <Typography key={key} fontSize="0.625rem">
+                      <Box
+                        component="span"
+                        display="inline-flex"
+                        alignItems="center"
+                        gap={0.5}
+                      >
+                        {icon && (
+                          <Image
+                            src={icon}
+                            alt={symbol}
+                            width={20}
+                            height={20}
+                          />
+                        )}
+                        {value.toFixed(1)}/h
+                      </Box>
+                    </Typography>
+                  );
+                })}
+            </Box>
+            <Box>
+              <Typography fontSize="0.8rem" fontWeight="bold">
+                Production:
+              </Typography>
+              <Typography fontSize="0.625rem">
+                <Box
+                  component="span"
+                  display="inline-flex"
+                  alignItems="center"
+                  gap={0.5}
+                >
+                  <Image src={prodIcon} alt={resource} width={20} height={20} />{" "}
+                  {taxedPerHour.toFixed(1)}/h {extraText}
+                </Box>
+              </Typography>
+            </Box>
+          </Box>
         </Box>
       </Stack>
 
-      <Box mt={2}>
-        <Typography fontWeight="bold" display="inline">
+      <Box>
+        <Typography fontSize="0.625rem" fontWeight="bold" display="inline">
           Progress:
         </Typography>
         {info.progressTooltip && (
           <Tooltip title={info.progressTooltip}>
-            <Typography component="span" ml={1}>
+            <Typography component="span" fontSize="0.625rem" ml={1}>
               ℹ️
             </Typography>
           </Tooltip>

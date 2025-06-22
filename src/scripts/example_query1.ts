@@ -1,5 +1,5 @@
 import { Prisma } from "@/generated/prisma";
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";
 

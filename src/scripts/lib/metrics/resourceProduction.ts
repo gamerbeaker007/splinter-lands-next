@@ -1,7 +1,7 @@
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";
-import { calcCosts } from "@/scripts/lib/utils/productionCosts";
+import { calcCosts } from "@/lib/shared/costCalc";
 import {
   MULTIPLE_CONSUMING_RESOURCES,
   NATURAL_RESOURCES,

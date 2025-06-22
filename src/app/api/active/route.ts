@@ -1,7 +1,7 @@
 import { getAllActiveData } from "@/lib/backend/api/internal/active-data";
-import { NextResponse } from "next/server";
-import { toActiveDtoList } from "@/lib/backend/mappers/active-mapper";
 import { logError } from "@/lib/backend/log/logUtils";
+import { toActiveDtoList } from "@/lib/backend/mappers/active-mapper";
+import { NextResponse } from "next/server";
 
 export async function GET() {
   try {

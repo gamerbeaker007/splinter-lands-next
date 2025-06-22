@@ -1,9 +1,9 @@
-import { logger } from "@/lib/backend/log/logger";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
 import axios from "axios";
 import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
+import logger from "../../log/logger.server";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",

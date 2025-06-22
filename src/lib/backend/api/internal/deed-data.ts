@@ -1,7 +1,7 @@
 import { getLastUpdate } from "@/lib/backend/cache/utils";
-import { logger } from "@/lib/backend/log/logger";
 import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
+import logger from "../../log/logger.server";
 
 let cachedDeedData: DeedComplete[] | null = null;
 let cachedDeedTimestamp: Date | null = null;

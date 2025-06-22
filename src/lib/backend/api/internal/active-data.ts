@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/prisma";
 import { Active } from "@/generated/prisma";
 import { getLastUpdate } from "@/lib/backend/cache/utils";
-import { logger } from "@/lib/backend/log/logger";
+import { prisma } from "@/lib/prisma";
+import logger from "../../log/logger.server";
 
 let cachedActiveData: Active[] | null = null;
 let cachedTimestamp: Date | null = null;

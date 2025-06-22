@@ -1,13 +1,9 @@
-"use client";
-
 import {
   CONSUME_RATES,
   CONSUMES_ONLY_GRAIN,
   MULTIPLE_CONSUMING_RESOURCES,
   NATURAL_RESOURCES,
 } from "@/scripts/lib/utils/statics";
-
-//## NOTE WARING TODO THIS A DUPLCIATE CODE with productionCosts.ts
 
 type CostResult = {
   cost_per_h_grain: number;
@@ -16,7 +12,7 @@ type CostResult = {
   cost_per_h_iron: number;
 };
 
-export function calcCostsFE(
+export function calcCosts(
   token_symbol: string,
   total_base_pp_after_cap: number,
 ): CostResult {
