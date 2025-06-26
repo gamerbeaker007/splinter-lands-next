@@ -4,6 +4,7 @@ import FilterDrawer from "@/components/filter/FilterDrawer";
 import NavTabs from "@/components/nav-tabs/NavTabs";
 import DeedOverview from "@/components/player-overview/DeedOverview";
 import PlayerInput from "@/components/player-overview/PlayerInput";
+import PlayerRegionOverview from "@/components/player-overview/region-overview/PlayerRegionOverview";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Box, Container } from "@mui/material";
@@ -19,8 +20,10 @@ export default function PlayerPage() {
   }, [setTitle]);
 
   const pages = [
-    { label: "Region Overview", component: <div>TODO</div> },
-    { label: "Resource Overview", component: <div>TODO</div> },
+    {
+      label: "Region Overview",
+      component: <PlayerRegionOverview player={selectedPlayer} />,
+    },
     {
       label: "Deed",
       component: <DeedOverview player={selectedPlayer} />,

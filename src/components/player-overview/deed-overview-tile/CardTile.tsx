@@ -57,6 +57,7 @@ export default function CardTile({
               src={img}
               alt={name}
               fill
+              sizes="150px"
               style={{
                 objectFit: "cover",
                 objectPosition: "top center",
