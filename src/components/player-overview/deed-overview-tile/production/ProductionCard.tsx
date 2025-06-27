@@ -141,12 +141,20 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
   const [extraText, taxedPerHour] = calculateTaxes(includeTax, rawPerHour);
   const cost = calcCosts(resource, basePP);
 
-  const info = getProgressInfo(
-    hoursSinceLastOperation,
-    projectCreatedDate,
-    projectedEndDate,
-    boostedPP,
-  );
+  const info =
+    resource != "TAX"
+      ? getProgressInfo(
+          hoursSinceLastOperation,
+          projectCreatedDate,
+          projectedEndDate,
+          boostedPP,
+        )
+      : {
+          percentageDone: 0,
+          infoStr: `N/A`,
+          progressTooltip:
+            "The status of Keeps and Castles remains a mystery for now.",
+        };
 
   const prodIcon = resourceIconMap[resource] ?? land_hammer_icon_url;
   const worksiteImage =
