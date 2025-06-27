@@ -64,7 +64,7 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             ))}
 
             {/* Total rewards per hour collect by all players */}
-            <Typography>Resource</Typography>
+            <Typography>Produce /hr</Typography>
             {data.resources.map((res, idx) => (
               <Typography key={idx} align="center">
                 {formatNumberWithSuffix(res.total_rewards_per_hour)}

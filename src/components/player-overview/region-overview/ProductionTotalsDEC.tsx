@@ -20,7 +20,6 @@ const ProductionTotalsDEC: React.FC<Props> = ({ data }) => {
     ? Object.entries(data)
         .filter(([key]) => key.startsWith("dec"))
         .reduce((sum, [, value]) => sum + (Number(value) || 0), 0)
-        .toLocaleString()
     : 0;
 
   return (
