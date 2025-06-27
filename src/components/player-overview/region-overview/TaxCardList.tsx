@@ -34,10 +34,28 @@ const TaxCardList: React.FC<Props> = ({ data }) => {
     };
   });
 
+  const sortedRegions = [...regionList].sort((a, b) => {
+    // Extract the number from region_uid (assumes format like "PR-PNW-9")
+    const getRegionEndNumber = (uid: string) => {
+      const parts = uid.split("-");
+      return parseInt(parts[parts.length - 1], 10);
+    };
+
+    const aRegionNum = getRegionEndNumber(a.region_uid);
+    const bRegionNum = getRegionEndNumber(b.region_uid);
+
+    if (aRegionNum !== bRegionNum) {
+      return aRegionNum - bRegionNum;
+    }
+
+    // Secondary sort: tract_number
+    return a.tract_number - b.tract_number;
+  });
+
   return (
     <>
       <Box display="flex" flexWrap="wrap" gap={2} justifyContent="flex-start">
-        {regionList.map((region, idx) => (
+        {sortedRegions.map((region, idx) => (
           <TaxCard key={idx} data={region} />
         ))}
       </Box>
