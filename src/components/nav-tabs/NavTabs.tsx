@@ -1,16 +1,16 @@
 "use client";
 
+import { Page } from "@/types/Page";
 import {
   Box,
-  Tabs,
-  Select,
   MenuItem,
+  Select,
+  SelectChangeEvent,
+  Tabs,
   useMediaQuery,
   useTheme,
-  SelectChangeEvent,
 } from "@mui/material";
 import GlowingTab from "../ui/GlowingTab";
-import { Page } from "@/types/Page";
 
 type NavTabsProps = {
   pages: Page[];
@@ -37,13 +37,14 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", px: 1, pt: 1 }}>
+    <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
       {isMobile ? (
         <Select
           value={pages[value].label}
           onChange={handleSelectChange}
           fullWidth
           size="small"
+          sx={{ pr: "10px" }}
         >
           {pages.map((page) => (
             <MenuItem key={page.label} value={page.label}>

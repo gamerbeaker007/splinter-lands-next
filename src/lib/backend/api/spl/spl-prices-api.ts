@@ -1,7 +1,7 @@
-import { logger } from "@/lib/backend/log/logger";
 import { PRICE_KEYS, SplPriceData } from "@/types/price";
 import axios from "axios";
 import * as rax from "retry-axios";
+import logger from "../../log/logger.server";
 
 const splPricesClient = axios.create({
   baseURL: "https://prices.splinterlands.com/",

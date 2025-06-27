@@ -3,7 +3,7 @@ import { Box } from "@mui/material";
 import type { Meta, StoryObj } from "@storybook/nextjs";
 
 const meta: Meta<typeof CardTile> = {
-  title: "Components/DeedOverview/Card",
+  title: "Components/PlayerOverview/DeeoOverview/Card",
   component: CardTile,
 };
 
@@ -35,6 +35,7 @@ export const Default: Story = {
           base_pp={100000}
           boosted_pp={100000}
           terrain_boost={-10.1}
+          uid=""
         />
         <CardTile
           name={"Fenmoor Wood Troll"}
@@ -46,6 +47,7 @@ export const Default: Story = {
           base_pp={100000}
           boosted_pp={100000}
           terrain_boost={0.1}
+          uid=""
         />
       </Box>
     );

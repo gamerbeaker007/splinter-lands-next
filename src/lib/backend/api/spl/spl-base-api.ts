@@ -1,7 +1,8 @@
-import { logger } from "@/lib/backend/log/logger";
 import { SplCardDetails } from "@/types/splCardDetails";
 import axios from "axios";
 import * as rax from "retry-axios";
+import logger from "../../log/logger.server";
+import { SplPlayerDetails } from "@/types/splPlayerDetails";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -36,4 +37,21 @@ export async function fetchCardDetails() {
   if (!data) throw new Error("Invalid response from Splinterlands API");
 
   return Array.isArray(data) ? (data as SplCardDetails[]) : [];
+}
+
+export async function fetchPlayerDetails(player: string) {
+  const url = "/players/details";
+  logger.info(`Fetch player detail for: ${player}`);
+  const res = await splBaseClient.get(url, {
+    params: { name: player },
+  });
+
+  const data = res.data;
+
+  // Handle API-level error even if HTTP status is 200
+  if (!data || typeof data !== "object" || "error" in data) {
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+
+  return data as SplPlayerDetails;
 }

@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import logger from "./logger.server";
 
 export function logError(context: string, error: unknown) {
   logger.error(context, {

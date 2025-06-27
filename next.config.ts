@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "files.peakd.com",
       },
+      {
+        protocol: "https",
+        hostname: "runi.splinterlands.com",
+      },
     ],
   },
 };

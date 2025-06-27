@@ -1,14 +1,10 @@
 import { Prisma } from "@/generated/prisma";
-import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
-import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
-import { logger } from "@/lib/backend/log/logger";
+import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
-import {
-  calcCosts,
-  getPrice,
-  prepareSummary,
-} from "@/scripts/lib/utils/productionCosts";
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { calcCosts } from "@/lib/shared/costCalc";
+import { prepareSummary } from "@/lib/backend/helpers/productionCosts";
+import { computeNetValues } from "@/lib/backend/helpers/computeNetValues";
+import { getResourceDECPrices } from "@/lib/backend/helpers/resourcePrices";
 
 type PlayerProductionSummaryInput = Prisma.PlayerProductionSummaryCreateInput;
 
@@ -24,9 +20,6 @@ type regionPlayerTokenResult = {
 
 export async function computeAndStorePlayerProduction(today: Date) {
   logger.info(`⌛ --- Start computeAndStorePlayerProduction...`);
-
-  const prices = await getPrices();
-  const metrics = await getLandResourcesPools();
 
   const rawResults = await prisma.$queryRaw<regionPlayerTokenResult[]>`
   SELECT
@@ -53,11 +46,7 @@ export async function computeAndStorePlayerProduction(today: Date) {
     };
   });
 
-  const unitPrices: Record<string, number> = {};
-
-  for (const key of PRODUCING_RESOURCES) {
-    unitPrices[key.toLowerCase()] = await getPrice(metrics, prices, key, 1);
-  }
+  const unitPrices = await getResourceDECPrices();
 
   const playerMap: Record<string, typeof resultsWithCosts> = {};
 
@@ -75,22 +64,7 @@ export async function computeAndStorePlayerProduction(today: Date) {
     const playerRows = playerMap[player];
     const summary = prepareSummary(playerRows, true, true); // includeTaxes, includeFee
 
-    // === DEC calculations from summary ===
-    const dec_net: Record<string, number> = {};
-    let total_dec = 0;
-
-    for (const key of PRODUCING_RESOURCES) {
-      const k = key.toLowerCase();
-      const adjNetKey = `adj_net_${k}`;
-
-      const amount = summary.reduce(
-        (acc, row) => acc + ((row[adjNetKey] as number) || 0),
-        0,
-      );
-      const decValue = unitPrices[k] * amount;
-      dec_net[`dec_${k}`] = decValue;
-      total_dec += decValue;
-    }
+    const { dec_net, total_dec } = computeNetValues(summary, unitPrices);
 
     // === Aggregate sums from raw playerRows ===
     const harvest_sum = playerRows.reduce(

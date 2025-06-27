@@ -10,7 +10,7 @@ export type Item = {
   stake_start_date: string;
   stake_type_uid: string;
   stake_ref_uid: string;
-  stake_ref_id: null;
+  stake_ref_id: string;
   name: string;
   boost: number;
 };

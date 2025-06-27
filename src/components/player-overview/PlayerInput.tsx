@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { TextField, IconButton, InputAdornment } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import { IconButton, InputAdornment, TextField } from "@mui/material";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
 type Props = {
   onPlayerChange: (player: string) => void;
@@ -21,9 +21,8 @@ export default function PlayerInput({ onPlayerChange }: Props) {
   }, [searchParams, onPlayerChange]);
 
   const handleLoad = () => {
-    if (!input) return;
     onPlayerChange(input);
-    router.push(`?player=${input}`);
+    router.push(input ? `?player=${input}` : "?");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

@@ -5,14 +5,9 @@ import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { SplCardDetails } from "@/types/splCardDetails";
-import {
-  Alert,
-  Box,
-  Container,
-  LinearProgress,
-  Typography,
-} from "@mui/material";
+import { Alert, Box, LinearProgress, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
+import DeedCount from "./deed-overview-tile/deed-count/DeedCount";
 
 const DEED_LIMIT = 200;
 
@@ -44,6 +39,11 @@ export default function DeedOverview({ player }: Props) {
 
   useEffect(() => {
     if (!filters) return;
+    if (!player || player == "") {
+      setData(null);
+      setLoadingText(null);
+      return;
+    }
 
     const run = async () => {
       try {
@@ -87,7 +87,7 @@ export default function DeedOverview({ player }: Props) {
   }, [filters, player]);
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+    <>
       {loadingText ? (
         <Box sx={{ mt: 2 }}>
           <Typography variant="body1">{loadingText}</Typography>
@@ -106,12 +106,18 @@ export default function DeedOverview({ player }: Props) {
               {warning}
             </Alert>
           )}
+          {data && data.length > 0 ? (
+            <DeedCount deedCount={data?.length ?? 0} />
+          ) : (
+            <></>
+          )}
+
           <Box
             sx={{
               display: "flex",
               flexWrap: "wrap",
-              gap: 2, // space between tiles
-              justifyContent: "center",
+              gap: 1, // space between tiles
+              // justifyContent: "center",
             }}
           >
             {cardDetails && data && data.length > 0 ? (
@@ -122,6 +128,7 @@ export default function DeedOverview({ player }: Props) {
                     border: "1px solid #ccc",
                     borderRadius: 2,
                     padding: 1,
+                    minWidth: 250,
                   }}
                 >
                   <DeedOverviewTile data={deed} cardDetails={cardDetails} />
@@ -133,7 +140,7 @@ export default function DeedOverview({ player }: Props) {
           </Box>
         </>
       )}
-    </Container>
+    </>
   );
 }
 

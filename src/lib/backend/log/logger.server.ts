@@ -1,9 +1,9 @@
-import { createLogger, transports, format } from "winston";
 import path from "path";
+import { createLogger, format, transports } from "winston";
 
 const isDev = process.env.NODE_ENV !== "production";
 
-export const logger = createLogger({
+const logger = createLogger({
   level: "info",
   format: format.combine(
     format.timestamp(),
@@ -14,7 +14,7 @@ export const logger = createLogger({
   transports: [
     new transports.File({
       filename: path.resolve("logs/app.log"),
-      maxsize: 5 * 1024 * 1024, // 5MB
+      maxsize: 5 * 1024 * 1024,
       maxFiles: 3,
     }),
     ...(isDev
@@ -32,3 +32,5 @@ export const logger = createLogger({
       : []),
   ],
 });
+
+export default logger;
