@@ -3,10 +3,10 @@ import { Button } from "@mui/material";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 
 export default function ResetFiltersButton() {
-  const { setFilters } = useFilters();
+  const { resetFilters } = useFilters();
 
   const handleClear = () => {
-    setFilters({}); // Reset all filters to empty object
+    resetFilters();
   };
 
   return (

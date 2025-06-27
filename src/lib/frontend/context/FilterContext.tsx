@@ -6,6 +6,7 @@ import { FilterInput } from "@/types/filters";
 type FilterContextType = {
   filters: FilterInput;
   setFilters: React.Dispatch<React.SetStateAction<FilterInput>>;
+  resetFilters: () => void;
 };
 
 const FilterContext = createContext<FilterContextType | undefined>(undefined);
@@ -13,8 +14,10 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined);
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [filters, setFilters] = useState<FilterInput>({});
 
+  const resetFilters = () => setFilters({});
+
   return (
-    <FilterContext.Provider value={{ filters, setFilters }}>
+    <FilterContext.Provider value={{ filters, setFilters, resetFilters }}>
       {children}
     </FilterContext.Provider>
   );

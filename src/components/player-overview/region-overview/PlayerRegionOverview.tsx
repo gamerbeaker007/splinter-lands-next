@@ -50,7 +50,6 @@ export default function PlayerRegionOverview({ player }: Props) {
     run();
   }, [filters, player]);
 
-  console.log(`TAX_DATA: ${taxData}`);
   return (
     <>
       {loadingText ? (
