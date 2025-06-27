@@ -5,6 +5,8 @@ import {
   fetchRegionDataPlayer,
 } from "../api/spl/spl-land-api";
 import { StakedAssets } from "@/types/stakedAssets";
+import { fetchPlayerDetails } from "../api/spl/spl-base-api";
+import { SplPlayerDetails } from "@/types/splPlayerDetails";
 
 export async function getCachedPlayerData(
   player: string,
@@ -39,4 +41,25 @@ export async function getCachedStakedAssets(
 
   cache.set(key, result);
   return result;
+}
+
+export async function getCachedPlayerDetails(
+  player: string,
+  force = false,
+): Promise<SplPlayerDetails> {
+  const key = `player-details:${player}`;
+  if (!force) {
+    const cached = cache.get<SplPlayerDetails>(key);
+    if (cached) return cached;
+  }
+
+  try {
+    const res = await fetchPlayerDetails(player);
+    cache.set(key, res);
+    return res;
+  } catch (err) {
+    throw new Error(
+      `Failed to fetch player details: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
 }
