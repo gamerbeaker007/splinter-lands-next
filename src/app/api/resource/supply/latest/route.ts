@@ -2,7 +2,10 @@ import { getLatestResourceSupplyEntries } from "@/lib/backend/api/internal/resou
 import { getLatestResourceTrackingEntries } from "@/lib/backend/api/internal/resource-tracking-data";
 import { getLatestTradeHubEntries } from "@/lib/backend/api/internal/trade-hub-data";
 import { logError } from "@/lib/backend/log/logUtils";
-import { DEFAULT_ORDER_RESOURCES } from "@/scripts/lib/utils/statics";
+import {
+  DEFAULT_ORDER_RESOURCES,
+  PRODUCING_RESOURCES,
+} from "@/scripts/lib/utils/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { NextResponse } from "next/server";
 
@@ -32,8 +35,8 @@ export async function GET() {
         iron: (rt.cost_per_h_iron ?? 0) * 24,
       };
 
-      // Set overview for known resources
-      if (supplyMap.has(token)) {
+      // Set overview for all producing resources (will exclude TAX)
+      if (PRODUCING_RESOURCES.includes(token)) {
         resourceMap[token] = {
           supply: supplyMap.get(token) || 0,
           trade_hub_supply: tradeHubSupplyMap.get(token) || 0,

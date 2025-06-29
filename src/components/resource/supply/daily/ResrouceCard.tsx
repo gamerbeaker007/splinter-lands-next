@@ -36,6 +36,19 @@ export function ResourceCard({ resourceName, row }: Props) {
     IRON: consumes?.iron ?? 0,
   };
 
+  const totalSupplyText =
+    supply === 0
+      ? "N/A"
+      : formatNumberWithSuffix(Number(supply) + Number(trade_hub_supply));
+
+  const supplyText =
+    supply === 0 ? "N/A" : formatNumberWithSuffix(Number(supply));
+
+  const hubSupplyText =
+    trade_hub_supply === 0
+      ? "N/A"
+      : formatNumberWithSuffix(Number(trade_hub_supply));
+
   return (
     <Card variant="outlined" sx={{ minWidth: 250 }}>
       <CardContent>
@@ -61,14 +74,11 @@ export function ResourceCard({ resourceName, row }: Props) {
                 color: "success.main",
               }}
             >
-              {formatNumberWithSuffix(
-                Number(supply) + Number(trade_hub_supply),
-              )}
+              {totalSupplyText}
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            (supply: {formatNumberWithSuffix(supply)}, hub:{" "}
-            {formatNumberWithSuffix(Number(trade_hub_supply))})
+            (supply: {supplyText}, hub: {hubSupplyText})
           </Typography>
         </Box>
 
