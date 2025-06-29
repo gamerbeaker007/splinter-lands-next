@@ -50,3 +50,15 @@ export const resourceIconMapping: Record<string, string> = {
   tax: resource_tax_icon_url,
   sps: resource_sps_icon_url,
 };
+
+export const RESOURCE_COLOR_MAP: Record<string, string> = {
+  GRAIN: "orange",
+  IRON: "olive",
+  RESEARCH: "lightblue",
+  SPS: "yellow",
+  STONE: "gray",
+  WOOD: "saddlebrown",
+  AURA: "mediumorchid",
+  "TAX CASTLE": "purple",
+  "TAX KEEP": "lightsalmon",
+};
