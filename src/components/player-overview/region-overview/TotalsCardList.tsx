@@ -13,7 +13,7 @@ const TotalsCardList: React.FC<Props> = ({ data }) => {
     totals: true,
     resources: PRODUCING_RESOURCES.map((res) => ({
       name: String(res),
-      count: Number(data[`res_count`]) || 0,
+      count: Number(data[`${res.toLowerCase()}_count`]) || 0,
       produce: Number(data[`${res.toLowerCase()}`]) || 0,
       net: Number(data[`dec_${res.toLowerCase()}`]) || 0,
     })),

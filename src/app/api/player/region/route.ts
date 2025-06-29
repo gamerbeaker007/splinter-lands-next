@@ -23,8 +23,9 @@ export async function POST(req: Request) {
       const tokenSymbol = deed.worksiteDetail?.token_symbol ?? "";
       const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
       const boostedPP = deed.stakingDetail?.total_harvest_pp ?? 0;
-      totalResourceCounts[`${tokenSymbol.toLowerCase()}_count`] =
-        (totalResourceCounts[tokenSymbol.toLowerCase()] ?? 0) + 1;
+      const countColumn = `${tokenSymbol.toLowerCase()}_count`;
+      totalResourceCounts[countColumn] =
+        (totalResourceCounts[countColumn] ?? 0) + 1;
 
       const costs = calcCosts(tokenSymbol, basePP);
 
