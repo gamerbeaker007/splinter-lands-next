@@ -1,12 +1,16 @@
 "use client";
 import NavTabs from "@/components/nav-tabs/NavTabs";
 import { ConversionPage } from "@/components/resource/conversion/ConversionPage";
+import { SupplyPage } from "@/components/resource/supply/SupplyPage";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Page } from "@/types/Page";
 import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 
-const pages: Page[] = [{ label: "Conversion", component: <ConversionPage /> }];
+const pages: Page[] = [
+  { label: "Conversion", component: <ConversionPage /> },
+  { label: "Supply", component: <SupplyPage /> },
+];
 
 export default function ResourcePage() {
   const { setTitle } = usePageTitle();

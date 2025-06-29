@@ -62,3 +62,16 @@ export const RESOURCE_COLOR_MAP: Record<string, string> = {
   "TAX CASTLE": "purple",
   "TAX KEEP": "lightsalmon",
 };
+
+export const DEFAULT_ORDER_RESOURCES = [
+  "GRAIN",
+  "WOOD",
+  "STONE",
+  "IRON",
+  "RESEARCH",
+  "AURA",
+  "SPS",
+  "TAX",
+  "TAX CASTLE",
+  "TAX KEEP",
+];

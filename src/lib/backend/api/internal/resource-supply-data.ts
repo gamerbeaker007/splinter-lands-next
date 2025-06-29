@@ -1,16 +1,20 @@
-import { ResourceHubMetrics } from "@/generated/prisma";
+import { ResourceSupply } from "@/generated/prisma";
 import { getLastUpdate } from "@/lib/backend/cache/utils";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
 
-let cachedTradeHubData: ResourceHubMetrics[] | null = null;
+let cachedResourceSupplyData: ResourceSupply[] | null = null;
 let cachedTimestamp: Date | null = null;
 
-export async function getAllTradeHubData(): Promise<ResourceHubMetrics[]> {
+export async function getAllResourceSupplyData(): Promise<ResourceSupply[]> {
   const lastUpdate = await getLastUpdate();
-  if (!cachedTradeHubData || !cachedTimestamp || cachedTimestamp < lastUpdate) {
-    logger.info("Refreshing trade hub data cache...");
-    cachedTradeHubData = await prisma.resourceHubMetrics.findMany({
+  if (
+    !cachedResourceSupplyData ||
+    !cachedTimestamp ||
+    cachedTimestamp < lastUpdate
+  ) {
+    logger.info("Refreshing ResourceSupply data cache...");
+    cachedResourceSupplyData = await prisma.resourceSupply.findMany({
       orderBy: {
         date: "asc",
       },
@@ -18,13 +22,13 @@ export async function getAllTradeHubData(): Promise<ResourceHubMetrics[]> {
     cachedTimestamp = lastUpdate;
   }
 
-  return cachedTradeHubData;
+  return cachedResourceSupplyData;
 }
 
-export async function getLatestTradeHubEntries(): Promise<
-  ResourceHubMetrics[] | null
+export async function getLatestResourceSupplyEntries(): Promise<
+  ResourceSupply[] | null
 > {
-  const all = await getAllTradeHubData();
+  const all = await getAllResourceSupplyData();
 
   if (!all.length) return null;
 
