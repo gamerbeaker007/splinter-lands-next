@@ -27,7 +27,7 @@ export function ResourceFactorSection() {
   }, []);
 
   return (
-    <Box minHeight={700} mt={4}>
+    <Box minHeight={500} mt={4}>
       {/* Top section: Resource Factor */}
       <Box marginBottom={6}>
         <Typography variant="h5" gutterBottom>

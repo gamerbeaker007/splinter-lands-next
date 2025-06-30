@@ -67,6 +67,7 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
         borderRadius: 5,
         padding: 2,
         width: "100%",
+        minHeight: "500px",
       }}
     >
       <Plot

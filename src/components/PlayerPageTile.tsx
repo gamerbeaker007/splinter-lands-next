@@ -20,9 +20,28 @@ export default function PlayerPageTile() {
     );
   };
 
+  const temp_image =
+    "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
+
   return (
-    <Card elevation={4} sx={{ p: 2 }}>
-      <CardContent>
+    <Card elevation={4} sx={{ position: "relative", p: 2, minHeight: 200 }}>
+      {/* Background image layer */}
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `url(${temp_image})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          opacity: 0.5,
+          zIndex: 0,
+          borderRadius: 1,
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Foreground content */}
+      <Box sx={{ position: "relative", zIndex: 1 }}>
         <Typography variant="h5" fontWeight="bold" gutterBottom>
           Player Overview
         </Typography>
@@ -37,17 +56,15 @@ export default function PlayerPageTile() {
           sx={{ mb: 2 }}
         />
 
-        <Box>
-          <Button
-            fullWidth
-            variant="contained"
-            color="primary"
-            onClick={handleClick}
-          >
-            Go
-          </Button>
-        </Box>
-      </CardContent>
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          onClick={handleClick}
+        >
+          Go
+        </Button>
+      </Box>
     </Card>
   );
 }

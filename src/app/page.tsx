@@ -27,13 +27,6 @@ export default function Home() {
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
-          <DefaultPageTile
-            title="Region Production Overview"
-            href="/region-production-overview"
-            image={temp_image}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
           <PlayerPageTile />
         </Grid>
       </Grid>

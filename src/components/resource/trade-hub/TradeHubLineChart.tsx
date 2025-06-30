@@ -1,41 +1,58 @@
+import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
-import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, useTheme } from "@mui/material";
+import { ScatterData } from "plotly.js";
 import React from "react";
 import Plot from "react-plotly.js";
 
 interface Props {
-  data: ResourceSupplyOverview[];
+  data: ResourceHubMetrics[];
+  type: "dec_volume_1" | "dec_burned"; // updated types
 }
 
-const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
+const getChartTitle = (type: Props["type"]): string => {
+  switch (type) {
+    case "dec_volume_1":
+      return "24h DEC Volume";
+    case "dec_burned":
+      return "24h DEC Burned (5%)";
+    default:
+      return "Chart";
+  }
+};
+
+const TradeHubLineChart: React.FC<Props> = ({ data, type }) => {
   const theme = useTheme();
   const backgroundColor = theme.palette.background.default;
   const textColor = theme.palette.text.primary;
   const gridLineColor = theme.palette.divider;
+  const burnRate = 0.05;
 
   const resourceMap: Record<string, { x: string[]; y: number[] }> = {};
 
   data.forEach((entry) => {
-    const date = entry.date;
-    for (const [resource, values] of Object.entries(entry.resource)) {
-      if (!resourceMap[resource]) {
-        resourceMap[resource] = { x: [], y: [] };
-      }
-      const value = values["daily_production"] - values["daily_consume"];
-      resourceMap[resource].x.push(date);
-      resourceMap[resource].y.push(value);
+    const date = new Date(entry.date).toISOString().split("T")[0];
+    const resource = entry.token_symbol;
+    const raw = Number(entry.dec_volume_1);
+
+    if (!resourceMap[resource]) {
+      resourceMap[resource] = { x: [], y: [] };
     }
+
+    const yValue = type === "dec_burned" ? raw * burnRate : raw;
+
+    resourceMap[resource].x.push(date);
+    resourceMap[resource].y.push(yValue);
   });
 
-  const traces: Partial<Plotly.Data>[] = Object.entries(resourceMap).map(
+  const traces: Partial<ScatterData>[] = Object.entries(resourceMap).map(
     ([resource, val]) => ({
       x: val.x,
       y: val.y,
-      type: "bar",
+      type: "scatter",
+      mode: "lines+markers",
       name: resource,
-      marker: { color: RESOURCE_COLOR_MAP[resource] || "black" },
-      barmode: "group",
+      line: { color: RESOURCE_COLOR_MAP[resource] || "black" },
     }),
   );
 
@@ -53,9 +70,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
       <Plot
         data={traces}
         layout={{
-          title: {
-            text: "Net Daily Production (Produce - Consume)",
-          },
+          title: { text: getChartTitle(type) },
           plot_bgcolor: backgroundColor,
           paper_bgcolor: backgroundColor,
           font: { color: textColor },
@@ -66,14 +81,11 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
             },
             orientation: "v",
           },
-          xaxis: {
-            title: { text: "Date" },
-            showgrid: false,
-            // type: "category",
-          },
+          xaxis: { title: { text: "Date" }, showgrid: false },
           yaxis: {
-            title: { text: "Net Production" },
+            title: { text: "Amount" },
             gridcolor: gridLineColor,
+            type: "linear",
           },
           margin: { t: 50, b: 40 },
         }}
@@ -84,4 +96,4 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
   );
 };
 
-export default ProduceConsumeBarChart;
+export default TradeHubLineChart;

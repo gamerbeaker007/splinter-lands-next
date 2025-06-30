@@ -77,6 +77,7 @@ export const ResourcePriceChart: React.FC<Props> = ({
         borderRadius: 5,
         padding: 2,
         width: "100%",
+        minHeight: "500px",
       }}
     >
       <Plot

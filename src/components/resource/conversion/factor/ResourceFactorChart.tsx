@@ -64,6 +64,7 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
         borderRadius: 5,
         padding: 2,
         width: "100%",
+        minHeight: "500px",
       }}
     >
       {" "}
