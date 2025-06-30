@@ -27,13 +27,13 @@ export function ResourceFactorSection() {
   }, []);
 
   return (
-    <Box padding={4} minHeight={700}>
+    <Box minHeight={700} mt={4}>
       {/* Top section: Resource Factor */}
       <Box marginBottom={6}>
-        <Typography variant="h6" gutterBottom>
+        <Typography variant="h5" gutterBottom>
           Resource Factor Graph
         </Typography>
-        <Typography variant="body1" paragraph>
+        <Typography variant="body1">
           This chart shows the relative value of each resource compared to
           Grain, based on the official whitepaper.
         </Typography>
@@ -60,10 +60,10 @@ export function ResourceFactorSection() {
         gap={4}
       >
         <Box flex={1}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h5" gutterBottom>
             Resource per 1000 DEC
           </Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2">
             Shows how many resources you can acquire by spending 1000 DEC (~$1
             USD).
           </Typography>
@@ -73,10 +73,10 @@ export function ResourceFactorSection() {
         </Box>
 
         <Box flex={1}>
-          <Typography variant="h6" gutterBottom>
+          <Typography variant="h5" gutterBottom>
             Cost per 1000 Resources
           </Typography>
-          <Typography variant="body2" paragraph>
+          <Typography variant="body2">
             Shows the DEC cost to acquire 1000 units of each resource.
           </Typography>
           {tradeHubMetrics ? (

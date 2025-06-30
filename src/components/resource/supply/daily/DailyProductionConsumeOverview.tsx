@@ -22,19 +22,17 @@ export function DailyProduceConsumeOverview() {
   }, []);
 
   return (
-    <>
-      <Box display="flex" flexWrap="wrap" gap={2}>
-        {latestResourcesSupply?.resource &&
-          Object.entries(latestResourcesSupply.resource).map(
-            ([resourceName, row]) => (
-              <ResourceCard
-                key={resourceName}
-                resourceName={resourceName}
-                row={row}
-              />
-            ),
-          )}
-      </Box>
-    </>
+    <Box display="flex" flexWrap="wrap" gap={2}>
+      {latestResourcesSupply?.resource &&
+        Object.entries(latestResourcesSupply.resource).map(
+          ([resourceName, row]) => (
+            <ResourceCard
+              key={resourceName}
+              resourceName={resourceName}
+              row={row}
+            />
+          ),
+        )}
+    </Box>
   );
 }

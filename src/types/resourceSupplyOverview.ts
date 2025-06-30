@@ -1,5 +1,5 @@
 export type ResourceSupplyOverview = {
-  date: Date;
+  date: string;
   resource: {
     [key: string]: {
       supply: number;

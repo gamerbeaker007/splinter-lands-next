@@ -47,6 +47,7 @@ export function ResourceCalculator() {
       p={2}
       border="1px solid #ddd"
       borderRadius={4}
+      borderColor="secondary.main"
       display="flex"
       flexWrap="wrap"
       gap={2}

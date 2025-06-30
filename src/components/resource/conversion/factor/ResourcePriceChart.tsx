@@ -1,7 +1,7 @@
 "use client";
 import React from "react";
 import Plot from "react-plotly.js";
-import { useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
@@ -60,17 +60,32 @@ export const ResourcePriceChart: React.FC<Props> = ({
     font: { color: textColor },
     paper_bgcolor: backgroundColor,
     plot_bgcolor: backgroundColor,
-    legend: { orientation: "h", font: { color: textColor } },
+    legend: {
+      orientation: "h",
+      font: { color: textColor },
+      y: -0.35,
+      yanchor: "bottom",
+    },
     margin: { t: 50, l: 50, r: 20, b: 50 },
   };
 
   return (
-    <Plot
-      data={traces}
-      layout={layout}
-      useResizeHandler
-      style={{ width: "100%" }}
-      config={{ responsive: true }}
-    />
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "secondary.main",
+        borderRadius: 5,
+        padding: 2,
+        width: "100%",
+      }}
+    >
+      <Plot
+        data={traces}
+        layout={layout}
+        useResizeHandler
+        style={{ width: "100%" }}
+        config={{ responsive: true }}
+      />
+    </Box>
   );
 };

@@ -1,7 +1,7 @@
 "use client";
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
-import { useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import React from "react";
 import Plot from "react-plotly.js";
 import { Layout, ScatterData } from "plotly.js";
@@ -57,23 +57,34 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
   };
 
   return (
-    <Plot
-      data={[
-        ...traces,
-        {
-          type: "scatter",
-          x: [filteredData[0]?.date, filteredData.at(-1)?.date],
-          y: [1, 1],
-          mode: "lines",
-          line: { dash: "dash", color: "gray" },
-          name: "1.00 (Grain baseline)",
-          hoverinfo: "skip",
-        } as Partial<ScatterData>,
-      ]}
-      layout={layout}
-      useResizeHandler
-      style={{ width: "100%" }}
-      config={{ responsive: true }}
-    />
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "secondary.main",
+        borderRadius: 5,
+        padding: 2,
+        width: "100%",
+      }}
+    >
+      {" "}
+      <Plot
+        data={[
+          ...traces,
+          {
+            type: "scatter",
+            x: [filteredData[0]?.date, filteredData.at(-1)?.date],
+            y: [1, 1],
+            mode: "lines",
+            line: { dash: "dash", color: "gray" },
+            name: "1.00 (Grain baseline)",
+            hoverinfo: "skip",
+          } as Partial<ScatterData>,
+        ]}
+        layout={layout}
+        useResizeHandler
+        style={{ width: "100%" }}
+        config={{ responsive: true }}
+      />
+    </Box>
   );
 };
