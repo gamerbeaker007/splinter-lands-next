@@ -74,4 +74,5 @@ export const DEFAULT_ORDER_RESOURCES = [
   "TAX",
   "TAX CASTLE",
   "TAX KEEP",
+  "",
 ];

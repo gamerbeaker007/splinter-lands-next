@@ -23,15 +23,13 @@ export default function ResourcePage() {
   }, [setTitle]);
 
   return (
-    <>
-      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-        <NavTabs
-          pages={pages}
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-        />
-        <Box mt={4}>{pages[activeTab].component}</Box>
-      </Container>
-    </>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+      <NavTabs
+        pages={pages}
+        value={activeTab}
+        onChange={(_, newValue) => setActiveTab(newValue)}
+      />
+      <Box mt={4}>{pages[activeTab].component}</Box>
+    </Container>
   );
 }

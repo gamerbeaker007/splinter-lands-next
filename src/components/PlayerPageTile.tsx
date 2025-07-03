@@ -3,15 +3,18 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@mui/material/Card";
-import CardContent from "@mui/material/CardContent";
 import Typography from "@mui/material/Typography";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Box from "@mui/material/Box";
+import { alpha, useTheme } from "@mui/material";
 
 export default function PlayerPageTile() {
   const [player, setPlayer] = useState("");
   const router = useRouter();
+  const theme = useTheme();
+  const paperColor = theme.palette.background.paper;
+  console.log(`paperColor:  ${paperColor}`);
 
   const handleClick = () => {
     const trimmed = player.trim();
@@ -53,7 +56,11 @@ export default function PlayerPageTile() {
           value={player}
           onChange={(e) => setPlayer(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleClick()}
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+            backgroundColor: alpha(paperColor, 0.5),
+            borderRadius: 1,
+          }}
         />
 
         <Button

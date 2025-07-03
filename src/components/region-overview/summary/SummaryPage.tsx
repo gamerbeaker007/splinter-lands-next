@@ -17,7 +17,7 @@ export default function SummaryPage() {
   useEffect(() => {
     if (!filters) return;
 
-    fetch("/api/deed/summary", {
+    fetch("/api/region/summary", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

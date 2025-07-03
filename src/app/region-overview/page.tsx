@@ -1,7 +1,7 @@
 "use client";
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import NavTabs from "@/components/nav-tabs/NavTabs";
-import ActiveDeedsChart from "@/components/region-overview/active/ActiveDeedsChart";
+import { ActivityPage } from "@/components/region-overview/active/ActivePage";
 import SummaryPage from "@/components/region-overview/summary/SummaryPage";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
@@ -10,7 +10,7 @@ import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 
 const pages: Page[] = [
-  { label: "Activity", component: <ActiveDeedsChart /> },
+  { label: "Activity", component: <ActivityPage /> },
   { label: "Summary", component: <SummaryPage /> },
 ];
 
@@ -23,8 +23,8 @@ export default function RegionOverviewPage() {
   }, [setTitle]);
 
   return (
-    <FilterProvider>
-      <Container>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+      <FilterProvider>
         <FilterDrawer />
         <NavTabs
           pages={pages}
@@ -32,7 +32,7 @@ export default function RegionOverviewPage() {
           onChange={(_, newValue) => setActiveTab(newValue)}
         />
         <Box mt={4}>{pages[activeTab].component}</Box>
-      </Container>
-    </FilterProvider>
+      </FilterProvider>
+    </Container>
   );
 }

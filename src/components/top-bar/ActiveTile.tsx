@@ -1,15 +1,15 @@
 "use client";
 
-import { ActiveDto } from "@/types/active";
 import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
+import { Active } from "@/generated/prisma";
 
 const MAX_PLOTS = 150_000;
 
 export default function ActiveTile() {
-  const [activeLatest, setActiveLatest] = useState<ActiveDto | null>(null);
+  const [activeLatest, setActiveLatest] = useState<Active | null>(null);
 
   useEffect(() => {
     fetch("/api/active/latest")
@@ -19,7 +19,7 @@ export default function ActiveTile() {
   }, []);
 
   const percentage = (
-    ((activeLatest?.activeBasedOnPp ?? 0) / MAX_PLOTS) *
+    ((activeLatest?.active_based_on_pp ?? 0) / MAX_PLOTS) *
     100
   ).toFixed(1);
 

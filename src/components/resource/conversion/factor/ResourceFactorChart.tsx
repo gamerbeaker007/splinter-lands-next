@@ -47,13 +47,19 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
       type: "linear",
       title: { text: "Factor", font: { color: textColor } },
     },
-    font: {
-      color: textColor,
+    // 🔁 Add secondary y-axis for dec_usd_value
+    yaxis2: {
+      title: { text: "DEC/USD (1000x)", font: { color: "purple" } },
+      overlaying: "y",
+      side: "right",
+      showgrid: false,
+      tickfont: { color: "purple" },
     },
+    font: { color: textColor },
     paper_bgcolor: backgroundColor,
     plot_bgcolor: backgroundColor,
     legend: { orientation: "h", font: { color: textColor } },
-    margin: { t: 50, l: 50, r: 20, b: 50 },
+    margin: { t: 50, l: 50, r: 50, b: 50 }, // widen right margin for y2
   };
 
   return (
@@ -67,10 +73,19 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
         minHeight: "500px",
       }}
     >
-      {" "}
       <Plot
         data={[
           ...traces,
+          {
+            type: "scatter",
+            x: data.map((d) => d.date),
+            y: data.map((d) => d.dec_usd_value * 1000),
+            mode: "lines",
+            name: "DEC/USD",
+            line: { color: "purple", width: 1, dash: "dash" },
+            yaxis: "y2",
+            hovertemplate: `<b>%{x}</b><br>DEC/USD: %{y}<extra></extra>`,
+          } as Partial<ScatterData>,
           {
             type: "scatter",
             x: [filteredData[0]?.date, filteredData.at(-1)?.date],
