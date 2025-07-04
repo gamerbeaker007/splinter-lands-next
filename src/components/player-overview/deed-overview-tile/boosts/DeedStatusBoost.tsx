@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, Typography, Avatar } from "@mui/material";
-import { SPL_WEB_URL } from "@/scripts/statics_icon_urls";
+import { SPL_WEB_URL } from "@/lib/shared/statics_icon_urls";
 
 export type RarityBoostProps = {
   plotStatus: string;

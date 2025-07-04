@@ -1,7 +1,8 @@
+import { ProductionPoints } from "@/types/productionPoints";
+
 export type RegionActiveSummary = {
   totalActiveDeeds: number;
   activeEmpty: number;
-  totalRawPP: number;
-  totalBoostedPP: number;
+  productionPoints: ProductionPoints;
   totalConstruction: number;
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { NATURAL_RESOURCES } from "@/scripts/lib/utils/statics";
+import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ResourceInput } from "./ResourceInput";

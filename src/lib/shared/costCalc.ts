@@ -3,7 +3,7 @@ import {
   CONSUMES_ONLY_GRAIN,
   MULTIPLE_CONSUMING_RESOURCES,
   NATURAL_RESOURCES,
-} from "@/scripts/lib/utils/statics";
+} from "@/lib/shared/statics";
 
 type CostResult = {
   cost_per_h_grain: number;

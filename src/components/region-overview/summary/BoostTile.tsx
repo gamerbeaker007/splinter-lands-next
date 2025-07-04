@@ -11,7 +11,7 @@ import {
   land_title_epic_icon_url,
   land_title_legendary_icon_url,
   land_title_rare_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Box, Paper, Typography } from "@mui/material";
 
 const boostMetaMapTitle: Record<string, { name: string; icon: string }> = {

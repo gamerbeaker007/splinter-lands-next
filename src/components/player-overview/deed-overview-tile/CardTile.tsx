@@ -1,6 +1,6 @@
 import { formatLargeNumber } from "@/lib/formatters";
 import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
-import { land_hammer_icon_url } from "@/scripts/statics_icon_urls";
+import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { Rarity } from "@/types/rarity";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip, Typography } from "@mui/material";

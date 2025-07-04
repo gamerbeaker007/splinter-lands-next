@@ -1,4 +1,4 @@
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, useTheme } from "@mui/material";
 import { ScatterData } from "plotly.js";

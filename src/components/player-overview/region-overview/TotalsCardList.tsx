@@ -1,7 +1,7 @@
 import React from "react";
 import { RegionCard } from "./RegionCard";
 import Box from "@mui/material/Box";
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 
 type Props = {
   data: Record<string, number>;

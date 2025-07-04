@@ -4,7 +4,7 @@ import Plot from "react-plotly.js";
 import { Box, useTheme } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
 import { ResourceHubMetrics } from "@/generated/prisma";
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 
 type Mode = "resource" | "dec"; // price = cost in DEC, dec = amount of resource
 interface Props {

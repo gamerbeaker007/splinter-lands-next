@@ -1,4 +1,4 @@
-import { WEB_URL } from "@/scripts/statics_icon_urls";
+import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
 

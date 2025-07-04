@@ -1,7 +1,7 @@
 import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { filterDeeds } from "@/lib/filters";
-import { DEFAULT_ORDER_RESOURCES } from "@/scripts/lib/utils/statics";
+import { DEFAULT_ORDER_RESOURCES } from "@/lib/shared/statics";
 import { FilterInput } from "@/types/filters";
 import { RegionActiveSummary } from "@/types/regionActiveSummary";
 import { NextResponse } from "next/server";
@@ -30,8 +30,7 @@ export async function POST(req: Request) {
         result[resource] = {
           totalActiveDeeds: 0,
           activeEmpty: 0,
-          totalRawPP: 0,
-          totalBoostedPP: 0,
+          productionPoints: { rawPP: 0, boostedPP: 0 },
           totalConstruction: 0,
         };
       }
@@ -39,8 +38,8 @@ export async function POST(req: Request) {
       if (isActive) result[resource].totalActiveDeeds++;
       if (isActiveButEmpty) result[resource].activeEmpty++;
       if (isConstruction) result[resource].totalConstruction++;
-      result[resource].totalRawPP += basePP;
-      result[resource].totalBoostedPP += harvestPP;
+      result[resource].productionPoints.rawPP += basePP;
+      result[resource].productionPoints.boostedPP += harvestPP;
     }
 
     const orderedResourceMap: Record<string, RegionActiveSummary> = {};

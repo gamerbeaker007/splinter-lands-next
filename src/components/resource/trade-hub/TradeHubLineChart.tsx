@@ -1,5 +1,5 @@
 import { ResourceHubMetrics } from "@/generated/prisma";
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box, useTheme } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";

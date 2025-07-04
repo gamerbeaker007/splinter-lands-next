@@ -1,13 +1,13 @@
 import React from "react";
 import {
-  Card,
-  CardContent,
-  Typography,
   Avatar,
   Box,
+  Card,
+  CardContent,
   Divider,
+  Typography,
 } from "@mui/material";
-import { resourceIconMapping } from "@/scripts/lib/utils/statics";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 
 export type TaxData = {
@@ -54,7 +54,7 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             {data.resources.map((res, idx) => (
               <Box textAlign="center" key={idx}>
                 <Avatar
-                  src={resourceIconMapping[res.token.toLowerCase()]}
+                  src={RESOURCE_ICON_MAP[res.token.toLowerCase()]}
                   sx={{ width: 25, height: 25, mx: "auto", mb: 0.5 }}
                 />
                 <Typography variant="caption">

@@ -2,7 +2,7 @@ import React from "react";
 import { RegionCard, RegionData } from "./RegionCard";
 import { RegionSummary } from "@/types/resource";
 import Box from "@mui/material/Box";
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 
 type Props = {
   data: RegionSummary[];

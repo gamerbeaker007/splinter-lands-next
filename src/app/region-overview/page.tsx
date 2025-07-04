@@ -8,9 +8,11 @@ import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Page } from "@/types/Page";
 import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
+import { ProductionPage } from "@/components/region-overview/production/ProductionPage";
 
 const pages: Page[] = [
   { label: "Activity", component: <ActivityPage /> },
+  { label: "Production", component: <ProductionPage /> },
   { label: "Summary", component: <SummaryPage /> },
 ];
 

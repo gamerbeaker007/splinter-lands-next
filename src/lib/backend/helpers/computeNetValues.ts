@@ -1,4 +1,4 @@
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { RegionSummary } from "@/types/resource";
 
 export function computeNetValues(

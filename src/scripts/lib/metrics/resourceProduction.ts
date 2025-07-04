@@ -5,7 +5,7 @@ import { calcCosts } from "@/lib/shared/costCalc";
 import {
   MULTIPLE_CONSUMING_RESOURCES,
   NATURAL_RESOURCES,
-} from "@/scripts/lib/utils/statics";
+} from "@/lib/shared/statics";
 
 async function computeAndStoreResource(
   date: Date,

@@ -1,6 +1,6 @@
 "use client";
 import { ResourceHubMetrics } from "@/generated/prisma";
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box, useTheme } from "@mui/material";
 import React from "react";
 import Plot from "react-plotly.js";

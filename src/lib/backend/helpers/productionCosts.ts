@@ -1,7 +1,4 @@
-import {
-  NATURAL_RESOURCES,
-  PRODUCING_RESOURCES,
-} from "@/scripts/lib/utils/statics";
+import { NATURAL_RESOURCES, PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { RegionSummary } from "@/types/resource";
 
 const TAX_RATE = 0.9; // 10% tax rate reduced from production

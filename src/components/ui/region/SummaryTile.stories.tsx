@@ -5,7 +5,7 @@ import {
   land_castle_icon_url,
   land_hammer_icon_url,
   land_shard_mine_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Box } from "@mui/material";
 
 const meta: Meta<typeof SummaryTile> = {

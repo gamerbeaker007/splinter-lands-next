@@ -3,7 +3,7 @@ import {
   getLandResourcesPools,
   getMidnightPotionPrice,
 } from "@/lib/backend/api/spl/spl-land-api";
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { SplPriceData } from "@/types/price";
 
 async function getPrice(

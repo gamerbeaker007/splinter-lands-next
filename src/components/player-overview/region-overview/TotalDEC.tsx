@@ -1,4 +1,4 @@
-import { dec_icon_url } from "@/scripts/statics_icon_urls";
+import { dec_icon_url } from "@/lib/shared/statics_icon_urls";
 import { Avatar, IconButton, Tooltip, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import React from "react";
