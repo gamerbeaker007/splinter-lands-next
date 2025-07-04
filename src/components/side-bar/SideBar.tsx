@@ -20,11 +20,6 @@ const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
   { href: "/resource", label: "Resource", icon: <FiDatabase /> },
   { href: "/region-overview", label: "Region Overview", icon: <FiMap /> },
-  {
-    href: "/region-production-overview",
-    label: "Region Production",
-    icon: <FiMap />,
-  },
   { href: "/player-overview", label: "Player Overview", icon: <FiUsers /> },
 ];
 

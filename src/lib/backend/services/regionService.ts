@@ -83,34 +83,31 @@ export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
 
 export async function getActiveDeedCountByRegion(filters: FilterInput) {
   const blob = await getCachedRegionData();
+  const filteredDeeds = filterDeeds(blob, filters);
 
-  //Only the region filter will have effect unless one region is selected
-  const regionFilter = filters.filter_regions ?? [];
+  const countByTract = filters.filter_regions?.length === 1;
 
-  // If exactly one region is selected, fall back to counting by tract
-  const countByTract = regionFilter.length === 1;
+  const result: Record<string, { active: number; inactive: number }> = {};
 
-  const filteredDeeds = filterDeeds(blob, { filter_regions: regionFilter });
-
-  const counts: Record<string, number> = {};
   for (const deed of filteredDeeds) {
-    const groupKey = countByTract
-      ? deed.tract_number // Use tract instead of region
-      : deed.region_uid;
-
+    const groupKey = countByTract ? deed.tract_number! : deed.region_uid!;
     const totalHarvest = deed.stakingDetail?.total_harvest_pp ?? 0;
 
-    if (groupKey && totalHarvest > 0) {
-      counts[groupKey] = (counts[groupKey] ?? 0) + 1;
+    if (!result[groupKey]) {
+      result[groupKey] = { active: 0, inactive: 0 };
+    }
+
+    if (totalHarvest > 0) {
+      result[groupKey].active += 1;
+    } else {
+      result[groupKey].inactive += 1;
     }
   }
 
-  // Sort the entries by count descending
-  const sortedCounts = Object.fromEntries(
-    Object.entries(counts).sort(([, a], [, b]) => b - a),
+  // Sort by active count descending
+  return Object.fromEntries(
+    Object.entries(result).sort(([, a], [, b]) => b.active - a.active),
   );
-
-  return sortedCounts;
 }
 
 export async function getAvailableFilterValues(
