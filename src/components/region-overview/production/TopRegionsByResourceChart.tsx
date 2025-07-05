@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { Box, Button, Stack, Typography, useTheme } from "@mui/material";
-import Plot from "react-plotly.js";
 import { RegionResourcePP } from "@/types/regionProductionSummary";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { Box, Typography, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
+import Plot from "react-plotly.js";
+import { ResourceSelector } from "../ResourceSelector";
 
 type Props = {
   data: Record<string, RegionResourcePP>;
@@ -15,22 +15,23 @@ export default function TopRegionsByResourceChart({ data }: Props) {
   const textColor = theme.palette.text.primary;
   const backgroundColor = theme.palette.background.default;
 
+  const resourceTypes = Object.keys(data).filter((r) => r !== "");
+
   const [selectedResource, setSelectedResource] = useState<string | null>(
-    "GRAIN",
+    resourceTypes[0],
   );
 
-  const handleSelect = (resource: string) => {
+  const handleSelect = (resource: string | null) => {
+    if (!resource || resource === selectedResource) return;
     setSelectedResource(resource);
   };
 
-  // Extract all unique resource types
-  const resourceTypes = Array.from(
-    new Set(
-      Object.entries(data)
-        .flatMap(([resource]) => resource)
-        .filter((r) => r !== ""),
-    ),
-  );
+  //Auto-reset when data/resourceTypes change
+  useEffect(() => {
+    if (!selectedResource || !resourceTypes.includes(selectedResource)) {
+      setSelectedResource(resourceTypes[0] ?? null);
+    }
+  }, [resourceTypes, selectedResource]);
 
   let topRegions: string[] = [];
   let rawValues: number[] = [];
@@ -57,25 +58,11 @@ export default function TopRegionsByResourceChart({ data }: Props) {
       <Typography mt={4} variant="h4">
         Regions by Boosted PP
       </Typography>
-
-      <Box display={"flex"} flexWrap={"wrap"} justifyContent={"center"}>
-        <Stack direction="row" spacing={1} flexWrap="wrap" mt={2}>
-          {resourceTypes.map((resource) => (
-            <Button
-              key={resource}
-              variant={selectedResource === resource ? "contained" : "outlined"}
-              onClick={() => handleSelect(resource)}
-              sx={{ width: 100, height: 100, padding: 1 }}
-            >
-              <img
-                src={RESOURCE_ICON_MAP[resource]}
-                alt={resource}
-                style={{ maxWidth: "100%", maxHeight: "100%" }}
-              />
-            </Button>
-          ))}
-        </Stack>
-      </Box>
+      <ResourceSelector
+        resourceTypes={resourceTypes}
+        selectedResource={selectedResource}
+        onSelect={handleSelect}
+      />
       {selectedResource && (
         <Box
           mt={3}
@@ -132,7 +119,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
             useResizeHandler
           />
         </Box>
-      )}
+      )}{" "}
     </>
   );
 }

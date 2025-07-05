@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionPP } from "@/types/regionProductionSummary";
 import { ProductionOverviewPage } from "@/components/region-overview/production/ProductionOverview";
+import { HistoricalProductionPP } from "./HistoricalProductionPP";
 
 export function ProductionPage() {
   const [data, setData] = useState<RegionPP | null>(null);
@@ -30,6 +31,7 @@ export function ProductionPage() {
     <>
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         {data && <ProductionOverviewPage data={data} />}
+        <HistoricalProductionPP />
       </Container>
     </>
   );

@@ -9,10 +9,12 @@ import { Page } from "@/types/Page";
 import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ProductionPage } from "@/components/region-overview/production/ProductionPage";
+import { ComparePage } from "@/components/region-overview/compare/ComparePage";
 
 const pages: Page[] = [
   { label: "Activity", component: <ActivityPage /> },
   { label: "Production", component: <ProductionPage /> },
+  { label: "Compare", component: <ComparePage /> },
   { label: "Summary", component: <SummaryPage /> },
 ];
 
