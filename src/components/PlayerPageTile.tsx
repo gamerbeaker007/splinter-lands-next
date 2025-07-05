@@ -14,7 +14,6 @@ export default function PlayerPageTile() {
   const router = useRouter();
   const theme = useTheme();
   const paperColor = theme.palette.background.paper;
-  console.log(`paperColor:  ${paperColor}`);
 
   const handleClick = () => {
     const trimmed = player.trim();
