@@ -42,18 +42,7 @@ export default function PlayerPage() {
         />
       ),
     },
-    { label: "LDE", component: <div>TEXT</div> },
   ];
-
-  if (playerProductionSummaryData) {
-    for (const summary of playerProductionSummaryData) {
-      if (summary.total_dec_staked != summary.total_dec_stake_needed) {
-        console.log(
-          `DIFFER ${summary.player}: ${summary.total_dec_staked} / ${summary.total_dec_stake_needed}`,
-        );
-      }
-    }
-  }
 
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
