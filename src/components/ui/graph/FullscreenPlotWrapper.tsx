@@ -73,7 +73,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
         <Box
           sx={{
             position: "absolute",
-            top: 16,
+            top: { xs: 0, md: 2, lg: 12 },
             left: "50%",
             transform: "translateX(-50%)",
             zIndex: 1000,
@@ -84,7 +84,9 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
           </IconButton>
         </Box>
 
-        <Box sx={{ width: "100vw", height: "100vh", paddingTop: 5 }}>
+        <Box
+          sx={{ width: "100vw", height: "100vh", p: { xs: 2, md: 3, lg: 8 } }}
+        >
           <Plot
             data={data}
             layout={{
