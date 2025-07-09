@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import Plot from "react-plotly.js";
 import { useTheme } from "@mui/material";
 import Typography from "@mui/material/Typography";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 export default function ActiveDeedsChart() {
   const { filters } = useFilters();
@@ -56,7 +56,7 @@ export default function ActiveDeedsChart() {
           minHeight: "500px",
         }}
       >
-        <Plot
+        <FullscreenPlotWrapper
           data={[
             {
               x: regionLabels,
@@ -93,8 +93,6 @@ export default function ActiveDeedsChart() {
               y: -0.3,
             },
           }}
-          style={{ width: "100%", height: "500px" }}
-          useResizeHandler
         />
       </Box>
     </>

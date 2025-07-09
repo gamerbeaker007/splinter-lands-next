@@ -4,8 +4,9 @@ import {
   land_keep_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { RegionTax } from "@/types/regionTax";
-import { Box, Card, Divider, Typography } from "@mui/material";
+import { Box, Card, Typography } from "@mui/material";
 import Image from "next/image";
+import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 
 type TopTaxEarnersListProps = {
   data: RegionTax[];
@@ -89,32 +90,13 @@ export function TopTaxEarnersList({
           </Typography>
         </Box>
         {earners.slice(0, 10).map((e, i) => (
-          <>
-            <Box
-              display={"flex"}
-              alignItems="center"
-              ml={1}
-              key={`rank-${e.regionUid}-${e.tractNumber}`}
-            >
-              <Box key={`rate-${e.regionUid}-${e.tractNumber}`} minWidth={80}>
-                <Typography variant="body2" fontWeight="medium" fontSize={14}>
-                  {i + 1}. {e.totalDEC.toFixed(3)}
-                </Typography>
-              </Box>
-              <Box key={`owner-${e.regionUid}-${e.tractNumber}`}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  fontSize={10}
-                >
-                  {e.player} ({e.regionUid}
-                  {e.tractNumber !== undefined ? `–${e.tractNumber}` : ""}
-                  {e.plotNumber !== undefined ? `–${e.plotNumber}` : ""})
-                </Typography>
-              </Box>
-            </Box>
-            <Divider key={`div-${e.regionUid}-${e.tractNumber}`} />
-          </>
+          <RankedItemBox
+            key={`ranked-box-${e.regionUid}-${e.tractNumber ?? "NA"}`}
+            rank={i + 1}
+            value={e.totalDEC.toFixed(2)}
+            subValue={e.player}
+            otherSubValues={[e.regionUid, e.tractNumber, e.plotNumber]}
+          />
         ))}
       </Card>
     </Box>

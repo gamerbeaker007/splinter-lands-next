@@ -3,8 +3,9 @@ import {
   land_keep_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { RegionTax } from "@/types/regionTax";
-import { Box, Card, Divider, Typography } from "@mui/material";
+import { Box, Card, Typography } from "@mui/material";
 import Image from "next/image";
+import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 
 type TopCaptureRateListProps = {
   data: RegionTax[];
@@ -77,32 +78,13 @@ export function TopCaptureRateList({
           </Typography>
         </Box>
         {owners.slice(0, 10).map((o, i) => (
-          <>
-            <Box
-              display={"flex"}
-              alignItems="center"
-              ml={1}
-              key={`rank-${o.regionUid}-${o.tractNumber}`}
-            >
-              <Box key={`rate-${o.regionUid}-${o.tractNumber}`} minWidth={80}>
-                <Typography variant="body2" fontWeight="medium" fontSize={14}>
-                  {i + 1}. {(o.captureRate * 100).toFixed(1)}%
-                </Typography>
-              </Box>
-              <Box key={`owner-${o.regionUid}-${o.tractNumber}`}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
-                  fontSize={10}
-                >
-                  {o.player} ( {o.regionUid}
-                  {o.tractNumber !== undefined ? `–${o.tractNumber}` : ""}
-                  {o.plotNumber !== undefined ? `–${o.plotNumber}` : ""})
-                </Typography>
-              </Box>
-            </Box>
-            <Divider key={`div-${o.regionUid}-${o.tractNumber}`} />
-          </>
+          <RankedItemBox
+            key={`ranked-box-${o.regionUid}-${o.tractNumber ?? "NA"}`}
+            rank={i + 1}
+            value={`${(o.captureRate * 100).toFixed(1)}%`}
+            subValue={o.player}
+            otherSubValues={[o.regionUid, o.tractNumber, o.plotNumber]}
+          />
         ))}
       </Card>
     </Box>

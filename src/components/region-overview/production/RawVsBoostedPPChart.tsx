@@ -1,8 +1,8 @@
 "use client";
 
 import { Box, useTheme } from "@mui/material";
-import Plot from "react-plotly.js";
 import { RegionPP } from "@/types/regionProductionSummary";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   data: RegionPP;
@@ -26,7 +26,7 @@ export default function RawVsBoostedPPChart({ data }: Props) {
           minHeight: "500px",
         }}
       >
-        <Plot
+        <FullscreenPlotWrapper
           data={[
             {
               x: ["RAW"],
@@ -63,8 +63,6 @@ export default function RawVsBoostedPPChart({ data }: Props) {
               y: -0.3,
             },
           }}
-          style={{ width: "100%", height: "500px" }}
-          useResizeHandler
         />
       </Box>
     </>

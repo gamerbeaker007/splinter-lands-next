@@ -37,7 +37,9 @@ export default function RegionOverviewPage() {
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
         />
-        <Box mt={4}>{pages[activeTab].component}</Box>
+        <Box mt={4} mb={4}>
+          {pages[activeTab].component}
+        </Box>
       </FilterProvider>
     </Container>
   );

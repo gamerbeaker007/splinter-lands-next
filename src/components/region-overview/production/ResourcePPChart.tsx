@@ -1,10 +1,10 @@
 "use client";
 
 import { Box, useTheme } from "@mui/material";
-import Plot from "react-plotly.js";
 import { RegionResourcePP } from "@/types/regionProductionSummary";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { Data } from "plotly.js";
+import { PlotData } from "plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   data: Record<string, RegionResourcePP>;
@@ -17,17 +17,19 @@ export default function ResourcePPChart({ data }: Props) {
 
   // Filter out Unknown Resource
   const resourceLabels = Object.keys(data).filter((r) => r !== "");
-  const rawTraces: Partial<Data>[] = resourceLabels.map((resourceLabel, i) => {
-    const rawPP = data[Object.keys(data)[i]].totalPP.rawPP;
-    const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
-    return {
-      x: [resourceLabel],
-      y: [rawPP],
-      name: resourceLabel,
-      type: "bar",
-      marker: { color },
-    };
-  });
+  const rawTraces: Partial<PlotData>[] = resourceLabels.map(
+    (resourceLabel, i) => {
+      const rawPP = data[Object.keys(data)[i]].totalPP.rawPP;
+      const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
+      return {
+        x: [resourceLabel],
+        y: [rawPP],
+        name: resourceLabel,
+        type: "bar",
+        marker: { color },
+      };
+    },
+  );
 
   const boostedValues = resourceLabels.map(
     (r, i) => data[Object.keys(data)[i]].totalPP.boostedPP,
@@ -46,7 +48,7 @@ export default function ResourcePPChart({ data }: Props) {
           minHeight: "500px",
         }}
       >
-        <Plot
+        <FullscreenPlotWrapper
           data={[
             ...rawTraces,
             {
@@ -79,8 +81,6 @@ export default function ResourcePPChart({ data }: Props) {
               y: -0.3,
             },
           }}
-          style={{ width: "100%", height: "500px" }}
-          useResizeHandler
         />
       </Box>
     </>

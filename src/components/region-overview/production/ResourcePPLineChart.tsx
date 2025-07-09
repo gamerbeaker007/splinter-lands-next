@@ -3,7 +3,7 @@ import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box, useTheme } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
-import Plot from "react-plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: resourceTracking[];
@@ -47,7 +47,7 @@ const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
         minHeight: "500px",
       }}
     >
-      <Plot
+      <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: { text: "Historical Boosted PP Chart" },
@@ -63,7 +63,6 @@ const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
           plot_bgcolor: backgroundColor,
         }}
         config={{ responsive: true }}
-        style={{ width: "100%", height: "500px" }}
       />
     </Box>
   );

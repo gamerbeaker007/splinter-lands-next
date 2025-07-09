@@ -3,8 +3,8 @@
 import { RegionResourcePP } from "@/types/regionProductionSummary";
 import { Box, Typography, useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
-import Plot from "react-plotly.js";
 import { ResourceSelector } from "../ResourceSelector";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   data: Record<string, RegionResourcePP>;
@@ -75,7 +75,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
             minHeight: "800px",
           }}
         >
-          <Plot
+          <FullscreenPlotWrapper
             data={[
               {
                 x: rawValues,
@@ -114,9 +114,6 @@ export default function TopRegionsByResourceChart({ data }: Props) {
                 orientation: "h",
               },
             }}
-            config={{ displayModeBar: "hover" }}
-            style={{ width: "100%", height: "100%" }}
-            useResizeHandler
           />
         </Box>
       )}{" "}

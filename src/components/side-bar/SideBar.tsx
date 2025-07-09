@@ -15,11 +15,17 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { FiDatabase, FiHome, FiMap, FiMenu, FiUsers } from "react-icons/fi";
+import { MdOutlineLeaderboard } from "react-icons/md";
 
 const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
   { href: "/resource", label: "Resource", icon: <FiDatabase /> },
   { href: "/region-overview", label: "Region Overview", icon: <FiMap /> },
+  {
+    href: "/player-efficiency",
+    label: "Player Efficiency",
+    icon: <MdOutlineLeaderboard />,
+  },
   { href: "/player-overview", label: "Player Overview", icon: <FiUsers /> },
 ];
 

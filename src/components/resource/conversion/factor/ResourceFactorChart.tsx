@@ -3,8 +3,8 @@ import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box, useTheme } from "@mui/material";
 import React from "react";
-import Plot from "react-plotly.js";
 import { Layout, ScatterData } from "plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: ResourceHubMetrics[];
@@ -73,7 +73,7 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
         minHeight: "500px",
       }}
     >
-      <Plot
+      <FullscreenPlotWrapper
         data={[
           ...traces,
           {
@@ -97,9 +97,6 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
           } as Partial<ScatterData>,
         ]}
         layout={layout}
-        useResizeHandler
-        style={{ width: "100%" }}
-        config={{ responsive: true }}
       />
     </Box>
   );

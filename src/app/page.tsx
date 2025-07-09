@@ -29,6 +29,13 @@ export default function Home() {
         <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
           <PlayerPageTile />
         </Grid>
+        <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
+          <DefaultPageTile
+            title="Player Efficiency"
+            href="/player-efficiency"
+            image={temp_image}
+          />
+        </Grid>
       </Grid>
     </Container>
   );

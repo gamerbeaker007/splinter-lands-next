@@ -1,8 +1,8 @@
 import { RegionTax } from "@/types/regionTax";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { useTheme } from "@mui/material";
-import Plot from "react-plotly.js";
-import { Data } from "plotly.js";
+import { Box, useTheme } from "@mui/material";
+import { PlotData } from "plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type TaxIncomeChartProps = {
   title: string;
@@ -23,7 +23,7 @@ export const TaxIncomeChart = ({
   const backgroundColor = theme.palette.background.default;
   const textColor = theme.palette.text.primary;
 
-  const traces = resourceFilter
+  const traces: Partial<PlotData>[] = resourceFilter
     ? getSortedTracesByResource(data, type, income, resourceFilter)
     : getGroupedTracesByResourceSortedByTotalDEC(data, type, income);
 
@@ -31,36 +31,45 @@ export const TaxIncomeChart = ({
     income === "resource" ? "Resources per Hour" : "DEC per Hour";
 
   return (
-    <Plot
-      data={traces}
-      layout={{
-        barmode: "stack",
-        bargap: 0.05,
-        bargroupgap: 0.05,
-        title: {
-          text: title,
-          font: { color: textColor },
-        },
-        margin: { l: 50, r: 30, t: 50, b: 100 },
-        xaxis: {
-          title: { text: type === "castle" ? "Region" : "Tract" },
-          tickangle: -45,
-          automargin: true,
-          color: textColor,
-          type: "category",
-        },
-        yaxis: {
-          title: { text: `${YAxisTtitle}` },
-          color: textColor,
-        },
-        height: 500,
-        paper_bgcolor: backgroundColor,
-        plot_bgcolor: backgroundColor,
-        legend: { font: { color: textColor } },
+    <Box
+      sx={{
+        border: "1px solid",
+        borderColor: "secondary.main",
+        borderRadius: 5,
+        padding: 2,
+        width: "100%",
+        minHeight: "500px",
       }}
-      style={{ width: "100%" }}
-      useResizeHandler
-    />
+    >
+      <FullscreenPlotWrapper
+        data={traces}
+        layout={{
+          barmode: "stack",
+          bargap: 0.05,
+          bargroupgap: 0.05,
+          title: {
+            text: title,
+            font: { color: textColor },
+          },
+          margin: { l: 50, r: 30, t: 50, b: 100 },
+          xaxis: {
+            title: { text: type === "castle" ? "Region" : "Tract" },
+            tickangle: -45,
+            automargin: true,
+            color: textColor,
+            type: "category",
+          },
+          yaxis: {
+            title: { text: `${YAxisTtitle}` },
+            color: textColor,
+          },
+          height: 500,
+          paper_bgcolor: backgroundColor,
+          plot_bgcolor: backgroundColor,
+          legend: { font: { color: textColor } },
+        }}
+      />
+    </Box>
   );
 };
 
@@ -71,7 +80,7 @@ function getSortedTracesByResource(
   type: "castle" | "keep",
   income: "resource" | "dec",
   resource: string,
-): Partial<Data>[] {
+): Partial<PlotData>[] {
   const entries =
     type === "castle"
       ? data.map((region) => ({
@@ -108,7 +117,7 @@ function getGroupedTracesByResourceSortedByTotalDEC(
   data: RegionTax[],
   type: "castle" | "keep",
   income: "resource" | "dec",
-): Partial<Data>[] {
+): Partial<PlotData>[] {
   const grouped: Record<string, Record<string, number>> = {};
   const totalPerLocation: Record<string, number> = {};
 

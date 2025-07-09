@@ -1,10 +1,10 @@
 "use client";
 import React from "react";
-import Plot from "react-plotly.js";
 import { Box, useTheme } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type Mode = "resource" | "dec"; // price = cost in DEC, dec = amount of resource
 interface Props {
@@ -80,13 +80,7 @@ export const ResourcePriceChart: React.FC<Props> = ({
         minHeight: "500px",
       }}
     >
-      <Plot
-        data={traces}
-        layout={layout}
-        useResizeHandler
-        style={{ width: "100%" }}
-        config={{ responsive: true }}
-      />
+      <FullscreenPlotWrapper data={traces} layout={layout} />
     </Box>
   );
 };

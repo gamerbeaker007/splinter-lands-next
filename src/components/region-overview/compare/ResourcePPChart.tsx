@@ -1,8 +1,8 @@
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ProductionPoints } from "@/types/productionPoints";
-import { useTheme } from "@mui/material";
-import { Data } from "plotly.js";
-import Plot from "react-plotly.js";
+import { Box, useTheme } from "@mui/material";
+import { PlotData } from "plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type ResourcePPChartProps = {
   method: string | null;
@@ -22,7 +22,7 @@ export const ResourcePPChart = ({
   if (!data || Object.keys(data).length === 0) return null;
 
   const locations = new Set<string>();
-  const traces: Partial<Data>[] = [];
+  const traces: Partial<PlotData>[] = [];
 
   const resources = resource ? [resource] : Object.keys(data);
 
@@ -61,32 +61,41 @@ export const ResourcePPChart = ({
   }
 
   return (
-    <Plot
-      data={traces}
-      layout={{
-        barmode: "group",
-        title: {
-          text: "Production Points by Resource and Location",
-          font: { color: textColor },
-        },
-        margin: { l: 50, r: 30, t: 50, b: 100 },
-        xaxis: {
-          title: { text: `Location (${method})` },
-          tickangle: -45,
-          automargin: true,
-          color: textColor,
-          type: "category",
-        },
-        yaxis: {
-          title: { text: "Production Points" },
-          color: textColor,
-        },
-        height: 500,
-        paper_bgcolor: backgroundColor,
-        plot_bgcolor: backgroundColor,
+    <Box
+      mt={3}
+      sx={{
+        border: "1px solid",
+        borderColor: "secondary.main",
+        borderRadius: 5,
+        padding: 2,
+        width: "100%",
+        height: "800px",
       }}
-      style={{ width: "100%" }}
-      useResizeHandler
-    />
+    >
+      <FullscreenPlotWrapper
+        data={traces}
+        layout={{
+          barmode: "group",
+          title: {
+            text: "Production Points by Resource and Location",
+            font: { color: textColor },
+          },
+          margin: { l: 50, r: 30, t: 50, b: 100 },
+          xaxis: {
+            title: { text: `Location (${method})` },
+            tickangle: -45,
+            automargin: true,
+            color: textColor,
+            type: "category",
+          },
+          yaxis: {
+            title: { text: "Production Points" },
+            color: textColor,
+          },
+          paper_bgcolor: backgroundColor,
+          plot_bgcolor: backgroundColor,
+        }}
+      />
+    </Box>
   );
 };
