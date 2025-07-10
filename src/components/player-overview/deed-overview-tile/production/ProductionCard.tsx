@@ -2,10 +2,6 @@ import { formatLargeNumber } from "@/lib/formatters";
 import { getProgressInfo } from "@/lib/frontend/ProductionUtils";
 import { calcCosts } from "@/lib/shared/costCalc";
 import {
-  aura_icon_url,
-  dec_icon_url,
-  grain_icon_url,
-  iron_icon_url,
   land_aura_lab_icon_url,
   land_castle_icon_url,
   land_grain_farm_icon_url,
@@ -17,15 +13,11 @@ import {
   land_research_hut_icon_url,
   land_shard_mine_icon_url,
   land_under_construction_icon_url,
-  research_icon_url,
-  sps_icon_url,
-  stone_icon_url,
-  tax_icon_url,
-  wood_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type ProductionCardProps = {
   worksiteType: string;
@@ -50,20 +42,6 @@ export const worksiteTypeMapping: Record<string, string> = {
   KEEP: land_keep_icon_url,
   CASTLE: land_castle_icon_url,
   Undeveloped: land_under_construction_icon_url,
-};
-
-export const resourceIconMap: Record<string, string> = {
-  GRAIN: grain_icon_url,
-  STONE: stone_icon_url,
-  WOOD: wood_icon_url,
-  IRON: iron_icon_url,
-  SPS: sps_icon_url,
-  RESEARCH: research_icon_url,
-  AURA: aura_icon_url,
-  TAX: tax_icon_url,
-  DEC: dec_icon_url,
-  PP: land_hammer_icon_url,
-  "": land_hammer_icon_url,
 };
 
 const calculateTaxes = (taxFee: boolean, amount: number) => {
@@ -156,7 +134,7 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
             "The status of Keeps and Castles remains a mystery for now.",
         };
 
-  const prodIcon = resourceIconMap[resource] ?? land_hammer_icon_url;
+  const prodIcon = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
   const worksiteImage =
     worksiteTypeMapping[worksiteType] ?? land_under_construction_icon_url;
 
@@ -214,7 +192,7 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
                 .filter(([, value]) => value > 0)
                 .map(([key, value]) => {
                   const symbol = key.split("_").pop()?.toUpperCase() || "";
-                  const icon = resourceIconMap[symbol];
+                  const icon = RESOURCE_ICON_MAP[symbol];
                   return (
                     <Typography key={key} fontSize="0.625rem">
                       <Box

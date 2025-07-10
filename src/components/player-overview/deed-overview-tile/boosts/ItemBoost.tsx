@@ -26,7 +26,7 @@ import {
   title_veteran_icon_url,
   title_watcher_icon_url,
   WEB_URL,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Item } from "@/types/stakedAssets";
 
 export type ItemBoostsProps = {

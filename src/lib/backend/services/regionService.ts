@@ -19,12 +19,23 @@ export async function getRegionSummary(
   const totemBoostCounts: Record<string, number> = {};
   const titleBoostCounts: Record<string, number> = {};
   const deedRarityBoostCounts: Record<string, number> = {};
+  const seenPairs = new Set<string>();
+  let runiCount = 0;
+  let totalDecNeeded = 0;
+  let totalDecInUse = 0;
+  let totalDecStaked = 0;
+  let totalDeeds = 0;
 
   for (const deed of filteredDeeds) {
+    const player = deed.player!;
+    const regionUid = deed.region_uid!;
+    const key = `${regionUid}-${player}`;
+
+    totalDeeds += 1;
+
     const worksite = deed.worksite_type ?? "unknown";
     worksiteCounts[worksite] = (worksiteCounts[worksite] ?? 0) + 1;
 
-    const player = deed.player ?? "unknown";
     playerCounts[player] = (playerCounts[player] ?? 0) + 1;
 
     const rarity = deed.rarity ?? "unknown";
@@ -40,6 +51,7 @@ export async function getRegionSummary(
     if (staking) {
       const runiBoost = staking.runi_boost ?? 0;
       runiBoostCounts[runiBoost] = (runiBoostCounts[runiBoost] ?? 0) + 1;
+      runiCount += runiBoost > 0 ? 1 : 0;
 
       const totemBoost = staking.totem_boost ?? 0;
       totemBoostCounts[totemBoost] = (totemBoostCounts[totemBoost] ?? 0) + 1;
@@ -50,6 +62,15 @@ export async function getRegionSummary(
       const rarityBoost = staking.deed_rarity_boost ?? 0;
       deedRarityBoostCounts[rarityBoost] =
         (deedRarityBoostCounts[rarityBoost] ?? 0) + 1;
+
+      totalDecNeeded += staking.total_dec_stake_needed ?? 0;
+      totalDecInUse += staking.total_dec_stake_in_use ?? 0;
+
+      //staked DEC is based on region only add it one per region-player combination
+      totalDecStaked += !seenPairs.has(key)
+        ? (staking.total_dec_staked ?? 0)
+        : 0;
+      seenPairs.add(key);
     }
   }
 
@@ -59,10 +80,15 @@ export async function getRegionSummary(
     rarities: rarityCounts,
     deedTypes: deedTypeCounts,
     plotStatuses: plotStatusCounts,
+    runiCount: runiCount,
     runiBoosts: runiBoostCounts,
     totemBoosts: totemBoostCounts,
     titleBoosts: titleBoostCounts,
     deedRarityBoosts: deedRarityBoostCounts,
+    totalDecNeeded: totalDecNeeded,
+    totalDecInUse: totalDecInUse,
+    totalDecStaked: totalDecStaked,
+    deedsCount: totalDeeds,
   };
 }
 

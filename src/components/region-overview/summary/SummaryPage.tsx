@@ -4,11 +4,14 @@ import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeT
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionSummary } from "@/types/regionSummary";
 import { Box, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import DeedRarityTile from "./DeedRarityTile";
 import DeedTypeTile from "./DeedTypeTile";
 import BoostTile from "./BoostTile";
 import DeedStatusTile from "./DeedStatusTile";
+import Container from "@mui/material/Container";
+import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
+import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState<RegionSummary | null>(null);
@@ -30,25 +33,37 @@ export default function SummaryPage() {
   }, [filters]);
 
   return (
-    <Box px={{ xs: 2, sm: 4, md: 6, lg: 0 }} py={2}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
       {summary ? (
-        <Stack spacing={3}>
-          <WorksiteTypeTile data={summary.worksites ?? {}} />
-          <DeedTypeTile data={summary.deedTypes ?? {}} />
-          <DeedRarityTile data={summary.rarities ?? {}} />
-          <DeedStatusTile data={summary.plotStatuses ?? {}} />
-          <BoostTile
-            titleBoosts={summary.titleBoosts ?? {}}
-            totemBoosts={summary.totemBoosts ?? {}}
-            runiBoosts={summary.runiBoosts ?? {}}
-            rarityBoosts={summary.deedRarityBoosts ?? {}}
-          />
-        </Stack>
+        <>
+          <Box>
+            <PlayerTopTenTile players={summary.players} />
+            <RegionSummaryStats
+              deedsCount={summary.deedsCount}
+              totalDecNeeded={summary.totalDecNeeded}
+              totalDecInUse={summary.totalDecInUse}
+              totalDecStaked={summary.totalDecStaked}
+              runiCount={summary.runiCount}
+            />
+          </Box>
+          <Stack spacing={3}>
+            <WorksiteTypeTile data={summary.worksites ?? {}} />
+            <DeedTypeTile data={summary.deedTypes ?? {}} />
+            <DeedRarityTile data={summary.rarities ?? {}} />
+            <DeedStatusTile data={summary.plotStatuses ?? {}} />
+            <BoostTile
+              titleBoosts={summary.titleBoosts ?? {}}
+              totemBoosts={summary.totemBoosts ?? {}}
+              runiBoosts={summary.runiBoosts ?? {}}
+              rarityBoosts={summary.deedRarityBoosts ?? {}}
+            />
+          </Stack>
+        </>
       ) : (
         <Typography variant="body2" color="text.secondary" align="center">
           Loading worksite data...
         </Typography>
       )}
-    </Box>
+    </Container>
   );
 }

@@ -6,7 +6,7 @@ import {
 import {
   DEFAULT_ORDER_RESOURCES,
   PRODUCING_RESOURCES,
-} from "@/scripts/lib/utils/statics";
+} from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 
 export function computeResourceSupplyOverview(

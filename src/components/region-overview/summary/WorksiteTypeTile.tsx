@@ -12,7 +12,7 @@ import {
   land_research_hut_icon_url,
   land_shard_mine_icon_url,
   land_under_construction_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Box } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";

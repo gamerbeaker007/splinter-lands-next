@@ -3,7 +3,7 @@ import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
   land_under_construction_icon_url,
   WEB_URL,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import FilterIcon from "../FilterIcon";
 
 type FilterIconProps = {

@@ -4,7 +4,7 @@ import SummaryTile from "@/components/ui/region/SummaryTile";
 import {
   land_default_icon_url_placeholder,
   land_unsurveyd_deed_icon_url as land_unsurveyed_deed_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 import { Box } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";

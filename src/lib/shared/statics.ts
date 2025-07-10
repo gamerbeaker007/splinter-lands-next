@@ -1,13 +1,15 @@
 import {
-  resource_grain_icon_url,
-  resource_stone_icon_url,
-  resource_wood_icon_url,
-  resource_iron_icon_url,
+  dec_icon_url,
+  land_hammer_icon_url,
   resource_aura_icon_url,
+  resource_grain_icon_url,
+  resource_iron_icon_url,
   resource_research_icon_url,
+  resource_stone_icon_url,
   resource_tax_icon_url,
-  resource_sps_icon_url,
-} from "@/scripts/statics_icon_urls";
+  resource_wood_icon_url,
+  sps_icon_url,
+} from "@/lib/shared/statics_icon_urls";
 
 export const NATURAL_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON"];
 export const MULTIPLE_CONSUMING_RESOURCES = new Set([
@@ -40,17 +42,6 @@ export const GRAIN_CONVERSION_RATIOS: Record<string, number> = {
   IRON: 40,
 };
 
-export const resourceIconMapping: Record<string, string> = {
-  grain: resource_grain_icon_url,
-  stone: resource_stone_icon_url,
-  wood: resource_wood_icon_url,
-  iron: resource_iron_icon_url,
-  aura: resource_aura_icon_url,
-  research: resource_research_icon_url,
-  tax: resource_tax_icon_url,
-  sps: resource_sps_icon_url,
-};
-
 export const RESOURCE_COLOR_MAP: Record<string, string> = {
   GRAIN: "orange",
   IRON: "olive",
@@ -59,6 +50,7 @@ export const RESOURCE_COLOR_MAP: Record<string, string> = {
   STONE: "gray",
   WOOD: "saddlebrown",
   AURA: "mediumorchid",
+  TAX: "purple",
   "TAX CASTLE": "purple",
   "TAX KEEP": "lightsalmon",
 };
@@ -76,3 +68,17 @@ export const DEFAULT_ORDER_RESOURCES = [
   "TAX KEEP",
   "",
 ];
+
+export const RESOURCE_ICON_MAP: Record<string, string> = {
+  GRAIN: resource_grain_icon_url,
+  STONE: resource_stone_icon_url,
+  WOOD: resource_wood_icon_url,
+  IRON: resource_iron_icon_url,
+  SPS: sps_icon_url,
+  RESEARCH: resource_research_icon_url,
+  AURA: resource_aura_icon_url,
+  TAX: resource_tax_icon_url,
+  DEC: dec_icon_url,
+  PP: land_hammer_icon_url,
+  "": land_hammer_icon_url,
+};

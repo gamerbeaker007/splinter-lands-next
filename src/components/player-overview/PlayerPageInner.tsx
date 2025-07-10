@@ -83,7 +83,9 @@ export default function PlayerPageInner() {
       {!error && playerData && selectedPlayer && (
         <>
           <FilterDrawer player={selectedPlayer} />
-          <Box mt={4}>{pages[activeTab].component}</Box>
+          <Box mt={4} mb={4}>
+            {pages[activeTab].component}
+          </Box>
         </>
       )}
     </Container>

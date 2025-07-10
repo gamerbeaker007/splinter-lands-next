@@ -1,7 +1,7 @@
 import { Active } from "@/generated/prisma";
-import { Typography, Box, useTheme } from "@mui/material";
-import { useState, useEffect } from "react";
-import Plot from "react-plotly.js";
+import { Box, Typography, useTheme } from "@mui/material";
+import { useEffect, useState } from "react";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 export default function ActivityChart() {
   const [data, setData] = useState<Active[]>([]);
@@ -45,7 +45,7 @@ export default function ActivityChart() {
           minHeight: "500px",
         }}
       >
-        <Plot
+        <FullscreenPlotWrapper
           data={[
             {
               x: dates,
@@ -100,8 +100,6 @@ export default function ActivityChart() {
               y: -0.3,
             },
           }}
-          style={{ width: "100%", height: "500px" }}
-          useResizeHandler
         />
       </Box>
     </>

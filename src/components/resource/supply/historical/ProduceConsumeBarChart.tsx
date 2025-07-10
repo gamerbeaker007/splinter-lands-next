@@ -1,8 +1,9 @@
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, useTheme } from "@mui/material";
 import React from "react";
-import Plot from "react-plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { PlotData } from "plotly.js";
 
 interface Props {
   data: ResourceSupplyOverview[];
@@ -28,7 +29,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
     }
   });
 
-  const traces: Partial<Plotly.Data>[] = Object.entries(resourceMap).map(
+  const traces: Partial<PlotData>[] = Object.entries(resourceMap).map(
     ([resource, val]) => ({
       x: val.x,
       y: val.y,
@@ -50,7 +51,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
         minHeight: "500px",
       }}
     >
-      <Plot
+      <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: {
@@ -77,8 +78,6 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
           },
           margin: { t: 50, b: 40 },
         }}
-        style={{ width: "100%", height: "500px" }}
-        useResizeHandler
       />
     </Box>
   );

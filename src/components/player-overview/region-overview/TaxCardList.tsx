@@ -4,7 +4,7 @@ import {
   TaxCard,
   TaxData,
 } from "@/components/player-overview/region-overview/TaxCard";
-import { PRODUCING_RESOURCES } from "@/scripts/lib/utils/statics";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { RegionTaxSummary } from "@/types/resource";
 
 type Props = {

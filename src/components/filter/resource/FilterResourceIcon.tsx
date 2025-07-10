@@ -1,6 +1,6 @@
 import React from "react";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { resourceIconMapping } from "@/scripts/lib/utils/statics";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import FilterIcon from "../FilterIcon";
 
 type FilterIconProps = {
@@ -15,7 +15,7 @@ export default function FilterResourceIcon({ name }: FilterIconProps) {
     return null;
   }
 
-  const image = resourceIconMapping[name.toLowerCase()];
+  const image = RESOURCE_ICON_MAP[name];
 
   const value = filters.filter_resources;
   const isArray = Array.isArray(value);

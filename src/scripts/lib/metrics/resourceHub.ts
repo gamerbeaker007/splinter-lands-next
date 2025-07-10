@@ -3,7 +3,7 @@ import { getLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
-import { GRAIN_CONVERSION_RATIOS } from "../utils/statics";
+import { GRAIN_CONVERSION_RATIOS } from "../../../lib/shared/statics";
 
 export async function computeAndStoreResourceHubMetrics(today: Date) {
   logger.info(`⌛ --- Start computeAndStoreResourceHubMetrics...`);

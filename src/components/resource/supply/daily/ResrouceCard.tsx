@@ -1,9 +1,17 @@
 "use client";
 
-import { resourceIconMap } from "@/components/player-overview/deed-overview-tile/production/ProductionCard";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { Avatar, Box, Card, CardContent, Typography } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Card,
+  CardContent,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import Image from "next/image";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 type ResourceCardRow = {
   supply: number;
@@ -27,7 +35,7 @@ export function ResourceCard({ resourceName, row }: Props) {
     consumes,
   } = row;
 
-  const iconUrl = resourceIconMap[resourceName] || "";
+  const iconUrl = RESOURCE_ICON_MAP[resourceName] || "";
 
   const dailyCosts: Record<string, number> = {
     GRAIN: consumes?.grain ?? 0,
@@ -90,9 +98,21 @@ export function ResourceCard({ resourceName, row }: Props) {
             key={label}
             display="flex"
             justifyContent="space-between"
+            alignItems="center"
             mb={0.5}
           >
-            <Typography variant="body2">{label}:</Typography>
+            <Box display="flex" alignItems="center">
+              <Typography variant="body2">{label}:</Typography>
+              {label === "Produced Daily" && resourceName === "SPS" && (
+                <Tooltip title="Due to the complexity of the SPS reward pool, this value is an estimate and may vary at the actual time of harvest.">
+                  <WarningAmberIcon
+                    fontSize="small"
+                    sx={{ ml: 0.5, color: "warning.main", height: 15 }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
+
             <Typography
               variant="body2"
               sx={{
@@ -120,7 +140,7 @@ export function ResourceCard({ resourceName, row }: Props) {
               >
                 <Box display="flex" alignItems="center">
                   <Image
-                    src={resourceIconMap[res]}
+                    src={RESOURCE_ICON_MAP[res]}
                     alt={res}
                     width={16}
                     height={16}

@@ -13,7 +13,6 @@ export async function GET(request: Request) {
   }
 
   try {
-    console.log(`search player: ${player}`);
     const data = await getCachedPlayerDetails(player);
     return NextResponse.json(data, { status: 200 });
   } catch (err) {

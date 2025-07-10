@@ -7,7 +7,7 @@ import {
   fire_element_icon_url,
   life_element_icon_url,
   water_element_icon_url,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 
 export type BiomeBoostsProps = {
   modifiers: Partial<

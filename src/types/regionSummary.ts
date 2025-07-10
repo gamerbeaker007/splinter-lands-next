@@ -8,4 +8,9 @@ export type RegionSummary = {
   totemBoosts: Record<string, number>;
   titleBoosts: Record<string, number>;
   deedRarityBoosts: Record<string, number>;
+  runiCount: number;
+  totalDecNeeded: number;
+  totalDecInUse: number;
+  totalDecStaked: number;
+  deedsCount: number;
 };

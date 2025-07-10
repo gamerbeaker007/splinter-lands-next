@@ -1,8 +1,8 @@
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { Box, useTheme } from "@mui/material";
-import Plot from "react-plotly.js";
 import { ScatterData } from "plotly.js";
 import React from "react";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: ResourceHubMetrics[];
@@ -70,7 +70,7 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
         minHeight: "500px",
       }}
     >
-      <Plot
+      <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: { text: "Daily DEC Burn and Cumulative DEC Burn" },
@@ -99,7 +99,6 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
           margin: { t: 50, b: 40 },
         }}
         style={{ width: "100%", height: "500px" }}
-        useResizeHandler
       />
     </Box>
   );

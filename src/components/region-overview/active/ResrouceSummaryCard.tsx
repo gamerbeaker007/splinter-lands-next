@@ -1,9 +1,9 @@
 "use client";
 
-import { resourceIconMap } from "@/components/player-overview/deed-overview-tile/production/ProductionCard";
 import { Avatar, Box, Card, CardContent, Typography } from "@mui/material";
 import { RegionActiveSummary } from "@/types/regionActiveSummary";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type Props = {
   resource: string;
@@ -11,7 +11,7 @@ type Props = {
 };
 
 export function ResourceActiveSummaryCard({ resource, summary }: Props) {
-  const iconUrl = resourceIconMap[resource] || "";
+  const iconUrl = RESOURCE_ICON_MAP[resource] || "";
 
   const resourceName = resource === "" ? "Unkown Resource" : resource;
 
@@ -90,11 +90,11 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
                 color: "success.main",
               }}
             >
-              {formatNumberWithSuffix(summary.totalBoostedPP)}
+              {formatNumberWithSuffix(summary.productionPoints.boostedPP)}
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Raw PP: {formatNumberWithSuffix(summary.totalRawPP)}
+            Raw PP: {formatNumberWithSuffix(summary.productionPoints.rawPP)}
           </Typography>
         </Box>
       </CardContent>

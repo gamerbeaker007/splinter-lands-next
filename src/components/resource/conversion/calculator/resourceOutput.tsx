@@ -1,4 +1,4 @@
-import { dec_icon_url, sps_icon_url } from "@/scripts/statics_icon_urls";
+import { dec_icon_url, sps_icon_url } from "@/lib/shared/statics_icon_urls";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 

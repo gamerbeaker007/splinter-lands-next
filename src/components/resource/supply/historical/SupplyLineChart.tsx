@@ -1,9 +1,9 @@
-import { RESOURCE_COLOR_MAP } from "@/scripts/lib/utils/statics";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, useTheme } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
-import Plot from "react-plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: ResourceSupplyOverview[];
@@ -70,7 +70,7 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
         minHeight: "500px",
       }}
     >
-      <Plot
+      <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: {
@@ -98,8 +98,6 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
           },
           margin: { t: 50, b: 40 },
         }}
-        style={{ width: "100%", height: "500px" }}
-        useResizeHandler
       />
     </Box>
   );

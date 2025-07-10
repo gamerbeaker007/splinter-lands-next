@@ -7,7 +7,7 @@ import {
   Box,
   Divider,
 } from "@mui/material";
-import { resourceIconMapping } from "@/scripts/lib/utils/statics";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 export type RegionData = {
   title: string;
@@ -52,7 +52,7 @@ export const RegionCard: React.FC<Props> = ({ data }) => {
             {data.resources.map((res, idx) => (
               <Box textAlign="center" key={idx}>
                 <Avatar
-                  src={resourceIconMapping[res.name.toLowerCase()]}
+                  src={RESOURCE_ICON_MAP[res.name]}
                   sx={{ width: 25, height: 25, mx: "auto", mb: 0.5 }}
                 />
                 <Typography variant="caption">

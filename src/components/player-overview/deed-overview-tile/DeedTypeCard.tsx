@@ -13,7 +13,7 @@ import {
   land_region_icon_url,
   land_tract_icon_url,
   SPL_WEB_URL,
-} from "@/scripts/statics_icon_urls";
+} from "@/lib/shared/statics_icon_urls";
 
 type DeedTypeProps = {
   magicType: string;

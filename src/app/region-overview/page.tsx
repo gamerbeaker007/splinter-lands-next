@@ -8,10 +8,16 @@ import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Page } from "@/types/Page";
 import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
+import { ProductionPage } from "@/components/region-overview/production/ProductionPage";
+import { ComparePage } from "@/components/region-overview/compare/ComparePage";
+import { TaxPage } from "@/components/region-overview/tax/TaxPage";
 
 const pages: Page[] = [
   { label: "Activity", component: <ActivityPage /> },
+  { label: "Production", component: <ProductionPage /> },
+  { label: "Compare", component: <ComparePage /> },
   { label: "Summary", component: <SummaryPage /> },
+  { label: "Tax", component: <TaxPage /> },
 ];
 
 export default function RegionOverviewPage() {
@@ -31,7 +37,9 @@ export default function RegionOverviewPage() {
           value={activeTab}
           onChange={(_, newValue) => setActiveTab(newValue)}
         />
-        <Box mt={4}>{pages[activeTab].component}</Box>
+        <Box mt={4} mb={4}>
+          {pages[activeTab].component}
+        </Box>
       </FilterProvider>
     </Container>
   );

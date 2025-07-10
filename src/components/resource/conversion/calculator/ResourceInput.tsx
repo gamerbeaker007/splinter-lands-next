@@ -1,7 +1,7 @@
 // components/ResourceInput.tsx
-import { resourceIconMap } from "@/components/player-overview/deed-overview-tile/production/ProductionCard";
-import { TextField, Box, Typography } from "@mui/material";
+import { Box, TextField, Typography } from "@mui/material";
 import Image from "next/image";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type Props = {
   resource: string;
@@ -19,7 +19,7 @@ export function ResourceInput({ resource, value, onChange }: Props) {
       gap={1}
     >
       <Image
-        src={resourceIconMap[resource]}
+        src={RESOURCE_ICON_MAP[resource]}
         alt={resource}
         width={100}
         height={100}
