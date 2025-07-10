@@ -43,7 +43,6 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   };
 
   const baseConfig = {
-    displayModeBar: true,
     displaylogo: false,
     responsive: true,
     ...config,

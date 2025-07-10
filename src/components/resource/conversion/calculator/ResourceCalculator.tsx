@@ -40,8 +40,9 @@ export function ResourceCalculator() {
   const dec_total = RESOURCES.reduce((sum, res) => {
     const amount = resourcesInput[res] || 0;
     const price = prices?.[res.toLowerCase()] ?? 0;
-    const total = sum + amount * price;
-    return res === "AURA" ? total : total * transaction_fee;
+    const raw = amount * price;
+    const taxed = res === "AURA" ? raw : raw * transaction_fee;
+    return sum + taxed;
   }, 0);
 
   const sps_amount = dec_total / (prices?.["sps"] ?? 0);
