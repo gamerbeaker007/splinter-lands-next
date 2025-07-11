@@ -60,7 +60,7 @@ export function ResourceCalculator() {
     return sum + taxed;
   }, 0);
 
-  const sps_amount = dec_total / (prices?.sps ?? 0);
+  const sps_amount = (dec_total + decExtra) / (prices?.sps ?? 0);
 
   const applyPreset = (
     preset: "wagons" | "auction" | "fortune" | "midnight" | "clear",
