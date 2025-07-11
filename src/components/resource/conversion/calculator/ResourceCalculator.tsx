@@ -13,11 +13,12 @@ import { useEffect, useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { ResourceInput } from "./ResourceInput";
 import { ResourceOutput } from "./resourceOutput";
+import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
 
 const sell_fee = 0.9; // When you sell the resource you need to pay the 10%
 const buy_fee = 1.1; // When you buy the resource you need to increas the DEC by 10%
 
-const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA"];
+const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA", "VOUCHER"];
 
 export function ResourceCalculator() {
   const [resourcesInput, setResourcesInput] = useState<Record<string, number>>({
@@ -26,10 +27,12 @@ export function ResourceCalculator() {
     STONE: 0,
     IRON: 0,
     AURA: 0,
+    VOUCHER: 0,
   });
 
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
   const [mode, setMode] = useState<"buy" | "sell">("buy");
+  const [decExtra, setDecExtra] = useState(0);
 
   useEffect(() => {
     fetch("/api/resource/prices", {
@@ -45,6 +48,7 @@ export function ResourceCalculator() {
 
   const handleChange = (resource: string, value: number) => {
     setResourcesInput((prev) => ({ ...prev, [resource]: value }));
+    setDecExtra(0);
   };
 
   const dec_total = RESOURCES.reduce((sum, res) => {
@@ -57,6 +61,69 @@ export function ResourceCalculator() {
   }, 0);
 
   const sps_amount = dec_total / (prices?.sps ?? 0);
+
+  const applyPreset = (
+    preset: "wagons" | "auction" | "fortune" | "midnight" | "clear",
+  ) => {
+    switch (preset) {
+      case "wagons":
+        setResourcesInput({
+          GRAIN: 0,
+          WOOD: 40000,
+          STONE: 10000,
+          IRON: 4000,
+          AURA: 2500,
+          VOUCHER: 0,
+        });
+        setDecExtra(0);
+        break;
+      case "auction":
+        setResourcesInput({
+          GRAIN: 0,
+          WOOD: 0,
+          STONE: 0,
+          IRON: 0,
+          AURA: 1000,
+          VOUCHER: 50,
+        });
+        setDecExtra(500);
+        break;
+      case "fortune":
+        // Define your own resource values
+        setResourcesInput({
+          GRAIN: 0,
+          WOOD: 0,
+          STONE: 0,
+          IRON: 0,
+          AURA: 200,
+          VOUCHER: 10,
+        });
+        setDecExtra(200);
+        break;
+      case "midnight":
+        setResourcesInput({
+          GRAIN: 0,
+          WOOD: 0,
+          STONE: 0,
+          IRON: 0,
+          AURA: 40,
+          VOUCHER: 0,
+        });
+        setDecExtra(0);
+        break;
+      case "clear":
+        setResourcesInput({
+          GRAIN: 0,
+          WOOD: 0,
+          STONE: 0,
+          IRON: 0,
+          AURA: 0,
+          VOUCHER: 0,
+        });
+        setDecExtra(0);
+        break;
+    }
+  };
 
   return (
     <Box
@@ -83,6 +150,8 @@ export function ResourceCalculator() {
           </ToggleButton>
         </ToggleButtonGroup>
       </Box>
+      <ResourcePresets onSelect={applyPreset} />
+
       <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
         {RESOURCES.map((res, i) => (
           <Box key={res} display="flex" alignItems="center" gap={2}>
@@ -103,7 +172,7 @@ export function ResourceCalculator() {
         </Typography>
 
         {/* Final output */}
-        <ResourceOutput dec={dec_total} sps={sps_amount} />
+        <ResourceOutput dec={dec_total} sps={sps_amount} decExtra={decExtra} />
       </Box>
       <Alert
         severity="info"

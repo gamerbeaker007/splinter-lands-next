@@ -20,7 +20,11 @@ export const resource_iron_icon_url = `${WEB_URL}website/land/resources/iron_500
 export const resource_aura_icon_url = `${WEB_URL}website/land/resources/aura_500.webp`;
 export const resource_research_icon_url = `${WEB_URL}website/land/resources/research.png`;
 export const resource_tax_icon_url = `${WEB_URL}website/nav/icon_nav_items_active@2x.png`;
-export const resource_sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
+export const resource_voucher_icon_url = `${WEB_URL}website/ui_elements/shop/cl/voucher-css.svg`;
+export const resource_auction_mark_icon_url = `${WEB_URL}website/icons/img_auction-marks_400.webp`;
+export const resource_fortune_ticket_icon_url = `${WEB_URL}website/icons/img_fortune-ticket_400.webp`;
+export const resource_midnight_potion_icon_url = `${WEB_URL}website/icons/img_midnight-potion_400.png`;
+export const resource_wagon_kit_icon_url = `${WEB_URL}website/icons/img_wagon-kit_400.webp`;
 
 export const land_default_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
 export const land_mythic_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/legendaryOff.svg`;

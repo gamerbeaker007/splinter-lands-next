@@ -3,7 +3,6 @@ import {
   getLandResourcesPools,
   getMidnightPotionPrice,
 } from "@/lib/backend/api/spl/spl-land-api";
-import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { SplPriceData } from "@/types/price";
 
 async function getPrice(
@@ -18,6 +17,11 @@ async function getPrice(
 
   if (token === "SPS") {
     const usdValue = amount * prices.sps;
+    return usdValue / prices.dec;
+  }
+
+  if (token === "VOUCHER") {
+    const usdValue = amount * prices.voucher;
     return usdValue / prices.dec;
   }
 
@@ -44,8 +48,16 @@ export async function getResourceDECPrices() {
   const metrics = await getLandResourcesPools();
 
   const unitPrices: Record<string, number> = {};
-
-  for (const key of PRODUCING_RESOURCES) {
+  for (const key of [
+    "GRAIN",
+    "WOOD",
+    "STONE",
+    "IRON",
+    "RESEARCH",
+    "AURA",
+    "SPS",
+    "VOUCHER",
+  ]) {
     unitPrices[key.toLowerCase()] = await getPrice(metrics, prices, key, 1);
   }
 

@@ -5,9 +5,10 @@ import Image from "next/image";
 type Props = {
   dec: number;
   sps: number;
+  decExtra: number;
 };
 
-export function ResourceOutput({ dec, sps }: Props) {
+export function ResourceOutput({ dec, sps, decExtra }: Props) {
   return (
     <Box
       display="flex"
@@ -18,7 +19,12 @@ export function ResourceOutput({ dec, sps }: Props) {
     >
       <Image src={dec_icon_url} alt="DEC" width={60} height={60} />
       <Typography variant="subtitle2">DEC</Typography>
-      <Typography fontWeight="bold">{dec.toFixed(2)}</Typography>
+      <Box display={"flex"} flexWrap={"wrap"} alignItems={"center"} gap={1}>
+        <Typography fontWeight="bold">{(dec + decExtra).toFixed(2)}</Typography>
+        {decExtra > 0 && (
+          <Typography fontSize={10}>(incl. {decExtra.toFixed(2)})</Typography>
+        )}
+      </Box>
 
       <Image
         src={sps_icon_url}

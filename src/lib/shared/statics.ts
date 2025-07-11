@@ -7,6 +7,7 @@ import {
   resource_research_icon_url,
   resource_stone_icon_url,
   resource_tax_icon_url,
+  resource_voucher_icon_url,
   resource_wood_icon_url,
   sps_icon_url,
 } from "@/lib/shared/statics_icon_urls";
@@ -76,6 +77,7 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   IRON: resource_iron_icon_url,
   SPS: sps_icon_url,
   RESEARCH: resource_research_icon_url,
+  VOUCHER: resource_voucher_icon_url,
   AURA: resource_aura_icon_url,
   TAX: resource_tax_icon_url,
   DEC: dec_icon_url,
