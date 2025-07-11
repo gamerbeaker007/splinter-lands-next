@@ -1,12 +1,21 @@
 "use client";
 
-import { Alert, AlertTitle, Box, Typography } from "@mui/material";
+import { Sell, ShoppingCart } from "@mui/icons-material";
+import {
+  Alert,
+  AlertTitle,
+  Box,
+  ToggleButton,
+  ToggleButtonGroup,
+  Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { ResourceInput } from "./ResourceInput";
 import { ResourceOutput } from "./resourceOutput";
 
-const transaction_fee = 0.9;
+const sell_fee = 0.9; // When you sell the resource you need to pay the 10%
+const buy_fee = 1.1; // When you buy the resource you need to increas the DEC by 10%
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA"];
 
@@ -20,6 +29,7 @@ export function ResourceCalculator() {
   });
 
   const [prices, setPrices] = useState<Record<string, number> | null>(null);
+  const [mode, setMode] = useState<"buy" | "sell">("buy");
 
   useEffect(() => {
     fetch("/api/resource/prices", {
@@ -41,11 +51,12 @@ export function ResourceCalculator() {
     const amount = resourcesInput[res] || 0;
     const price = prices?.[res.toLowerCase()] ?? 0;
     const raw = amount * price;
-    const taxed = res === "AURA" ? raw : raw * transaction_fee;
+    const taxed =
+      res === "AURA" ? raw : mode == "buy" ? raw * buy_fee : raw * sell_fee;
     return sum + taxed;
   }, 0);
 
-  const sps_amount = dec_total / (prices?.["sps"] ?? 0);
+  const sps_amount = dec_total / (prices?.sps ?? 0);
 
   return (
     <Box
@@ -55,6 +66,23 @@ export function ResourceCalculator() {
       borderColor="secondary.main"
       gap={2}
     >
+      <Box display="flex" justifyContent="center" width="100%">
+        <ToggleButtonGroup
+          value={mode}
+          exclusive
+          onChange={(_, newMode) => newMode && setMode(newMode)}
+          aria-label="mode toggle"
+        >
+          <ToggleButton value="buy" aria-label="buy mode">
+            <ShoppingCart sx={{ mr: 1 }} />
+            Buy
+          </ToggleButton>
+          <ToggleButton value="sell" aria-label="sell mode">
+            <Sell sx={{ mr: 1 }} />
+            Sell
+          </ToggleButton>
+        </ToggleButtonGroup>
+      </Box>
       <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
         {RESOURCES.map((res, i) => (
           <Box key={res} display="flex" alignItems="center" gap={2}>
