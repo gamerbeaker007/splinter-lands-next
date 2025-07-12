@@ -49,19 +49,32 @@ export default function RankingList({
     : null;
 
   return (
-    <Box minWidth={250}>
-      <Card>
-        {title && <Typography variant={"h5"}>{title}</Typography>}
-        {currentPlayerData && (
-          <Box mb={2}>
-            <Typography variant={"body2"} color="secondary.main" fontSize={14}>
-              {currentPlayer} rank: {currentPlayerData[rankingField]}{" "}
-            </Typography>
-            <Typography variant={"body2"} fontSize={12}>
-              Value: {(currentPlayerData[valueField] as number)?.toFixed(2)}
-            </Typography>
-          </Box>
-        )}
+    <Box minWidth={300} maxHeight={500}>
+      <Card sx={{ height: "100%", overflowY: "auto" }}>
+        <Box
+          sx={{
+            position: "sticky",
+            top: 0,
+            backgroundColor: "background.paper",
+            zIndex: 1,
+            px: 2,
+            py: 1,
+            borderBottom: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          {title && <Typography variant="h5">{title}</Typography>}
+          {currentPlayerData && (
+            <Box px={1}>
+              <Typography variant="body2" color="secondary.main" fontSize={14}>
+                {currentPlayer} rank: {currentPlayerData[rankingField]}
+              </Typography>
+              <Typography variant="body2" fontSize={12}>
+                Value: {(currentPlayerData[valueField] as number)?.toFixed(2)}
+              </Typography>
+            </Box>
+          )}
+        </Box>
 
         {sorted.map((p) => (
           <RankedItemBox
@@ -69,7 +82,6 @@ export default function RankingList({
             rank={p[rankingField] as number}
             value={formatNumberWithSuffix(p[valueField] as number)}
             subValue={p.player}
-            //otherSubValues={[p.regionUid, p.tractNumber, p.plotNumber]}
           />
         ))}
       </Card>

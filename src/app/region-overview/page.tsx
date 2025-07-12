@@ -29,18 +29,18 @@ export default function RegionOverviewPage() {
   }, [setTitle]);
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-      <FilterProvider>
-        <FilterDrawer />
-        <NavTabs
-          pages={pages}
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-        />
+    <FilterProvider>
+      <FilterDrawer />
+      <NavTabs
+        pages={pages}
+        value={activeTab}
+        onChange={(_, newValue) => setActiveTab(newValue)}
+      />
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={4} mb={4}>
           {pages[activeTab].component}
         </Box>
-      </FilterProvider>
-    </Container>
+      </Container>
+    </FilterProvider>
   );
 }

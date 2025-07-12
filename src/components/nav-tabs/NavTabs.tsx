@@ -37,7 +37,18 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", pt: 1 }}>
+    <Box
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        pt: 1,
+        position: "sticky",
+        top: 0,
+        zIndex: theme.zIndex.appBar, // Or use a higher number like 1100
+        backgroundColor: theme.palette.background.default,
+        borderBottom: `1px solid ${theme.palette.divider}`, // Optional: visual separation
+      }}
+    >
       {isMobile ? (
         <Select
           value={pages[value].label}

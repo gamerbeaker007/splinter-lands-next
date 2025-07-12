@@ -1,6 +1,7 @@
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import RankingList from "@/components/player-efficiency/RankingList";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import RankingBarChart from "./RankingBarChart";
 
 type Props = {
   currentPlayer?: string;
@@ -11,10 +12,42 @@ export default function RankingPage({
   currentPlayer,
   playerSummaryData,
 }: Props) {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
-    <Box display={"flex"} flexWrap={"wrap"} gap={2}>
+    <Box display={"flex"} flexWrap={"wrap"} gap={2} mb={2}>
       {playerSummaryData ? (
         <>
+          <Box
+            display="flex"
+            flexDirection={isSmallScreen ? "column" : "row"}
+            gap={1}
+            minHeight={450}
+            width={"100%"}
+          >
+            <RankingBarChart
+              title="Plots Active"
+              data={playerSummaryData}
+              valueField="count"
+              rankField="count_rank"
+              currentPlayer={currentPlayer}
+            />
+            <RankingBarChart
+              title="Total DEC Staked"
+              data={playerSummaryData}
+              valueField="total_dec_staked"
+              rankField="total_dec_staked_rank"
+              currentPlayer={currentPlayer}
+            />
+            <RankingBarChart
+              title="Total Harvest PP"
+              data={playerSummaryData}
+              valueField="total_harvest_pp"
+              rankField="total_harvest_pp_rank"
+              currentPlayer={currentPlayer}
+            />
+          </Box>
           <RankingList
             title="Total DEC/hr"
             players={playerSummaryData}
@@ -24,7 +57,7 @@ export default function RankingPage({
           />
 
           <RankingList
-            title="Plots Owned"
+            title="Plots Active"
             players={playerSummaryData}
             rankingField="count_rank"
             valueField="count"

@@ -63,31 +63,32 @@ export default function PlayerPageInner() {
   ];
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+    <>
       <NavTabs
         pages={pages}
         value={activeTab}
         onChange={(_, newValue) => setActiveTab(newValue)}
       />
-
-      <Box mt={2}>
-        <PlayerInput onPlayerChange={setSelectedPlayer} />
-      </Box>
-
-      {error && (
-        <Box mt={4}>
-          <Alert severity="warning">{error}</Alert>
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+        <Box mt={2}>
+          <PlayerInput onPlayerChange={setSelectedPlayer} />
         </Box>
-      )}
 
-      {!error && playerData && selectedPlayer && (
-        <>
-          <FilterDrawer player={selectedPlayer} />
-          <Box mt={4} mb={4}>
-            {pages[activeTab].component}
+        {error && (
+          <Box mt={4}>
+            <Alert severity="warning">{error}</Alert>
           </Box>
-        </>
-      )}
-    </Container>
+        )}
+
+        {!error && playerData && selectedPlayer && (
+          <>
+            <FilterDrawer player={selectedPlayer} />
+            <Box mt={4} mb={4}>
+              {pages[activeTab].component}
+            </Box>
+          </>
+        )}
+      </Container>
+    </>
   );
 }
