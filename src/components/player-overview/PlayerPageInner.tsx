@@ -8,6 +8,26 @@ import NavTabs from "../nav-tabs/NavTabs";
 import DeedOverview from "./DeedOverview";
 import PlayerInput from "./PlayerInput";
 import PlayerRegionOverview from "./region-overview/PlayerRegionOverview";
+import { EnableFilterOptions } from "@/types/filters";
+import { Page } from "@/types/Page";
+
+const defaultFilterConfig: EnableFilterOptions = {
+  regions: true,
+  tracts: true,
+  plots: true,
+  attributes: true,
+  player: false,
+  sorting: false,
+};
+
+const defaultWithSortingFilterConfig: EnableFilterOptions = {
+  regions: true,
+  tracts: true,
+  plots: true,
+  attributes: true,
+  player: false,
+  sorting: true,
+};
 
 export default function PlayerPageInner() {
   const { setTitle } = usePageTitle();
@@ -51,17 +71,20 @@ export default function PlayerPageInner() {
       });
   }, [selectedPlayer]);
 
-  const pages = [
+  const pages: Page[] = [
     {
       label: "Region Overview",
       component: <PlayerRegionOverview player={selectedPlayer} />,
+      filterOptions: defaultFilterConfig,
     },
     {
       label: "Deed",
       component: <DeedOverview player={selectedPlayer} />,
+      filterOptions: defaultWithSortingFilterConfig,
     },
   ];
 
+  const activePage = pages[activeTab];
   return (
     <>
       <NavTabs
@@ -82,9 +105,12 @@ export default function PlayerPageInner() {
 
         {!error && playerData && selectedPlayer && (
           <>
-            <FilterDrawer player={selectedPlayer} />
+            <FilterDrawer
+              player={selectedPlayer}
+              filtersEnabled={activePage.filterOptions}
+            />
             <Box mt={4} mb={4}>
-              {pages[activeTab].component}
+              {activePage.component}
             </Box>
           </>
         )}

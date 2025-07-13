@@ -1,6 +1,6 @@
 import { formatLargeNumber } from "@/lib/formatters";
-import { getProgressInfo } from "@/lib/frontend/ProductionUtils";
 import { calcCosts } from "@/lib/shared/costCalc";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   land_aura_lab_icon_url,
   land_castle_icon_url,
@@ -14,10 +14,10 @@ import {
   land_shard_mine_icon_url,
   land_under_construction_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { ProgressInfo } from "@/types/progressInfo";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type ProductionCardProps = {
   worksiteType: string;
@@ -26,9 +26,7 @@ type ProductionCardProps = {
   rawPerHour: number;
   resource: string;
   includeTax: boolean;
-  hoursSinceLastOperation: number;
-  projectCreatedDate: Date | null;
-  projectedEndDate: Date | null;
+  progressInfo?: ProgressInfo;
 };
 
 export const worksiteTypeMapping: Record<string, string> = {
@@ -112,27 +110,10 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
   rawPerHour,
   resource,
   includeTax,
-  hoursSinceLastOperation,
-  projectCreatedDate,
-  projectedEndDate,
+  progressInfo,
 }) => {
   const [extraText, taxedPerHour] = calculateTaxes(includeTax, rawPerHour);
   const cost = calcCosts(resource, basePP);
-
-  const info =
-    resource != "TAX"
-      ? getProgressInfo(
-          hoursSinceLastOperation,
-          projectCreatedDate,
-          projectedEndDate,
-          boostedPP,
-        )
-      : {
-          percentageDone: 0,
-          infoStr: `N/A`,
-          progressTooltip:
-            "The status of Keeps and Castles remains a mystery for now.",
-        };
 
   const prodIcon = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
   const worksiteImage =
@@ -235,19 +216,24 @@ export const ProductionCard: React.FC<ProductionCardProps> = ({
         </Box>
       </Stack>
 
-      <Box>
-        <Typography fontSize="0.625rem" fontWeight="bold" display="inline">
-          Progress:
-        </Typography>
-        {info.progressTooltip && (
-          <Tooltip title={info.progressTooltip}>
-            <Typography component="span" fontSize="0.625rem" ml={1}>
-              ℹ️
-            </Typography>
-          </Tooltip>
-        )}
-        <ProgressBar percentage={info.percentageDone} label={info.infoStr} />
-      </Box>
+      {progressInfo && (
+        <Box>
+          <Typography fontSize="0.625rem" fontWeight="bold" display="inline">
+            Progress:
+          </Typography>
+          {progressInfo.progressTooltip && (
+            <Tooltip title={progressInfo.progressTooltip}>
+              <Typography component="span" fontSize="0.625rem" ml={1}>
+                ℹ️
+              </Typography>
+            </Tooltip>
+          )}
+          <ProgressBar
+            percentage={progressInfo.percentageDone}
+            label={progressInfo.infoStr}
+          />
+        </Box>
+      )}
     </Box>
   );
 };

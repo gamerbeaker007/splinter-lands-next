@@ -24,6 +24,7 @@ export async function getPlayerData(
   force = false,
 ): Promise<DeedComplete[]> {
   const raw = await getCachedPlayerData(player, force);
+  console.log(`Filters: ${JSON.stringify(filters)}`);
   if (raw.deeds.length > 0) {
     const completeDeeds = mapRegionDataToDeedComplete(raw);
     return filterDeeds(completeDeeds, filters);

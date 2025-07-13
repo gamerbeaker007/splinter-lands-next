@@ -1,6 +1,6 @@
 "use client";
 
-import { FilterInput } from "@/types/filters";
+import { EnableFilterOptions, FilterInput } from "@/types/filters";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
@@ -10,11 +10,13 @@ import LocationFilter from "./LocationFilter";
 import PlayerFilter from "./PlayerFilter";
 import ResetFiltersButton from "./reset-filters/ResetFiltersButton";
 import { Typography } from "@mui/material";
+import Sorting from "./Sorting";
 
 type Props = {
   player?: string | null;
+  filtersEnabled?: Partial<EnableFilterOptions>;
 };
-export default function FilterDrawer({ player }: Props) {
+export default function FilterDrawer({ player, filtersEnabled }: Props) {
   const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
     null,
   );
@@ -105,9 +107,24 @@ export default function FilterDrawer({ player }: Props) {
             gap: 4,
           }}
         >
-          <LocationFilter options={availableOptions} />
-          <AttributeFilter options={availableOptions} />
-          <PlayerFilter options={availableOptions} />
+          {(filtersEnabled?.regions !== false ||
+            filtersEnabled.tracts !== false ||
+            filtersEnabled.plots !== false) && (
+            <LocationFilter
+              options={availableOptions}
+              showRegion={filtersEnabled?.regions ?? true}
+              showTract={filtersEnabled?.tracts ?? true}
+              showPlot={filtersEnabled?.plots ?? true}
+            />
+          )}
+          {filtersEnabled?.attributes !== false && (
+            <AttributeFilter options={availableOptions} />
+          )}
+          {filtersEnabled?.player !== false && (
+            <PlayerFilter options={availableOptions} />
+          )}
+
+          {filtersEnabled?.sorting !== false && <Sorting />}
         </Box>
         <ResetFiltersButton />
       </Drawer>

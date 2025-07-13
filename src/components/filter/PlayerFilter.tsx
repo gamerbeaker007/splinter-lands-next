@@ -2,7 +2,7 @@
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { FilterInput } from "@/types/filters";
-import { Box, Typography } from "@mui/material";
+import { Box, Divider, Typography } from "@mui/material";
 import MultiSelect from "../ui/multiselect/MultiSelect";
 
 type Props = {
@@ -21,6 +21,7 @@ export default function PlayerFilter({ options }: Props) {
 
   return (
     <Box>
+      <Divider />
       <Typography variant="subtitle1" gutterBottom>
         Player
       </Typography>
