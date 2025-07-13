@@ -17,7 +17,7 @@ export function filterDeeds(
   data: DeedComplete[],
   filters: FilterInput,
 ): DeedComplete[] {
-  const filtered = data.filter((deed) => {
+  return data.filter((deed) => {
     if (!isInFilter(filters.filter_regions, deed.region_number)) return false;
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
     if (!isInFilter(filters.filter_plots, deed.plot_number)) return false;
@@ -49,11 +49,9 @@ export function filterDeeds(
 
     return true;
   });
-
-  return sortDeeds(filtered, filters.sorting);
 }
 
-function sortDeeds(
+export function sortDeeds(
   deeds: DeedComplete[],
   sorting?: { key: SortOptionKey; direction: SortDirection },
 ): DeedComplete[] {
@@ -94,6 +92,8 @@ function getSortValue(
       return deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     case "boostedPP":
       return deed.stakingDetail?.total_harvest_pp ?? 0;
+    case "percentComplete":
+      return deed.progressInfo?.percentageDone ?? 0;
     default:
       return undefined;
   }
