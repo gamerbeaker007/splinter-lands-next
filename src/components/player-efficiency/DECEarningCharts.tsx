@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
-import { Box, useTheme } from "@mui/material";
-import { PRODUCING_RESOURCES, RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { PRODUCING_RESOURCES, RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
+import { Box } from "@mui/material";
 
 type Props = {
   data: PlayerProductionSummaryEnriched[];
@@ -12,10 +11,6 @@ type Props = {
 };
 
 export default function DECEarningCharts({ data, currentPlayer }: Props) {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   const sorted = [...data]
     .filter((d) => d.total_dec !== undefined)
     .sort((a, b) => (b.total_dec ?? 0) - (a.total_dec ?? 0));
@@ -59,24 +54,16 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
   }
 
   return (
-    <Box display={"flex"} flexWrap={"wrap"}>
+    <Box display={"flex"} flexWrap={"wrap"} gap={2}>
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
           data={traces}
           layout={{
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
-            font: { color: textColor },
             barmode: "relative",
             title: {
               text: "Hourly Earning From Land Resources (converted to DEC)",
@@ -85,6 +72,7 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
               title: { text: "Player" },
               tickangle: -45,
               automargin: true,
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Hourly DEC" },
@@ -95,14 +83,9 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
         />
       </Box>
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -111,21 +94,18 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
               type: "bar",
               x: players,
               y: sorted.map((d) => d.total_dec ?? 0),
-              // marker: { color: 'blue' },
               name: "Total DEC",
               hoverinfo: "x+y",
             },
-          ]} //add here a total_dec bar chart with color blue}
+          ]}
           layout={{
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
-            font: { color: textColor },
             barmode: "relative",
             title: { text: "Total DEC earning)" },
             xaxis: {
               title: { text: "Player" },
               tickangle: -45,
               automargin: true,
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Hourly DEC" },

@@ -1,20 +1,16 @@
 "use client";
 
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { RegionResourcePP } from "@/types/regionProductionSummary";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ResourceSelector } from "../ResourceSelector";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   data: Record<string, RegionResourcePP>;
 };
 
 export default function TopRegionsByResourceChart({ data }: Props) {
-  const theme = useTheme();
-  const textColor = theme.palette.text.primary;
-  const backgroundColor = theme.palette.background.default;
-
   const resourceTypes = Object.keys(data).filter((r) => r !== "");
 
   const [selectedResource, setSelectedResource] = useState<string | null>(
@@ -65,14 +61,10 @@ export default function TopRegionsByResourceChart({ data }: Props) {
       />
       {selectedResource && (
         <Box
-          mt={3}
+          mt={2}
           sx={{
-            border: "1px solid",
-            borderColor: "secondary.main",
-            borderRadius: 5,
-            padding: 2,
             width: "100%",
-            minHeight: "800px",
+            height: 800,
           }}
         >
           <FullscreenPlotWrapper
@@ -97,11 +89,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
             layout={{
               title: { text: `${selectedResource} – Regions by Boosted PP` },
               barmode: "group",
-              height: 800,
-              font: { color: textColor },
-              plot_bgcolor: backgroundColor,
-              paper_bgcolor: backgroundColor,
-              margin: { l: 50, b: 50, t: 50 },
+              margin: { b: 100, l: 50, r: 60, t: 50 },
               xaxis: {
                 title: { text: "Production Points" },
               },
@@ -116,7 +104,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
             }}
           />
         </Box>
-      )}{" "}
+      )}
     </>
   );
 }

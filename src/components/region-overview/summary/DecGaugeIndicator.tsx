@@ -1,7 +1,7 @@
-import React from "react";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
-import { formatNumberWithSuffix } from "@/lib/formatters";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { formatNumberWithSuffix } from "@/lib/formatters";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import React from "react";
 
 type Props = {
   title: string;
@@ -46,84 +46,73 @@ const DecGaugeIndicator: React.FC<Props> = ({
         marginLeft: 2,
         minWidth: isSmallScreen ? 250 : 400,
         width: "100%",
+        aspectRatio: "7 / 6",
       }}
     >
-      <Box width="100%" height="100%" sx={{ aspectRatio: "7 / 6" }}>
-        <FullscreenPlotWrapper
-          data={[
-            {
-              type: "indicator",
-              mode: "gauge",
-              value: totalDecStaked,
-              title: {
-                text: title,
-                font: { size: 18, color: textColor },
-              },
-              gauge: {
-                axis: {
-                  range: [0, maxPossibleStakedDec],
-                  tickwidth: 1,
-                  tickcolor: textColor,
-                  color: textColor,
-                },
-                steps: [
-                  {
-                    range: [yellowStart, yellowEnd],
-                    color: "yellow",
-                  },
-                ],
-                threshold: {
-                  line: { color: "red", width: 4 },
-                  thickness: 0.5,
-                  value: maxPossibleStakedDec,
-                },
-                bar: { color: "blue" },
-              },
-              domain: { x: [0, 1], y: [0, 1] },
+      <FullscreenPlotWrapper
+        noBoxWrapper={true}
+        data={[
+          {
+            type: "indicator",
+            mode: "gauge",
+            value: totalDecStaked,
+            title: {
+              text: title,
+              font: { size: 18, color: textColor },
             },
-          ]}
-          layout={{
-            autosize: true,
-            paper_bgcolor: backgroundColor,
-            plot_bgcolor: backgroundColor,
-            font: { color: textColor },
-            margin: { t: 50, b: 0, l: 0, r: 0 },
-            annotations: [
-              {
-                text: `${formatNumberWithSuffix(totalDecStaked)} DEC`,
-                x: 0.5,
-                y: 0.25,
-                xref: "paper",
-                yref: "paper",
-                showarrow: false,
-                font: {
-                  size: 30,
-                  color: textColor,
-                },
+            gauge: {
+              axis: {
+                range: [0, maxPossibleStakedDec],
+                tickwidth: 1,
+                tickcolor: textColor,
+                color: textColor,
               },
-              {
-                text: deltaText,
-                x: 0.5,
-                y: 0.15,
-                xref: "paper",
-                yref: "paper",
-                showarrow: false,
-                font: {
-                  size: 18,
-                  color: delta >= 0 ? "green" : "red",
+              steps: [
+                {
+                  range: [yellowStart, yellowEnd],
+                  color: "yellow",
                 },
+              ],
+              threshold: {
+                line: { color: "red", width: 4 },
+                thickness: 0.5,
+                value: maxPossibleStakedDec,
               },
-            ],
-          }}
-          config={{
-            displayModeBar: true,
-            displaylogo: true,
-            responsive: true,
-            // modeBarButtons: DEFAULT_BUTTONS as unknown as any[][],
-          }}
-          style={{ width: "100%", height: "100%" }}
-        />
-      </Box>
+              bar: { color: "blue" },
+            },
+            domain: { x: [0, 1], y: [0, 1] },
+          },
+        ]}
+        layout={{
+          autosize: true,
+          margin: { t: 50, b: 0, l: 0, r: 0 },
+          annotations: [
+            {
+              text: `${formatNumberWithSuffix(totalDecStaked)} DEC`,
+              x: 0.5,
+              y: 0.25,
+              xref: "paper",
+              yref: "paper",
+              showarrow: false,
+              font: {
+                size: 30,
+              },
+            },
+            {
+              text: deltaText,
+              x: 0.5,
+              y: 0.15,
+              xref: "paper",
+              yref: "paper",
+              showarrow: false,
+              font: {
+                size: 18,
+                color: delta >= 0 ? "green" : "red",
+              },
+            },
+          ],
+        }}
+      />
     </Box>
   );
 };

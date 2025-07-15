@@ -1,9 +1,8 @@
 "use client";
 
-import React from "react";
-import { Box, Typography, useTheme } from "@mui/material";
-import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
+import { Box, Typography } from "@mui/material";
+import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   title: string;
@@ -20,10 +19,6 @@ export default function RankingBarChart({
   rankField,
   currentPlayer,
 }: Props) {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   const sorted = [...data]
     .filter((d) => d[valueField] !== undefined && d[rankField] !== undefined)
     .sort((a, b) => Number(a[rankField])! - Number(b[rankField]!));
@@ -52,12 +47,8 @@ export default function RankingBarChart({
       </Box>
       <Box
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -80,11 +71,9 @@ export default function RankingBarChart({
             },
           ]}
           layout={{
-            paper_bgcolor: backgroundColor,
-            plot_bgcolor: backgroundColor,
             barmode: "stack",
-            font: { color: textColor },
             title: { text: `Ranking by ${valueField}` },
+            xaxis: { showgrid: false, tickangle: -45 },
             yaxis: {
               title: { text: `${valueField} (log)` },
               type: "log",

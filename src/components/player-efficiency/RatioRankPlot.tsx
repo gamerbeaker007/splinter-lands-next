@@ -1,7 +1,7 @@
 "use client";
 
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
-import { Box, useTheme } from "@mui/material";
+import { Box } from "@mui/material";
 import { ScatterData, Shape } from "plotly.js";
 import React from "react";
 import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
@@ -27,10 +27,6 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
   xAxisTitle = "Ratio",
   yAxisTitle = "Rank",
 }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   if (!data || data.length === 0) return null;
 
   const df = data.filter((row) => {
@@ -139,20 +135,13 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
     <Box
       mt={1}
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper
         data={traces}
         layout={{
-          paper_bgcolor: backgroundColor,
-          plot_bgcolor: backgroundColor,
-          font: { color: textColor },
           title: { text: title },
           xaxis: { title: { text: xAxisTitle } },
           yaxis: { title: { text: yAxisTitle } },

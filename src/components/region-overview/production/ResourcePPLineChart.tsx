@@ -1,19 +1,15 @@
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { resourceTracking } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { Box, useTheme } from "@mui/material";
+import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: resourceTracking[];
 }
 
 const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   // Group data by resource token_symbol
   const grouped = data.reduce<Record<string, resourceTracking[]>>(
     (acc, entry) => {
@@ -39,28 +35,21 @@ const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
   return (
     <Box
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: { text: "Historical Boosted PP Chart" },
-          xaxis: { title: { text: "Date" } },
-          font: { color: textColor },
+          xaxis: { title: { text: "Date" }, showgrid: false },
           yaxis: {
-            title: { text: "Boosted PP" },
+            title: { text: "Boosted PP (log)" },
             type: "log",
             autorange: true,
           },
-          legend: { orientation: "h", y: -0.2 },
-          paper_bgcolor: backgroundColor,
-          plot_bgcolor: backgroundColor,
+          legend: { orientation: "h", y: -0.3 },
         }}
         config={{ responsive: true }}
       />

@@ -1,20 +1,16 @@
 "use client";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { Box, useTheme } from "@mui/material";
-import React from "react";
+import { Box } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import React from "react";
 
 interface Props {
   data: ResourceHubMetrics[];
 }
 
 export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   const filteredData = data
     .filter((d) => ["WOOD", "STONE", "IRON"].includes(d.token_symbol))
     .map((d) => ({
@@ -40,12 +36,11 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
   );
 
   const layout: Partial<Layout> = {
-    title: { text: "Grain factor", font: { color: textColor } },
-    height: 600,
-    xaxis: { title: { text: "Date", font: { color: textColor } } },
+    title: { text: "Grain factor" },
+    xaxis: { title: { text: "Date" }, showgrid: false },
     yaxis: {
       type: "linear",
-      title: { text: "Factor", font: { color: textColor } },
+      title: { text: "Factor" },
     },
     // 🔁 Add secondary y-axis for dec_usd_value
     yaxis2: {
@@ -55,22 +50,15 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
       showgrid: false,
       tickfont: { color: "purple" },
     },
-    font: { color: textColor },
-    paper_bgcolor: backgroundColor,
-    plot_bgcolor: backgroundColor,
-    legend: { orientation: "h", font: { color: textColor } },
+    legend: { orientation: "h" },
     margin: { t: 50, l: 50, r: 50, b: 50 }, // widen right margin for y2
   };
 
   return (
     <Box
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 600,
       }}
     >
       <FullscreenPlotWrapper

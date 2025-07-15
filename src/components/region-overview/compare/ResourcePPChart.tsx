@@ -1,8 +1,8 @@
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ProductionPoints } from "@/types/productionPoints";
-import { Box, useTheme } from "@mui/material";
+import { Box } from "@mui/material";
 import { PlotData } from "plotly.js";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 type ResourcePPChartProps = {
   method: string | null;
@@ -15,10 +15,6 @@ export const ResourcePPChart = ({
   resource,
   data,
 }: ResourcePPChartProps) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   if (!data || Object.keys(data).length === 0) return null;
 
   const locations = new Set<string>();
@@ -62,14 +58,10 @@ export const ResourcePPChart = ({
 
   return (
     <Box
-      mt={3}
+      mt={2}
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        height: "800px",
+        height: 700,
       }}
     >
       <FullscreenPlotWrapper
@@ -78,22 +70,18 @@ export const ResourcePPChart = ({
           barmode: "group",
           title: {
             text: "Production Points by Resource and Location",
-            font: { color: textColor },
           },
-          margin: { l: 50, r: 30, t: 50, b: 100 },
+          margin: { b: 100, l: 50, r: 60, t: 50 },
           xaxis: {
             title: { text: `Location (${method})` },
             tickangle: -45,
             automargin: true,
-            color: textColor,
+            showgrid: false,
             type: "category",
           },
           yaxis: {
             title: { text: "Production Points" },
-            color: textColor,
           },
-          paper_bgcolor: backgroundColor,
-          plot_bgcolor: backgroundColor,
         }}
       />
     </Box>

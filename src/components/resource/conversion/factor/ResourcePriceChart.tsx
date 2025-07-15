@@ -1,10 +1,10 @@
 "use client";
-import React from "react";
-import { Box, useTheme } from "@mui/material";
-import { Layout, ScatterData } from "plotly.js";
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { Box } from "@mui/material";
+import { Layout, ScatterData } from "plotly.js";
+import React from "react";
 
 type Mode = "resource" | "dec"; // price = cost in DEC, dec = amount of resource
 interface Props {
@@ -18,10 +18,6 @@ export const ResourcePriceChart: React.FC<Props> = ({
   mode,
   logY = false,
 }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   const transformedData = data.map((d) => ({
     ...d,
     display_value:
@@ -48,36 +44,27 @@ export const ResourcePriceChart: React.FC<Props> = ({
 
   const layout: Partial<Layout> = {
     title: { text: mode === "resource" ? "1000 Resources" : "1000 DEC" },
-    height: 400,
-    xaxis: { title: { text: "Date", font: { color: textColor } } },
+    xaxis: { title: { text: "Date" }, showgrid: false },
     yaxis: {
       title: {
         text: mode === "resource" ? "Cost in DEC" : "Amount of Resource",
       },
       type: logY ? "log" : "linear",
-      color: textColor,
     },
-    font: { color: textColor },
-    paper_bgcolor: backgroundColor,
-    plot_bgcolor: backgroundColor,
     legend: {
       orientation: "h",
-      font: { color: textColor },
       y: -0.35,
       yanchor: "bottom",
     },
-    margin: { t: 50, l: 50, r: 20, b: 50 },
+    margin: { b: 100, l: 50, r: 60, t: 50 },
   };
 
   return (
     <Box
+      mb={2}
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper data={traces} layout={layout} />

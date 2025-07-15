@@ -27,14 +27,14 @@ export default function RankingPage({
             width={"100%"}
           >
             <RankingBarChart
-              title="Plots Active"
+              title="Plots active"
               data={playerSummaryData}
               valueField="count"
               rankField="count_rank"
               currentPlayer={currentPlayer}
             />
             <RankingBarChart
-              title="DEC Staked"
+              title="DEC staked"
               data={playerSummaryData}
               valueField="total_dec_staked"
               rankField="total_dec_staked_rank"
@@ -49,7 +49,7 @@ export default function RankingPage({
             />
           </Box>
           <RankingList
-            title="Total DEC/hr"
+            title="DEC/hr"
             players={playerSummaryData}
             rankingField="total_dec_rank"
             valueField="total_dec"
@@ -57,7 +57,7 @@ export default function RankingPage({
           />
 
           <RankingList
-            title="Plots Active"
+            title="Plots active"
             players={playerSummaryData}
             rankingField="count_rank"
             valueField="count"
@@ -81,7 +81,7 @@ export default function RankingPage({
           />
 
           <RankingList
-            title="LCE BOOSTED PP"
+            title="LCE Boosted PP"
             players={playerSummaryData}
             rankingField="LCE_boosted_rank"
             valueField="LCE_boosted_score"
@@ -107,7 +107,7 @@ export default function RankingPage({
             currentPlayer={currentPlayer}
           />
           <RankingList
-            title="TOTAL LAND SCORE"
+            title="Land Score"
             players={playerSummaryData}
             rankingField="total_land_rank"
             valueField="total_land_score"

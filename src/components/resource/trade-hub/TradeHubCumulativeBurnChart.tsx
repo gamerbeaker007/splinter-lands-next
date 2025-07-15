@@ -1,19 +1,14 @@
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma";
-import { Box, useTheme } from "@mui/material";
+import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 
 interface Props {
   data: ResourceHubMetrics[];
 }
 
 const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-  const gridLineColor = theme.palette.divider;
-
   // Aggregate daily DEC volume and burned
   const dailyMap: Record<string, number> = {};
   const dateList: string[] = [];
@@ -62,23 +57,16 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
   return (
     <Box
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper
         data={traces}
         layout={{
           title: { text: "Daily DEC Burn and Cumulative DEC Burn" },
-          plot_bgcolor: backgroundColor,
-          paper_bgcolor: backgroundColor,
-          font: { color: textColor },
           legend: {
-            font: { size: 10, color: textColor },
+            font: { size: 10 },
             orientation: "v",
           },
           xaxis: {
@@ -87,7 +75,6 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
           },
           yaxis: {
             title: { text: "Burned DEC" },
-            gridcolor: gridLineColor,
           },
           yaxis2: {
             title: { text: "Cumulative Burned DEC" },
@@ -96,9 +83,8 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
             showgrid: false,
             zeroline: false,
           },
-          margin: { t: 50, b: 40 },
+          margin: { b: 100, l: 50, r: 60, t: 50 },
         }}
-        style={{ width: "100%", height: "500px" }}
       />
     </Box>
   );

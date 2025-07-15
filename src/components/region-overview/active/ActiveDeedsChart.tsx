@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { useTheme } from "@mui/material";
-import Typography from "@mui/material/Typography";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
 
 export default function ActiveDeedsChart() {
   const { filters } = useFilters();
   const [data, setData] = useState<Record<string, Record<string, number>>>({});
   const [xTitle, setXTitle] = useState<string>("");
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
 
   useEffect(() => {
     if (!filters) return;
@@ -46,14 +42,9 @@ export default function ActiveDeedsChart() {
       </Typography>
 
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -76,18 +67,14 @@ export default function ActiveDeedsChart() {
           layout={{
             title: { text: "Active Deeds" },
             barmode: "stack",
-            height: 500,
-            margin: { b: 100 },
-            font: { color: textColor },
+            margin: { b: 100, l: 50, r: 60, t: 50 },
             xaxis: {
               title: { text: xTitle },
-              tickfont: { size: 10 },
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Deeds" },
             },
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
             legend: {
               orientation: "h",
               y: -0.3,
