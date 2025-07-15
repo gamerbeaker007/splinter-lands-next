@@ -34,14 +34,14 @@ export default function RankingPage({
               currentPlayer={currentPlayer}
             />
             <RankingBarChart
-              title="Total DEC Staked"
+              title="DEC Staked"
               data={playerSummaryData}
               valueField="total_dec_staked"
               rankField="total_dec_staked_rank"
               currentPlayer={currentPlayer}
             />
             <RankingBarChart
-              title="Total Harvest PP"
+              title="Boosted PP"
               data={playerSummaryData}
               valueField="total_harvest_pp"
               rankField="total_harvest_pp_rank"
@@ -81,10 +81,20 @@ export default function RankingPage({
           />
 
           <RankingList
+            title="LCE BOOSTED PP"
+            players={playerSummaryData}
+            rankingField="LCE_boosted_rank"
+            valueField="LCE_boosted_score"
+            subValueField="LCE_ratio_boosted"
+            currentPlayer={currentPlayer}
+          />
+
+          <RankingList
             title="LDE"
             players={playerSummaryData}
             rankingField="LDE_rank"
-            valueField="LDE_ratio"
+            valueField="LDE_score"
+            subValueField="LDE_ratio"
             currentPlayer={currentPlayer}
           />
 
@@ -92,7 +102,15 @@ export default function RankingPage({
             title="LPE"
             players={playerSummaryData}
             rankingField="LPE_rank"
-            valueField="LPE_ratio"
+            valueField="LPE_score"
+            subValueField="LPE_ratio"
+            currentPlayer={currentPlayer}
+          />
+          <RankingList
+            title="TOTAL LAND SCORE"
+            players={playerSummaryData}
+            rankingField="total_land_rank"
+            valueField="total_land_score"
             currentPlayer={currentPlayer}
           />
         </>

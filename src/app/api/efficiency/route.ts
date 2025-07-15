@@ -89,14 +89,40 @@ function assignRank(
   }
 }
 
+function normalizeRatio(
+  players: PlayerProductionSummaryEnriched[],
+  field: keyof PlayerProductionSummaryEnriched,
+  targetField: string,
+  scale = 1000,
+) {
+  const values = players
+    .map((p) => p[field] as number)
+    .filter((v) => isFinite(v));
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+
+  for (const player of players) {
+    const raw = player[field] as number;
+    const norm = isFinite(raw) ? ((raw - min) / (max - min)) * scale : 0;
+    (player as unknown as Record<string, number | null>)[targetField] = norm;
+  }
+}
+
 function calculateRatios(players: PlayerProductionSummaryEnriched[]) {
+  const epsilon = 1e-6;
+
   // --- Ratios
   for (const player of players) {
-    player.LCE_ratio_base = player.total_base_pp_after_cap / player.total_dec;
-    player.LCE_ratio_boosted = player.total_harvest_pp / player.total_dec;
+    player.LDE_ratio = Math.log10(
+      player.total_dec / ((player.total_dec_stake_in_use ?? 0) + epsilon),
+    );
+    player.LCE_ratio_base = Math.log10(
+      player.total_dec / (player.total_base_pp_after_cap + epsilon),
+    );
+    player.LCE_ratio_boosted = Math.log10(
+      player.total_dec / (player.total_harvest_pp + epsilon),
+    );
     player.LPE_ratio = player.total_dec / player.count;
-    player.LDE_ratio =
-      (player.total_dec_stake_in_use ?? 0) / (player.total_dec * 24);
   }
 }
 
@@ -110,6 +136,24 @@ function calculateRanks(players: PlayerProductionSummaryEnriched[]) {
   assignRank(players, "total_dec_staked", "total_dec_staked_rank");
   assignRank(players, "count", "count_rank");
   assignRank(players, "total_harvest_pp", "total_harvest_pp_rank");
+  assignRank(players, "total_land_score", "total_land_rank");
+}
+
+function normalizeRatios(players: PlayerProductionSummaryEnriched[]) {
+  normalizeRatio(players, "LDE_ratio", "LDE_score", 100);
+  normalizeRatio(players, "LCE_ratio_base", "LCE_base_score", 100);
+  normalizeRatio(players, "LCE_ratio_boosted", "LCE_boosted_score", 100);
+  normalizeRatio(players, "LPE_ratio", "LPE_score", 100);
+}
+
+function calculateTotalLandScore(players: PlayerProductionSummaryEnriched[]) {
+  for (const player of players) {
+    player.total_land_score =
+      ((player.LDE_score ?? 0) +
+        (player.LPE_score ?? 0) +
+        (player.LCE_boosted_score ?? 0)) /
+      3;
+  }
 }
 
 export async function GET() {
@@ -121,6 +165,8 @@ export async function GET() {
     const stakeMap = aggregateStakingInfo(regionData);
     applyStakingDataToPlayers(playerSummaryData, stakeMap);
     calculateRatios(playerSummaryData);
+    normalizeRatios(playerSummaryData);
+    calculateTotalLandScore(playerSummaryData);
     calculateRanks(playerSummaryData);
 
     return NextResponse.json(playerSummaryData, { status: 200 });

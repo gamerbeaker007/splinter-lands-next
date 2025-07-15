@@ -46,7 +46,7 @@ export default function RankingBarChart({
         <Typography variant="h5">{title}</Typography>
         {currentPlayer && selectedRank !== undefined && (
           <Typography variant="body2" color="secondary.main" fontSize={14}>
-            {currentPlayer} rank: {selectedRank} /{sorted.length}
+            {currentPlayer} rank: {selectedRank} / {sorted.length}
           </Typography>
         )}
       </Box>
@@ -85,7 +85,6 @@ export default function RankingBarChart({
             barmode: "stack",
             font: { color: textColor },
             title: { text: `Ranking by ${valueField}` },
-            //   xaxis: { title: { text: "Player" } },
             yaxis: {
               title: { text: `${valueField} (log)` },
               type: "log",

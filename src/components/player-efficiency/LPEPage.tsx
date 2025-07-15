@@ -7,7 +7,7 @@ type Props = {
   playerSummaryData?: PlayerProductionSummaryEnriched[] | null;
 };
 
-export default function LDEPage({ currentPlayer, playerSummaryData }: Props) {
+export default function LPEPage({ currentPlayer, playerSummaryData }: Props) {
   if (!playerSummaryData) {
     return <Box>... Loading Data</Box>;
   }
@@ -22,20 +22,19 @@ export default function LDEPage({ currentPlayer, playerSummaryData }: Props) {
           fontSize: "0.9rem",
         }}
       >
-        Land DEC Efficiency (LDE ratio) = log10(DEC earned per hour / Total DEC
-        Staked in Use)
+        Land Plot Efficiency (LPE ratio) = Total DEC earned per hour / Number of
+        Active Plots
         {"\n"}
-        LDE Score = Normalized ratio (from 0 to 100)
+        LPE Score = Normalized ratio (from 0 to 100)
       </Alert>
-
       <RatioRankPlot
         data={playerSummaryData}
         currentPlayer={currentPlayer}
-        xColumn="LDE_score"
-        yColumn="LDE_rank"
-        hoverLabel="LDE Score"
-        title="LDE Score vs Rank"
-        xAxisTitle="LDE Score"
+        xColumn="LPE_ratio"
+        yColumn="LPE_rank"
+        hoverLabel="LPE Ratio"
+        title="LPE Score vs Rank"
+        xAxisTitle="LPE Score"
         yAxisTitle="Rank"
       />
     </Box>

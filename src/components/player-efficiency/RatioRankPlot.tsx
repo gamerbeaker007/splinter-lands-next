@@ -1,7 +1,7 @@
 "use client";
 
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, useTheme } from "@mui/material";
 import { ScatterData, Shape } from "plotly.js";
 import React from "react";
 import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
@@ -115,7 +115,7 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
       },
       hovertemplate:
         `<b>%{text}</b><br>${hoverLabel}: %{x:.2f}` +
-        `<br>Rank: %{y}<br>Base PP: %{customdata[0]:,.0f}<extra></extra>`,
+        `<br>Value: %{y}<br>Base PP: %{customdata[0]:,.0f}<extra></extra>`,
       name: "Players",
     },
     ...[1_000_000, 5_000_000, 10_000_000].map((value) => ({
@@ -136,10 +136,17 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
   ];
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        {title}
-      </Typography>
+    <Box
+      mt={1}
+      sx={{
+        border: "1px solid",
+        borderColor: "secondary.main",
+        borderRadius: 5,
+        padding: 2,
+        width: "100%",
+        minHeight: "500px",
+      }}
+    >
       <FullscreenPlotWrapper
         data={traces}
         layout={{
