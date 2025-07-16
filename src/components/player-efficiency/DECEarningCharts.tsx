@@ -77,7 +77,6 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
             yaxis: {
               title: { text: "Hourly DEC" },
             },
-            margin: { t: 50, l: 50, r: 20, b: 100 },
             shapes: getCurrentPlayerShape(players, currentPlayer),
           }}
         />
@@ -110,7 +109,6 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
             yaxis: {
               title: { text: "Hourly DEC" },
             },
-            margin: { t: 50, l: 50, r: 20, b: 100 },
             shapes: getCurrentPlayerShape(players, currentPlayer),
           }}
         />

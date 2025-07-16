@@ -51,7 +51,6 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
       tickfont: { color: "purple" },
     },
     legend: { orientation: "h" },
-    margin: { t: 50, l: 50, r: 50, b: 50 }, // widen right margin for y2
   };
 
   return (

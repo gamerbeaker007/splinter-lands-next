@@ -1,10 +1,9 @@
 "use client";
 
-import Container from "@mui/material/Container";
-import { useEffect, useState } from "react";
+import { ProductionOverviewPage } from "@/components/region-overview/production/ProductionOverview";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionPP } from "@/types/regionProductionSummary";
-import { ProductionOverviewPage } from "@/components/region-overview/production/ProductionOverview";
+import { useEffect, useState } from "react";
 import { HistoricalProductionPP } from "./HistoricalProductionPP";
 
 export function ProductionPage() {
@@ -29,10 +28,8 @@ export function ProductionPage() {
 
   return (
     <>
-      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-        {data && <ProductionOverviewPage data={data} />}
-        <HistoricalProductionPP />
-      </Container>
+      {data && <ProductionOverviewPage data={data} />}
+      <HistoricalProductionPP />
     </>
   );
 }

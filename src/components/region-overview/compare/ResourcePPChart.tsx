@@ -71,7 +71,6 @@ export const ResourcePPChart = ({
           title: {
             text: "Production Points by Resource and Location",
           },
-          margin: { b: 100, l: 50, r: 60, t: 50 },
           xaxis: {
             title: { text: `Location (${method})` },
             tickangle: -45,

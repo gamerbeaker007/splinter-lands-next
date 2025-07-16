@@ -147,7 +147,6 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
           yaxis: { title: { text: yAxisTitle } },
           shapes,
           legend: { orientation: "h" },
-          margin: { t: 50 },
         }}
       />
     </Box>

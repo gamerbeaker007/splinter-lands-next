@@ -37,9 +37,7 @@ export default function ActiveDeedsChart() {
 
   return (
     <>
-      <Typography mt={4} variant={"h4"}>
-        Activated deeds
-      </Typography>
+      <Typography variant={"h4"}>Activated deeds</Typography>
 
       <Box
         sx={{
@@ -67,7 +65,6 @@ export default function ActiveDeedsChart() {
           layout={{
             title: { text: "Active Deeds" },
             barmode: "stack",
-            margin: { b: 100, l: 50, r: 60, t: 50 },
             xaxis: {
               title: { text: xTitle },
               showgrid: false,

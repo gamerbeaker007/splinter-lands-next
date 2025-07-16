@@ -20,8 +20,8 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
       variant="outlined"
       sx={{
         position: "relative",
-        maxWidth: 250,
-        minWidth: 250,
+        width: 250,
+        height: 210,
         overflow: "hidden",
         borderRadius: "50px 0px 50px 0px", // top-left and bottom-right rounded more
       }}
@@ -42,7 +42,7 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
         }}
       />
 
-      <CardContent sx={{ position: "relative", zIndex: 1 }}>
+      <CardContent>
         <Box display="flex" alignItems="center" mb={2}>
           <Avatar
             src={iconUrl}
@@ -54,12 +54,13 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
 
         {/* Deeds Active */}
         <Box mb={1}>
-          <Box display="flex" justifyContent="space-between" mb={0.5}>
-            <Typography variant="body2">
+          <Box display="flex" justifyContent="space-between">
+            <Typography variant="body2" noWrap>
               <strong>Deeds active</strong>
             </Typography>
             <Typography
               variant="body2"
+              noWrap
               sx={{
                 fontFamily: "monospace",
                 fontWeight: "bold",
@@ -78,7 +79,7 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
 
         {/* Boosted PP */}
         <Box mb={1}>
-          <Box display="flex" justifyContent="space-between" mb={0.5}>
+          <Box display="flex" justifyContent="space-between">
             <Typography variant="body2">
               <strong>Boosted PP</strong>
             </Typography>

@@ -56,7 +56,6 @@ export const ResourcePriceChart: React.FC<Props> = ({
       y: -0.35,
       yanchor: "bottom",
     },
-    margin: { b: 100, l: 50, r: 60, t: 50 },
   };
 
   return (

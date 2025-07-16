@@ -43,7 +43,6 @@ export const TaxIncomeChart = ({
           title: {
             text: title,
           },
-          margin: { b: 100, l: 50, r: 60, t: 50 },
           xaxis: {
             title: { text: type === "castle" ? "Region" : "Tract" },
             tickangle: -45,

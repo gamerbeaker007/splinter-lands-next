@@ -83,7 +83,6 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
             showgrid: false,
             zeroline: false,
           },
-          margin: { b: 100, l: 50, r: 60, t: 50 },
         }}
       />
     </Box>

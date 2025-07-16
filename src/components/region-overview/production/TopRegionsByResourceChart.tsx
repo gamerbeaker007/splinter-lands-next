@@ -89,7 +89,6 @@ export default function TopRegionsByResourceChart({ data }: Props) {
             layout={{
               title: { text: `${selectedResource} – Regions by Boosted PP` },
               barmode: "group",
-              margin: { b: 100, l: 50, r: 60, t: 50 },
               xaxis: {
                 title: { text: "Production Points" },
               },

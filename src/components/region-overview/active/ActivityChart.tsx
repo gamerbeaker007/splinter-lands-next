@@ -27,9 +27,7 @@ export default function ActivityChart() {
 
   return (
     <>
-      <Typography mt={4} variant="h4">
-        Historical activation of land
-      </Typography>
+      <Typography variant="h4">Historical activation of land</Typography>
 
       <Box
         sx={{
@@ -68,7 +66,6 @@ export default function ActivityChart() {
           ]}
           layout={{
             title: { text: "Activity Historical" },
-            margin: { b: 100, l: 50, r: 60, t: 50 },
             xaxis: {
               title: { text: "Date" },
               showgrid: false,

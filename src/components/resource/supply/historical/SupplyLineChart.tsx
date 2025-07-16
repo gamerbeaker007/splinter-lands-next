@@ -82,7 +82,6 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
             title: { text: "Amount" },
             type: "log",
           },
-          margin: { b: 100, l: 50, r: 60, t: 50 },
         }}
       />
     </Box>

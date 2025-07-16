@@ -62,7 +62,6 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
           yaxis: {
             title: { text: "Net Production" },
           },
-          margin: { b: 100, l: 50, r: 60, t: 50 },
         }}
       />
     </Box>

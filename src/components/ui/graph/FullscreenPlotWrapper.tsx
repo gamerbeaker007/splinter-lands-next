@@ -62,6 +62,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
     font: { color: textColor },
     yaxis: { gridcolor: gridLineColor },
     xaxis: { gridcolor: gridLineColor },
+    margin: { t: 50, l: 50, r: 50, b: 50 },
   };
 
   // Merge defaults with incoming layout deeply
@@ -79,6 +80,10 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
     yaxis: {
       ...defaultLayout.yaxis,
       ...layout?.yaxis,
+    },
+    margin: {
+      ...defaultLayout.margin,
+      ...layout?.margin,
     },
   };
 

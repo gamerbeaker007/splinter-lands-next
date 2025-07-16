@@ -85,7 +85,6 @@ const DecGaugeIndicator: React.FC<Props> = ({
         ]}
         layout={{
           autosize: true,
-          margin: { t: 50, b: 0, l: 0, r: 0 },
           annotations: [
             {
               text: `${formatNumberWithSuffix(totalDecStaked)} DEC`,

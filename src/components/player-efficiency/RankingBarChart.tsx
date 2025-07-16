@@ -78,8 +78,8 @@ export default function RankingBarChart({
               title: { text: `${valueField} (log)` },
               type: "log",
             },
+            margin: { r: 20 },
             showlegend: false,
-            margin: { t: 50, l: 50, r: 20, b: 100 },
           }}
         />
       </Box>

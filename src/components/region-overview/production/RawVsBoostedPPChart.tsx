@@ -37,7 +37,6 @@ export default function RawVsBoostedPPChart({ data }: Props) {
           layout={{
             title: { text: "Raw vs Boosted PP" },
             barmode: "group",
-            margin: { b: 100, l: 50, r: 60, t: 50 },
             xaxis: {
               title: { text: "Regions" },
               showgrid: false,
