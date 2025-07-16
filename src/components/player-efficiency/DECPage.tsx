@@ -14,7 +14,7 @@ export default function DECPage({ currentPlayer, playerSummaryData }: Props) {
   }
 
   return (
-    <Box display="flex" flexDirection="column" gap={2}>
+    <Box display="flex" flexDirection="column" gap={2} mb={2}>
       <DECEarningCharts
         data={playerSummaryData}
         currentPlayer={currentPlayer}
