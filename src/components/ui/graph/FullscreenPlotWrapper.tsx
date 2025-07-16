@@ -10,7 +10,6 @@ interface FullscreenPlotWrapperProps {
   config?: Partial<Plotly.Config>;
   style?: React.CSSProperties;
   className?: string;
-  titleSuffix?: string; // optional extra for fullscreen title
   noBoxWrapper?: boolean;
 }
 
@@ -20,7 +19,6 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   config,
   style,
   className,
-  titleSuffix = " (Fullscreen)",
   noBoxWrapper = false,
 }) => {
   const theme = useTheme();
@@ -142,17 +140,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
         >
           <Plot
             data={data}
-            layout={{
-              ...layout,
-              title: {
-                ...layout?.title,
-                text: layout?.title?.text
-                  ? layout.title.text + titleSuffix
-                  : titleSuffix,
-                font: { color: textColor },
-              },
-              height: undefined,
-            }}
+            layout={mergedLayout}
             config={{
               ...baseConfig,
               modeBarButtonsToAdd: [],
