@@ -1,17 +1,17 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { resourceTracking } from "@/generated/prisma";
+import { ResourceTracking } from "@/generated/prisma";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
 
 interface Props {
-  data: resourceTracking[];
+  data: ResourceTracking[];
 }
 
 const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
   // Group data by resource token_symbol
-  const grouped = data.reduce<Record<string, resourceTracking[]>>(
+  const grouped = data.reduce<Record<string, ResourceTracking[]>>(
     (acc, entry) => {
       (acc[entry.token_symbol] ||= []).push(entry);
       return acc;

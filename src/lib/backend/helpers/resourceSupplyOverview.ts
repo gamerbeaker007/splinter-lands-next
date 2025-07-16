@@ -1,7 +1,7 @@
 import {
   ResourceHubMetrics,
   ResourceSupply,
-  resourceTracking,
+  ResourceTracking,
 } from "@/generated/prisma";
 import {
   DEFAULT_ORDER_RESOURCES,
@@ -12,7 +12,7 @@ import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 export function computeResourceSupplyOverview(
   date: string,
   supply: ResourceSupply[],
-  resourceTracking: resourceTracking[],
+  resourceTracking: ResourceTracking[],
   tradeHubSupply: ResourceHubMetrics[],
 ): ResourceSupplyOverview {
   const resourceMap: ResourceSupplyOverview["resource"] = {};

@@ -38,7 +38,7 @@ model ResourceSupply {
   @@map("resource_supply")
 }
 
-model resourceTracking {
+model ResourceTracking {
   date                    DateTime @db.Date
   token_symbol            String
   total_harvest_pp        Float
