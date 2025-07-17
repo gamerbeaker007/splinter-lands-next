@@ -4,6 +4,7 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
+import { PlayerTradeHubPosition } from "@/generated/prisma";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -74,6 +75,31 @@ export async function fetchPlayerStakedAssets(deed_uid: string) {
   if (!data) throw new Error("Invalid response from Splinterlands API");
 
   return data;
+}
+
+export async function fetchPlayerPoolInfo(
+  player: string,
+): Promise<PlayerTradeHubPosition[]> {
+  const url = `land/liquidity/pools/${player}/all-no-vesting`;
+  const res = await splLandClient.get(url);
+
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return data.all.positions
+    .filter((pos: PlayerTradeHubPosition) => pos.token !== "DEC-VOUCHER")
+    .map((pos: PlayerTradeHubPosition) => ({
+      player: player,
+      token: pos.token,
+      balance: pos.balance,
+      total_fees_earned_dec: pos.total_fees_earned_dec,
+      total_fees_earned_resource: pos.total_fees_earned_resource,
+      fees_earned_dec_1: pos.fees_earned_dec_1,
+      fees_earned_resource_1: pos.fees_earned_resource_1,
+      fees_earned_dec_30: pos.fees_earned_dec_30,
+      fees_earned_resource_30: pos.fees_earned_resource_30,
+      share_percentage: 0,
+    }));
 }
 
 export async function getLandResourcesPools() {

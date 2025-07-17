@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "data:inject": "tsx src/scripts/data_inject.ts",
+    "data:inject-weekly": "tsx src/scripts/data_inject_weekly.ts",
     "data:query1": "tsx src/scripts/example_query1.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
