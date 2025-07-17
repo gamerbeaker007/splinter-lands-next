@@ -1,17 +1,16 @@
 "use client";
 
+import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
+import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionSummary } from "@/types/regionSummary";
 import { Box, Stack, Typography } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import DeedRarityTile from "./DeedRarityTile";
-import DeedTypeTile from "./DeedTypeTile";
+import { useEffect, useState } from "react";
 import BoostTile from "./BoostTile";
+import DeedRarityTile from "./DeedRarityTile";
 import DeedStatusTile from "./DeedStatusTile";
-import Container from "@mui/material/Container";
-import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
-import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
+import DeedTypeTile from "./DeedTypeTile";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState<RegionSummary | null>(null);
@@ -33,7 +32,7 @@ export default function SummaryPage() {
   }, [filters]);
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+    <>
       {summary ? (
         <>
           <Box>
@@ -64,6 +63,6 @@ export default function SummaryPage() {
           Loading worksite data...
         </Typography>
       )}
-    </Container>
+    </>
   );
 }

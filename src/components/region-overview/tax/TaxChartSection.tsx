@@ -34,7 +34,6 @@ export const TaxChartsWrapper = ({ data }: TaxChartsWrapperProps) => {
         flexDirection={isSmallScreen ? "column" : "row"}
         flexWrap="wrap"
         gap={2}
-        mt={2}
       >
         <Box flex={1} minWidth={250}>
           <TaxIncomeChart
@@ -65,7 +64,6 @@ export const TaxChartsWrapper = ({ data }: TaxChartsWrapperProps) => {
         flexDirection={isSmallScreen ? "column" : "row"}
         flexWrap="wrap"
         gap={2}
-        mt={2}
       >
         <Box flex={1} minWidth={250}>
           <TaxIncomeChart

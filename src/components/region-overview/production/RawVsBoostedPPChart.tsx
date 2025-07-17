@@ -1,29 +1,20 @@
 "use client";
 
-import { Box, useTheme } from "@mui/material";
-import { RegionPP } from "@/types/regionProductionSummary";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { RegionPP } from "@/types/regionProductionSummary";
+import { Box } from "@mui/material";
 
 type Props = {
   data: RegionPP;
 };
 
 export default function RawVsBoostedPPChart({ data }: Props) {
-  const theme = useTheme();
-  const textColor = theme.palette.text.primary;
-  const backgroundColor = theme.palette.background.default;
-
   return (
     <>
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -46,18 +37,13 @@ export default function RawVsBoostedPPChart({ data }: Props) {
           layout={{
             title: { text: "Raw vs Boosted PP" },
             barmode: "group",
-            height: 500,
-            margin: { b: 100 },
-            font: { color: textColor },
             xaxis: {
               title: { text: "Regions" },
-              tickfont: { size: 10 },
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Production Points" },
             },
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
             legend: {
               orientation: "h",
               y: -0.3,

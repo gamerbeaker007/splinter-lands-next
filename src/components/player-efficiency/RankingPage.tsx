@@ -1,6 +1,7 @@
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import RankingList from "@/components/player-efficiency/RankingList";
-import { Box } from "@mui/material";
+import { Box, useMediaQuery, useTheme } from "@mui/material";
+import RankingBarChart from "./RankingBarChart";
 
 type Props = {
   currentPlayer?: string;
@@ -11,12 +12,44 @@ export default function RankingPage({
   currentPlayer,
   playerSummaryData,
 }: Props) {
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+
   return (
-    <Box display={"flex"} flexWrap={"wrap"} gap={2}>
+    <Box display={"flex"} flexWrap={"wrap"} gap={2} mb={2}>
       {playerSummaryData ? (
         <>
+          <Box
+            display="flex"
+            flexDirection={isSmallScreen ? "column" : "row"}
+            gap={1}
+            minHeight={450}
+            width={"100%"}
+          >
+            <RankingBarChart
+              title="Plots active"
+              data={playerSummaryData}
+              valueField="count"
+              rankField="count_rank"
+              currentPlayer={currentPlayer}
+            />
+            <RankingBarChart
+              title="DEC staked"
+              data={playerSummaryData}
+              valueField="total_dec_staked"
+              rankField="total_dec_staked_rank"
+              currentPlayer={currentPlayer}
+            />
+            <RankingBarChart
+              title="Boosted PP"
+              data={playerSummaryData}
+              valueField="total_harvest_pp"
+              rankField="total_harvest_pp_rank"
+              currentPlayer={currentPlayer}
+            />
+          </Box>
           <RankingList
-            title="Total DEC/hr"
+            title="DEC/hr"
             players={playerSummaryData}
             rankingField="total_dec_rank"
             valueField="total_dec"
@@ -24,7 +57,7 @@ export default function RankingPage({
           />
 
           <RankingList
-            title="Plots Owned"
+            title="Plots active"
             players={playerSummaryData}
             rankingField="count_rank"
             valueField="count"
@@ -48,10 +81,20 @@ export default function RankingPage({
           />
 
           <RankingList
+            title="LCE Boosted PP"
+            players={playerSummaryData}
+            rankingField="LCE_boosted_rank"
+            valueField="LCE_boosted_score"
+            subValueField="LCE_ratio_boosted"
+            currentPlayer={currentPlayer}
+          />
+
+          <RankingList
             title="LDE"
             players={playerSummaryData}
             rankingField="LDE_rank"
-            valueField="LDE_ratio"
+            valueField="LDE_score"
+            subValueField="LDE_ratio"
             currentPlayer={currentPlayer}
           />
 
@@ -59,7 +102,15 @@ export default function RankingPage({
             title="LPE"
             players={playerSummaryData}
             rankingField="LPE_rank"
-            valueField="LPE_ratio"
+            valueField="LPE_score"
+            subValueField="LPE_ratio"
+            currentPlayer={currentPlayer}
+          />
+          <RankingList
+            title="Land Score"
+            players={playerSummaryData}
+            rankingField="total_land_rank"
+            valueField="total_land_score"
             currentPlayer={currentPlayer}
           />
         </>

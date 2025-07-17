@@ -11,13 +11,52 @@ import { useEffect, useState } from "react";
 import { ProductionPage } from "@/components/region-overview/production/ProductionPage";
 import { ComparePage } from "@/components/region-overview/compare/ComparePage";
 import { TaxPage } from "@/components/region-overview/tax/TaxPage";
+import { EnableFilterOptions } from "@/types/filters";
+
+const defaultFilterConfig: EnableFilterOptions = {
+  regions: true,
+  tracts: true,
+  plots: true,
+  attributes: true,
+  player: true,
+  sorting: false,
+};
+
+const taxFilterConfig: EnableFilterOptions = {
+  regions: true,
+  tracts: true,
+  plots: false,
+  attributes: false,
+  player: false,
+  sorting: false,
+};
 
 const pages: Page[] = [
-  { label: "Activity", component: <ActivityPage /> },
-  { label: "Production", component: <ProductionPage /> },
-  { label: "Compare", component: <ComparePage /> },
-  { label: "Summary", component: <SummaryPage /> },
-  { label: "Tax", component: <TaxPage /> },
+  {
+    label: "Activity",
+    component: <ActivityPage />,
+    filterOptions: defaultFilterConfig,
+  },
+  {
+    label: "Production",
+    component: <ProductionPage />,
+    filterOptions: defaultFilterConfig,
+  },
+  {
+    label: "Compare",
+    component: <ComparePage />,
+    filterOptions: defaultFilterConfig,
+  },
+  {
+    label: "Summary",
+    component: <SummaryPage />,
+    filterOptions: defaultFilterConfig,
+  },
+  {
+    label: "Tax",
+    component: <TaxPage />,
+    filterOptions: taxFilterConfig,
+  },
 ];
 
 export default function RegionOverviewPage() {
@@ -28,19 +67,21 @@ export default function RegionOverviewPage() {
     setTitle("Region Overview");
   }, [setTitle]);
 
+  const activePage = pages[activeTab];
+
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-      <FilterProvider>
-        <FilterDrawer />
-        <NavTabs
-          pages={pages}
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-        />
+    <FilterProvider>
+      <FilterDrawer filtersEnabled={activePage.filterOptions} />
+      <NavTabs
+        pages={pages}
+        value={activeTab}
+        onChange={(_, newValue) => setActiveTab(newValue)}
+      />
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={4} mb={4}>
-          {pages[activeTab].component}
+          {activePage.component}
         </Box>
-      </FilterProvider>
-    </Container>
+      </Container>
+    </FilterProvider>
   );
 }

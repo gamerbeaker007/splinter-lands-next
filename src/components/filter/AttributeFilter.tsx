@@ -9,10 +9,10 @@ import {
   FormGroup,
   Typography,
 } from "@mui/material";
-import FilterRarityGroup from "./rarity/FilterRarityGroup";
-import FilterResourceGroup from "./resource/FilterResourceGroup";
 import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
+import FilterRarityGroup from "./rarity/FilterRarityGroup";
+import FilterResourceGroup from "./resource/FilterResourceGroup";
 
 type Props = {
   options: FilterInput;
@@ -40,7 +40,7 @@ export default function AttributeFilter({ options }: Props) {
 
   return (
     <Box>
-      <Typography variant="subtitle1" gutterBottom>
+      <Typography variant="h5" gutterBottom>
         Attributes
       </Typography>
 

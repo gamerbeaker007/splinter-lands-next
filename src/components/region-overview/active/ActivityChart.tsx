@@ -1,13 +1,10 @@
-import { Active } from "@/generated/prisma";
-import { Box, Typography, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { Active } from "@/generated/prisma";
+import { Box, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
 
 export default function ActivityChart() {
   const [data, setData] = useState<Active[]>([]);
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
 
   useEffect(() => {
     fetch("/api/active", {
@@ -30,19 +27,12 @@ export default function ActivityChart() {
 
   return (
     <>
-      <Typography mt={4} variant="h4">
-        Historical activation of land
-      </Typography>
+      <Typography variant="h4">Historical activation of land</Typography>
 
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -75,13 +65,10 @@ export default function ActivityChart() {
             },
           ]}
           layout={{
-            title: { text: "Activity Historical", font: { color: textColor } },
-            height: 500,
-            margin: { b: 100, l: 50, r: 60, t: 50 },
-            font: { color: textColor },
+            title: { text: "Activity Historical" },
             xaxis: {
               title: { text: "Date" },
-              tickfont: { size: 10 },
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Deeds" },
@@ -93,8 +80,6 @@ export default function ActivityChart() {
               showgrid: false,
               tickfont: { color: "hotpink" },
             },
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
             legend: {
               orientation: "h",
               y: -0.3,

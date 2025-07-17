@@ -1,10 +1,5 @@
-import { calculateProgress, timeUntil, validDate } from "../utils/timeUtils";
-
-export type ProgressInfo = {
-  percentageDone: number;
-  infoStr: string;
-  progressTooltip: string | null;
-};
+import { ProgressInfo } from "@/types/progressInfo";
+import { calculateProgress, timeUntil, validDate } from "../../utils/timeUtils";
 
 export function productionPercentage(hoursSinceLastOp: number): number {
   const maxHours = 7 * 24;

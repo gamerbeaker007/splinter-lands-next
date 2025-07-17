@@ -2,8 +2,7 @@
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionTax } from "@/types/regionTax";
-import { Alert, Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import Container from "@mui/material/Container";
+import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
 import { TaxChartsWrapper } from "./TaxChartSection";
 import { TopCaptureRateList } from "./TopCapturedRateList";
@@ -32,11 +31,7 @@ export function TaxPage() {
   }, [filters]);
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-      <Alert severity="info">
-        Note: This page responds only to region and tract filters.
-      </Alert>
-
+    <>
       {data && (
         <Box>
           <Typography variant="h6">Leaderboard Tax Collectors</Typography>
@@ -54,6 +49,6 @@ export function TaxPage() {
           <TaxChartsWrapper data={data} />
         </Box>
       )}
-    </Container>
+    </>
   );
 }

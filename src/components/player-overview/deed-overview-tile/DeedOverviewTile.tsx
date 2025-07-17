@@ -79,9 +79,7 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
         rawPerHour={data.worksiteDetail?.rewards_per_hour ?? 0}
         resource={data.worksiteDetail?.token_symbol ?? ""}
         includeTax={true}
-        hoursSinceLastOperation={data.worksiteDetail?.hours_since_last_op ?? 0}
-        projectCreatedDate={data.worksiteDetail?.project_created_date ?? null}
-        projectedEndDate={data.worksiteDetail?.projected_end ?? null}
+        progressInfo={data.progressInfo}
       />
     </Box>
   );

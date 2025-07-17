@@ -10,7 +10,7 @@ interface FullscreenPlotWrapperProps {
   config?: Partial<Plotly.Config>;
   style?: React.CSSProperties;
   className?: string;
-  titleSuffix?: string; // optional extra for fullscreen title
+  noBoxWrapper?: boolean;
 }
 
 export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
@@ -19,11 +19,13 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   config,
   style,
   className,
-  titleSuffix = " (Fullscreen)",
+  noBoxWrapper = false,
 }) => {
   const theme = useTheme();
   const backgroundColor = theme.palette.background.default;
   const textColor = theme.palette.text.primary;
+  const gridLineColor = theme.palette.divider;
+
   const [open, setOpen] = useState(false);
 
   const fullscreenIcon = {
@@ -52,16 +54,66 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
     ],
   };
 
+  const defaultLayout: Partial<Plotly.Layout> = {
+    paper_bgcolor: backgroundColor,
+    plot_bgcolor: backgroundColor,
+    font: { color: textColor },
+    yaxis: { gridcolor: gridLineColor },
+    xaxis: { gridcolor: gridLineColor },
+    margin: { t: 50, l: 50, r: 50, b: 50 },
+  };
+
+  // Merge defaults with incoming layout deeply
+  const mergedLayout: Partial<Plotly.Layout> = {
+    ...defaultLayout,
+    ...layout,
+    font: {
+      ...defaultLayout.font,
+      ...layout?.font,
+    },
+    xaxis: {
+      ...defaultLayout.xaxis,
+      ...layout?.xaxis,
+    },
+    yaxis: {
+      ...defaultLayout.yaxis,
+      ...layout?.yaxis,
+    },
+    margin: {
+      ...defaultLayout.margin,
+      ...layout?.margin,
+    },
+  };
+
+  const plotComponent = (
+    <Plot
+      data={data}
+      layout={mergedLayout}
+      config={baseConfig}
+      useResizeHandler
+      style={style || { width: "100%", height: "100%" }}
+      className={className}
+    />
+  );
+
   return (
     <>
-      <Plot
-        data={data}
-        layout={layout ?? {}}
-        config={baseConfig}
-        useResizeHandler
-        style={style || { width: "100%", height: "100%" }}
-        className={className}
-      />
+      {noBoxWrapper ? (
+        plotComponent
+      ) : (
+        <Box
+          sx={{
+            border: "1px solid",
+            borderColor: "secondary.main",
+            borderRadius: 5,
+            padding: 2,
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          {plotComponent}
+        </Box>
+      )}
 
       <Dialog
         fullScreen
@@ -88,17 +140,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
         >
           <Plot
             data={data}
-            layout={{
-              ...layout,
-              title: {
-                ...layout?.title,
-                text: layout?.title?.text
-                  ? layout.title.text + titleSuffix
-                  : titleSuffix,
-                font: { color: textColor },
-              },
-              height: undefined,
-            }}
+            layout={mergedLayout}
             config={{
               ...baseConfig,
               modeBarButtonsToAdd: [],

@@ -1,13 +1,13 @@
-import { resourceTracking } from "@/generated/prisma";
+import { ResourceTracking } from "@/generated/prisma";
 import { getLastUpdate } from "@/lib/backend/cache/utils";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
 
-let cachedResourceTrackingData: resourceTracking[] | null = null;
+let cachedResourceTrackingData: ResourceTracking[] | null = null;
 let cachedTimestamp: Date | null = null;
 
 export async function getAllResourceTrackingdata(): Promise<
-  resourceTracking[]
+  ResourceTracking[]
 > {
   const lastUpdate = await getLastUpdate();
   if (
@@ -28,7 +28,7 @@ export async function getAllResourceTrackingdata(): Promise<
 }
 
 export async function getLatestResourceTrackingEntries(): Promise<
-  resourceTracking[] | null
+  ResourceTracking[] | null
 > {
   const all = await getAllResourceTrackingdata();
 

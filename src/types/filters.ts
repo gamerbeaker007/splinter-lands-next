@@ -1,4 +1,5 @@
-// types/filters.ts
+import { SortSelection } from "./sorting";
+
 export type FilterInput = {
   filter_regions?: number[];
   filter_tracts?: number[];
@@ -12,4 +13,14 @@ export type FilterInput = {
   filter_developed?: boolean;
   filter_under_construction?: boolean;
   filter_has_pp?: boolean;
+  sorting?: SortSelection;
+};
+
+export type EnableFilterOptions = {
+  regions: boolean;
+  tracts: boolean;
+  plots: boolean;
+  attributes: boolean;
+  player: boolean;
+  sorting: boolean;
 };

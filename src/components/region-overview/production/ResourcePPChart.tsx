@@ -1,20 +1,16 @@
 "use client";
 
-import { Box, useTheme } from "@mui/material";
-import { RegionResourcePP } from "@/types/regionProductionSummary";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { PlotData } from "plotly.js";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { RegionResourcePP } from "@/types/regionProductionSummary";
+import { Box } from "@mui/material";
+import { PlotData } from "plotly.js";
 
 type Props = {
   data: Record<string, RegionResourcePP>;
 };
 
 export default function ResourcePPChart({ data }: Props) {
-  const theme = useTheme();
-  const textColor = theme.palette.text.primary;
-  const backgroundColor = theme.palette.background.default;
-
   // Filter out Unknown Resource
   const resourceLabels = Object.keys(data).filter((r) => r !== "");
   const rawTraces: Partial<PlotData>[] = resourceLabels.map(
@@ -38,14 +34,9 @@ export default function ResourcePPChart({ data }: Props) {
   return (
     <>
       <Box
-        mt={1}
         sx={{
-          border: "1px solid",
-          borderColor: "secondary.main",
-          borderRadius: 5,
-          padding: 2,
           width: "100%",
-          minHeight: "500px",
+          height: 500,
         }}
       >
         <FullscreenPlotWrapper
@@ -64,18 +55,13 @@ export default function ResourcePPChart({ data }: Props) {
           layout={{
             title: { text: "Resource Raw vs Boosted PP" },
             barmode: "group",
-            height: 500,
-            margin: { b: 100 },
-            font: { color: textColor },
             xaxis: {
               title: { text: "Resources" },
-              tickfont: { size: 10 },
+              showgrid: false,
             },
             yaxis: {
               title: { text: "Production Points" },
             },
-            plot_bgcolor: backgroundColor,
-            paper_bgcolor: backgroundColor,
             legend: {
               orientation: "h",
               y: -0.3,

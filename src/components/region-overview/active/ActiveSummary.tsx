@@ -28,16 +28,10 @@ export default function ActiveSummary() {
 
   return (
     <>
-      <Typography variant={"h4"} mt={4}>
+      <Typography variant={"h4"}>
         Production points (PP) and activated{" "}
       </Typography>
-      <Box
-        display={"flex"}
-        flexWrap={"wrap"}
-        gap={2}
-        mt={2}
-        justifyContent={"center"}
-      >
+      <Box display={"flex"} flexWrap={"wrap"} gap={2} justifyContent={"center"}>
         {Object.entries(data).map(([resource, summary]) => (
           <ResourceActiveSummaryCard
             key={resource}

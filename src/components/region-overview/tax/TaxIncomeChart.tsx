@@ -1,8 +1,8 @@
-import { RegionTax } from "@/types/regionTax";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { Box, useTheme } from "@mui/material";
-import { PlotData } from "plotly.js";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { RegionTax } from "@/types/regionTax";
+import { Box } from "@mui/material";
+import { PlotData } from "plotly.js";
 
 type TaxIncomeChartProps = {
   title: string;
@@ -19,10 +19,6 @@ export const TaxIncomeChart = ({
   income,
   resourceFilter,
 }: TaxIncomeChartProps) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-
   const traces: Partial<PlotData>[] = resourceFilter
     ? getSortedTracesByResource(data, type, income, resourceFilter)
     : getGroupedTracesByResourceSortedByTotalDEC(data, type, income);
@@ -33,12 +29,9 @@ export const TaxIncomeChart = ({
   return (
     <Box
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
         padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper
@@ -49,24 +42,17 @@ export const TaxIncomeChart = ({
           bargroupgap: 0.05,
           title: {
             text: title,
-            font: { color: textColor },
           },
-          margin: { l: 50, r: 30, t: 50, b: 100 },
           xaxis: {
             title: { text: type === "castle" ? "Region" : "Tract" },
             tickangle: -45,
             automargin: true,
-            color: textColor,
+            showgrid: false,
             type: "category",
           },
           yaxis: {
             title: { text: `${YAxisTtitle}` },
-            color: textColor,
           },
-          height: 500,
-          paper_bgcolor: backgroundColor,
-          plot_bgcolor: backgroundColor,
-          legend: { font: { color: textColor } },
         }}
       />
     </Box>

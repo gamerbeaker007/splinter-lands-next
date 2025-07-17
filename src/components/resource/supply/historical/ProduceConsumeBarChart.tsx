@@ -1,20 +1,15 @@
+import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
-import { Box, useTheme } from "@mui/material";
-import React from "react";
-import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { Box } from "@mui/material";
 import { PlotData } from "plotly.js";
+import React from "react";
 
 interface Props {
   data: ResourceSupplyOverview[];
 }
 
 const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-  const gridLineColor = theme.palette.divider;
-
   const resourceMap: Record<string, { x: string[]; y: number[] }> = {};
 
   data.forEach((entry) => {
@@ -43,12 +38,8 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
   return (
     <Box
       sx={{
-        border: "1px solid",
-        borderColor: "secondary.main",
-        borderRadius: 5,
-        padding: 2,
         width: "100%",
-        minHeight: "500px",
+        height: 500,
       }}
     >
       <FullscreenPlotWrapper
@@ -57,13 +48,9 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
           title: {
             text: "Net Daily Production (Produce - Consume)",
           },
-          plot_bgcolor: backgroundColor,
-          paper_bgcolor: backgroundColor,
-          font: { color: textColor },
           legend: {
             font: {
               size: 10,
-              color: textColor,
             },
             orientation: "v",
           },
@@ -74,9 +61,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
           },
           yaxis: {
             title: { text: "Net Production" },
-            gridcolor: gridLineColor,
           },
-          margin: { t: 50, b: 40 },
         }}
       />
     </Box>
