@@ -1,22 +1,23 @@
 "use client";
 
-import { Sell, ShoppingCart } from "@mui/icons-material";
+import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
+import { NATURAL_RESOURCES } from "@/lib/shared/statics";
+import { Refresh, Sell, ShoppingCart } from "@mui/icons-material";
 import {
   Alert,
   AlertTitle,
   Box,
+  Button,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { ResourceInput } from "./ResourceInput";
 import { ResourceOutput } from "./resourceOutput";
-import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
 
-const sell_fee = 0.9; // When you sell the resource you need to pay the 10%
-const buy_fee = 1.1; // When you buy the resource you need to increas the DEC by 10%
+const fee = 0.9;
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA", "VOUCHER"];
 
@@ -34,17 +35,20 @@ export function ResourceCalculator() {
   const [mode, setMode] = useState<"buy" | "sell">("buy");
   const [decExtra, setDecExtra] = useState(0);
 
-  useEffect(() => {
-    fetch("/api/resource/prices", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setPrices)
-      .catch(console.error);
+  const fetchPrices = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/resource/prices`);
+      const data = await res.json();
+      setPrices(data);
+    } catch (err) {
+      console.error("Failed to fetch prices:", err);
+    }
   }, []);
+
+  // Fetch on first load
+  useEffect(() => {
+    fetchPrices();
+  }, [fetchPrices]);
 
   const handleChange = (resource: string, value: number) => {
     setResourcesInput((prev) => ({ ...prev, [resource]: value }));
@@ -54,13 +58,17 @@ export function ResourceCalculator() {
   const dec_total = RESOURCES.reduce((sum, res) => {
     const amount = resourcesInput[res] || 0;
     const price = prices?.[res.toLowerCase()] ?? 0;
-    const raw = amount * price;
-    const taxed =
-      res === "AURA" ? raw : mode == "buy" ? raw * buy_fee : raw * sell_fee;
-    return sum + taxed;
+    let result = 0;
+    if (NATURAL_RESOURCES.includes(res)) {
+      result =
+        mode === "buy" ? amount / ((1 / price) * fee) : amount * (price * fee);
+    } else {
+      result = res === "AURA" ? amount * price : amount * price * fee;
+    }
+    return sum + result;
   }, 0);
 
-  const sps_amount = (dec_total + decExtra) / (prices?.sps ?? 0);
+  const sps_amount = prices ? (dec_total + decExtra) / prices.sps : 0;
 
   const applyPreset = (
     preset: "wagons" | "auction" | "fortune" | "midnight" | "clear",
@@ -89,7 +97,6 @@ export function ResourceCalculator() {
         setDecExtra(500);
         break;
       case "fortune":
-        // Define your own resource values
         setResourcesInput({
           GRAIN: 0,
           WOOD: 0,
@@ -133,11 +140,15 @@ export function ResourceCalculator() {
       borderColor="secondary.main"
       gap={2}
     >
-      <Box display="flex" justifyContent="center" width="100%">
+      <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
         <ToggleButtonGroup
           value={mode}
           exclusive
-          onChange={(_, newMode) => newMode && setMode(newMode)}
+          onChange={(_, newMode) => {
+            if (newMode) {
+              setMode(newMode);
+            }
+          }}
           aria-label="mode toggle"
         >
           <ToggleButton value="buy" aria-label="buy mode">
@@ -149,7 +160,17 @@ export function ResourceCalculator() {
             Sell
           </ToggleButton>
         </ToggleButtonGroup>
+
+        <Button
+          size="small"
+          variant="outlined"
+          startIcon={<Refresh />}
+          onClick={() => fetchPrices()}
+        >
+          Refresh Prices
+        </Button>
       </Box>
+
       <ResourcePresets onSelect={applyPreset} />
 
       <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
@@ -166,14 +187,13 @@ export function ResourceCalculator() {
           </Box>
         ))}
 
-        {/* Equal sign before output */}
         <Typography fontSize={24} fontWeight="bold">
           =
         </Typography>
 
-        {/* Final output */}
         <ResourceOutput dec={dec_total} sps={sps_amount} decExtra={decExtra} />
       </Box>
+
       <Alert
         severity="info"
         icon={<FaInfoCircle />}
@@ -191,7 +211,7 @@ export function ResourceCalculator() {
         calculations.
         {"\n"}
         For AURA, the value is estimated based on the price of the Midnight
-        Potion.{" "}
+        Potion.
       </Alert>
     </Box>
   );
