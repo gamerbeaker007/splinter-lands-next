@@ -1,7 +1,7 @@
-import { ResourceHubMetrics, PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition, ResourceHubMetrics } from "@/generated/prisma";
 import {
-  getLandResourcesPools,
   fetchPlayerPoolInfo,
+  getLandResourcesPools,
 } from "@/lib/backend/api/spl/spl-land-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
@@ -94,10 +94,16 @@ export function enrichData(
 ) {
   playerTradeHubPosition.date = today;
   const resource = playerTradeHubPosition.token.split("-")[1];
-  const totalShares = Number(
-    metrics.find((metric) => metric.token_symbol === resource)?.total_shares ??
-      0,
-  );
-  playerTradeHubPosition.share_percentage =
-    totalShares > 0 ? (playerTradeHubPosition.balance / totalShares) * 100 : 0;
+  const metric = metrics.find((m) => m.token_symbol === resource);
+
+  const totalShares = Number(metric?.total_shares ?? 0);
+  const totalDEC = Number(metric?.dec_quantity ?? 0);
+  const totalResource = Number(metric?.resource_quantity ?? 0);
+
+  const sharePercentage =
+    totalShares > 0 ? playerTradeHubPosition.balance / totalShares : 0;
+
+  playerTradeHubPosition.share_percentage = sharePercentage * 100;
+  playerTradeHubPosition.dec_quantity = totalDEC * sharePercentage;
+  playerTradeHubPosition.resource_quantity = totalResource * sharePercentage;
 }

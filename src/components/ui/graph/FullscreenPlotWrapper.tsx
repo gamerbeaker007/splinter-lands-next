@@ -1,11 +1,11 @@
 "use client";
-import React, { useState } from "react";
-import { Dialog, Box, IconButton, useTheme } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { Box, Dialog, IconButton, useTheme } from "@mui/material";
+import React, { useState } from "react";
 import Plot from "react-plotly.js";
 
 interface FullscreenPlotWrapperProps {
-  data: Partial<Plotly.PlotData>[];
+  data: Partial<Plotly.PlotData>[] | Partial<Plotly.PieData>[];
   layout?: Partial<Plotly.Layout>;
   config?: Partial<Plotly.Config>;
   style?: React.CSSProperties;
@@ -61,6 +61,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
     yaxis: { gridcolor: gridLineColor },
     xaxis: { gridcolor: gridLineColor },
     margin: { t: 50, l: 50, r: 50, b: 50 },
+    autosize: true,
   };
 
   // Merge defaults with incoming layout deeply

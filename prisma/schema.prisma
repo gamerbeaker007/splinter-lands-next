@@ -277,7 +277,9 @@ model PlayerTradeHubPosition {
   fees_earned_dec_30          Float
   fees_earned_resource_30     Float
 
-  share_percentage             Float   // calculated as balance / ResourceHubMetrics.totalShares * 100
+  share_percentage            Float   // calculated as balance / ResourceHubMetrics.totalShares * 100
+  resource_quantity           Float
+  dec_quantity                Float
 
   @@id([date, player, token])
   @@map("player_trade_hub_position")

@@ -1,7 +1,7 @@
 import { groupedPlayerTradeHubPosition } from "@/app/api/resource/trade-hub/player-positions/route";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { TradeHubTokenRankingList } from "./TradeHubTokenRankingList";
+import { TradeHubTokenSection } from "./TradeHubTokenSection";
 import PlayerInput from "@/components/player-overview/PlayerInput";
 
 export default function TradeHubPositionPage() {
@@ -33,7 +33,7 @@ export default function TradeHubPositionPage() {
       </Box>
       <Box mt={2}>
         <Typography variant="h5">
-          Analysis performed on data from:{" "}
+          Based on data retrieved from:{" "}
           {groupedPlayerTradeHubPosition.date
             ? new Date(groupedPlayerTradeHubPosition.date)
                 .toISOString()
@@ -45,7 +45,7 @@ export default function TradeHubPositionPage() {
       <Box display="flex" flexDirection={"row"} flexWrap="wrap" gap={2}>
         {Object.entries(groupedPlayerTradeHubPosition.tokens).map(
           ([token, playerTradeHubPositions]) => (
-            <TradeHubTokenRankingList
+            <TradeHubTokenSection
               key={token}
               token={token}
               playerTradeHubPositions={playerTradeHubPositions}
