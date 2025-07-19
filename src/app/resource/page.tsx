@@ -2,6 +2,7 @@
 import NavTabs from "@/components/nav-tabs/NavTabs";
 import { ConversionPage } from "@/components/resource/conversion/ConversionPage";
 import { SupplyPage } from "@/components/resource/supply/SupplyPage";
+import TradeHubPositionPage from "@/components/resource/trade-hub-positions/TradeHubPositionsPage";
 import { TradeHubPage } from "@/components/resource/trade-hub/TradeHubPage";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Page } from "@/types/Page";
@@ -12,6 +13,7 @@ const pages: Page[] = [
   { label: "Conversion", component: <ConversionPage /> },
   { label: "Supply", component: <SupplyPage /> },
   { label: "TradeHub", component: <TradeHubPage /> },
+  { label: "TradeHub Positions", component: <TradeHubPositionPage /> },
 ];
 
 export default function ResourcePage() {
