@@ -32,9 +32,9 @@ export function TradeHubTokenSection({
   return (
     <Box display={"flex"} flexWrap={"wrap"} flexDirection={"column"} gap={2}>
       <Box
-        minWidth={{ xs: "100%", sm: 300 }}
-        maxWidth={{ xs: "100%", sm: 800 }}
-        height={550}
+        minWidth={{ xs: "100%", sm: 350 }}
+        maxWidth={{ xs: "100%", sm: 900 }}
+        height={700}
       >
         <TradeHubTokenShareChart
           playerTradeHubPositions={playerTradeHubPositions}
@@ -42,8 +42,8 @@ export function TradeHubTokenSection({
         />
       </Box>
       <Box
-        minWidth={{ xs: "100%", sm: 300 }}
-        maxWidth={{ xs: "100%", sm: 800 }}
+        minWidth={{ xs: "100%", sm: 350 }}
+        maxWidth={{ xs: "100%", sm: 900 }}
         maxHeight={800}
         mt={2}
       >
