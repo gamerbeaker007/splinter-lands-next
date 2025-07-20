@@ -74,7 +74,7 @@ export function TradeHubTokenShareChart({
         />
       </Box>
 
-      <Box pl={5} pr={5}>
+      <Box pl={3} pr={3}>
         <InfoItem
           title={"Total Shares:"}
           text={`${totalShare.toFixed(2)}%`}
@@ -95,6 +95,28 @@ export function TradeHubTokenShareChart({
             <InfoItem
               title={"Resource Qty:"}
               text={formatNumberWithSuffix(currentPlayerData.resource_quantity)}
+            />
+            <InfoItem
+              title={"DEC Earned 1d:"}
+              text={formatNumberWithSuffix(currentPlayerData.fees_earned_dec_1)}
+            />
+            <InfoItem
+              title={"DEC Earned Total:"}
+              text={formatNumberWithSuffix(
+                currentPlayerData.total_fees_earned_dec,
+              )}
+            />
+            <InfoItem
+              title={"Resources Earned 1d:"}
+              text={formatNumberWithSuffix(
+                currentPlayerData.fees_earned_resource_1,
+              )}
+            />
+            <InfoItem
+              title={"Resources Earned Total:"}
+              text={formatNumberWithSuffix(
+                currentPlayerData.total_fees_earned_resource,
+              )}
             />
           </Box>
         )}
