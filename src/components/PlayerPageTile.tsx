@@ -53,7 +53,7 @@ export default function PlayerPageTile() {
           variant="outlined"
           placeholder="Enter player name (optional)"
           value={player}
-          onChange={(e) => setPlayer(e.target.value)}
+          onChange={(e) => setPlayer(e.target.value.toLowerCase())}
           onKeyDown={(e) => e.key === "Enter" && handleClick()}
           sx={{
             mb: 2,

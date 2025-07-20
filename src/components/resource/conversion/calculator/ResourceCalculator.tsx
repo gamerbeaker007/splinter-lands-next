@@ -1,7 +1,6 @@
 "use client";
 
 import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
-import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { Refresh, Sell, ShoppingCart } from "@mui/icons-material";
 import {
   Alert,
@@ -58,14 +57,13 @@ export function ResourceCalculator() {
   const dec_total = RESOURCES.reduce((sum, res) => {
     const amount = resourcesInput[res] || 0;
     const price = prices?.[res.toLowerCase()] ?? 0;
-    let result = 0;
-    if (NATURAL_RESOURCES.includes(res)) {
-      result =
-        mode === "buy" ? amount / ((1 / price) * fee) : amount * (price * fee);
-    } else {
-      result = res === "AURA" ? amount * price : amount * price * fee;
-    }
-    return sum + result;
+    const taxed =
+      res === "AURA"
+        ? amount * price
+        : mode === "buy"
+          ? amount / ((1 / price) * fee)
+          : amount * (price * fee);
+    return sum + taxed;
   }, 0);
 
   const sps_amount = prices ? (dec_total + decExtra) / prices.sps : 0;

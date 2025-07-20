@@ -35,7 +35,7 @@ export default function PlayerInput({ onPlayerChange }: Props) {
     <TextField
       label="Enter Player"
       value={input}
-      onChange={(e) => setInput(e.target.value)}
+      onChange={(e) => setInput(e.target.value.toLowerCase())}
       onKeyDown={handleKeyPress}
       slotProps={{
         input: {
