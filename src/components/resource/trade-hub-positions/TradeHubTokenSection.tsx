@@ -32,7 +32,7 @@ export function TradeHubTokenSection({
   return (
     <Box display={"flex"} flexWrap={"wrap"} flexDirection={"column"} gap={2}>
       <Box
-        minWidth={{ xs: "100%", sm: 350 }}
+        minWidth={{ xs: "100%", sm: 400 }}
         maxWidth={{ xs: "100%", sm: 900 }}
         height={700}
       >
@@ -42,7 +42,7 @@ export function TradeHubTokenSection({
         />
       </Box>
       <Box
-        minWidth={{ xs: "100%", sm: 350 }}
+        minWidth={{ xs: "100%", sm: 400 }}
         maxWidth={{ xs: "100%", sm: 900 }}
         maxHeight={800}
         mt={2}
