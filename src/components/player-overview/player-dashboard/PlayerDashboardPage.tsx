@@ -108,8 +108,8 @@ export default function PlayerDashboardPage({ player }: Props) {
                     </Box>
                   </Typography>
                   <Typography variant={"body1"}>
-                    Deeds that needs attention these plot are either full or the
-                    building is finished
+                    These deeds need attention because the plots are either full
+                    or the buildings are finished.
                   </Typography>
                   <Box display={"flex"} flexWrap={"wrap"}>
                     {playerOverview.alerts.map((alert) => (

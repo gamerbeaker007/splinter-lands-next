@@ -5,6 +5,7 @@ import {
   Box,
   Card,
   CardActionArea,
+  IconButton,
   Stack,
   Typography,
 } from "@mui/material";
@@ -15,7 +16,12 @@ import {
   land_region_icon_url,
   land_tract_icon_url,
 } from "@/lib/shared/statics_icon_urls";
-import { getDeedImg, getManageLinkPlot } from "@/lib/utils/deedUtil";
+import {
+  getDeedImg,
+  getHarvestRegion as getHarvestRegionLink,
+  getManageLinkPlot,
+} from "@/lib/utils/deedUtil";
+import AgricultureIcon from "@mui/icons-material/Agriculture";
 
 type Props = {
   alert: DeedAlertsInfo;
@@ -23,6 +29,7 @@ type Props = {
 
 export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
   const linkUrl = getManageLinkPlot(alert.regionNumber, alert.plotId);
+  const harvestLink = getHarvestRegionLink(alert.regionNumber);
   const cardImg = getDeedImg(
     alert.magicType,
     alert.deedType,
@@ -39,7 +46,7 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
         m: 1,
         position: "relative",
         overflow: "hidden",
-        border: "2px solid red",
+        // border: "1px solid red",
         boxShadow: "0 0 10px rgba(255,0,0,0.5)",
       }}
     >
@@ -57,6 +64,19 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
           textAlign: "center",
         }}
       >
+        <IconButton
+          href={harvestLink}
+          target="_blank"
+          sx={{
+            position: "absolute",
+            top: 5,
+            right: 6,
+            zIndex: 10,
+          }}
+          size="small"
+        >
+          <AgricultureIcon fontSize="small" color="warning" />
+        </IconButton>
         <Box
           sx={{
             position: "absolute",
@@ -120,6 +140,7 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
               color: "red",
               borderRadius: 1,
               px: 1,
+              mt: 1,
             }}
           >
             ⚠ {alert.infoStr}
