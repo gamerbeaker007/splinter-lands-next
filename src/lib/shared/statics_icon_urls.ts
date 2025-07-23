@@ -80,3 +80,6 @@ export const title_emissary_icon_url = `${WEB_URL}website/icons/icon_active_emis
 
 export const dec_icon_url = `${WEB_URL}website/icon_dec.png`;
 export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
+
+export const alert_gif =
+  "https://files.peakd.com/file/peakd-hive/beaker007/23vsb3F8eJic8GixxxZEDupcjbm63GJEg6JRSn9QroYcV3hdEsjPqCp4VuoxvfDC6SfpW.gif";

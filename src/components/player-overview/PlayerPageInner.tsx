@@ -10,6 +10,7 @@ import PlayerInput from "./PlayerInput";
 import PlayerRegionOverview from "./region-overview/PlayerRegionOverview";
 import { EnableFilterOptions } from "@/types/filters";
 import { Page } from "@/types/Page";
+import PlayerDashboardPage from "@/components/player-overview/player-dashboard/PlayerDashboardPage";
 
 const defaultFilterConfig: EnableFilterOptions = {
   regions: true,
@@ -73,6 +74,10 @@ export default function PlayerPageInner() {
 
   const pages: Page[] = [
     {
+      label: "Player Dashboard",
+      component: <PlayerDashboardPage player={selectedPlayer} />,
+    },
+    {
       label: "Region Overview",
       component: <PlayerRegionOverview player={selectedPlayer} />,
       filterOptions: defaultFilterConfig,
@@ -105,10 +110,12 @@ export default function PlayerPageInner() {
 
         {!error && playerData && selectedPlayer && (
           <>
-            <FilterDrawer
-              player={selectedPlayer}
-              filtersEnabled={activePage.filterOptions}
-            />
+            {activePage.filterOptions && (
+              <FilterDrawer
+                player={selectedPlayer}
+                filtersEnabled={activePage.filterOptions}
+              />
+            )}
             <Box mt={4} mb={4}>
               {activePage.component}
             </Box>

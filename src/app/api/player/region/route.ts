@@ -12,9 +12,13 @@ import { getCachedResourcePrices } from "@/lib/backend/services/resourceService"
 
 export async function POST(req: Request) {
   try {
-    const { filters, player } = await req.json();
+    const { filters, player, force } = await req.json();
 
-    const playerData: DeedComplete[] = await getPlayerData(player, filters);
+    const playerData: DeedComplete[] = await getPlayerData(
+      player,
+      filters,
+      force,
+    );
 
     const totalResourceCounts: Record<string, number> = {};
     const playerDataInclCosts = playerData.map((deed: DeedComplete) => {

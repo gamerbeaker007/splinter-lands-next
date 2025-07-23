@@ -67,6 +67,17 @@ export async function fetchRegionDataPlayer(
   };
 }
 
+export async function fetchPlayerLiquidity(player: string) {
+  const url = `/land/liquidity/region/${player}`;
+  const res = await splLandClient.get(url);
+
+  logger.info(`SPL API - fetch land player liquidity for: ${player}`);
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return data;
+}
+
 export async function fetchPlayerStakedAssets(deed_uid: string) {
   const url = `/land/stake/deeds/${deed_uid}/assets`;
   const res = await splLandClient.get(url);

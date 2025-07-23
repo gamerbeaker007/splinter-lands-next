@@ -1,12 +1,26 @@
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { cache } from "../cache/cache";
 import {
+  fetchPlayerLiquidity,
+  fetchPlayerPoolInfo,
   fetchPlayerStakedAssets,
   fetchRegionDataPlayer,
+  getLandResourcesPools,
 } from "../api/spl/spl-land-api";
 import { StakedAssets } from "@/types/stakedAssets";
-import { fetchPlayerDetails } from "../api/spl/spl-base-api";
+import {
+  fetchPlayerBalances,
+  fetchPlayerDetails,
+} from "../api/spl/spl-base-api";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
+import { PlayerOverview } from "@/types/playerOverview";
+import {
+  enrichWithProgressInfo,
+  getDeedsAlerts,
+  summarizeDeedsData,
+} from "@/lib/backend/services/regionService";
+import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
+import { enrichPoolData } from "@/scripts/lib/metrics/playerTradeHubPosition";
 
 export async function getCachedPlayerData(
   player: string,
@@ -62,4 +76,51 @@ export async function getCachedPlayerDetails(
       `Failed to fetch player details: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
+}
+
+export async function getCachedPlayerOverviewData(
+  player: string,
+  force = false,
+): Promise<PlayerOverview> {
+  const key = `player-overview-data:${player}`;
+  if (!force) {
+    const cached = cache.get<PlayerOverview>(key);
+    if (cached) return cached;
+  }
+
+  const deeds = mapRegionDataToDeedComplete(
+    await fetchRegionDataPlayer(player),
+  );
+  const enrichedDeeds = enrichWithProgressInfo(deeds);
+  const summarizedRegionInfo = summarizeDeedsData(enrichedDeeds);
+  const alerts = getDeedsAlerts(enrichedDeeds);
+
+  const liquidityInfo = await fetchPlayerLiquidity(player);
+
+  const poolInfo = await fetchPlayerPoolInfo(player);
+  const metrics = await getLandResourcesPools();
+  const today = new Date();
+  poolInfo.map((row) => enrichPoolData(row, today, metrics));
+  const liquidityPoolInfo = poolInfo;
+
+  const balances = await fetchPlayerBalances(player, [
+    "DEC",
+    "SPS",
+    "VOUCHER",
+    "MIDNIGHTPOT",
+    "WAGONKIT",
+    "AM",
+    "FT",
+  ]);
+
+  const result: PlayerOverview = {
+    summarizedRegionInfo: summarizedRegionInfo,
+    liquidityInfo: liquidityInfo,
+    liquidityPoolInfo: liquidityPoolInfo,
+    balances: balances,
+    alerts: alerts,
+  };
+
+  cache.set(key, result);
+  return result;
 }

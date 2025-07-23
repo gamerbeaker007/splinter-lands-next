@@ -4,7 +4,7 @@ import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 
-function mapRegionDataToDeedComplete(
+export function mapRegionDataToDeedComplete(
   data: RawRegionDataResponse,
 ): DeedComplete[] {
   const worksiteMap = new Map(
@@ -20,7 +20,7 @@ function mapRegionDataToDeedComplete(
 
 export async function getPlayerData(
   player: string,
-  filters: FilterInput,
+  filters: FilterInput = {},
   force = false,
 ): Promise<DeedComplete[]> {
   const raw = await getCachedPlayerData(player, force);

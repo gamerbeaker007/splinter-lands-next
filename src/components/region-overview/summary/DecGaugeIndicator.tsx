@@ -46,6 +46,7 @@ const DecGaugeIndicator: React.FC<Props> = ({
         marginLeft: 2,
         minWidth: isSmallScreen ? 250 : 400,
         width: "100%",
+        // height: "100%",
         aspectRatio: "7 / 6",
       }}
     >
@@ -84,7 +85,6 @@ const DecGaugeIndicator: React.FC<Props> = ({
           },
         ]}
         layout={{
-          autosize: true,
           annotations: [
             {
               text: `${formatNumberWithSuffix(totalDecStaked)} DEC`,

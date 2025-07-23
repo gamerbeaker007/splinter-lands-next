@@ -1,13 +1,17 @@
 import {
   dec_icon_url,
   land_hammer_icon_url,
+  resource_auction_mark_icon_url,
   resource_aura_icon_url,
+  resource_fortune_ticket_icon_url,
   resource_grain_icon_url,
   resource_iron_icon_url,
+  resource_midnight_potion_icon_url,
   resource_research_icon_url,
   resource_stone_icon_url,
   resource_tax_icon_url,
   resource_voucher_icon_url,
+  resource_wagon_kit_icon_url,
   resource_wood_icon_url,
   sps_icon_url,
 } from "@/lib/shared/statics_icon_urls";
@@ -82,5 +86,9 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   TAX: resource_tax_icon_url,
   DEC: dec_icon_url,
   PP: land_hammer_icon_url,
+  WAGONKIT: resource_wagon_kit_icon_url,
+  AM: resource_auction_mark_icon_url,
+  FL: resource_fortune_ticket_icon_url,
+  MIDNIGHTPOT: resource_midnight_potion_icon_url,
   "": land_hammer_icon_url,
 };

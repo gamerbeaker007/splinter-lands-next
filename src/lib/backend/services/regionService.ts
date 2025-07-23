@@ -2,13 +2,12 @@ import { FilterInput } from "@/types/filters";
 import { RegionSummary } from "@/types/regionSummary";
 import { getCachedRegionData } from "../api/internal/deed-data";
 import { filterDeeds } from "../../filters";
+import { DeedComplete } from "@/types/deed";
+import { ProgressInfo } from "@/types/progressInfo";
+import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
+import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 
-export async function getRegionSummary(
-  filters: FilterInput,
-): Promise<RegionSummary> {
-  const blob = await getCachedRegionData();
-  const filteredDeeds = filterDeeds(blob, filters);
-
+export function summarizeDeedsData(deeds: DeedComplete[]) {
   // Initialize all count buckets
   const worksiteCounts: Record<string, number> = {};
   const playerCounts: Record<string, number> = {};
@@ -26,7 +25,7 @@ export async function getRegionSummary(
   let totalDecStaked = 0;
   let totalDeeds = 0;
 
-  for (const deed of filteredDeeds) {
+  for (const deed of deeds) {
     const player = deed.player!;
     const regionUid = deed.region_uid!;
     const key = `${regionUid}-${player}`;
@@ -90,6 +89,15 @@ export async function getRegionSummary(
     totalDecStaked: totalDecStaked,
     deedsCount: totalDeeds,
   };
+}
+
+export async function getRegionSummary(
+  filters: FilterInput,
+): Promise<RegionSummary> {
+  const blob = await getCachedRegionData();
+  const filteredDeeds = filterDeeds(blob, filters);
+
+  return summarizeDeedsData(filteredDeeds);
 }
 
 export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
@@ -180,4 +188,55 @@ export async function getAvailableFilterValues(
     filter_plot_status: [...values.filter_plot_status].sort(),
     filter_players: [...values.filter_players].sort(),
   };
+}
+
+export function enrichWithProgressInfo(deeds: DeedComplete[]): DeedComplete[] {
+  return deeds.map((deed) => {
+    const isTaxSymbol = deed.worksiteDetail?.token_symbol === "TAX";
+    const progressInfo: ProgressInfo = isTaxSymbol
+      ? {
+          percentageDone: 0,
+          infoStr: "N/A",
+          progressTooltip:
+            "The status of Keeps and Castles remains a mystery for now.",
+        }
+      : getProgressInfo(
+          deed.worksiteDetail?.hours_since_last_op ?? 0,
+          deed.worksiteDetail?.project_created_date ?? null,
+          deed.worksiteDetail?.projected_end ?? null,
+          deed.stakingDetail?.total_harvest_pp ?? 0,
+        );
+
+    return {
+      ...deed,
+      progressInfo,
+    };
+  });
+}
+
+export function getDeedsAlerts(deeds: DeedComplete[]): DeedAlertsInfo[] {
+  return deeds
+    .filter(
+      (deed) =>
+        deed.progressInfo !== undefined &&
+        deed.progressInfo !== null &&
+        deed.progressInfo.percentageDone >= 100,
+    )
+    .map((deed) => {
+      return {
+        regionUid: deed.region_uid!,
+        regionNumber: deed.region_number!,
+        plotNumber: deed.plot_number!,
+        plotId: deed.plot_id!,
+        tractNumber: deed.tract_number!,
+        percentageDone: deed.progressInfo!.percentageDone,
+        infoStr: deed.progressInfo!.infoStr,
+
+        deedType: deed.deed_type!,
+        rarity: deed.rarity!,
+        magicType: deed.magic_type!,
+        worksiteType: deed.worksiteDetail!.worksite_type!,
+        plotStatus: deed.plot_status!,
+      } as DeedAlertsInfo;
+    });
 }
