@@ -1,6 +1,5 @@
 "use client";
 
-import { DeedAlertCard } from "@/components/player-overview/player-dashboard/DeedAlertCard";
 import { PlayerCraftingOverview } from "@/components/player-overview/player-dashboard/PlayerCraftingOverview";
 import { ResourceOverviewCard } from "@/components/player-overview/player-dashboard/ResourceOverviewCard";
 import BoostTile from "@/components/region-overview/summary/BoostTile";
@@ -10,12 +9,11 @@ import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile"
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { alert_gif as alert_gif_url } from "@/lib/shared/statics_icon_urls";
 import { PlayerOverview } from "@/types/playerOverview";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { DeedAlertSection } from "./DeedAlertSection";
 
 type Props = {
   player: string;
@@ -80,45 +78,8 @@ export default function PlayerDashboardPage({ player }: Props) {
               mt={4}
             >
               {playerOverview.alerts.length > 0 && (
-                <>
-                  <Typography variant="h5">
-                    <Box
-                      component="span"
-                      sx={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 1,
-                      }}
-                    >
-                      <Image
-                        src={alert_gif_url}
-                        alt={"Alert"}
-                        width={25}
-                        height={25}
-                        style={{ marginLeft: 10, marginRight: 10 }}
-                      />
-                      Alerts!
-                      <Image
-                        src={alert_gif_url}
-                        alt={"Alert"}
-                        width={25}
-                        height={25}
-                        style={{ marginLeft: 10, marginRight: 10 }}
-                      />
-                    </Box>
-                  </Typography>
-                  <Typography variant={"body1"}>
-                    These deeds need attention because the plots are either full
-                    or the buildings are finished.
-                  </Typography>
-                  <Box display={"flex"} flexWrap={"wrap"}>
-                    {playerOverview.alerts.map((alert) => (
-                      <DeedAlertCard key={alert.plotId} alert={alert} />
-                    ))}
-                  </Box>
-                </>
+                <DeedAlertSection alerts={playerOverview.alerts} />
               )}
-
               <Typography variant={"h5"}>Resource Stores</Typography>
               <Box display="flex" flexWrap="wrap" gap={2}>
                 {["GRAIN", "WOOD", "STONE", "IRON", "RESEARCH", "AURA"].map(
