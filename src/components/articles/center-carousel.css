@@ -1,0 +1,27 @@
+.carousel-slide {
+  padding: 10px;
+  transition: transform 0.3s ease;
+  height: 400px; /* default height for smallest */
+}
+
+.slick-slide {
+  transform: scale(0.7);
+  opacity: 0.5;
+  transition: all 0.4s ease;
+}
+
+.slick-active {
+  opacity: 0.8;
+  transform: scale(0.85);
+  height: 250px !important;
+}
+
+.slick-center {
+  transform: scale(1.05) !important;
+  opacity: 1 !important;
+  height: 320px !important;
+}
+
+.carousel-content {
+  height: 100%;
+}

@@ -1,5 +1,6 @@
 "use client";
 
+import ArticleSection from "@/components/articles/ArticleSection";
 import DefaultPageTile from "@/components/DefaultPageTile";
 import PlayerPageTile from "@/components/PlayerPageTile";
 import Container from "@mui/material/Container";
@@ -10,8 +11,8 @@ const temp_image =
 
 export default function Home() {
   return (
-    <Container maxWidth="lg" sx={{ mt: 4 }}>
-      <Grid container spacing={3}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+      <Grid container spacing={3} mt={4}>
         <Grid size={{ xs: 12, sm: 6, lg: 4 }}>
           <DefaultPageTile
             title="Resource"
@@ -37,6 +38,7 @@ export default function Home() {
           />
         </Grid>
       </Grid>
+      <ArticleSection />
     </Container>
   );
 }
