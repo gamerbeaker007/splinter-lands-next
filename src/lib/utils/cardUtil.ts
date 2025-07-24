@@ -19,14 +19,13 @@ const bcxMap: Record<FoilType, Record<SetName, Record<Rarity, number>>> = {
 };
 
 export const determineCardMaxBCX = (
-  card_set: string,
+  cardSet: string,
   rarity: Rarity,
   foil: number,
 ): number => {
-  console.log(`cardset: `, card_set);
   const foilType: FoilType = foil > 0 ? "gold" : "normal";
   const set: SetName =
-    card_set in bcxMap[foilType] ? (card_set as SetName) : "default";
+    cardSet in bcxMap[foilType] ? (cardSet as SetName) : "default";
 
   return bcxMap[foilType][set][rarity];
 };
