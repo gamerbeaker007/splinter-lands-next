@@ -1,17 +1,16 @@
 import { getPlayerData } from "@/lib/backend/api/internal/player-data";
-import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedStakedAssets } from "@/lib/backend/services/playerService";
+import { enrichWithProgressInfo } from "@/lib/backend/services/regionService";
 import { sortDeeds } from "@/lib/filters";
 import { DeedComplete } from "@/types/deed";
-import { ProgressInfo } from "@/types/progressInfo";
 import pLimit from "p-limit";
 
 const DEED_LIMIT = 200;
 
 export async function POST(req: Request) {
   try {
-    const { filters, player, force } = await req.json();
+    const { filters, player } = await req.json();
     const deeds: DeedComplete[] = await getPlayerData(player, filters);
     if (!deeds) return new Response("No deeds found", { status: 404 });
 
@@ -42,10 +41,7 @@ export async function POST(req: Request) {
         const jobs = deedsToEnrich.map((deed) =>
           limit(async () => {
             try {
-              const stakedAssets = await getCachedStakedAssets(
-                deed.deed_uid,
-                force,
-              );
+              const stakedAssets = await getCachedStakedAssets(deed.deed_uid);
               const enriched = {
                 ...deed,
                 stakedAssets,
@@ -81,28 +77,4 @@ export async function POST(req: Request) {
     logError("Failed to stream enriched deeds", err);
     return new Response("Internal error", { status: 500 });
   }
-}
-
-function enrichWithProgressInfo(deeds: DeedComplete[]): DeedComplete[] {
-  return deeds.map((deed) => {
-    const isTaxSymbol = deed.worksiteDetail?.token_symbol === "TAX";
-    const progressInfo: ProgressInfo = isTaxSymbol
-      ? {
-          percentageDone: 0,
-          infoStr: "N/A",
-          progressTooltip:
-            "The status of Keeps and Castles remains a mystery for now.",
-        }
-      : getProgressInfo(
-          deed.worksiteDetail?.hours_since_last_op ?? 0,
-          deed.worksiteDetail?.project_created_date ?? null,
-          deed.worksiteDetail?.projected_end ?? null,
-          deed.stakingDetail?.total_harvest_pp ?? 0,
-        );
-
-    return {
-      ...deed,
-      progressInfo,
-    };
-  });
 }

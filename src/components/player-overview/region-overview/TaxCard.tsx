@@ -54,7 +54,7 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             {data.resources.map((res, idx) => (
               <Box textAlign="center" key={idx}>
                 <Avatar
-                  src={RESOURCE_ICON_MAP[res.token.toLowerCase()]}
+                  src={RESOURCE_ICON_MAP[res.token.toUpperCase()]}
                   sx={{ width: 25, height: 25, mx: "auto", mb: 0.5 }}
                 />
                 <Typography variant="caption">

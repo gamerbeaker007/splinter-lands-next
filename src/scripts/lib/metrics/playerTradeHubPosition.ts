@@ -66,7 +66,7 @@ export async function throttledFetchAllAssets(
       try {
         const result = await fetchPlayerPoolInfo(player);
 
-        result.map((row) => enrichData(row, today, metrics));
+        result.map((row) => enrichPoolData(row, today, metrics));
         results.push(...result);
 
         if (++current % 10 === 0) {
@@ -87,7 +87,7 @@ export async function throttledFetchAllAssets(
   return results;
 }
 
-export function enrichData(
+export function enrichPoolData(
   playerTradeHubPosition: PlayerTradeHubPosition,
   today: Date,
   metrics: ResourceHubMetrics[],

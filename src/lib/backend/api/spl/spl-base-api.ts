@@ -3,6 +3,7 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import logger from "../../log/logger.server";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
+import { Balance } from "@/types/balance";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -54,4 +55,30 @@ export async function fetchPlayerDetails(player: string) {
   }
 
   return data as SplPlayerDetails;
+}
+
+export async function fetchPlayerBalances(
+  player: string,
+  filterTypes: string[] = [],
+): Promise<Balance[]> {
+  const url = "/players/balances";
+  logger.info(`Fetch balances for: ${player}, with filters: ${filterTypes}`);
+
+  const res = await splBaseClient.get(url, {
+    params: { players: player },
+  });
+
+  const data = res.data;
+
+  if (!Array.isArray(data)) {
+    logger.error("Invalid response format from Splinterlands API", data);
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+
+  if (filterTypes.length === 0) {
+    return data;
+  }
+  return data.filter((entry: Balance) => {
+    return filterTypes.some((filter) => entry.token.startsWith(filter));
+  });
 }
