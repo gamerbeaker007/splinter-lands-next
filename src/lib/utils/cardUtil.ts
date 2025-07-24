@@ -2,68 +2,34 @@ import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
 
-export function determineCardMaxBCX(
-  id: number,
-  edition: number,
+type FoilType = "normal" | "gold";
+type SetName = "alpha" | "beta" | "default";
+
+const bcxMap: Record<FoilType, Record<SetName, Record<Rarity, number>>> = {
+  normal: {
+    alpha: { Common: 379, Rare: 86, Epic: 32, Legendary: 8 },
+    beta: { Common: 505, Rare: 115, Epic: 46, Legendary: 11 },
+    default: { Common: 400, Rare: 115, Epic: 46, Legendary: 11 },
+  },
+  gold: {
+    alpha: { Common: 31, Rare: 17, Epic: 8, Legendary: 3 },
+    beta: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
+    default: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
+  },
+};
+
+export const determineCardMaxBCX = (
+  card_set: string,
   rarity: Rarity,
   foil: number,
-): number {
-  if (edition === 0) return getAlphaBCX(foil, rarity);
-  if (edition === 1) return getBetaBCX(foil, rarity);
-  if (edition === 2) return getEditionPromoBCX(id, foil, rarity);
-  if (edition === 3) return getEditionRewardBCX(id, foil, rarity);
+): number => {
+  console.log(`cardset: `, card_set);
+  const foilType: FoilType = foil > 0 ? "gold" : "normal";
+  const set: SetName =
+    card_set in bcxMap[foilType] ? (card_set as SetName) : "default";
 
-  return getDefaultBCX(foil, rarity);
-}
-
-function getAlphaBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    return { Common: 397, Rare: 86, Epic: 32, Legendary: 8 }[rarity];
-  } else {
-    return { Common: 31, Rare: 17, Epic: 8, Legendary: 3 }[rarity];
-  }
-}
-
-function getBetaBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    return { Common: 505, Rare: 115, Epic: 46, Legendary: 11 }[rarity];
-  } else {
-    return { Common: 38, Rare: 22, Epic: 10, Legendary: 4 }[rarity];
-  }
-}
-
-function getDefaultBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    // Foil Regular
-    return { Common: 400, Rare: 115, Epic: 46, Legendary: 11 }[rarity];
-  } else {
-    // Foil 1 Gold
-    // Foil 2 GoldArcane
-    // Foil 3 Black Foil
-    // Foil 4 Black Arcane
-    return { Common: 38, Rare: 22, Epic: 10, Legendary: 4 }[rarity];
-  }
-}
-
-function getEditionPromoBCX(id: number, foil: number, rarity: Rarity): number {
-  if (id >= 75 && id <= 78) {
-    return getAlphaBCX(foil, rarity);
-  }
-  if (id > 223) {
-    return getDefaultBCX(foil, rarity);
-  }
-  //TODO Beta promo. For now assume Beta.
-  return getBetaBCX(foil, rarity);
-}
-
-function getEditionRewardBCX(id: number, foil: number, rarity: Rarity): number {
-  if (id > 223) {
-    return getDefaultBCX(foil, rarity);
-  }
-
-  //TODO Beta reward. For now assume Beta.
-  return getBetaBCX(foil, rarity);
-}
+  return bcxMap[foilType][set][rarity];
+};
 
 enum Edition {
   alpha = 0,

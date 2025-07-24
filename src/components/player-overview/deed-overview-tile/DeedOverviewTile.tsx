@@ -45,8 +45,7 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
           if (name === "Runi") return null;
 
           const max_bcx = determineCardMaxBCX(
-            card.card_detail_id,
-            card.edition,
+            card.card_set,
             rarity as Rarity,
             card.foil,
           );
