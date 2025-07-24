@@ -52,7 +52,6 @@ export default function PlayerDashboardPage({ player }: Props) {
     fetchPlayerData(false);
   }, [player, fetchPlayerData]);
 
-  console.log(playerOverview);
   return (
     <>
       {loadingText ? (

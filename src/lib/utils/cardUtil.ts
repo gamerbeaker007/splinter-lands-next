@@ -7,7 +7,7 @@ export function determineCardMaxBCX(
   edition: number,
   rarity: Rarity,
   foil: number,
-): number | string {
+): number {
   if (edition === 0) return getAlphaBCX(foil, rarity);
   if (edition === 1) return getBetaBCX(foil, rarity);
   if (edition === 2) return getEditionPromoBCX(id, foil, rarity);
@@ -45,11 +45,7 @@ function getDefaultBCX(foil: number, rarity: Rarity) {
   }
 }
 
-function getEditionPromoBCX(
-  id: number,
-  foil: number,
-  rarity: Rarity,
-): number | string {
+function getEditionPromoBCX(id: number, foil: number, rarity: Rarity): number {
   if (id >= 75 && id <= 78) {
     return getAlphaBCX(foil, rarity);
   }
@@ -60,11 +56,7 @@ function getEditionPromoBCX(
   return getBetaBCX(foil, rarity);
 }
 
-function getEditionRewardBCX(
-  id: number,
-  foil: number,
-  rarity: Rarity,
-): number | string {
+function getEditionRewardBCX(id: number, foil: number, rarity: Rarity): number {
   if (id > 223) {
     return getDefaultBCX(foil, rarity);
   }
@@ -158,3 +150,20 @@ function rarityName(rarity: number) {
       return `Unknown (${rarity})`;
   }
 }
+
+export const getFoilLabel = (foil: number): string => {
+  switch (foil) {
+    case 0:
+      return "Regular";
+    case 1:
+      return "Gold";
+    case 2:
+      return "Gold Arcane";
+    case 3:
+      return "Black Foil";
+    case 4:
+      return "Black Arcane";
+    default:
+      return "Unknown";
+  }
+};

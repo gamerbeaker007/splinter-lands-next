@@ -1,3 +1,4 @@
+import { getFoilLabel } from "@/lib/utils/cardUtil";
 import { Box, Tooltip, Typography } from "@mui/material";
 
 type Rarity = "Common" | "Rare" | "Epic" | "Legendary";
@@ -6,21 +7,24 @@ interface Props {
   rarity: Rarity;
   foil: number; // 0 = regular, 1-4 = gold
   bcx: number;
+  max_bcx: number;
   basePP: number;
 }
 
-const basePPMap: Record<Rarity, Record<0 | 1, number>> = {
-  Common: { 0: 2.5, 1: 52.63 },
-  Rare: { 0: 9.57, 1: 181.82 },
-  Epic: { 0: 27.17, 1: 600 },
-  Legendary: { 0: 136.36, 1: 2500 },
+const basePPMaxMap: Record<Rarity, Record<0 | 1, number>> = {
+  Common: { 0: 1000, 1: 2000 },
+  Rare: { 0: 1100, 1: 4000 },
+  Epic: { 0: 1250, 1: 6000 },
+  Legendary: { 0: 1500, 1: 10000 },
 };
 
-const PPMultiplierDot = ({ rarity, foil, bcx, basePP }: Props) => {
+const PPMultiplierDot = ({ rarity, foil, bcx, max_bcx, basePP }: Props) => {
   const foilKey: 0 | 1 = foil === 0 ? 0 : 1;
-  const productionPointsPerBCX = basePPMap[rarity][foilKey];
-  const wihtoutMultiplierPP = bcx * productionPointsPerBCX;
-  const multiplier = basePP / wihtoutMultiplierPP;
+
+  const basePPMax = basePPMaxMap[rarity][foilKey];
+  const productionPointsPerBCX = basePPMax / max_bcx;
+  const wihtoutMultiplierPP = productionPointsPerBCX * bcx;
+  const multiplier = basePP / ((bcx / max_bcx) * basePPMax);
 
   return multiplier.toFixed(0) != "1" ? (
     <Tooltip
@@ -28,10 +32,10 @@ const PPMultiplierDot = ({ rarity, foil, bcx, basePP }: Props) => {
         <>
           <strong>Base PP Multiplier:</strong>
           <br />
-          Foil: {foil}
-          <br />1 BCX PP: {productionPointsPerBCX}
+          Foil: {getFoilLabel(foil)}
+          <br />1 BCX PP: {productionPointsPerBCX.toFixed(2)}
           <br />
-          {bcx} BCX PP: {wihtoutMultiplierPP.toFixed(0)}
+          {bcx} BCX PP: {wihtoutMultiplierPP.toFixed(2)}
           <br />
           Received PP: {basePP}
           <br />

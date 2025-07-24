@@ -1,6 +1,6 @@
 import { formatLargeNumber } from "@/lib/formatters";
-import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
+import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
 import { Rarity } from "@/types/rarity";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import { Box, Tooltip, Typography } from "@mui/material";
@@ -14,7 +14,7 @@ type Props = {
   foil: number;
   terrain_boost: number;
   actual_bcx: number;
-  max_bcx: number | string;
+  max_bcx: number;
   base_pp: number;
   boosted_pp: number;
   uid: string;
@@ -97,6 +97,7 @@ export default function CardTile({
             rarity={rarity as Rarity}
             foil={foil}
             bcx={actual_bcx}
+            max_bcx={max_bcx}
             basePP={base_pp}
           />
 
