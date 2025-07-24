@@ -89,7 +89,7 @@ export default function CardTile({
             height={14}
             borderRadius="50%"
             border={1}
-            bgcolor={RarityColor[rarity]}
+            bgcolor={RarityColor[rarity as Rarity]}
           />
 
           {/* bottom-left multiplier dot (placeholder logic) */}
