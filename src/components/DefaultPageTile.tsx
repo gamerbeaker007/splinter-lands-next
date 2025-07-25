@@ -19,8 +19,8 @@ export default function DefaultPageTile({ title, href, image }: Props) {
       elevation={4}
       sx={{
         position: "relative",
-        minHeight: 300,
-        maxWidth: 500,
+        height: "100%",
+        width: "100%",
         overflow: "hidden",
         textDecoration: "none",
         color: "inherit",

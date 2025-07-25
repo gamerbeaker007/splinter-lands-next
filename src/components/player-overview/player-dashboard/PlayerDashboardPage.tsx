@@ -12,8 +12,10 @@ import { formatNumberWithSuffix } from "@/lib/formatters";
 import { PlayerOverview } from "@/types/playerOverview";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { DeedAlertSection } from "./DeedAlertSection";
+import { InfoCreatableItem } from "@/components/player-overview/player-dashboard/InfoItemWithCraftable";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type Props = {
   player: string;
@@ -93,8 +95,33 @@ export default function PlayerDashboardPage({ player }: Props) {
                 )}
               </Box>
               <Box display={"flex"} flexWrap={"wrap"} gap={4}>
+                <Box>
+                  <Typography variant={"h5"} mb={2}>
+                    Est. DEC Income
+                  </Typography>
+                  <Typography variant="h6">Production (/hr):</Typography>
+                  <InfoCreatableItem
+                    icon={RESOURCE_ICON_MAP["DEC"]}
+                    title={"DEC"}
+                    number={playerOverview.totalDec}
+                    percision={3}
+                  />
+                  {playerOverview.totalTaxDec && (
+                    <>
+                      <Typography variant="h6">Tax (/hr):</Typography>
+                      <InfoCreatableItem
+                        icon={RESOURCE_ICON_MAP["DEC"]}
+                        title={"DEC"}
+                        number={playerOverview.totalTaxDec}
+                        percision={3}
+                      />
+                    </>
+                  )}
+                </Box>
                 <Box maxWidth={450} flex={1}>
-                  <Typography variant={"h5"}>DEC Info</Typography>
+                  <Typography variant={"h5"} ml={2} mb={2}>
+                    Staked DEC Information
+                  </Typography>
                   <DecGaugeIndicator
                     title={`STAKED DEC MAX: ${formatNumberWithSuffix(playerOverview.summarizedRegionInfo.deedsCount * 50_000)}`}
                     maxPossibleStakedDec={
@@ -112,6 +139,9 @@ export default function PlayerDashboardPage({ player }: Props) {
                   />
                 </Box>
                 <Box flex={1}>
+                  <Typography variant={"h5"} mb={2}>
+                    Resource / Crafting{" "}
+                  </Typography>
                   <PlayerCraftingOverview
                     liquidityInfo={playerOverview.liquidityInfo}
                     balances={playerOverview.balances}

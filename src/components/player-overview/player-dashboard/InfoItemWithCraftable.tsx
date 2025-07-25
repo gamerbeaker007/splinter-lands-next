@@ -6,7 +6,8 @@ import Tooltip from "@mui/material/Tooltip";
 type Props = {
   icon: string;
   title: string;
-  text: string;
+  number: number;
+  percision?: number;
   creatable?: string;
   fontSize?: number;
   tooltip?: React.ReactNode;
@@ -15,7 +16,8 @@ type Props = {
 export function InfoCreatableItem({
   icon,
   title,
-  text,
+  number,
+  percision,
   creatable,
   fontSize = 14,
   tooltip,
@@ -31,10 +33,10 @@ export function InfoCreatableItem({
             sx={{
               fontFamily: "monospace",
               fontWeight: "bold",
-              color: "success.main",
+              color: `${number >= 0 ? "success.main" : "error.main"}`,
             }}
           >
-            {text}
+            {percision ? number.toFixed(percision) : number.toLocaleString()}
           </Typography>
           {creatable && (
             <Tooltip title={tooltip ?? ""} disableHoverListener={!tooltip}>

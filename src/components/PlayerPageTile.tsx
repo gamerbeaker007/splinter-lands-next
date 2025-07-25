@@ -28,7 +28,7 @@ export default function PlayerPageTile() {
   return (
     <Card
       elevation={4}
-      sx={{ position: "relative", p: 2, minHeight: 300, maxWidth: 500 }}
+      sx={{ position: "relative", p: 2, height: "100%", width: "100%" }}
     >
       {/* Background image layer */}
       <Box

@@ -13,4 +13,6 @@ export type RegionSummary = {
   totalDecInUse: number;
   totalDecStaked: number;
   deedsCount: number;
+  totalBasePP: number;
+  totalBoostedPP: number;
 };
