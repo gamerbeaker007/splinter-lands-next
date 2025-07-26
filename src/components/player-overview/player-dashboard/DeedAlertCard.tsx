@@ -51,6 +51,7 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
       }}
     >
       <CardActionArea
+        component="a"
         href={linkUrl}
         target="_blank"
         sx={{
@@ -65,8 +66,11 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
         }}
       >
         <IconButton
-          href={harvestLink}
-          target="_blank"
+          component="span"
+          onClick={(e) => {
+            e.stopPropagation(); // prevent CardActionArea click
+            window.open(harvestLink, "_blank");
+          }}
           sx={{
             position: "absolute",
             top: 5,
@@ -143,7 +147,10 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
               mt: 1,
             }}
           >
-            ⚠ {alert.infoStr}
+            ⚠{" "}
+            {alert.infoStr.startsWith("Finished")
+              ? "Building Finished"
+              : alert.infoStr}
           </Typography>
         </Box>
       </CardActionArea>

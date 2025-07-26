@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import Box from "@mui/material/Box";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
-import Box from "@mui/material/Box";
+import Link from "next/link";
 
 type Props = {
   title: string;
@@ -19,7 +19,8 @@ export default function DefaultPageTile({ title, href, image }: Props) {
       elevation={4}
       sx={{
         position: "relative",
-        minHeight: 200,
+        height: "100%",
+        width: "100%",
         overflow: "hidden",
         textDecoration: "none",
         color: "inherit",

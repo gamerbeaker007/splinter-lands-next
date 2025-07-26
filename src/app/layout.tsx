@@ -2,7 +2,7 @@
 import SideBar from "@/components/side-bar/SideBar";
 import TopBar from "@/components/top-bar/TopBar";
 import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
-import { ThemeProviderWrapper } from "@/lib/frontend/context/ThemeContext"; // Adjust path as needed
+import { ThemeProviderWrapper } from "@/lib/frontend/context/ThemeContext";
 import Box from "@mui/material/Box";
 
 export default function RootLayout({

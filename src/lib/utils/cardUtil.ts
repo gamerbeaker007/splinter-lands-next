@@ -2,68 +2,69 @@ import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
 
-export function determineCardMaxBCX(
-  id: number,
-  edition: number,
-  rarity: Rarity,
-  foil: number,
-): number {
-  if (edition === 0) return getAlphaBCX(foil, rarity);
-  if (edition === 1) return getBetaBCX(foil, rarity);
-  if (edition === 2) return getEditionPromoBCX(id, foil, rarity);
-  if (edition === 3) return getEditionRewardBCX(id, foil, rarity);
+// ----------------------------------
+// Types
+// ----------------------------------
 
-  return getDefaultBCX(foil, rarity);
-}
+export type FoilBCXType = "normal" | "gold";
+export type SetName = "alpha" | "beta" | "default";
 
-function getAlphaBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    return { Common: 397, Rare: 86, Epic: 32, Legendary: 8 }[rarity];
-  } else {
-    return { Common: 31, Rare: 17, Epic: 8, Legendary: 3 }[rarity];
-  }
-}
+type FoilMeta = {
+  bcxType: FoilBCXType;
+  suffix: string;
+  label: string;
+};
 
-function getBetaBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    return { Common: 505, Rare: 115, Epic: 46, Legendary: 11 }[rarity];
-  } else {
-    return { Common: 38, Rare: 22, Epic: 10, Legendary: 4 }[rarity];
-  }
-}
+// ----------------------------------
+// Foil Metadata Map
+// ----------------------------------
 
-function getDefaultBCX(foil: number, rarity: Rarity) {
-  if (foil === 0) {
-    // Foil Regular
-    return { Common: 400, Rare: 115, Epic: 46, Legendary: 11 }[rarity];
-  } else {
-    // Foil 1 Gold
-    // Foil 2 GoldArcane
-    // Foil 3 Black Foil
-    // Foil 4 Black Arcane
-    return { Common: 38, Rare: 22, Epic: 10, Legendary: 4 }[rarity];
-  }
-}
+const foilMetaMap: Record<number, FoilMeta> = {
+  0: { bcxType: "normal", suffix: "", label: "Regular" },
+  1: { bcxType: "gold", suffix: "_gold", label: "Gold" },
+  2: { bcxType: "gold", suffix: "_gold", label: "Gold Arcane" },
+  3: { bcxType: "gold", suffix: "_blk", label: "Black Foil" },
+  4: { bcxType: "gold", suffix: "_blk", label: "Black Arcane" },
+};
 
-function getEditionPromoBCX(id: number, foil: number, rarity: Rarity): number {
-  if (id >= 75 && id <= 78) {
-    return getAlphaBCX(foil, rarity);
-  }
-  if (id > 223) {
-    return getDefaultBCX(foil, rarity);
-  }
-  //TODO Beta promo. For now assume Beta.
-  return getBetaBCX(foil, rarity);
-}
+// ----------------------------------
+// BCX Map
+// ----------------------------------
 
-function getEditionRewardBCX(id: number, foil: number, rarity: Rarity): number {
-  if (id > 223) {
-    return getDefaultBCX(foil, rarity);
-  }
+const bcxMap: Record<FoilBCXType, Record<SetName, Record<Rarity, number>>> = {
+  normal: {
+    alpha: { Common: 379, Rare: 86, Epic: 32, Legendary: 8 },
+    beta: { Common: 505, Rare: 115, Epic: 46, Legendary: 11 },
+    default: { Common: 400, Rare: 115, Epic: 46, Legendary: 11 },
+  },
+  gold: {
+    alpha: { Common: 31, Rare: 17, Epic: 8, Legendary: 3 },
+    beta: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
+    default: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
+  },
+};
 
-  //TODO Beta reward. For now assume Beta.
-  return getBetaBCX(foil, rarity);
-}
+// ----------------------------------
+// Rarity Mapping & Colors
+// ----------------------------------
+
+const rarityMap: Record<number, Rarity> = {
+  1: "Common",
+  2: "Rare",
+  3: "Epic",
+  4: "Legendary",
+};
+
+export const RarityColor: Record<Rarity, string> = {
+  Common: "gray",
+  Rare: "blue",
+  Epic: "purple",
+  Legendary: "gold",
+};
+
+// ----------------------------------
+// Edition Enum
+// ----------------------------------
 
 enum Edition {
   alpha = 0,
@@ -81,29 +82,22 @@ enum Edition {
   conclave = 14,
 }
 
-export const RarityColor: Record<string, string> = {
-  Common: "gray",
-  Rare: "blue",
-  Epic: "purple",
-  Legendary: "gold",
-};
+// ----------------------------------
+// Utilities
+// ----------------------------------
+
+export const getFoilLabel = (foil: number): string =>
+  foilMetaMap[foil]?.label ?? "Unknown";
+
+const getFoilSuffix = (foil: number): string => foilMetaMap[foil]?.suffix ?? "";
+
+const getFoilType = (foil: number): FoilBCXType =>
+  foilMetaMap[foil]?.bcxType ?? "normal";
 
 export function getEditionName(edition: Edition): string {
   return Edition[edition];
 }
 
-function getFoilSuffix(foil: number): string {
-  switch (foil) {
-    case 1:
-    case 2:
-      return "_gold";
-    case 3:
-      return "_blk";
-    case 0:
-    default:
-      return "";
-  }
-}
 export function getCardImg(
   cardName: string,
   edition: Edition,
@@ -116,54 +110,44 @@ export function getCardImg(
   return `${baseCardUrl}/${editionName}/${safeCardName}_lv1${suffix}.png`;
 }
 
+export const determineCardMaxBCX = (
+  cardSet: string,
+  rarity: Rarity,
+  foil: number,
+): number => {
+  const foilType = getFoilType(foil);
+  const validSets: SetName[] = ["alpha", "beta", "default"];
+  const set: SetName = validSets.includes(cardSet as SetName)
+    ? (cardSet as SetName)
+    : "default";
+
+  return bcxMap[foilType][set][rarity];
+};
+
+function rarityName(rarity: number): Rarity | string {
+  return rarityMap[rarity] ?? `Unknown (${rarity})`;
+}
+
 export function determineCardInfo(
   id: number,
   cardDetails: SplCardDetails[] | null | undefined,
-) {
-  if (!cardDetails || !Array.isArray(cardDetails)) {
+): {
+  name: string;
+  rarity: Rarity | string;
+} {
+  if (!Array.isArray(cardDetails)) {
     console.warn("cardDetails is null or not an array");
-    return { name: "", edition: "", rarity: "", max_bcx: 0 };
+    return { name: "", rarity: "" };
   }
 
   const card = cardDetails.find((cd) => cd.id === id);
   if (!card) {
     console.warn(`Card with id ${id} not found`);
-    return { name: "", edition: "", rarity: "", max_bcx: 0 };
+    return { name: "", rarity: "" };
   }
 
   const name = card.name;
   const rarity = rarityName(card.rarity);
+
   return { name, rarity };
 }
-
-function rarityName(rarity: number) {
-  switch (rarity) {
-    case 1:
-      return "Common";
-    case 2:
-      return "Rare";
-    case 3:
-      return "Epic";
-    case 4:
-      return "Legendary";
-    default:
-      return `Unknown (${rarity})`;
-  }
-}
-
-export const getFoilLabel = (foil: number): string => {
-  switch (foil) {
-    case 0:
-      return "Regular";
-    case 1:
-      return "Gold";
-    case 2:
-      return "Gold Arcane";
-    case 3:
-      return "Black Foil";
-    case 4:
-      return "Black Arcane";
-    default:
-      return "Unknown";
-  }
-};

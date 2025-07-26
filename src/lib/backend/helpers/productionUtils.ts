@@ -46,3 +46,20 @@ export function getProgressInfo(
     progressTooltip: null,
   };
 }
+
+const epsilon = 1e-6;
+
+export function calculateLDERatio(
+  total_dec: number,
+  total_dec_stake_in_use: number,
+) {
+  return Math.log10(total_dec / (total_dec_stake_in_use + epsilon));
+}
+
+export function calculateLCERatio(total_dec: number, pp: number) {
+  return Math.log10(total_dec / (pp + epsilon));
+}
+
+export function calculateLPERatio(total_dec: number, plotCount: number) {
+  return total_dec / plotCount;
+}

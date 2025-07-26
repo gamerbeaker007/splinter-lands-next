@@ -1,9 +1,9 @@
-import React from "react";
-import { Box, Typography } from "@mui/material";
-import { Card } from "@/types/stakedAssets";
-import { SplCardDetails } from "@/types/splCardDetails";
 import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import { Rarity } from "@/types/rarity";
+import { SplCardDetails } from "@/types/splCardDetails";
+import { Card } from "@/types/stakedAssets";
+import { Box, Typography } from "@mui/material";
+import React from "react";
 import CardTile from "../CardTile";
 
 export type RuniBoostProps = {
@@ -38,8 +38,7 @@ export const RuniBoost: React.FC<RuniBoostProps> = ({
             cardDetails,
           );
           const max_bcx = determineCardMaxBCX(
-            card.card_detail_id,
-            card.edition,
+            card.card_set,
             rarity as Rarity,
             card.foil,
           );

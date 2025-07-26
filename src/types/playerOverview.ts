@@ -10,4 +10,10 @@ export type PlayerOverview = {
   liquidityPoolInfo: PlayerTradeHubPosition[];
   balances: Balance[];
   alerts: DeedAlertsInfo[];
+  LCERatioBase: number;
+  LCERatioBoosted: number;
+  LPERatio: number;
+  LDERatio: number;
+  totalDec: number;
+  totalTaxDec: number | null;
 };

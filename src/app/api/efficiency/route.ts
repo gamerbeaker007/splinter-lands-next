@@ -4,6 +4,11 @@ import { getPlayerProductionData } from "@/lib/backend/api/internal/player-produ
 import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { DeedComplete } from "@/types/deed";
+import {
+  calculateLCERatio,
+  calculateLDERatio,
+  calculateLPERatio,
+} from "@/lib/backend/helpers/productionUtils";
 
 type StakeInfo = {
   totalDecStakeNeeded: number;
@@ -109,20 +114,21 @@ function normalizeRatio(
 }
 
 function calculateRatios(players: PlayerProductionSummaryEnriched[]) {
-  const epsilon = 1e-6;
-
   // --- Ratios
   for (const player of players) {
-    player.LDE_ratio = Math.log10(
-      player.total_dec / ((player.total_dec_stake_in_use ?? 0) + epsilon),
+    player.LDE_ratio = calculateLDERatio(
+      player.total_dec,
+      player.total_dec_stake_in_use ?? 0,
     );
-    player.LCE_ratio_base = Math.log10(
-      player.total_dec / (player.total_base_pp_after_cap + epsilon),
+    player.LCE_ratio_base = calculateLCERatio(
+      player.total_dec,
+      player.total_base_pp_after_cap ?? 0,
     );
-    player.LCE_ratio_boosted = Math.log10(
-      player.total_dec / (player.total_harvest_pp + epsilon),
+    player.LCE_ratio_boosted = calculateLCERatio(
+      player.total_dec,
+      player.total_harvest_pp ?? 0,
     );
-    player.LPE_ratio = player.total_dec / player.count;
+    player.LPE_ratio = calculateLPERatio(player.total_dec, player.count);
   }
 }
 

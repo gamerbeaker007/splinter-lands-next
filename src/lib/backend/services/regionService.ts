@@ -7,7 +7,7 @@ import { ProgressInfo } from "@/types/progressInfo";
 import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 
-export function summarizeDeedsData(deeds: DeedComplete[]) {
+export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   // Initialize all count buckets
   const worksiteCounts: Record<string, number> = {};
   const playerCounts: Record<string, number> = {};
@@ -24,6 +24,8 @@ export function summarizeDeedsData(deeds: DeedComplete[]) {
   let totalDecInUse = 0;
   let totalDecStaked = 0;
   let totalDeeds = 0;
+  let totalRawPP = 0;
+  let totalBoostedPP = 0;
 
   for (const deed of deeds) {
     const player = deed.player!;
@@ -65,6 +67,9 @@ export function summarizeDeedsData(deeds: DeedComplete[]) {
       totalDecNeeded += staking.total_dec_stake_needed ?? 0;
       totalDecInUse += staking.total_dec_stake_in_use ?? 0;
 
+      totalRawPP += staking.total_base_pp_after_cap ?? 0;
+      totalBoostedPP += staking.total_harvest_pp ?? 0;
+
       //staked DEC is based on region only add it one per region-player combination
       totalDecStaked += !seenPairs.has(key)
         ? (staking.total_dec_staked ?? 0)
@@ -88,6 +93,8 @@ export function summarizeDeedsData(deeds: DeedComplete[]) {
     totalDecInUse: totalDecInUse,
     totalDecStaked: totalDecStaked,
     deedsCount: totalDeeds,
+    totalBasePP: totalRawPP,
+    totalBoostedPP: totalBoostedPP,
   };
 }
 

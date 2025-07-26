@@ -85,8 +85,6 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
 
   return (
     <Box display={"flex"} flexWrap={"wrap"} gap={4}>
-      <Box></Box>
-
       <Box maxWidth={350}>
         <Typography variant="h6">Resource Overview</Typography>
 
@@ -95,19 +93,19 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
             key={resource}
             icon={RESOURCE_ICON_MAP[resource]}
             title={resource}
-            text={resourceAvailableMap[resource].toLocaleString()}
+            number={resourceAvailableMap[resource]}
           />
         ))}
 
         <InfoCreatableItem
           icon={RESOURCE_ICON_MAP["DEC"]}
           title="DEC"
-          text={resourceAvailableMap["DEC"].toLocaleString()}
+          number={resourceAvailableMap["DEC"]}
         />
         <InfoCreatableItem
           icon={RESOURCE_ICON_MAP["VOUCHER"]}
           title="VOUCHER"
-          text={resourceAvailableMap["VOUCHER"].toLocaleString()}
+          number={resourceAvailableMap["VOUCHER"]}
         />
       </Box>
       <Box maxWidth={350}>
@@ -130,9 +128,9 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
               key={itemKey}
               icon={RESOURCE_ICON_MAP[itemKey]}
               title={itemKey}
-              text={Number(
+              number={Number(
                 balances.find((b) => b.token === itemKey)?.balance ?? 0,
-              ).toLocaleString()}
+              )}
               creatable={`${count}x`}
               tooltip={tooltip}
             />

@@ -8,11 +8,11 @@ export interface RegionTaxSummary {
   tract_number: number;
   type: string;
   capture_rate: number;
+  total_tax_dec: number;
   resources: Record<string, string | number>[];
 }
 
 export type PlayerRegionDataType = {
   regionSummary: RegionSummary[];
   totals: Record<string, number>;
-  amount: Record<string, number>;
 };

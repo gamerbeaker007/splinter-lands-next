@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Card from "@mui/material/Card";
-import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Box from "@mui/material/Box";
 import { alpha, useTheme } from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Card from "@mui/material/Card";
+import TextField from "@mui/material/TextField";
+import Typography from "@mui/material/Typography";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function PlayerPageTile() {
   const [player, setPlayer] = useState("");
@@ -26,7 +26,10 @@ export default function PlayerPageTile() {
     "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
 
   return (
-    <Card elevation={4} sx={{ position: "relative", p: 2, minHeight: 200 }}>
+    <Card
+      elevation={4}
+      sx={{ position: "relative", p: 2, height: "100%", width: "100%" }}
+    >
       {/* Background image layer */}
       <Box
         sx={{
