@@ -7,6 +7,8 @@ import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 export function mapRegionDataToDeedComplete(
   data: RawRegionDataResponse,
 ): DeedComplete[] {
+  if (Object.entries(data.deeds).length === 0) return [];
+
   const worksiteMap = new Map(
     data.worksite_details.map((w) => [w.deed_uid, w]),
   );
