@@ -5,7 +5,8 @@ export type SortOptionKey =
   | "plotNumber"
   | "rawPP"
   | "boostedPP"
-  | "percentComplete";
+  | "percentComplete"
+  | "netDEC";
 
 export type SortOption = {
   key: SortOptionKey;
@@ -34,5 +35,9 @@ export const defaultSortOptions: SortOption[] = [
   {
     key: "percentComplete",
     label: "Percentage full/complete",
+  },
+  {
+    key: "netDEC",
+    label: "DEC /hr",
   },
 ];

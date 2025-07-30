@@ -16,10 +16,10 @@ const RESOURCES = [
   "AURA",
 ] as const;
 
-const CRAFT_FORMULAS = {
+const CRAFT_REQUIREMENTS = {
   WAGONKIT: { WOOD: 40000, STONE: 10000, IRON: 4000, AURA: 2500 },
   AM: { AURA: 1000, VOUCHER: 50, DEC: 500 },
-  FL: { AURA: 200, VOUCHER: 10, DEC: 200 },
+  FT: { AURA: 200, VOUCHER: 10, DEC: 200 },
   MIDNIGHTPOT: { AURA: 40 },
 };
 
@@ -56,11 +56,23 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
 
   const getMissingResources = (
     requirements: Record<string, number>,
+    maxCraftable: number,
   ): React.ReactNode => {
+    // Subtract used resources from available
+    const remainingAfterCraft = Object.entries(requirements).reduce(
+      (acc, [resource, needed]) => {
+        const available = resourceAvailableMap[resource] ?? 0;
+        acc[resource] = available - needed * maxCraftable;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    // Determine what's missing to craft ONE MORE item
     const missing = Object.entries(requirements)
       .map(([resource, needed]) => {
-        const available = resourceAvailableMap[resource] ?? 0;
-        const shortfall = needed - available;
+        const remaining = remainingAfterCraft[resource] ?? 0;
+        const shortfall = needed - remaining;
         return shortfall > 0
           ? `- ${resource}: ${shortfall.toLocaleString()}`
           : null;
@@ -69,7 +81,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
 
     return missing.length > 0 ? (
       <>
-        <strong>Missing</strong>
+        <strong>Missing for next:</strong>
         <br />
         {missing.map((item, i) => (
           <React.Fragment key={i}>
@@ -116,12 +128,9 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
           </Box>
         </Tooltip>
 
-        {Object.entries(CRAFT_FORMULAS).map(([itemKey, formula]) => {
-          const count = getCraftableCount(formula);
-          const isCraftable = count > 0;
-          const tooltip = isCraftable
-            ? undefined
-            : getMissingResources(formula);
+        {Object.entries(CRAFT_REQUIREMENTS).map(([itemKey, requirements]) => {
+          const count = getCraftableCount(requirements);
+          const tooltip = getMissingResources(requirements, count);
 
           return (
             <InfoCreatableItem
@@ -132,7 +141,8 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
                 balances.find((b) => b.token === itemKey)?.balance ?? 0,
               )}
               creatable={`${count}x`}
-              tooltip={tooltip}
+              tooltip_craft={tooltip}
+              tooltip_requirements={requirements}
             />
           );
         })}

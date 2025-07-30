@@ -75,10 +75,9 @@ export default function DeedOverviewTile({ data, cardDetails }: Props) {
         worksiteType={data.worksiteDetail?.worksite_type ?? "Undeveloped"}
         basePP={data.stakingDetail?.total_base_pp_after_cap ?? 0}
         boostedPP={data.stakingDetail?.total_harvest_pp ?? 0}
-        rawPerHour={data.worksiteDetail?.rewards_per_hour ?? 0}
         resource={data.worksiteDetail?.token_symbol ?? ""}
-        includeTax={true}
         progressInfo={data.progressInfo}
+        productionInfo={data.productionIfo}
       />
     </Box>
   );

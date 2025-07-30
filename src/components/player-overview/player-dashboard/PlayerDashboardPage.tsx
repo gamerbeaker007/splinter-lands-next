@@ -104,7 +104,7 @@ export default function PlayerDashboardPage({ player }: Props) {
                     icon={RESOURCE_ICON_MAP["DEC"]}
                     title={"DEC"}
                     number={playerOverview.totalDec}
-                    percision={3}
+                    precision={3}
                   />
                   {playerOverview.totalTaxDec && (
                     <>
@@ -113,7 +113,7 @@ export default function PlayerDashboardPage({ player }: Props) {
                         icon={RESOURCE_ICON_MAP["DEC"]}
                         title={"DEC"}
                         number={playerOverview.totalTaxDec}
-                        percision={3}
+                        precision={3}
                       />
                     </>
                   )}

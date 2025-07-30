@@ -5,6 +5,7 @@ import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
 import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { AuraPrices } from "@/types/price";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -140,7 +141,7 @@ export async function fetchResourceSupply(resource: string) {
   return Array.isArray(data) ? (data as ResourceSupplyResponse[]) : [];
 }
 
-export async function getMidnightPotionPrice(): Promise<number> {
+export async function getAURAPrices(): Promise<AuraPrices[]> {
   try {
     const url = "/market/landing";
     const params = { assets: "CONSUMABLES" };
@@ -150,21 +151,21 @@ export async function getMidnightPotionPrice(): Promise<number> {
     const assets = res.data?.data?.assets;
     if (!Array.isArray(assets)) {
       logger.warn("⚠️ No assets array found in response.");
-      return 0;
+      return [];
     }
 
-    const potion = assets.find((asset) => asset.detailId === "MIDNIGHTPOT");
+    const auraItems = ["MIDNIGHTPOT", "FT", "AM", "WAGONKIT"];
 
-    const price = potion?.prices?.[0]?.minPrice;
-
-    if (typeof price === "number") {
-      return price;
-    }
-
-    logger.warn("⚠️ Midnight Potion not found or missing price.");
-    return 0;
+    return assets
+      .filter((asset) => auraItems.includes(asset.detailId))
+      .map((assets) => {
+        return {
+          detailId: assets.detailId,
+          minPrice: assets.prices?.[0]?.minPrice,
+        };
+      });
   } catch (error) {
     logError("❌ Failed to fetch Midnight Potion price:", error);
-    return 0;
+    return [];
   }
 }

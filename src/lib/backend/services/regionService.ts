@@ -6,6 +6,10 @@ import { DeedComplete } from "@/types/deed";
 import { ProgressInfo } from "@/types/progressInfo";
 import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
+import { ProductionInfo } from "@/types/productionInfo";
+import { calcConsumeCosts, calcDECPrice } from "@/lib/shared/costCalc";
+import { Resource } from "@/constants/resource/resource";
+import { Prices } from "@/types/price";
 
 export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   // Initialize all count buckets
@@ -217,6 +221,53 @@ export function enrichWithProgressInfo(deeds: DeedComplete[]): DeedComplete[] {
     return {
       ...deed,
       progressInfo,
+    };
+  });
+}
+
+export function enrichWithProductionInfo(
+  deeds: DeedComplete[],
+  prices: Prices,
+): DeedComplete[] {
+  return deeds.map((deed) => {
+    const ws = deed.worksiteDetail;
+    const st = deed.stakingDetail;
+    if (!ws || !st) return { ...deed };
+
+    const resource = ws.token_symbol as Resource;
+
+    if (resource === "TAX") return { ...deed }; // Investigate if tax should be included
+
+    const production = (ws.rewards_per_hour ?? 0) * 0.9; // Tax Fee
+    const decIncomeBuy = calcDECPrice("buy", resource, production, prices);
+    const decIncomeSell = calcDECPrice("sell", resource, production, prices);
+
+    const consumeCosts = calcConsumeCosts(
+      resource,
+      st.total_base_pp_after_cap ?? 0,
+      prices,
+      ws.site_efficiency ?? 0,
+    );
+    const totalDECConsume = consumeCosts.reduce(
+      (sum, row) => sum + Number(row.sellPriceDEC || 0),
+      0,
+    );
+    const netDEC = decIncomeSell - totalDECConsume;
+
+    const productionIfo: ProductionInfo = {
+      produce: {
+        resource: resource,
+        amount: production,
+        buyPriceDEC: decIncomeBuy,
+        sellPriceDEC: decIncomeSell,
+      },
+      consume: consumeCosts,
+      netDEC: netDEC,
+    };
+
+    return {
+      ...deed,
+      productionIfo,
     };
   });
 }

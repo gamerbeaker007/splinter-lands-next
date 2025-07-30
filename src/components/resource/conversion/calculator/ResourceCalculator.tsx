@@ -7,210 +7,168 @@ import {
   AlertTitle,
   Box,
   Button,
+  Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
 import { ResourceInput } from "./ResourceInput";
 import { ResourceOutput } from "./resourceOutput";
+import { Mode } from "@/types/mode";
+import { PresetName, RESOURCE_PRESETS } from "@/constants/conversion/presets";
+import {
+  CALCULATOR_RESOURCES,
+  CalculatorResource,
+} from "@/constants/resource/resource";
+import { usePrices } from "@/hooks/usePrices";
+import { useResourceConversion } from "@/components/resource/conversion/calculator/userResourceConversion";
+import AuraPriceBox from "@/components/resource/conversion/calculator/AuraPriceBox";
 
-const fee = 0.9;
-
-const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA", "VOUCHER"];
+export const EMPTY_RESOURCE_INPUT: Record<CalculatorResource, number> =
+  Object.fromEntries(CALCULATOR_RESOURCES.map((r) => [r, 0])) as Record<
+    CalculatorResource,
+    number
+  >;
 
 export function ResourceCalculator() {
-  const [resourcesInput, setResourcesInput] = useState<Record<string, number>>({
-    GRAIN: 0,
-    WOOD: 0,
-    STONE: 0,
-    IRON: 0,
-    AURA: 0,
-    VOUCHER: 0,
-  });
+  const [resourcesInput, setResourcesInput] =
+    useState<Record<CalculatorResource, number>>(EMPTY_RESOURCE_INPUT);
 
-  const [prices, setPrices] = useState<Record<string, number> | null>(null);
-  const [mode, setMode] = useState<"buy" | "sell">("buy");
+  const [mode, setMode] = useState<Mode>("buy");
   const [decExtra, setDecExtra] = useState(0);
+  const { prices, loading, error, fetchPrices } = usePrices();
+  const { dec_total, sps_amount } = useResourceConversion(
+    mode,
+    resourcesInput,
+    decExtra,
+    prices,
+  );
 
-  const fetchPrices = useCallback(async () => {
-    try {
-      const res = await fetch(`/api/resource/prices`);
-      const data = await res.json();
-      setPrices(data);
-    } catch (err) {
-      console.error("Failed to fetch prices:", err);
-    }
-  }, []);
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" mt={4}>
+        <Typography variant="body1">Loading prices...</Typography>
+      </Box>
+    );
+  }
 
-  // Fetch on first load
-  useEffect(() => {
-    fetchPrices();
-  }, [fetchPrices]);
+  if (error) {
+    return (
+      <Alert severity="error" sx={{ mt: 2 }}>
+        <AlertTitle>Error</AlertTitle>
+        Failed to fetch prices: {error}
+      </Alert>
+    );
+  }
 
-  const handleChange = (resource: string, value: number) => {
+  const handleChange = (resource: CalculatorResource, value: number) => {
     setResourcesInput((prev) => ({ ...prev, [resource]: value }));
     setDecExtra(0);
   };
 
-  const dec_total = RESOURCES.reduce((sum, res) => {
-    const amount = resourcesInput[res] || 0;
-    const price = prices?.[res.toLowerCase()] ?? 0;
-    const taxed =
-      res === "AURA"
-        ? amount * price
-        : mode === "buy"
-          ? amount / ((1 / price) * fee)
-          : amount * (price * fee);
-    return sum + taxed;
-  }, 0);
-
-  const sps_amount = prices ? (dec_total + decExtra) / prices.sps : 0;
-
-  const applyPreset = (
-    preset: "wagons" | "auction" | "fortune" | "midnight" | "clear",
-  ) => {
-    switch (preset) {
-      case "wagons":
-        setResourcesInput({
-          GRAIN: 0,
-          WOOD: 40000,
-          STONE: 10000,
-          IRON: 4000,
-          AURA: 2500,
-          VOUCHER: 0,
-        });
-        setDecExtra(0);
-        break;
-      case "auction":
-        setResourcesInput({
-          GRAIN: 0,
-          WOOD: 0,
-          STONE: 0,
-          IRON: 0,
-          AURA: 1000,
-          VOUCHER: 50,
-        });
-        setDecExtra(500);
-        break;
-      case "fortune":
-        setResourcesInput({
-          GRAIN: 0,
-          WOOD: 0,
-          STONE: 0,
-          IRON: 0,
-          AURA: 200,
-          VOUCHER: 10,
-        });
-        setDecExtra(200);
-        break;
-      case "midnight":
-        setResourcesInput({
-          GRAIN: 0,
-          WOOD: 0,
-          STONE: 0,
-          IRON: 0,
-          AURA: 40,
-          VOUCHER: 0,
-        });
-        setDecExtra(0);
-        break;
-      case "clear":
-        setResourcesInput({
-          GRAIN: 0,
-          WOOD: 0,
-          STONE: 0,
-          IRON: 0,
-          AURA: 0,
-          VOUCHER: 0,
-        });
-        setDecExtra(0);
-        break;
-    }
+  const applyPreset = (preset: PresetName) => {
+    const { input, decExtra } = RESOURCE_PRESETS[preset];
+    setResourcesInput(input);
+    setDecExtra(decExtra);
   };
 
   return (
-    <Box
-      p={2}
-      border="1px solid #ddd"
-      borderRadius={4}
-      borderColor="secondary.main"
-      gap={2}
-    >
-      <Box display="flex" justifyContent="center" alignItems="center" gap={2}>
-        <ToggleButtonGroup
-          value={mode}
-          exclusive
-          onChange={(_, newMode) => {
-            if (newMode) {
-              setMode(newMode);
-            }
-          }}
-          aria-label="mode toggle"
-        >
-          <ToggleButton value="buy" aria-label="buy mode">
-            <ShoppingCart sx={{ mr: 1 }} />
-            Buy
-          </ToggleButton>
-          <ToggleButton value="sell" aria-label="sell mode">
-            <Sell sx={{ mr: 1 }} />
-            Sell
-          </ToggleButton>
-        </ToggleButtonGroup>
-
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={() => fetchPrices()}
-        >
-          Refresh Prices
-        </Button>
-      </Box>
-
-      <ResourcePresets onSelect={applyPreset} />
-
-      <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
-        {RESOURCES.map((res, i) => (
-          <Box key={res} display="flex" alignItems="center" gap={2}>
-            <ResourceInput
-              resource={res}
-              value={resourcesInput[res]}
-              onChange={(val) => handleChange(res, val)}
-            />
-            {i < RESOURCES.length - 1 && (
-              <Typography fontSize={24}>+</Typography>
-            )}
-          </Box>
-        ))}
-
-        <Typography fontSize={24} fontWeight="bold">
-          =
-        </Typography>
-
-        <ResourceOutput dec={dec_total} sps={sps_amount} decExtra={decExtra} />
-      </Box>
-
-      <Alert
-        severity="info"
-        icon={<FaInfoCircle />}
-        sx={{
-          mt: 2,
-          mb: 2,
-          whiteSpace: "pre-line",
-          borderRadius: 2,
-          fontSize: "0.9rem",
-          maxWidth: 600,
-        }}
+    <Box display="flex" flexDirection="column" gap={2}>
+      <Box
+        p={2}
+        border="1px solid #ddd"
+        borderRadius={4}
+        borderColor="secondary.main"
+        display="flex"
+        flexDirection="column"
+        gap={2}
       >
-        <AlertTitle sx={{ fontWeight: "bold" }}>Info</AlertTitle>
-        For natural resources, the 10% Trade Hub fee is included in the
-        calculations.
-        {"\n"}
-        For AURA, the value is estimated based on the price of the Midnight
-        Potion.
-      </Alert>
+        <Stack
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          gap={2}
+        >
+          <ToggleButtonGroup
+            value={mode}
+            exclusive
+            onChange={(_, newMode) => {
+              if (newMode) {
+                setMode(newMode);
+              }
+            }}
+          >
+            <ToggleButton value="buy">
+              <ShoppingCart sx={{ mr: 1 }} />
+              Buy
+            </ToggleButton>
+            <ToggleButton value="sell">
+              <Sell sx={{ mr: 1 }} />
+              Sell
+            </ToggleButton>
+          </ToggleButtonGroup>
+
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Refresh />}
+            onClick={() => fetchPrices()}
+            disabled={loading}
+          >
+            {loading ? "Refreshing..." : "Refresh Prices"}
+          </Button>
+        </Stack>
+
+        <ResourcePresets onSelect={applyPreset} />
+
+        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+          {CALCULATOR_RESOURCES.map((res, i) => (
+            <Box key={res} display="flex" alignItems="center" gap={2}>
+              <ResourceInput
+                resource={res}
+                value={resourcesInput[res]}
+                onChange={(val) => handleChange(res, val)}
+              />
+              {i < CALCULATOR_RESOURCES.length - 1 && (
+                <Typography fontSize={24}>+</Typography>
+              )}
+            </Box>
+          ))}
+
+          <Typography fontSize={24} fontWeight="bold">
+            =
+          </Typography>
+
+          <ResourceOutput
+            dec={dec_total}
+            sps={sps_amount}
+            decExtra={decExtra}
+          />
+        </Box>
+
+        <Alert
+          severity="info"
+          icon={<FaInfoCircle />}
+          sx={{
+            mt: 2,
+            mb: 2,
+            whiteSpace: "pre-line",
+            borderRadius: 2,
+            fontSize: "0.9rem",
+            maxWidth: 600,
+          }}
+        >
+          <AlertTitle sx={{ fontWeight: "bold" }}>Info</AlertTitle>
+          For natural resources, the 10% Trade Hub fee is included in the
+          calculations.
+          {"\n"}
+          For AURA, the value is estimated based on the price of the Midnight
+          Potion.
+        </Alert>
+      </Box>
+      {prices && <AuraPriceBox prices={prices} />}
     </Box>
   );
 }

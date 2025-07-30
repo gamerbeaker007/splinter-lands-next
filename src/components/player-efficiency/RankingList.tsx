@@ -111,7 +111,7 @@ export default function RankingList({
           <RankedItemBox
             key={`ranked-box-${p.player}`}
             rank={p[rankingField] as number}
-            value={formatNumberWithSuffix(p[valueField] as number)}
+            value={formatNumberWithSuffix((p[valueField] as number) ?? 0)}
             subValue={p.player}
             otherSubValues={
               subValueField
