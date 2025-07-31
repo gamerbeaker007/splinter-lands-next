@@ -1,11 +1,10 @@
-import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
+import { RESOURCE_PRESETS } from "@/constants/conversion/presets";
 import {
   getAURAPrices,
   getLandResourcesPools,
 } from "@/lib/backend/api/spl/spl-land-api";
+import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import { AuraPrices, Prices, SplPriceData } from "@/types/price";
-import { RESOURCE_PRESETS } from "@/constants/conversion/presets";
-import { calcDECPrice } from "@/lib/shared/costCalc";
 
 function getPrice(
   landResourcePrices: Prices,
@@ -47,7 +46,8 @@ function getPrice(
 
     if (ftUSD > 0 && prices.dec > 0) {
       const preset = RESOURCE_PRESETS.fortune;
-      const voucherCostDEC = preset.input.VOUCHER * prices.voucher;
+      const voucherCostDEC =
+        (preset.input.VOUCHER * prices.voucher) / prices.dec;
       const totalDec = ftUSD / prices.dec - preset.decExtra;
       return (totalDec - voucherCostDEC) / preset.input.AURA;
     }
@@ -59,7 +59,8 @@ function getPrice(
       auraPrices.find((item) => item.detailId === "AM")?.minPrice ?? 0;
     if (amUSD > 0 && prices.dec > 0) {
       const preset = RESOURCE_PRESETS.auction;
-      const voucherCostDEC = preset.input.VOUCHER * prices.voucher;
+      const voucherCostDEC =
+        (preset.input.VOUCHER * prices.voucher) / prices.dec;
       const totalDec = amUSD / prices.dec - preset.decExtra; // subtract DEC explicitly listed
       return (totalDec - voucherCostDEC) / preset.input.AURA;
     }
@@ -71,11 +72,12 @@ function getPrice(
       auraPrices.find((item) => item.detailId === "WAGONKIT")?.minPrice ?? 0;
     const preset = RESOURCE_PRESETS.wagons;
     let baseCost = 0;
-    Object.entries(preset.input).map(
-      ([res, amount]) =>
-        (baseCost += calcDECPrice("sell", res, amount, landResourcePrices)),
-    );
-    // const baseCost = calculateTotalDEC(preset.input, prices); // Excludes AURA
+    Object.entries(preset.input).forEach(([res, amount]) => {
+      if (amount > 0 && res != "AURA") {
+        const matchingMetric = landResourcePrices[res] ?? null;
+        baseCost += amount / matchingMetric;
+      }
+    });
     const totalDec = wagonUSD / prices.dec;
     return (totalDec - baseCost) / preset.input.AURA;
   }
