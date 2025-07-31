@@ -15,35 +15,40 @@ async function computeAndStoreResource(
   const key = worksite_type ? `${resource} ${worksite_type}` : resource;
 
   try {
-    const worksiteWhere = Object.assign(
-      { token_symbol: resource },
-      worksite_type ? { worksite_type } : {},
-    );
-
-    const stakingSums = await prisma.stakingDetail.aggregate({
+    const deeds = await prisma.deed.findMany({
       where: {
-        deed: {
-          worksiteDetail: worksiteWhere,
+        worksiteDetail: {
+          token_symbol: resource,
+          ...(worksite_type ? { worksite_type } : {}),
         },
       },
-      _sum: {
-        total_harvest_pp: true,
-        total_base_pp_after_cap: true,
+      include: {
+        worksiteDetail: true,
+        stakingDetail: true,
       },
     });
 
-    const worksiteRewards = await prisma.worksiteDetail.aggregate({
-      where: worksiteWhere,
-      _sum: {
-        rewards_per_hour: true,
-      },
-    });
+    let totalHarvest = 0;
+    let totalBasePP = 0;
+    let totalRewards = 0;
 
-    const totalHarvest = stakingSums._sum.total_harvest_pp ?? 0;
-    const totalBasePP = stakingSums._sum.total_base_pp_after_cap ?? 0;
-    const totalRewards = worksiteRewards._sum.rewards_per_hour ?? 0;
+    for (const deed of deeds) {
+      const { stakingDetail, worksiteDetail } = deed;
+      if (!stakingDetail || !worksiteDetail) continue;
 
-    const costs = calcCosts(resource, totalBasePP);
+      totalHarvest += stakingDetail.total_harvest_pp ?? 0;
+      totalBasePP += stakingDetail.total_base_pp_after_cap ?? 0;
+      totalRewards += worksiteDetail.rewards_per_hour ?? 0;
+    }
+
+    const totalEfficiency =
+      deeds.reduce((acc, deed) => {
+        const se = deed.worksiteDetail?.site_efficiency ?? 0;
+        const pp = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
+        return acc + se * pp;
+      }, 0) || 0;
+
+    const costs = calcCosts(resource, totalEfficiency, 1); // pass efficiency-weighted PP
 
     const data = {
       total_harvest_pp: totalHarvest,

@@ -202,7 +202,11 @@ export async function processPlayerRegionInformation(
     totalResourceCounts[countColumn] =
       (totalResourceCounts[countColumn] ?? 0) + 1;
 
-    const costs = calcCosts(tokenSymbol, basePP);
+    const costs = calcCosts(
+      tokenSymbol,
+      basePP,
+      deed?.worksiteDetail?.site_efficiency ?? 0,
+    );
 
     return {
       region_uid: regionUid,

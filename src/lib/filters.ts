@@ -94,6 +94,8 @@ function getSortValue(
       return deed.stakingDetail?.total_harvest_pp ?? 0;
     case "percentComplete":
       return deed.progressInfo?.percentageDone ?? 0;
+    case "netDEC":
+      return deed.productionIfo?.netDEC ?? 0;
     default:
       return undefined;
   }

@@ -88,7 +88,9 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   PP: land_hammer_icon_url,
   WAGONKIT: resource_wagon_kit_icon_url,
   AM: resource_auction_mark_icon_url,
-  FL: resource_fortune_ticket_icon_url,
+  FT: resource_fortune_ticket_icon_url,
   MIDNIGHTPOT: resource_midnight_potion_icon_url,
   "": land_hammer_icon_url,
 };
+
+export const TRADE_HUB_FEE = 0.9;

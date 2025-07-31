@@ -8,7 +8,7 @@ import { getResourceDECPrices } from "@/lib/backend/helpers/resourcePrices";
 
 type PlayerProductionSummaryInput = Prisma.PlayerProductionSummaryCreateInput;
 
-type regionPlayerTokenResult = {
+type PlayerTokenProductionRow = {
   region_uid: string;
   player: string;
   token_symbol: string;
@@ -16,78 +16,88 @@ type regionPlayerTokenResult = {
   total_harvest_pp: number;
   total_base_pp_after_cap: number;
   count: number;
+  fee?: number;
+  dec_grain?: number;
+  dec_wood?: number;
+  dec_stone?: number;
+  dec_iron?: number;
+  dec_research?: number;
+  dec_aura?: number;
+  dec_sps?: number;
 };
 
 export async function computeAndStorePlayerProduction(today: Date) {
   logger.info(`⌛ --- Start computeAndStorePlayerProduction...`);
 
-  const rawResults = await prisma.$queryRaw<regionPlayerTokenResult[]>`
-  SELECT
-    d.region_uid,
-    d.player,
-    w.token_symbol,
-    SUM(w.rewards_per_hour) AS rewards_per_hour,
-    SUM(s.total_harvest_pp) AS total_harvest_pp,
-    SUM(s.total_base_pp_after_cap) AS total_base_pp_after_cap,
-    COUNT(*) AS count
-  FROM "deed" d
-  JOIN "worksite_detail" w ON d.deed_uid = w.deed_uid
-  JOIN "staking_detail" s ON d.deed_uid = s.deed_uid
-  WHERE s.total_harvest_pp > 0 AND w.token_symbol != 'TAX'
-  GROUP BY d.region_uid, d.player, w.token_symbol;
-`;
+  const deeds = await prisma.deed.findMany({
+    include: {
+      worksiteDetail: true,
+      stakingDetail: true,
+    },
+  });
 
-  const resultsWithCosts = rawResults.map((row: regionPlayerTokenResult) => {
-    const costs = calcCosts(row.token_symbol, row.total_base_pp_after_cap);
+  const playerTokenMap: Record<
+    string,
+    Record<string, PlayerTokenProductionRow[]>
+  > = {};
 
-    return {
-      ...row,
+  for (const deed of deeds) {
+    const { player, region_uid, worksiteDetail, stakingDetail } = deed;
+    if (!player || !worksiteDetail || !stakingDetail) continue;
+    if (worksiteDetail.token_symbol === "TAX") continue;
+    if ((stakingDetail.total_harvest_pp ?? 0) <= 0) continue;
+
+    const token = worksiteDetail.token_symbol;
+    const siteEfficiency = worksiteDetail.site_efficiency ?? 0;
+
+    const costs = calcCosts(
+      token,
+      stakingDetail.total_base_pp_after_cap ?? 0,
+      siteEfficiency,
+    );
+
+    const row = {
+      region_uid: region_uid!,
+      player,
+      token_symbol: token,
+      rewards_per_hour: worksiteDetail.rewards_per_hour ?? 0,
+      total_harvest_pp: stakingDetail.total_harvest_pp ?? 0,
+      total_base_pp_after_cap: stakingDetail.total_base_pp_after_cap ?? 0,
+      count: 1,
       ...costs,
     };
-  });
+
+    if (!playerTokenMap[player]) playerTokenMap[player] = {};
+    if (!playerTokenMap[player][token]) playerTokenMap[player][token] = [];
+
+    playerTokenMap[player][token].push(row);
+  }
 
   const unitPrices = await getResourceDECPrices();
 
-  const playerMap: Record<string, typeof resultsWithCosts> = {};
-
-  for (const row of resultsWithCosts) {
-    if (!playerMap[row.player]) {
-      playerMap[row.player] = [];
-    }
-    playerMap[row.player].push(row);
-  }
-
-  // Compute summary for each player
   const playerSummaries: PlayerProductionSummaryInput[] = [];
 
-  for (const player of Object.keys(playerMap)) {
-    const playerRows = playerMap[player];
-    const summary = prepareSummary(playerRows, true, true); // includeTaxes, includeFee
+  for (const player of Object.keys(playerTokenMap)) {
+    const flatRows = Object.values(playerTokenMap[player]).flat();
 
+    const summary = prepareSummary(flatRows, true, true);
     const { dec_net, total_dec } = computeNetValues(summary, unitPrices);
 
-    // === Aggregate sums from raw playerRows ===
-    const harvest_sum = playerRows.reduce(
-      (acc: number, row: regionPlayerTokenResult) =>
-        acc + (row.total_harvest_pp as number),
+    const total_harvest_pp = flatRows.reduce(
+      (sum, r) => sum + r.total_harvest_pp,
       0,
     );
-    const base_sum = playerRows.reduce(
-      (acc: number, row: regionPlayerTokenResult) =>
-        acc + row.total_base_pp_after_cap,
+    const total_base_pp_after_cap = flatRows.reduce(
+      (sum, r) => sum + r.total_base_pp_after_cap,
       0,
     );
-    const count_sum = playerRows.reduce(
-      (acc: number, row: regionPlayerTokenResult) => acc + Number(row.count),
-      0,
-    );
+    const count = flatRows.reduce((sum, r) => sum + r.count, 0);
 
-    // === Final output ===
     playerSummaries.push({
       player,
-      total_harvest_pp: harvest_sum,
-      total_base_pp_after_cap: base_sum,
-      count: count_sum,
+      total_harvest_pp,
+      total_base_pp_after_cap,
+      count,
       total_dec,
       dec_grain: dec_net.dec_grain || 0,
       dec_wood: dec_net.dec_wood || 0,
@@ -102,23 +112,9 @@ export async function computeAndStorePlayerProduction(today: Date) {
   logger.info(`🧹 playerProductionSummary - Clearing existing data...`);
   await prisma.playerProductionSummary.deleteMany();
 
-  const data = playerSummaries.map((summary) => ({
-    player: summary.player,
-    total_harvest_pp: summary.total_harvest_pp,
-    total_base_pp_after_cap: summary.total_base_pp_after_cap,
-    count: summary.count,
-    total_dec: summary.total_dec,
-    dec_grain: summary.dec_grain || 0,
-    dec_wood: summary.dec_wood || 0,
-    dec_stone: summary.dec_stone || 0,
-    dec_iron: summary.dec_iron || 0,
-    dec_research: summary.dec_research || 0,
-    dec_aura: summary.dec_aura || 0,
-    dec_sps: summary.dec_sps || 0,
-  }));
-  logger.info(`📦 Inserting ${data.length} playerSummaries...`);
+  logger.info(`📦 Inserting ${playerSummaries.length} playerSummaries...`);
   await prisma.playerProductionSummary.createMany({
-    data: data,
+    data: playerSummaries,
   });
 
   logger.info(

@@ -26,7 +26,7 @@ export default function SortingFilter({ options = defaultSortOptions }: Props) {
   const sortSelection = filters.sorting;
 
   const sortKey = sortSelection?.key ?? "";
-  const direction: SortDirection = sortSelection?.direction ?? "asc";
+  const direction: SortDirection = sortSelection?.direction ?? "desc";
 
   const handleKeyChange = (e: SelectChangeEvent) => {
     const key = e.target.value as SortOptionKey;
@@ -36,7 +36,7 @@ export default function SortingFilter({ options = defaultSortOptions }: Props) {
       ...prev,
       sorting: {
         key,
-        direction: prev.sorting?.direction ?? "asc", // preserve current direction
+        direction: prev.sorting?.direction ?? "desc", // preserve current direction
       },
     }));
   };

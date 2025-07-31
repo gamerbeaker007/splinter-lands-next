@@ -1,9 +1,8 @@
 import { cache } from "@/lib/backend/cache/cache";
 import { getResourceDECPrices } from "@/lib/backend/helpers/resourcePrices";
+import { Prices } from "@/types/price";
 
-export async function getCachedResourcePrices(
-  force = false,
-): Promise<Record<string, number>> {
+export async function getCachedResourcePrices(force = false): Promise<Prices> {
   const key = `resource-price-data`;
   if (!force) {
     const cached = cache.get<Record<string, number>>(key);
