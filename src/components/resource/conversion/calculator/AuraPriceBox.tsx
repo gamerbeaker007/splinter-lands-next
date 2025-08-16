@@ -9,7 +9,7 @@ type AuraPriceBoxProps = {
 
 const AURA_SOURCES = [
   { key: "aura", label: "Midnight Potion", icon: "MIDNIGHTPOT" },
-  { key: "aura_am", label: "Action Mark", icon: "AM" },
+  { key: "aura_am", label: "Auction Mark", icon: "AM" },
   { key: "aura_ft", label: "Fortune Ticket", icon: "FT" },
   { key: "aura_wagonkit", label: "Wagon Repair Kit", icon: "WAGONKIT" },
 ];
