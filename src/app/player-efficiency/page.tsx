@@ -38,6 +38,7 @@ export default function PlayerPage() {
 
   const pages: Page[] = [
     {
+      key: "rankings",
       label: "Rankings",
       component: (
         <RankingPage
@@ -47,6 +48,7 @@ export default function PlayerPage() {
       ),
     },
     {
+      key: "dec",
       label: "DEC",
       component: (
         <DECPage
@@ -56,6 +58,7 @@ export default function PlayerPage() {
       ),
     },
     {
+      key: "lde",
       label: "LDE",
       component: (
         <LDEPage
@@ -65,6 +68,7 @@ export default function PlayerPage() {
       ),
     },
     {
+      key: "lce",
       label: "LCE",
       component: (
         <LCEPage
@@ -74,6 +78,7 @@ export default function PlayerPage() {
       ),
     },
     {
+      key: "lpe",
       label: "LPE",
       component: (
         <LPEPage
