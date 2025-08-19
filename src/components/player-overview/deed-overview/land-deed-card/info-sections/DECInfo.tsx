@@ -1,4 +1,5 @@
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { CSSSize } from "@/types/cssSize";
 import { ProductionInfo } from "@/types/productionInfo";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { Box, Divider, Tooltip, Typography } from "@mui/material";
@@ -6,8 +7,9 @@ import Image from "next/image";
 import React from "react";
 
 type Props = {
-  productionInfo: ProductionInfo;
+  productionInfo?: ProductionInfo;
   resource: string;
+  pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
 function tooltipContent(
@@ -131,32 +133,47 @@ function tooltipContent(
   );
 }
 
-export const DECInfo: React.FC<Props> = ({ productionInfo, resource }) => {
-  const { consume, produce, netDEC } = productionInfo;
+export const DECInfo: React.FC<Props> = ({
+  productionInfo,
+  resource,
+  pos = { x: "0px", y: "0px", w: "auto" },
+}) => {
+  const { consume, produce, netDEC } = productionInfo ?? {
+    consume: null,
+    produce: null,
+    netDEC: 0,
+  };
 
-  const totalConsumeSell = consume?.reduce((sum, r) => sum + r.sellPriceDEC, 0);
-  const totalConsumeBuy = consume?.reduce((sum, r) => sum + r.buyPriceDEC, 0);
+  const totalConsumeSell =
+    consume?.reduce((sum, r) => sum + r.sellPriceDEC, 0) ?? 0;
+  const totalConsumeBuy =
+    consume?.reduce((sum, r) => sum + r.buyPriceDEC, 0) ?? 0;
+
+  const { x, y, w } = pos;
 
   return (
-    <Box>
-      <Typography fontSize="0.8rem" fontWeight="bold" mb={0.5}>
+    <Box
+      sx={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        textAlign: "left",
+      }}
+    >
+      <Typography fontSize="1.0rem" fontWeight="bold" color={"white"} mb={0.5}>
         Net Dec:
       </Typography>
 
-      <Box
-        display="inline-flex"
-        flexDirection="column"
-        alignItems="flex-start"
-        gap={0.25}
-      >
-        <Box display="inline-flex" alignItems="center" gap={0.5}>
+      <Box display="inline-flex" flexDirection="column" alignItems="flex-start">
+        <Box display="inline-flex" alignItems="center" gap={0.2}>
           <Tooltip
             title={tooltipContent(
               resource,
               totalConsumeSell,
               totalConsumeBuy,
-              produce?.sellPriceDEC,
-              produce?.buyPriceDEC,
+              produce?.sellPriceDEC ?? 0,
+              produce?.buyPriceDEC ?? 0,
               netDEC,
             )}
             placement="top"
@@ -166,13 +183,13 @@ export const DECInfo: React.FC<Props> = ({ productionInfo, resource }) => {
               <Image
                 src={RESOURCE_ICON_MAP["DEC"]}
                 alt={resource}
-                width={20}
-                height={20}
+                width={35}
+                height={35}
               />
             </Box>
           </Tooltip>
           <Typography
-            fontSize="0.625rem"
+            fontSize="1.0rem"
             fontWeight="bold"
             color={netDEC >= 0 ? "green" : "error"}
           >

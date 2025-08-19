@@ -1,6 +1,6 @@
 // components/ItemBoosts.tsx
 import React from "react";
-import { Box, Typography, Avatar, Stack } from "@mui/material";
+import { Box, Typography, Avatar, Stack, Tooltip } from "@mui/material";
 import {
   land_hammer_icon_url,
   title_burninator_icon_url,
@@ -81,33 +81,36 @@ export const ItemBoosts: React.FC<ItemBoostsProps> = ({ items }) => {
   const renderItem = (item: Item, index: number) => {
     const boostPercent = item.boost * 100;
     let url = "";
-    let label = item.name;
+    let label = "";
 
     if (item.stake_type_uid === "STK-LND-TTL") {
       const result = findTitleIcon(item.name);
       url = result.url;
-      label = result.label;
+      label = `Title: ${item.name}`;
     } else if (item.stake_type_uid === "STK-LND-TOT") {
       const imageName =
         defaultTotemMap[item.name] ??
         item.name.toLowerCase().replace(/ /g, "_");
       url = `${WEB_URL}website/icons/icon_totem_${imageName}_300.png`;
+      label = `${item.name}`;
     } else {
       return null; // skip unknown types
     }
 
     return (
-      <Box key={`${item.stake_type_uid}-${index}`} textAlign="center">
-        <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
-          {boostPercent.toFixed(0)}%
-        </Typography>
-        <Avatar
-          variant="square"
-          src={url}
-          alt={label}
-          sx={{ width: 50, height: 50, mt: 0.5 }}
-        />
-      </Box>
+      <Tooltip key={`${item.stake_type_uid}-${index}`} title={label}>
+        <Box textAlign="center">
+          <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
+            {boostPercent.toFixed(0)}%
+          </Typography>
+          <Avatar
+            variant="square"
+            src={url}
+            alt={label}
+            sx={{ width: 55, height: 55, mt: 0.5 }}
+          />
+        </Box>
+      </Tooltip>
     );
   };
 
@@ -117,7 +120,6 @@ export const ItemBoosts: React.FC<ItemBoostsProps> = ({ items }) => {
       spacing={2}
       justifyContent="center"
       alignItems="flex-start"
-      sx={{ ml: 1 }}
     >
       {items.map(renderItem)}
     </Stack>

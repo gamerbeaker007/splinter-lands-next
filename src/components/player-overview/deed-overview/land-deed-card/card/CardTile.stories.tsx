@@ -1,9 +1,9 @@
-import CardTile from "@/components/player-overview/deed-overview-tile/CardTile";
+import CardTile from "@/components/player-overview/deed-overview/land-deed-card/card/CardTile";
 import { Box } from "@mui/material";
 import type { Meta, StoryObj } from "@storybook/nextjs";
 
 const meta: Meta<typeof CardTile> = {
-  title: "Components/PlayerOverview/DeeoOverview/Card",
+  title: "Components/PlayerOverview/Card",
   component: CardTile,
 };
 
@@ -32,9 +32,9 @@ export const Default: Story = {
           rarity={"Common"}
           actual_bcx={20}
           max_bcx={400}
-          base_pp={100000}
-          boosted_pp={100000}
-          terrain_boost={-10.1}
+          base_pp={50}
+          boosted_pp={500}
+          terrain_boost={-0.1}
           uid=""
         />
         <CardTile
@@ -44,8 +44,8 @@ export const Default: Story = {
           rarity={"Rare"}
           actual_bcx={400}
           max_bcx={400}
-          base_pp={100000}
-          boosted_pp={100000}
+          base_pp={20000}
+          boosted_pp={30000}
           terrain_boost={0.1}
           uid=""
         />

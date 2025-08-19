@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { RarityBoost } from "./RarityBoost";
 
 const meta: Meta<typeof RarityBoost> = {
-  title: "Components/PlayerOverview/DeeoOverview/RarityBoost",
+  title: "Components/PlayerOverview/Boosts/RarityBoost",
   component: RarityBoost,
 };
 

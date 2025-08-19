@@ -8,6 +8,6 @@ export type SplCardDetails = {
   is_starter: false;
   editions: string;
   is_promo: boolean;
-  tier: null;
-  secondary_color: null;
+  tier?: number;
+  secondary_color?: string;
 };

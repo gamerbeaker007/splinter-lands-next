@@ -9,7 +9,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import FilterDrawer from "../filter/FilterDrawer";
 import NavTabs from "../nav-tabs/NavTabs";
-import DeedOverview from "./DeedOverview";
+import DeedOverview from "./deed-overview/DeedOverview";
 import PlayerInput from "./PlayerInput";
 import PlayerRegionOverview from "./region-overview/PlayerRegionOverview";
 

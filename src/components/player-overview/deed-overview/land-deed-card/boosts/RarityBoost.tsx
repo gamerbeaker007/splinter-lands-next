@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Avatar } from "@mui/material";
+import { Box, Typography, Avatar, Tooltip } from "@mui/material";
 import { SPL_WEB_URL } from "@/lib/shared/statics_icon_urls";
 
 export type RarityBoostProps = {
@@ -9,15 +9,15 @@ export type RarityBoostProps = {
 
 export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
   if (rarity.toLowerCase() === "mythic" || rarity.toLowerCase() === "common") {
-    return <div />;
+    return <></>;
   }
 
   const boostPercent = boost * 100;
   const imgUrl = `${SPL_WEB_URL}assets/lands/sideMenu/${rarity.toLowerCase()}Off.svg`;
 
   return (
-    <Box textAlign="center" sx={{ width: 65, height: 100, ml: 1 }}>
-      <Box>
+    <Tooltip title={"Rarity Boost"}>
+      <Box textAlign="center">
         <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
           {boostPercent.toFixed(0)}%
         </Typography>
@@ -26,10 +26,10 @@ export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
             variant="square"
             src={imgUrl}
             alt={rarity}
-            sx={{ width: 50, height: 50 }}
+            sx={{ width: 55, height: 55 }}
           />
         </Box>
       </Box>
-    </Box>
+    </Tooltip>
   );
 };
