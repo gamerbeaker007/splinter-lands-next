@@ -15,10 +15,28 @@ export default function PlayerPageTile() {
   const theme = useTheme();
   const paperColor = theme.palette.background.paper;
 
-  const handleClick = () => {
+  const gotoOverview = () => {
     const trimmed = player.trim();
     router.push(
       trimmed ? `/player-overview?player=${trimmed}` : "/player-overview",
+    );
+  };
+
+  const gotoDeeds = () => {
+    const trimmed = player.trim();
+    router.push(
+      trimmed
+        ? `/player-overview?player=${trimmed}&tab=deed`
+        : "/player-overview",
+    );
+  };
+
+  const gotoRegionOverview = () => {
+    const trimmed = player.trim();
+    router.push(
+      trimmed
+        ? `/player-overview?player=${trimmed}&tab=overview`
+        : "/player-overview",
     );
   };
 
@@ -57,7 +75,7 @@ export default function PlayerPageTile() {
           placeholder="Enter player name (optional)"
           value={player}
           onChange={(e) => setPlayer(e.target.value.toLowerCase())}
-          onKeyDown={(e) => e.key === "Enter" && handleClick()}
+          onKeyDown={(e) => e.key === "Enter" && gotoOverview()}
           sx={{
             mb: 2,
             backgroundColor: alpha(paperColor, 0.5),
@@ -65,14 +83,32 @@ export default function PlayerPageTile() {
           }}
         />
 
-        <Button
-          fullWidth
-          variant="contained"
-          color="primary"
-          onClick={handleClick}
-        >
-          Go
-        </Button>
+        <Box display="flex" flexDirection="row" gap={1}>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={gotoOverview}
+          >
+            dashboard
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={gotoRegionOverview}
+          >
+            Region
+          </Button>
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={gotoDeeds}
+          >
+            Deeds
+          </Button>
+        </Box>
       </Box>
     </Card>
   );

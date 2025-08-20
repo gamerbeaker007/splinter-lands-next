@@ -1,5 +1,5 @@
 import { getFoilLabel } from "@/lib/utils/cardUtil";
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, Tooltip } from "@mui/material";
 
 type Rarity = "Common" | "Rare" | "Epic" | "Legendary";
 
@@ -44,32 +44,24 @@ const PPMultiplierDot = ({ rarity, foil, bcx, max_bcx, basePP }: Props) => {
       }
     >
       <Box
+        border="solid 1px white"
         position="absolute"
-        bottom={5}
-        left={5}
-        width={30}
         height={20}
-        borderRadius="20%"
+        width={35}
+        bottom={4}
+        left={5}
+        bgcolor="lightblue"
+        color="black"
+        fontSize="0.725rem"
+        fontWeight="bold"
+        px={0.6}
+        borderRadius={0.5}
         display="flex"
-        alignItems="center"
-        justifyContent="center"
-        sx={{
-          backgroundColor: "#D0E8FF",
-          border: "1px solid #1976D2",
-          cursor: "pointer",
-        }}
+        justifyContent={"center"}
+        textAlign={"center"}
+        lineHeight={1.7}
       >
-        <Typography
-          variant="caption"
-          sx={{
-            fontSize: "0.6rem",
-            fontWeight: "bold",
-            color: "#0D47A1",
-            fontFamily: "monospace",
-          }}
-        >
-          {multiplier.toFixed(1)}x
-        </Typography>
+        {multiplier.toFixed(1)}x
       </Box>
     </Tooltip>
   ) : (

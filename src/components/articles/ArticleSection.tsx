@@ -87,7 +87,8 @@ export default function ArticleSection() {
 
   const pages: Page[] = ["Basic", "Intermediate", "Advanced"].map(
     (label, index) => ({
-      label,
+      key: label,
+      label: label,
       component: (
         <Grid container spacing={2} justifyContent="center" mt={2}>
           {groupedArticles[index].map((article, idx) => (

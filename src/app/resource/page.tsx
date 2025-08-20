@@ -10,10 +10,14 @@ import { Box, Container } from "@mui/material";
 import { useEffect, useState } from "react";
 
 const pages: Page[] = [
-  { label: "Conversion", component: <ConversionPage /> },
-  { label: "Supply", component: <SupplyPage /> },
-  { label: "TradeHub", component: <TradeHubPage /> },
-  { label: "TradeHub Positions", component: <TradeHubPositionPage /> },
+  { key: "conversion", label: "Conversion", component: <ConversionPage /> },
+  { key: "supply", label: "Supply", component: <SupplyPage /> },
+  { key: "tradehub", label: "TradeHub", component: <TradeHubPage /> },
+  {
+    key: "tradehub-pos",
+    label: "TradeHub Positions",
+    component: <TradeHubPositionPage />,
+  },
 ];
 
 export default function ResourcePage() {

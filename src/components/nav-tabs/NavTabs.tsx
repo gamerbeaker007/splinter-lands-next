@@ -24,6 +24,8 @@ type NavTabsProps = {
 export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isShort = useMediaQuery("(max-height: 420px)");
+  const compact = isMobile || isShort;
 
   const handleSelectChange = (event: SelectChangeEvent) => {
     const newIndex = pages.findIndex((p) => p.label === event.target.value);
@@ -41,7 +43,6 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
       sx={{
         display: "flex",
         justifyContent: "center",
-        pt: 1,
         position: "sticky",
         top: 0,
         zIndex: theme.zIndex.appBar, // Or use a higher number like 1100
@@ -50,30 +51,33 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
       }}
     >
       {isMobile ? (
-        <Select
-          value={pages[value].label}
-          onChange={handleSelectChange}
-          fullWidth
-          size="small"
-          sx={{ pr: "10px" }}
-        >
-          {pages.map((page) => (
-            <MenuItem key={page.label} value={page.label}>
-              {page.label}
-            </MenuItem>
-          ))}
-        </Select>
+        <Box width={"100%"} m={1}>
+          <Select
+            value={pages[value].label}
+            onChange={handleSelectChange}
+            fullWidth
+            size="small"
+          >
+            {pages.map((page) => (
+              <MenuItem key={page.label} value={page.label}>
+                {page.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
       ) : (
         <Tabs
           value={value}
           onChange={handleTabChange}
-          aria-label="nav tabs"
           variant="scrollable"
           scrollButtons="auto"
           allowScrollButtonsMobile
+          sx={{
+            minHeight: compact ? 22 : 36,
+          }}
         >
           {pages.map((page) => (
-            <GlowingTab key={page.label} label={page.label} />
+            <GlowingTab key={page.label} label={page.label} compact={compact} />
           ))}
         </Tabs>
       )}

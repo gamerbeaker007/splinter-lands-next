@@ -45,15 +45,12 @@ export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
       const biomeImage = biomeMapper[biome];
 
       const block = (
-        <Box key={biome} textAlign="center" mx={0.5}>
+        <Box key={biome} textAlign="center">
           <Typography
-            variant="body2"
-            sx={{
-              color: isPositive ? "green" : "red",
-              fontWeight: "bold",
-              fontFamily: "monospace",
-              fontSize: "10pt",
-            }}
+            fontWeight="bold"
+            fontFamily="monospace"
+            fontSize="14px"
+            color={isPositive ? "green" : "red"}
           >
             {percent > 0 ? `+${percent.toFixed(0)}%` : `${percent.toFixed(0)}%`}
           </Typography>
@@ -61,8 +58,8 @@ export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
             src={biomeImage}
             variant="square"
             sx={{
-              height: 25,
-              width: 25,
+              height: 20,
+              width: 20,
               mx: "auto",
               border: "1px solid white",
               bgcolor: bgColor,
@@ -87,7 +84,13 @@ export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
         </Stack>
       )}
       {negatives.length > 0 && (
-        <Stack direction="row" justifyContent="center" spacing={1} mt={1}>
+        <Stack
+          direction="row"
+          justifyContent="center"
+          spacing={1}
+          mt={0.5}
+          mb={1}
+        >
           {negatives}
         </Stack>
       )}

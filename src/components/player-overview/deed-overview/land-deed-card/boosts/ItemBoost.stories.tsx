@@ -2,7 +2,7 @@ import { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { ItemBoosts } from "./ItemBoost";
 
 const meta: Meta<typeof ItemBoosts> = {
-  title: "Components/PlayerOverview/DeeoOverview/ItemBoosts",
+  title: "Components/PlayerOverview/Boosts/ItemBoosts",
   component: ItemBoosts,
 };
 

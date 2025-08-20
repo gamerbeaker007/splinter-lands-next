@@ -23,14 +23,14 @@ export default function TopBar() {
       sx={{ borderBottom: 1, borderColor: "divider" }}
     >
       <Toolbar
+        variant="dense"
         sx={{
           display: { xs: "flow", sm: "flex" },
           justifyContent: "space-between",
-          py: 1,
         }}
       >
         {/* Left side */}
-        <Typography variant="h6" fontWeight="bold">
+        <Typography variant="body2" fontWeight="bold" fontSize={20}>
           {title}
         </Typography>
 
@@ -40,7 +40,6 @@ export default function TopBar() {
             display: "flex",
             alignItems: "center",
             gap: 1,
-            flexShrink: 0,
             flexWrap: "wrap",
           }}
         >

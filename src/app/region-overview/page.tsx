@@ -33,26 +33,31 @@ const taxFilterConfig: EnableFilterOptions = {
 
 const pages: Page[] = [
   {
+    key: "activity",
     label: "Activity",
     component: <ActivityPage />,
     filterOptions: defaultFilterConfig,
   },
   {
+    key: "production",
     label: "Production",
     component: <ProductionPage />,
     filterOptions: defaultFilterConfig,
   },
   {
+    key: "compare",
     label: "Compare",
     component: <ComparePage />,
     filterOptions: defaultFilterConfig,
   },
   {
+    key: "summary",
     label: "Summary",
     component: <SummaryPage />,
     filterOptions: defaultFilterConfig,
   },
   {
+    key: "tax",
     label: "Tax",
     component: <TaxPage />,
     filterOptions: taxFilterConfig,

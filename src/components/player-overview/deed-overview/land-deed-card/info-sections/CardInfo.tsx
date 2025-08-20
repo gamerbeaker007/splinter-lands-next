@@ -1,42 +1,43 @@
 import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Card } from "@/types/stakedAssets";
-import { Box, Typography } from "@mui/material";
-import React from "react";
-import CardTile from "../CardTile";
+import { StakedAssets } from "@/types/stakedAssets";
+import { Box } from "@mui/material";
+import CardTile from "../card/CardTile";
+import { CSSSize } from "@/types/cssSize";
 
-export type RuniBoostProps = {
-  cards: Card[];
+export type Props = {
+  stakedAssets: StakedAssets;
   cardDetails: SplCardDetails[];
-  runiBoost: number;
+  pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-export const RuniBoost: React.FC<RuniBoostProps> = ({
-  cards,
+export const CardInfo: React.FC<Props> = ({
+  stakedAssets,
   cardDetails,
-  runiBoost,
+  pos = { x: "0px", y: "0px", w: "auto" },
 }) => {
-  if (runiBoost === 0) return <></>;
-
-  const runiCards = cards.filter((card) => {
-    const { name } = determineCardInfo(card.card_detail_id, cardDetails);
-    return name === "Runi";
-  });
-
-  if (runiCards.length === 0) return <></>;
+  const { x, y, w } = pos;
 
   return (
-    <Box textAlign="center" sx={{ width: 65, height: "auto", ml: 1 }}>
-      <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
-        {runiBoost * 100}%
-      </Typography>
+    <Box
+      sx={{
+        position: "absolute",
+        left: x,
+        top: y,
+        width: w,
+        textAlign: "center",
+      }}
+    >
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-        {runiCards.map((card) => {
+        {stakedAssets?.cards?.map((card) => {
           const { name, rarity } = determineCardInfo(
             card.card_detail_id,
             cardDetails,
           );
+
+          if (name === "Runi") return null;
+
           const max_bcx = determineCardMaxBCX(
             card.card_set,
             rarity as Rarity,
@@ -45,7 +46,7 @@ export const RuniBoost: React.FC<RuniBoostProps> = ({
 
           return (
             <CardTile
-              key={card.uid ?? `${card.card_detail_id}-${card.foil}`}
+              key={card.name}
               name={name}
               rarity={rarity}
               edition={card.edition}

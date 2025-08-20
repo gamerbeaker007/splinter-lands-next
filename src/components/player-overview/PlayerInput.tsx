@@ -1,7 +1,7 @@
 import SearchIcon from "@mui/icons-material/Search";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 
 type Props = {
   onPlayerChange: (player: string) => void;
@@ -9,20 +9,36 @@ type Props = {
 
 export default function PlayerInput({ onPlayerChange }: Props) {
   const searchParams = useSearchParams();
-  const [input, setInput] = useState("");
+  const [selectedPlayer, setSelectedPlayer] = useState("");
   const router = useRouter();
 
   useEffect(() => {
     const player = searchParams.get("player");
     if (player) {
-      setInput(player);
+      setSelectedPlayer(player);
       onPlayerChange(player);
     }
   }, [searchParams, onPlayerChange]);
 
   const handleLoad = () => {
-    onPlayerChange(input);
-    router.push(input ? `?player=${input}` : "?");
+    const trimmed = selectedPlayer.trim();
+
+    const params = new URLSearchParams(searchParams.toString());
+    if (trimmed) {
+      params.set("player", trimmed);
+    } else {
+      params.delete("player");
+    }
+
+    const nextQs = params.toString();
+    const currentQs = searchParams.toString();
+    if (nextQs !== currentQs) {
+      router.replace(`?${nextQs}`, { scroll: false });
+    }
+
+    startTransition(() => {
+      onPlayerChange(trimmed); // still pass tab to parent if you need it
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -34,8 +50,8 @@ export default function PlayerInput({ onPlayerChange }: Props) {
   return (
     <TextField
       label="Enter Player"
-      value={input}
-      onChange={(e) => setInput(e.target.value.toLowerCase())}
+      value={selectedPlayer}
+      onChange={(e) => setSelectedPlayer(e.target.value.toLowerCase())}
       onKeyDown={handleKeyPress}
       slotProps={{
         input: {
