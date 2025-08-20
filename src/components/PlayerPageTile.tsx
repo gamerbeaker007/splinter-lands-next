@@ -26,7 +26,7 @@ export default function PlayerPageTile() {
     const trimmed = player.trim();
     router.push(
       trimmed
-        ? `/player-overview?player=${trimmed}&tab=Deed`
+        ? `/player-overview?player=${trimmed}&tab=deed`
         : "/player-overview",
     );
   };

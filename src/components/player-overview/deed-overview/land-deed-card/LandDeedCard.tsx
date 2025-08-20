@@ -48,7 +48,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
   const worksiteType = data.worksite_type!;
 
   const productionInfo = data.productionIfo;
-  const resource = data.worksiteDetail?.token_symbol ?? "Unkown";
+  const resource = data.worksiteDetail?.token_symbol ?? "";
 
   const isConstruction = data.worksiteDetail?.is_construction ?? false;
 
