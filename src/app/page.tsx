@@ -44,6 +44,13 @@ export default function Home() {
             image={temp_image}
           />
         </Box>
+        <Box sx={defaultBoxStyle}>
+          <DefaultPageTile
+            title="Land Planning"
+            href="/planning"
+            image={temp_image}
+          />
+        </Box>
       </Box>
 
       <Box mt={4} mb={4}>

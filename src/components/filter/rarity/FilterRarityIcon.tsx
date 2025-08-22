@@ -1,6 +1,6 @@
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
-  land_default_icon_url_placeholder,
+  land_default_off_icon_url_placeholder,
   land_mythic_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import FilterIcon from "../FilterIcon";
@@ -20,7 +20,7 @@ export default function FilterRarityIcon({ name }: FilterIconProps) {
   const image =
     name == "mythic"
       ? land_mythic_icon_url
-      : land_default_icon_url_placeholder.replace(
+      : land_default_off_icon_url_placeholder.replace(
           "__NAME__",
           name.toLowerCase(),
         );

@@ -2,7 +2,7 @@
 
 import SummaryTile from "@/components/ui/region/SummaryTile";
 import {
-  land_default_icon_url_placeholder,
+  land_default_off_icon_url_placeholder,
   land_mythic_icon_url,
   land_under_construction_icon_url,
 } from "@/lib/shared/statics_icon_urls";
@@ -39,7 +39,7 @@ export default function DeedRarityTile({
                 ? type == "Unknown"
                   ? land_under_construction_icon_url
                   : land_mythic_icon_url
-                : land_default_icon_url_placeholder.replace(
+                : land_default_off_icon_url_placeholder.replace(
                     "__NAME__",
                     type.toLowerCase(),
                   );

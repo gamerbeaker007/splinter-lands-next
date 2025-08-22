@@ -3,7 +3,7 @@ import { cache } from "../cache/cache";
 import {
   fetchPlayerLiquidity,
   fetchPlayerPoolInfo,
-  fetchPlayerStakedAssets,
+  fetchStakedAssets,
   fetchRegionDataPlayer,
   getLandResourcesPools,
 } from "../api/spl/spl-land-api";
@@ -65,7 +65,7 @@ export async function getCachedStakedAssets(
     if (cached) return cached;
   }
 
-  const data = await fetchPlayerStakedAssets(deedUid);
+  const data = await fetchStakedAssets(deedUid);
   const result: StakedAssets = {
     cards: data.cards || [],
     items: data.items || [],
