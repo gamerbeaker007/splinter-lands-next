@@ -5,8 +5,15 @@ import { SimulationResult } from "@/components/planning/SimulationResult";
 import { useCardDetails } from "@/hooks/useCardDetails";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
-import { Box, Container, Stack } from "@mui/material";
-import React, { useEffect } from "react";
+import {
+  Alert,
+  Box,
+  CircularProgress,
+  Container,
+  Stack,
+  Typography,
+} from "@mui/material";
+import React, { useCallback, useEffect, useState } from "react";
 
 const emptyPlan: ResourceWithDEC = {
   resource: "GRAIN",
@@ -14,23 +21,20 @@ const emptyPlan: ResourceWithDEC = {
   buyPriceDEC: 0,
   sellPriceDEC: 0,
 };
+
 export default function RegionOverviewPage() {
   const { setTitle } = usePageTitle();
-  const { cardDetails, loading, error, refetch } = useCardDetails();
+  const { cardDetails, loading, error } = useCardDetails();
 
   useEffect(() => {
     setTitle("Land Planning");
   }, [setTitle]);
 
-  const [plans, setPlans] = React.useState<ProductionInfo[]>([
-    {
-      consume: [],
-      produce: emptyPlan,
-      netDEC: 0,
-    },
+  const [plans, setPlans] = useState<ProductionInfo[]>([
+    { consume: [], produce: emptyPlan, netDEC: 0 },
   ]);
 
-  const handlePlanChange = React.useCallback(
+  const handlePlanChange = useCallback(
     (index: number, info: ProductionInfo) => {
       setPlans((prev) => {
         const next = [...prev];
@@ -41,17 +45,50 @@ export default function RegionOverviewPage() {
     [],
   );
 
-  const addPlan = React.useCallback(() => {
+  const addPlan = useCallback(() => {
     setPlans((prev) => [
       ...prev,
       { consume: [], produce: emptyPlan, netDEC: 0 },
     ]);
   }, []);
 
-  const deletePlan = React.useCallback((index: number) => {
+  const deletePlan = useCallback((index: number) => {
     setPlans((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Loading state
+  if (loading) {
+    return (
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+        <Stack
+          spacing={3}
+          alignItems="center"
+          justifyContent="center"
+          minHeight="40vh"
+        >
+          <CircularProgress />
+          <Typography variant="body2" color="text.secondary">
+            Loading card details…
+          </Typography>
+        </Stack>
+      </Container>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+        <Stack spacing={3}>
+          <Alert severity="error">
+            Failed to load card details: {String(error)}
+          </Alert>
+        </Stack>
+      </Container>
+    );
+  }
+
+  // Data ready
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
       <Stack spacing={3}>
@@ -59,15 +96,15 @@ export default function RegionOverviewPage() {
         <SimulationResult items={plans} />
 
         {/* Bottom: DeedPlanning tiles + Add tile */}
-        <Box display={"flex"} flexWrap={"wrap"} gap={1}>
+        <Box display="flex" flexWrap="wrap" gap={1}>
           {plans.map((_, idx) => (
             <Box key={idx}>
               <DeedPlanning
                 index={idx}
-                cardDetails={cardDetails}
+                cardDetails={cardDetails ?? []}
                 onChange={handlePlanChange}
                 onDelete={deletePlan}
-                deletable={idx !== 0} // only allow delete for non-first
+                deletable={idx !== 0}
               />
             </Box>
           ))}

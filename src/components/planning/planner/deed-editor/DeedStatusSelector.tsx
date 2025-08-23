@@ -3,6 +3,7 @@ import { land_default_off_icon_url_placeholder } from "@/lib/shared/statics_icon
 import { PlotStatus, plotStatusOptions } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -17,10 +18,6 @@ export type Props = {
   value: PlotStatus;
   onChange: (tier: PlotStatus) => void;
 };
-
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
 
 export function PlotStatusSelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<PlotStatus>) => {

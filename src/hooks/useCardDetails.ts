@@ -33,5 +33,5 @@ export function useCardDetails(endpoint = "/api/card-details") {
     refetch();
   }, [refetch]);
 
-  return { cardDetails, loading, error, refetch };
+  return { cardDetails, loading, error };
 }

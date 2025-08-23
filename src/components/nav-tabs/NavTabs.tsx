@@ -77,7 +77,11 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
           }}
         >
           {pages.map((page) => (
-            <GlowingTab key={page.label} label={page.label} compact={compact} />
+            <GlowingTab
+              key={page.label}
+              label={page.label}
+              compact={compact ?? undefined}
+            />
           ))}
         </Tabs>
       )}

@@ -6,6 +6,7 @@ import { Box, Typography } from "@mui/material";
 import { computeSlot } from "../../utils/calc";
 import { BcxInput } from "./BcxInput";
 import { CardFoilSelector } from "./CardFoilSelector";
+import { CardPPInfo } from "./CardPPInfo";
 import { CardRaritySelector } from "./CardRaritySelector";
 import { CardElementSelector } from "./ElementSelector";
 import { SetSelector } from "./SetSelector";
@@ -39,8 +40,8 @@ export default function SlotEditor({
       borderRadius={1}
       sx={{
         position: "absolute",
-        top: x,
-        left: y,
+        top: y,
+        left: x,
         width: w,
         p: 1,
         bgcolor: "rgba(0,0,0,0.45)",
@@ -65,14 +66,7 @@ export default function SlotEditor({
           slot={value}
           onChange={(bcx) => onChange({ ...value, bcx })}
         />
-        <Box>
-          <Typography variant="body2">
-            Base PP: <b>{Math.round(computed.basePP)}</b>
-          </Typography>
-          <Typography variant="body2">
-            Boosted PP: <b>{Math.round(computed.boostedPP)}</b>
-          </Typography>
-        </Box>
+        <CardPPInfo basePP={computed.basePP} boostedPP={computed.boostedPP} />
       </Box>
     </Box>
   );

@@ -4,6 +4,7 @@ import { TbCardsFilled } from "react-icons/tb";
 
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -18,10 +19,6 @@ export type Props = {
   onChange: (tier: CardFoil) => void;
 };
 
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
-
 export function CardFoilSelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<CardFoil>) => {
     onChange(e.target.value as CardFoil);
@@ -32,7 +29,7 @@ export function CardFoilSelector({ value, onChange }: Props) {
       <TbCardsFilled
         size={size}
         display={"block"}
-        color={tier === "Regular" ? "gray" : "yellow"}
+        color={tier === "regular" ? "gray" : "yellow"}
       />
     );
   };

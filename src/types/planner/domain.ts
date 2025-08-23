@@ -9,6 +9,7 @@ import {
   RuniTier,
   TitleTier,
   TotemTier,
+  WorksiteType,
 } from "./primitives";
 
 export interface PlotModifiers {
@@ -18,6 +19,7 @@ export interface PlotModifiers {
   title: TitleTier;
   totem: TotemTier;
   runi: RuniTier;
+  worksiteType: WorksiteType;
 }
 
 export interface SlotInput {

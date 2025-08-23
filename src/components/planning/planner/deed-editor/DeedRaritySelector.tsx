@@ -7,6 +7,7 @@ import {
 } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -21,10 +22,6 @@ export type Props = {
   value: PlotRarity;
   onChange: (tier: PlotRarity) => void;
 };
-
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
 
 export function PlotRaritySelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<PlotRarity>) => {

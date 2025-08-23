@@ -3,6 +3,7 @@ import { land_default_off_icon_url_placeholder } from "@/lib/shared/statics_icon
 import { MagicType, magicTypeOptions } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -17,10 +18,6 @@ export type Props = {
   value: MagicType;
   onChange: (tier: MagicType) => void;
 };
-
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
 
 export function MagicTypeSelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<MagicType>) => {

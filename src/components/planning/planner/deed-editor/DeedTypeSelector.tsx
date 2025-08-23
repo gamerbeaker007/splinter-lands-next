@@ -9,6 +9,7 @@ import {
 } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -26,10 +27,6 @@ export type Props = {
   onChange: (tier: DeedType) => void;
 };
 
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
-
 export function DeedTypeSelector({
   value,
   plotStatus,
@@ -41,7 +38,7 @@ export function DeedTypeSelector({
   };
 
   const disabledDeed = (d: DeedType) =>
-    plotStatus === "Magical" &&
+    plotStatus === "magical" &&
     magicType !== "" &&
     (DEED_BLOCKED[magicType]?.includes(d) ?? false);
 
@@ -64,7 +61,7 @@ export function DeedTypeSelector({
   return (
     <Box borderRadius={1}>
       <FormControl size="small" variant="outlined">
-        <InputLabel>DeedType:</InputLabel>
+        <InputLabel>Geography:</InputLabel>
         <Select<DeedType>
           value={value}
           onChange={handleChange}

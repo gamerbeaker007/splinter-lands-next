@@ -15,6 +15,7 @@ import {
 } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -30,17 +31,13 @@ export type Props = {
   onChange: (tier: CardElement) => void;
 };
 
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
-
 const ICONS: Record<CardSetName, string> = {
-  Alpha: edition_apha_icon_url,
-  Beta: edition_beta_icon_url,
-  Untamed: edition_untamed_icon_url,
-  Chaos: edition_chaos_icon_url,
-  Rebellion: edition_rebellion_icon_url,
-  Conclave: edition_conclave_icon_url,
+  alpha: edition_apha_icon_url,
+  beta: edition_beta_icon_url,
+  untamed: edition_untamed_icon_url,
+  chaos: edition_chaos_icon_url,
+  rebellion: edition_rebellion_icon_url,
+  conclave: edition_conclave_icon_url,
 };
 
 export function SetSelector({ value, onChange }: Props) {

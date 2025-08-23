@@ -8,6 +8,7 @@ import {
 import { CardRarity, cardRarityOptions } from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -23,15 +24,11 @@ export type Props = {
   onChange: (tier: CardRarity) => void;
 };
 
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
-}
-
 const ICONS: Record<CardRarity, string> = {
-  Common: card_rarity_common_icon_url,
-  Rare: card_rarity_rare_icon_url,
-  Epic: card_rarity_epic_icon_url,
-  Legendary: card_rarity_legendary_icon_url,
+  common: card_rarity_common_icon_url,
+  rare: card_rarity_rare_icon_url,
+  epic: card_rarity_epic_icon_url,
+  legendary: card_rarity_legendary_icon_url,
 };
 
 export function CardRaritySelector({ value, onChange }: Props) {

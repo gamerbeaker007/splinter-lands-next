@@ -54,7 +54,7 @@ export function PlannerControls({
         onChange={(e) => onPlotStatusChange(e as PlotStatus)}
       />
 
-      {value.plotStatus === "Magical" && (
+      {value.plotStatus === "magical" && (
         <MagicTypeSelector
           value={magicType}
           onChange={(e) => onMagicTypeChange(e as MagicType)}

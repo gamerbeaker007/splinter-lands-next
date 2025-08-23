@@ -5,13 +5,14 @@ import {
   land_title_rare_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { titleModifiers, TitleTier } from "@/types/planner";
+import { titleModifiers, titleOptions, TitleTier } from "@/types/planner";
 import BlockIcon from "@mui/icons-material/Block";
 import {
   Box,
+  capitalize,
   FormControl,
+  InputLabel,
   ListItemIcon,
-  ListItemText,
   MenuItem,
   Select,
   SelectChangeEvent,
@@ -19,13 +20,11 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 
-const ICONS: Record<Exclude<TitleTier, "None">, string> = {
-  Rare: land_title_rare_icon_url,
-  Epic: land_title_epic_icon_url,
-  Legendary: land_title_legendary_icon_url,
+const ICONS: Record<Exclude<TitleTier, "none">, string> = {
+  rare: land_title_rare_icon_url,
+  epic: land_title_epic_icon_url,
+  legendary: land_title_legendary_icon_url,
 };
-
-const ORDER: TitleTier[] = ["None", "Rare", "Epic", "Legendary"];
 
 export type Props = {
   value: TitleTier;
@@ -40,7 +39,7 @@ export function TitleSelector({ value, onChange, pos }: Props) {
   };
 
   const renderIcon = (tier: TitleTier, size = 20) =>
-    tier === "None" ? (
+    tier === "none" ? (
       <BlockIcon fontSize="small" />
     ) : (
       <Image
@@ -52,45 +51,42 @@ export function TitleSelector({ value, onChange, pos }: Props) {
       />
     );
 
-  const label = (tier: TitleTier) => `${tier} (${titleModifiers[tier] * 100}%)`;
-
   return (
     <Box
       borderRadius={1}
       sx={{
         position: "absolute",
-        top: x,
-        left: y,
+        top: y,
+        left: x,
         width: w,
         p: 1,
-        bgcolor: "rgba(0,0,0,0.45)",
+        bgcolor: "rgba(0,0,0,0.6)",
 
         zIndex: 2,
       }}
     >
-      <Typography>Title:</Typography>
-      <FormControl size="small" sx={{ minWidth: 200 }}>
+      <FormControl size="small" variant="outlined" sx={{ minWidth: 100 }}>
+        <InputLabel sx={{ color: "common.white" }}>Totem:</InputLabel>
         <Select<TitleTier>
           value={value}
           onChange={handleChange}
           displayEmpty
-          renderValue={(val) => (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              {renderIcon(val as TitleTier)}
-              <Typography variant="body2" sx={{ color: "common.white" }}>
-                {label(val as TitleTier)}
-              </Typography>
-            </Box>
-          )}
-          MenuProps={{
-            MenuListProps: { dense: true },
+          renderValue={(val) => {
+            const v = (val as TitleTier) ?? value;
+            return (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {renderIcon(v)}
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  {titleModifiers[v] * 100}%
+                </Typography>
+              </Box>
+            );
           }}
+          MenuProps={{ MenuListProps: { dense: true } }}
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
+            ".MuiOutlinedInput-notchedOutline": { border: "none" },
             color: "common.white",
-            ".MuiOutlinedInput-notchedOutline": {
-              borderColor: "rgba(255,255,255,0.3)",
-            },
             "&:hover .MuiOutlinedInput-notchedOutline": {
               borderColor: "rgba(255,255,255,0.6)",
             },
@@ -99,12 +95,23 @@ export function TitleSelector({ value, onChange, pos }: Props) {
             },
           }}
         >
-          {ORDER.map((tier) => (
-            <MenuItem key={tier} value={tier}>
+          {titleOptions.map((v) => (
+            <MenuItem key={v} value={v}>
               <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(tier, 24)}
+                {renderIcon(v, 18)}
               </ListItemIcon>
-              <ListItemText primary={label(tier)} />
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  width: "100%",
+                  gap: 1,
+                }}
+              >
+                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                  {capitalize(v)} ({titleModifiers[v] * 100}%)
+                </Typography>
+              </Box>
             </MenuItem>
           ))}
         </Select>

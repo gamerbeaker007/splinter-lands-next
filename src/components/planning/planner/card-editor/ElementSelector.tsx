@@ -1,8 +1,14 @@
 "use client";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { CardElement, cardElementOptions, DeedType } from "@/types/planner";
+import {
+  CardElement,
+  cardElementOptions,
+  DeedType,
+  TERRAIN_BONUS,
+} from "@/types/planner";
 import {
   Box,
+  capitalize,
   FormControl,
   InputLabel,
   ListItemIcon,
@@ -12,7 +18,6 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { TERRAIN_BONUS } from "../../data/terrain";
 
 export type Props = {
   value: CardElement;
@@ -58,10 +63,6 @@ function BoostTag({ boost }: { boost: number }) {
       {label}
     </Box>
   );
-}
-
-function capitalize(word: string) {
-  return word ? word[0].toUpperCase() + word.slice(1) : word;
 }
 
 export function CardElementSelector({ value, deedType, onChange }: Props) {
