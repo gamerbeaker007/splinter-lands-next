@@ -27,6 +27,9 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
+import { PPOutput } from "./output/PPOutput";
+import { ResourceOutput } from "./output/ResourceOutput";
+import { Prices } from "@/types/price";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -38,9 +41,10 @@ const DEFAULTS = {
 
 export type Props = {
   cardDetails: SplCardDetails[];
+  prices: Prices;
 };
 
-export default function Planner({ cardDetails }: Props) {
+export default function Planner({ cardDetails, prices }: Props) {
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -320,6 +324,18 @@ export default function Planner({ cardDetails }: Props) {
           />
         ))}
 
+        <PPOutput
+          slots={slots}
+          plotModifiers={plot}
+          pos={{ x: "680px", y: "30px" }}
+        />
+
+        <ResourceOutput
+          slots={slots}
+          plotModifiers={plot}
+          prices={prices}
+          pos={{ x: "680px", y: "100px" }}
+        />
         <Box
           sx={{
             position: "absolute",

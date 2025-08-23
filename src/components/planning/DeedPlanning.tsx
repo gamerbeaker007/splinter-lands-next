@@ -14,10 +14,12 @@ import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { useEffect } from "react";
 import Planner from "./planner/Planner";
+import { Prices } from "@/types/price";
 
 export type Props = {
   index: number;
   cardDetails: SplCardDetails[];
+  prices: Prices;
   onChange: (index: number, info: ProductionInfo) => void;
   onDelete?: (index: number) => void;
   deletable?: boolean;
@@ -27,6 +29,7 @@ export type Props = {
 export function DeedPlanning({
   index,
   cardDetails,
+  prices,
   onChange,
   onDelete,
   deletable,
@@ -81,7 +84,7 @@ export function DeedPlanning({
             Deed Planning #{index + 1}
           </Typography>
           <Divider />
-          <Planner cardDetails={cardDetails} />
+          <Planner cardDetails={cardDetails} prices={prices} />
         </Stack>
       </CardContent>
     </Card>

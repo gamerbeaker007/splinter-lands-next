@@ -3,6 +3,7 @@ import { AddDeedPlanningTile } from "@/components/planning/AddDeedPlanningTile";
 import { DeedPlanning } from "@/components/planning/DeedPlanning";
 import { SimulationResult } from "@/components/planning/SimulationResult";
 import { useCardDetails } from "@/hooks/useCardDetails";
+import { usePrices } from "@/hooks/usePrices";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import {
@@ -13,7 +14,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const emptyPlan: ResourceWithDEC = {
   resource: "GRAIN",
@@ -25,6 +26,7 @@ const emptyPlan: ResourceWithDEC = {
 export default function RegionOverviewPage() {
   const { setTitle } = usePageTitle();
   const { cardDetails, loading, error } = useCardDetails();
+  const { prices, loading: loadingPrices, error: errorPrices } = usePrices();
 
   useEffect(() => {
     setTitle("Land Planning");
@@ -57,7 +59,7 @@ export default function RegionOverviewPage() {
   }, []);
 
   // Loading state
-  if (loading) {
+  if (loading || loadingPrices) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack
@@ -76,12 +78,12 @@ export default function RegionOverviewPage() {
   }
 
   // Error state
-  if (error) {
+  if (error || errorPrices) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack spacing={3}>
           <Alert severity="error">
-            Failed to load card details: {String(error)}
+            Failed to load card details or prices: {String(error)}
           </Alert>
         </Stack>
       </Container>
@@ -96,22 +98,25 @@ export default function RegionOverviewPage() {
         <SimulationResult items={plans} />
 
         {/* Bottom: DeedPlanning tiles + Add tile */}
-        <Box display="flex" flexWrap="wrap" gap={1}>
-          {plans.map((_, idx) => (
-            <Box key={idx}>
-              <DeedPlanning
-                index={idx}
-                cardDetails={cardDetails ?? []}
-                onChange={handlePlanChange}
-                onDelete={deletePlan}
-                deletable={idx !== 0}
-              />
+        {prices && cardDetails && (
+          <Box display="flex" flexWrap="wrap" gap={1}>
+            {plans.map((_, idx) => (
+              <Box key={idx}>
+                <DeedPlanning
+                  index={idx}
+                  cardDetails={cardDetails}
+                  prices={prices}
+                  onChange={handlePlanChange}
+                  onDelete={deletePlan}
+                  deletable={idx !== 0}
+                />
+              </Box>
+            ))}
+            <Box width={840} height={422}>
+              <AddDeedPlanningTile onAdd={addPlan} />
             </Box>
-          ))}
-          <Box width={840} height={422}>
-            <AddDeedPlanningTile onAdd={addPlan} />
           </Box>
-        </Box>
+        )}
       </Stack>
     </Container>
   );

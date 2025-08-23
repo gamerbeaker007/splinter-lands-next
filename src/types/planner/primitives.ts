@@ -1,3 +1,5 @@
+import { Resource } from "@/constants/resource/resource";
+
 export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
 export const plotRarityModifiers: Record<PlotRarity, number> = {
   common: 0,
@@ -206,15 +208,27 @@ export const worksiteTypeOptions = [
 
 export type WorksiteType = (typeof worksiteTypeOptions)[number];
 
-// const worksiteTypeMapping: Record<string, string> = {
-//   "Grain Farm": land_grain_farm_icon_url,
-//   "Logging Camp": land_logging_camp_icon_url,
-//   "Ore Mine": land_ore_mine_icon_url,
-//   Quarry: land_quarry_icon_url,
-//   "Research Hut": land_research_hut_icon_url,
-//   "Aura Lab": land_aura_lab_icon_url,
-//   "Shard Mine": land_shard_mine_icon_url,
-//   KEEP: land_keep_icon_url,
-//   CASTLE: land_castle_icon_url,
-//   Undeveloped: land_under_construction_icon_url,
-// };
+export const resourceWorksiteMap: Record<
+  WorksiteType,
+  Exclude<Resource, "VOUCHER" | "TAX" | "DEC">
+> = {
+  "Grain Farm": "GRAIN",
+  "Logging Camp": "WOOD",
+  "Ore Mine": "IRON",
+  Quarry: "STONE",
+  "Research Hut": "RESEARCH",
+  "Aura Lab": "AURA",
+  "Shard Mine": "SPS",
+};
+
+export const resourceOptions = [
+  "grain",
+  "wood",
+  "iron",
+  "stone",
+  "research",
+  "aura",
+  "sps",
+];
+
+export type resource = (typeof resourceOptions)[number];

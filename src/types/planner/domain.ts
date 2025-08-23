@@ -1,5 +1,5 @@
 import {
-  CardElement as CardElement,
+  CardElement,
   CardFoil,
   CardRarity,
   CardSetName,
