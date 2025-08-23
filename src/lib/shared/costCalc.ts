@@ -1,14 +1,15 @@
+import { Resource } from "@/constants/resource/resource";
 import {
   CONSUME_RATES,
   CONSUMES_ONLY_GRAIN,
   MULTIPLE_CONSUMING_RESOURCES,
   NATURAL_RESOURCES,
+  PRODUCE_RATES,
   TRADE_HUB_FEE,
 } from "@/lib/shared/statics";
 import { Mode } from "@/types/mode";
-import { ResourceWithDEC } from "@/types/productionInfo";
 import { Prices } from "@/types/price";
-import { Resource } from "@/constants/resource/resource";
+import { ResourceWithDEC } from "@/types/productionInfo";
 
 type CostResult = {
   cost_per_h_grain: number;
@@ -93,6 +94,29 @@ export function calcConsumeCosts(
   }
 
   return [];
+}
+
+export function calcProduceCosts(
+  resource: Resource,
+  total_harvest_pp: number,
+  prices: Record<string, number>,
+  siteEfficiency: number,
+): ResourceWithDEC {
+  const amount = total_harvest_pp * PRODUCE_RATES[resource] * siteEfficiency;
+  return {
+    resource,
+    amount,
+    buyPriceDEC: calcDirectDECPrice(
+      "buy",
+      amount,
+      prices[resource.toLowerCase()] ?? 0,
+    ),
+    sellPriceDEC: calcDirectDECPrice(
+      "sell",
+      amount,
+      prices[resource.toLowerCase()] ?? 0,
+    ),
+  };
 }
 
 export function calcDECPrice(

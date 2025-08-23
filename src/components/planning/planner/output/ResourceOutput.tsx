@@ -1,12 +1,17 @@
-import { calcConsumeCosts } from "@/lib/shared/costCalc";
+import { calcConsumeCosts, calcProduceCosts } from "@/lib/shared/costCalc";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { CSSSize } from "@/types/cssSize";
-import { PlotModifiers, resourceWorksiteMap, SlotInput } from "@/types/planner";
+import {
+  PlotModifiers,
+  resourceWorksiteMap,
+  RUNI_FLAT_ADD,
+  SlotInput,
+} from "@/types/planner";
 import { Prices } from "@/types/price";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { computeSlot } from "../../utils/calc";
+import { calcBoostedPP, computeSlot } from "../../utils/calc";
 
 type Props = {
   slots: SlotInput[];
@@ -24,7 +29,7 @@ export const ResourceOutput: React.FC<Props> = ({
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
 
   // Sum all PP values
-  const { totalBasePP } = slots.reduce(
+  const { totalBasePP, totalBoostedPP } = slots.reduce(
     (acc, slot) => {
       const { basePP, boostedPP } = computeSlot(slot, plotModifiers);
       acc.totalBasePP += basePP;
@@ -34,8 +39,16 @@ export const ResourceOutput: React.FC<Props> = ({
     { totalBasePP: 0, totalBoostedPP: 0 },
   );
 
+  const basePP = RUNI_FLAT_ADD[plotModifiers.runi];
+  const boostedPP = calcBoostedPP(basePP, plotModifiers, 0);
+  const finalBasePP = totalBasePP + basePP;
+  const finalBoostedPP = totalBoostedPP + boostedPP;
+
   const resource = resourceWorksiteMap[plotModifiers.worksiteType];
-  const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
+  const consume = calcConsumeCosts(resource, finalBasePP, prices, 1);
+  const produce = calcProduceCosts(resource, finalBoostedPP, prices, 1);
+
+  const procudeIcon = RESOURCE_ICON_MAP[resource];
 
   return (
     <Box
@@ -81,6 +94,26 @@ export const ResourceOutput: React.FC<Props> = ({
                 </Box>
               );
             })}
+        </Box>
+        <Box>
+          <Typography fontSize="0.75rem" fontWeight="bold" mb={0.5}>
+            Produce:
+          </Typography>
+          {produce && (
+            <Box display="flex" alignItems="center" gap={0.5} mb={0.25}>
+              {procudeIcon && (
+                <Image
+                  src={procudeIcon}
+                  alt={produce.resource}
+                  width={20}
+                  height={20}
+                />
+              )}
+              <Typography fontSize="0.75rem">
+                {produce.amount.toFixed(1)} /h
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     </Box>

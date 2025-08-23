@@ -16,13 +16,6 @@ import {
 import { Rarity } from "@/types/rarity";
 import { capitalize } from "@mui/material";
 
-// Runi flat base PP bonus
-// const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
-//   None: 0,
-//   Regular: 1500, // +1.5k base PP
-//   Gold: 10000, // +10k base PP
-// };
-
 export function terrainBonusPct(
   terrain: DeedType,
   element: CardElement,
@@ -31,14 +24,23 @@ export function terrainBonusPct(
   return TERRAIN_BONUS[terrain]?.[element] ?? 0;
 }
 
-export function calcBoostedPP(basePP: number, plot: PlotModifiers) {
+export function calcBoostedPP(
+  basePP: number,
+  plot: PlotModifiers,
+  terrainModifier?: number,
+) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
   const titlePct = titleModifiers[plot.title];
   const totemPct = totemModifiers[plot.totem];
   const runiPct = runiModifiers[plot.runi];
 
+  const terrainBoostedPP = basePP * (1 + (terrainModifier ?? 0));
+
+  // TODO 100% bonus on AURA and RESOURCE when magical
+  // TODO 100% bonus on SPS when occupied
+
   const totalBoostedMultiplier = 1 + totemPct + titlePct + runiPct + rarityPct;
-  const boostedPP = basePP * totalBoostedMultiplier;
+  const boostedPP = terrainBoostedPP * totalBoostedMultiplier;
   return boostedPP;
 }
 
@@ -56,12 +58,12 @@ export function computeSlot(
     foilId,
   );
 
-  const tPct = terrainBonusPct(plot.deedType, slot.element);
   const ppPerBcx = maxBasePP / maxBCX;
-  const basePP =
-    ppPerBcx * slot.bcx * (cardSetModifiers[slot.set] ?? 0) * (1 + tPct);
+  const basePP = ppPerBcx * slot.bcx * (cardSetModifiers[slot.set] ?? 0);
 
-  const boostedPP = calcBoostedPP(basePP, plot);
+  const tPct = terrainBonusPct(plot.deedType, slot.element);
+
+  const boostedPP = calcBoostedPP(basePP, plot, tPct);
 
   return {
     basePP,

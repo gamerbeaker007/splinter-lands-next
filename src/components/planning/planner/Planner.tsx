@@ -17,19 +17,19 @@ import {
   TotemTier,
   WorksiteType,
 } from "@/types/planner";
+import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
+import { PPOutput } from "./output/PPOutput";
+import { ResourceOutput } from "./output/ResourceOutput";
 import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
-import { PPOutput } from "./output/PPOutput";
-import { ResourceOutput } from "./output/ResourceOutput";
-import { Prices } from "@/types/price";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -327,14 +327,14 @@ export default function Planner({ cardDetails, prices }: Props) {
         <PPOutput
           slots={slots}
           plotModifiers={plot}
-          pos={{ x: "680px", y: "30px" }}
+          pos={{ x: "780px", y: "50px" }}
         />
 
         <ResourceOutput
           slots={slots}
           plotModifiers={plot}
           prices={prices}
-          pos={{ x: "680px", y: "100px" }}
+          pos={{ x: "780px", y: "180px" }}
         />
         <Box
           sx={{

@@ -1,4 +1,5 @@
 import { Resource } from "@/constants/resource/resource";
+import { PlotModifiers } from "./domain";
 
 export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
 export const plotRarityModifiers: Record<PlotRarity, number> = {
@@ -128,6 +129,13 @@ export const runiModifiers: Record<RuniTier, number> = {
   gold: 1,
 };
 export type RuniTier = (typeof runiOptions)[number];
+
+// Runi flat base PP bonus
+export const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
+  none: 0,
+  regular: 1500, // +1.5k base PP
+  gold: 10000, // +10k base PP
+};
 
 export const cardSetOptions = [
   "alpha",

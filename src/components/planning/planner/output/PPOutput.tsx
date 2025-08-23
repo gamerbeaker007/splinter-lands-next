@@ -1,10 +1,10 @@
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { PlotModifiers, SlotInput } from "@/types/planner";
+import { PlotModifiers, RUNI_FLAT_ADD, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { computeSlot } from "../../utils/calc";
+import { calcBoostedPP, computeSlot } from "../../utils/calc";
 
 type Props = {
   slots: SlotInput[];
@@ -28,6 +28,11 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
     },
     { totalBasePP: 0, totalBoostedPP: 0 },
   );
+
+  const basePP = RUNI_FLAT_ADD[plotModifiers.runi];
+  const boostedPP = calcBoostedPP(basePP, plotModifiers, 0);
+  const finalBasePP = totalBasePP + basePP;
+  const finalBoostedPP = totalBoostedPP + boostedPP;
 
   return (
     <Box
@@ -62,7 +67,7 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
               fontWeight="bold"
               color="common.white"
             >
-              {totalBasePP.toLocaleString(undefined, {
+              {finalBasePP.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
             </Typography>
@@ -87,7 +92,7 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
               fontWeight="bold"
               color="success.main"
             >
-              {totalBoostedPP.toLocaleString(undefined, {
+              {finalBoostedPP.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
             </Typography>

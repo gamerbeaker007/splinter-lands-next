@@ -8,6 +8,7 @@ import {
 import { CSSSize } from "@/types/cssSize";
 import {
   PlotModifiers,
+  RUNI_FLAT_ADD,
   runiModifiers,
   runiOptions,
   RuniTier,
@@ -33,8 +34,8 @@ const ICONS: Record<RuniTier, string> = {
 };
 
 const renderBoost = (value: RuniTier, plot: PlotModifiers, size = 15) => {
-  const basePP = value === "regular" ? 1500 : 10000;
-  const boostedPP = calcBoostedPP(basePP, plot);
+  const basePP = RUNI_FLAT_ADD[value];
+  const boostedPP = calcBoostedPP(basePP, plot, 0);
   return (
     <Box display={"flex"}>
       <Box display={"flex"} gap={1} ml={1} mt={1}>
