@@ -11,7 +11,7 @@ interface BcxInputProps {
 }
 
 export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
-  const foilId = slot.foil === "regular" ? 0 : 1;
+  const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
   const maxBCX = determineCardMaxBCX(
     slot.set.toLowerCase(),
     capitalize(slot.rarity) as Rarity, //TODO fix this with correct rarity accrons the application all lowercases.

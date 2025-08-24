@@ -14,6 +14,17 @@ import {
   Typography,
 } from "@mui/material";
 
+const foilStyle: Record<
+  CardFoil,
+  { iconColor: string; badgeText?: string; badgeColor?: string }
+> = {
+  regular: { iconColor: "gray" },
+  gold: { iconColor: "gold" },
+  "gold arcane": { iconColor: "gold", badgeText: "GV", badgeColor: "black" },
+  black: { iconColor: "black" },
+  "black arcane": { iconColor: "black", badgeText: "BV", badgeColor: "white" },
+};
+
 export type Props = {
   value: CardFoil;
   onChange: (tier: CardFoil) => void;
@@ -24,15 +35,56 @@ export function CardFoilSelector({ value, onChange }: Props) {
     onChange(e.target.value as CardFoil);
   };
 
-  const renderIcon = (tier: CardFoil, size = 24) => {
+  function renderIcon(tier: CardFoil, size = 25) {
+    const { iconColor, badgeText, badgeColor } =
+      foilStyle[tier] ?? foilStyle.regular;
+
+    // scale badge font relative to icon size
+    const badgeFont = Math.max(10, Math.floor(size * 0.6)); // keeps it readable when small
+
     return (
-      <TbCardsFilled
-        size={size}
-        display={"block"}
-        color={tier === "regular" ? "gray" : "yellow"}
-      />
+      <Box
+        sx={{
+          position: "relative",
+          width: size,
+          height: size,
+          display: "inline-block",
+          lineHeight: 0,
+        }}
+        aria-label={`Foil: ${tier}`}
+        title={tier}
+      >
+        <TbCardsFilled
+          size={size}
+          color={iconColor}
+          style={{ display: "block" }}
+        />
+        {badgeText && (
+          <Typography
+            component="span"
+            sx={{
+              position: "absolute",
+              inset: 0, // fill the box
+              display: "grid",
+              placeItems: "center", // center the text
+              fontSize: badgeFont,
+              fontWeight: 900,
+              color: badgeColor,
+              letterSpacing: 0.5,
+              userSelect: "none",
+              // a little stroke for contrast on gold arcane badge
+              textShadow:
+                badgeColor === "black"
+                  ? "0 0 2px rgba(255,255,255,0.9)"
+                  : "0 0 2px rgba(0,0,0,0.8)",
+            }}
+          >
+            {badgeText}
+          </Typography>
+        )}
+      </Box>
     );
-  };
+  }
 
   return (
     <Box borderRadius={1}>

@@ -3,6 +3,7 @@ import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
   CardElement,
+  cardFoilModifiers,
   cardSetModifiers,
   deedResourceBoostRules,
   DeedType,
@@ -61,9 +62,9 @@ export function computeSlot(
   slot: SlotInput,
   plot: PlotModifiers,
 ): SlotComputedPP {
-  const maxBasePP = basePPMax[slot.rarity][slot.foil];
-  const foilId = slot.foil === "regular" ? 0 : 1;
-
+  const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
+  const maxBasePP =
+    basePPMax[slot.rarity][slot.foil === "regular" ? "regular" : "gold"];
   // TODO look into converio to rarity with lower cases!
   const maxBCX = determineCardMaxBCX(
     slot.set,
@@ -72,8 +73,11 @@ export function computeSlot(
   );
 
   const ppPerBcx = maxBasePP / maxBCX;
-  const basePP = ppPerBcx * slot.bcx * (cardSetModifiers[slot.set] ?? 0);
-
+  const basePP =
+    ppPerBcx *
+    slot.bcx *
+    (cardSetModifiers[slot.set] ?? 0) *
+    (cardFoilModifiers[slot.foil] ?? 1);
   const tPct = terrainBonusPct(plot.deedType, slot.element);
 
   const boostedPP = calcBoostedPP(basePP, plot, tPct);

@@ -155,9 +155,22 @@ export const cardSetModifiers: Record<CardSetName, number> = {
 };
 export type CardSetName = (typeof cardRarityOptions)[number];
 
-// Note all other variants like gold arcanes / black / black arcane are treahten as gold.
-export const cardFoilOptions = ["regular", "gold"];
+export const cardFoilOptions = [
+  "regular",
+  "gold",
+  "gold arcane",
+  "black",
+  "black arcane",
+];
 export type CardFoil = (typeof cardFoilOptions)[number];
+
+export const cardFoilModifiers: Record<CardFoil, number> = {
+  regular: 1,
+  gold: 1,
+  "gold arcane": 5,
+  black: 5,
+  "black arcane": 5,
+};
 
 export const basePPMax: Record<CardRarity, Record<CardFoil, number>> = {
   common: { regular: 1000, gold: 2000 },
