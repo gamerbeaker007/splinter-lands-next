@@ -229,6 +229,11 @@ export const resourceWorksiteMap: Record<
   "Shard Mine": "SPS",
 };
 
+export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
+  magical: ["Research Hut", "Aura Lab"],
+  occupied: ["Shard Mine"],
+};
+
 export const resourceOptions = [
   "grain",
   "wood",

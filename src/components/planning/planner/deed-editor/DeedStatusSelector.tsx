@@ -16,10 +16,15 @@ import Image from "next/image";
 
 export type Props = {
   value: PlotStatus;
+  deedResourceBoost: number;
   onChange: (tier: PlotStatus) => void;
 };
 
-export function PlotStatusSelector({ value, onChange }: Props) {
+export function PlotStatusSelector({
+  value,
+  deedResourceBoost,
+  onChange,
+}: Props) {
   const handleChange = (e: SelectChangeEvent<PlotStatus>) => {
     onChange(e.target.value as PlotStatus);
   };
@@ -54,7 +59,8 @@ export function PlotStatusSelector({ value, onChange }: Props) {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 {renderIcon(v)}
                 <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {capitalize(v)}
+                  {capitalize(v)}{" "}
+                  {deedResourceBoost > 0 ? `(${deedResourceBoost * 100}%)` : ""}
                 </Typography>
               </Box>
             );

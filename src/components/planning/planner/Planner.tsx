@@ -22,6 +22,11 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
 import { useMemo, useState } from "react";
+import {
+  calcProductionInfo,
+  calcTotalPP,
+  determineDeedResourceBoost,
+} from "../utils/calc";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
 import { PPOutput } from "./output/PPOutput";
@@ -30,6 +35,7 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
+import { DECOutput } from "./output/DECOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -49,12 +55,13 @@ export default function Planner({ cardDetails, prices }: Props) {
     plotRarity: "common",
     plotStatus: "natural",
     deedType: "badlands",
+    magicType: "",
+    deedResourceBoost: 0,
     title: "none",
     totem: "none",
     runi: "none",
     worksiteType: "Grain Farm",
   });
-  const [magicType, setMagicType] = useState<MagicType>("");
   const [runiImgUrl, setRuniImgUrl] = useState<string | null>(null);
 
   const [slots, setSlots] = useState<SlotInput[]>(
@@ -70,8 +77,13 @@ export default function Planner({ cardDetails, prices }: Props) {
 
   const imgUrl = useMemo(
     () =>
-      getDeedImg(magicType, plot.deedType, plot.plotStatus, plot.plotRarity),
-    [magicType, plot.deedType, plot.plotStatus, plot.plotRarity],
+      getDeedImg(
+        plot.magicType,
+        plot.deedType,
+        plot.plotStatus,
+        plot.plotRarity,
+      ),
+    [plot.magicType, plot.deedType, plot.plotStatus, plot.plotRarity],
   );
 
   const updatePlot = (patch: Partial<PlotModifiers>) =>
@@ -118,13 +130,20 @@ export default function Planner({ cardDetails, prices }: Props) {
   const onRarityChange = (next: PlotRarity) => updatePlot({ plotRarity: next });
 
   const onPlotStatusChange = (next: PlotStatus) => {
+    // update magical boost based on worksite
+    updatePlot({
+      deedResourceBoost: determineDeedResourceBoost(next, plot.worksiteType),
+    });
+
     updatePlot({ plotStatus: next });
-    if (next !== "magical") setMagicType("fire");
+
+    if (next === "magical") updatePlot({ magicType: "fire" });
   };
 
   const onMagicTypeChange = (next: MagicType) => {
-    setMagicType(next);
+    updatePlot({ magicType: next });
     if (plot.plotStatus === "magical") {
+      // Update Geography is its a impossible combination
       const blocked = DEED_BLOCKED[next] ?? [];
       if (blocked.includes(plot.deedType)) {
         const fallback = deedTypeOptions.find((d) => !blocked.includes(d));
@@ -213,11 +232,18 @@ export default function Planner({ cardDetails, prices }: Props) {
     const importedTitle = findTitle(deed);
     const importedRuni = findRuni(deed);
 
+    // update magical boost based on worsite
+    const importedDeedResourceBoost = determineDeedResourceBoost(
+      importedStatus,
+      importedWorksite,
+    );
+
     // Update plot first
     updatePlot({
       plotStatus: importedStatus,
       plotRarity: importedRarity,
       deedType: importedDeedType,
+      deedResourceBoost: importedDeedResourceBoost,
       totem: importedTotem,
       title: importedTitle,
       runi: importedRuni,
@@ -227,7 +253,9 @@ export default function Planner({ cardDetails, prices }: Props) {
     updateSlots(deed.stakedAssets?.cards ?? []);
 
     // Then update magic visual state
-    setMagicType(importedStatus === "magical" ? importedMagic : "");
+    updatePlot({
+      magicType: importedStatus === "magical" ? importedMagic : "",
+    });
   }
 
   const onTotemChange = (tier: TotemTier) => {
@@ -239,6 +267,11 @@ export default function Planner({ cardDetails, prices }: Props) {
   };
 
   const onWorksiteChange = (worksite: WorksiteType) => {
+    // update magical boost based on worsite
+    updatePlot({
+      deedResourceBoost: determineDeedResourceBoost(plot.plotStatus, worksite),
+    });
+
     updatePlot({ worksiteType: worksite });
   };
 
@@ -249,6 +282,14 @@ export default function Planner({ cardDetails, prices }: Props) {
 
   const updateSlot = (i: number, next: SlotInput) =>
     setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
+
+  const { totalBasePP, totalBoostedPP } = calcTotalPP(slots, plot);
+  const productionInfo = calcProductionInfo(
+    totalBasePP,
+    totalBoostedPP,
+    plot,
+    prices,
+  );
 
   return (
     <Stack spacing={2}>
@@ -261,7 +302,6 @@ export default function Planner({ cardDetails, prices }: Props) {
         >
           <PlannerControls
             value={plot}
-            magicType={magicType}
             onRarityChange={onRarityChange}
             onPlotStatusChange={onPlotStatusChange}
             onMagicTypeChange={onMagicTypeChange}
@@ -325,17 +365,21 @@ export default function Planner({ cardDetails, prices }: Props) {
         ))}
 
         <PPOutput
-          slots={slots}
-          plotModifiers={plot}
-          pos={{ x: "780px", y: "50px" }}
+          totalBasePP={totalBasePP}
+          totalBoostPP={totalBoostedPP}
+          pos={{ x: "680px", y: "30px" }}
         />
 
         <ResourceOutput
-          slots={slots}
-          plotModifiers={plot}
-          prices={prices}
+          productionInfo={productionInfo}
           pos={{ x: "780px", y: "180px" }}
         />
+
+        <DECOutput
+          productionInfo={productionInfo}
+          pos={{ x: "780px", y: "390px" }}
+        />
+
         <Box
           sx={{
             position: "absolute",
@@ -353,7 +397,7 @@ export default function Planner({ cardDetails, prices }: Props) {
             </Typography>
           ) : (
             <Typography variant="caption" color="common.white">
-              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(magicType)} • ${capitalize(plot.deedType)} •`}
+              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.magicType)} • ${capitalize(plot.deedType)} •`}
             </Typography>
           )}
         </Box>

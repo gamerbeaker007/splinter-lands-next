@@ -4,6 +4,7 @@ import {
   CardRarity,
   CardSetName,
   DeedType,
+  MagicType,
   PlotRarity,
   PlotStatus,
   RuniTier,
@@ -15,6 +16,8 @@ import {
 export interface PlotModifiers {
   plotRarity: PlotRarity;
   deedType: DeedType;
+  magicType: MagicType;
+  deedResourceBoost: number;
   plotStatus: PlotStatus;
   title: TitleTier;
   totem: TotemTier;

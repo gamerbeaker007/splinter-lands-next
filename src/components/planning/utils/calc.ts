@@ -1,18 +1,26 @@
+import { calcConsumeCosts, calcProduceCosts } from "@/lib/shared/costCalc";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
   CardElement,
   cardSetModifiers,
+  deedResourceBoostRules,
   DeedType,
   PlotModifiers,
   plotRarityModifiers,
+  PlotStatus,
+  resourceWorksiteMap,
+  RUNI_FLAT_ADD,
   runiModifiers,
   SlotComputedPP,
   SlotInput,
   TERRAIN_BONUS,
   titleModifiers,
   totemModifiers,
+  WorksiteType,
 } from "@/types/planner";
+import { Prices } from "@/types/price";
+import { ProductionInfo } from "@/types/productionInfo";
 import { Rarity } from "@/types/rarity";
 import { capitalize } from "@mui/material";
 
@@ -22,6 +30,13 @@ export function terrainBonusPct(
 ): number {
   if (!terrain) return 0;
   return TERRAIN_BONUS[terrain]?.[element] ?? 0;
+}
+
+export function determineDeedResourceBoost(
+  plotStatus: PlotStatus,
+  worksiteType: WorksiteType,
+): number {
+  return deedResourceBoostRules[plotStatus]?.includes(worksiteType) ? 1 : 0;
 }
 
 export function calcBoostedPP(
@@ -36,10 +51,8 @@ export function calcBoostedPP(
 
   const terrainBoostedPP = basePP * (1 + (terrainModifier ?? 0));
 
-  // TODO 100% bonus on AURA and RESOURCE when magical
-  // TODO 100% bonus on SPS when occupied
-
-  const totalBoostedMultiplier = 1 + totemPct + titlePct + runiPct + rarityPct;
+  const totalBoostedMultiplier =
+    1 + totemPct + titlePct + runiPct + rarityPct + plot.deedResourceBoost;
   const boostedPP = terrainBoostedPP * totalBoostedMultiplier;
   return boostedPP;
 }
@@ -71,13 +84,43 @@ export function computeSlot(
   };
 }
 
-// export function sumTotals(slots: SlotComputed[]) {
-//   return slots.reduce(
-//     (acc, s) => {
-//       acc.totalBasePP += s.basePP;
-//       acc.totalBoostedPP += s.boostedPP;
-//       return acc;
-//     },
-//     { totalBasePP: 0, totalBoostedPP: 0 },
-//   );
-// }
+export function calcTotalPP(slots: SlotInput[], plot: PlotModifiers) {
+  const { sumBasePP, sumBoostedPP } = slots.reduce(
+    (acc, slot) => {
+      const { basePP, boostedPP } = computeSlot(slot, plot);
+      acc.sumBasePP += basePP;
+      acc.sumBoostedPP += boostedPP;
+      return acc;
+    },
+    { sumBasePP: 0, sumBoostedPP: 0 },
+  );
+
+  const basePP = RUNI_FLAT_ADD[plot.runi];
+  const boostedPP = calcBoostedPP(basePP, plot, 0);
+  const totalBasePP = sumBasePP + basePP;
+  const totalBoostedPP = sumBoostedPP + boostedPP;
+  return { totalBasePP, totalBoostedPP };
+}
+
+export function calcProductionInfo(
+  totalBasePP: number,
+  totalBoostedPP: number,
+  plotModifiers: PlotModifiers,
+  prices: Prices,
+): ProductionInfo {
+  const resource = resourceWorksiteMap[plotModifiers.worksiteType];
+  const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
+  const produce = calcProduceCosts(resource, totalBoostedPP, prices, 1);
+
+  const totalDECConsume = consume.reduce(
+    (sum, row) => sum + Number(row.sellPriceDEC || 0),
+    0,
+  );
+  const netDEC = produce.sellPriceDEC - totalDECConsume;
+
+  return {
+    consume,
+    produce,
+    netDEC,
+  };
+}

@@ -19,7 +19,6 @@ import { DeedTypeSelector } from "./DeedTypeSelector";
 
 type Props = {
   value: PlotModifiers;
-  magicType: MagicType;
   onRarityChange: (r: PlotRarity) => void;
   onPlotStatusChange: (s: PlotStatus) => void;
   onMagicTypeChange: (m: MagicType) => void;
@@ -29,7 +28,6 @@ type Props = {
 
 export function PlannerControls({
   value,
-  magicType,
   onRarityChange,
   onPlotStatusChange,
   onMagicTypeChange,
@@ -51,12 +49,13 @@ export function PlannerControls({
 
       <PlotStatusSelector
         value={value.plotStatus}
+        deedResourceBoost={value.deedResourceBoost}
         onChange={(e) => onPlotStatusChange(e as PlotStatus)}
       />
 
       {value.plotStatus === "magical" && (
         <MagicTypeSelector
-          value={magicType}
+          value={value.magicType}
           onChange={(e) => onMagicTypeChange(e as MagicType)}
         />
       )}
@@ -64,7 +63,7 @@ export function PlannerControls({
       <DeedTypeSelector
         value={value.deedType}
         plotStatus={value.plotStatus}
-        magicType={magicType}
+        magicType={value.magicType}
         onChange={(e) => onDeedTypeChange(e as DeedType)}
       />
 

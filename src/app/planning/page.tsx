@@ -92,7 +92,7 @@ export default function RegionOverviewPage() {
 
   // Data ready
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 8 } }}>
       <Stack spacing={3}>
         {/* Top: Result, full width */}
         <SimulationResult items={plans} />

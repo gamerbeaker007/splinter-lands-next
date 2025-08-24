@@ -1,38 +1,24 @@
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { PlotModifiers, RUNI_FLAT_ADD, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { calcBoostedPP, computeSlot } from "../../utils/calc";
 
 type Props = {
-  slots: SlotInput[];
-  plotModifiers: PlotModifiers;
+  totalBasePP: number;
+  totalBoostPP: number;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const sizeHammerIcon = 15;
-const fontSize = 10;
+const sizeHammerIcon = 20;
+const fontSize = "1.0rem";
 
-export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
+export const PPOutput: React.FC<Props> = ({
+  totalBasePP,
+  totalBoostPP,
+  pos,
+}) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
-
-  // Sum all PP values
-  const { totalBasePP, totalBoostedPP } = slots.reduce(
-    (acc, slot) => {
-      const { basePP, boostedPP } = computeSlot(slot, plotModifiers);
-      acc.totalBasePP += basePP;
-      acc.totalBoostedPP += boostedPP;
-      return acc;
-    },
-    { totalBasePP: 0, totalBoostedPP: 0 },
-  );
-
-  const basePP = RUNI_FLAT_ADD[plotModifiers.runi];
-  const boostedPP = calcBoostedPP(basePP, plotModifiers, 0);
-  const finalBasePP = totalBasePP + basePP;
-  const finalBoostedPP = totalBoostedPP + boostedPP;
 
   return (
     <Box
@@ -43,12 +29,19 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
         top: y,
         width: w,
         p: 1,
-        bgcolor: "rgba(0,0,0,0.6)",
-
         zIndex: 2,
       }}
     >
-      <Box display="flex" flexDirection="column" mt={0.5} width="100%">
+      <Box display="flex" flexDirection="column" minWidth="210px">
+        <Typography
+          fontSize="1.5rem"
+          fontWeight="bold"
+          color={"white"}
+          mb={0.5}
+        >
+          Production:
+        </Typography>
+
         {/* Base PP */}
         <Box display="flex" alignItems="center" gap={1} ml={0.5}>
           <Image
@@ -67,7 +60,7 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
               fontWeight="bold"
               color="common.white"
             >
-              {finalBasePP.toLocaleString(undefined, {
+              {totalBasePP.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
             </Typography>
@@ -92,7 +85,7 @@ export const PPOutput: React.FC<Props> = ({ slots, plotModifiers, pos }) => {
               fontWeight="bold"
               color="success.main"
             >
-              {finalBoostedPP.toLocaleString(undefined, {
+              {totalBoostPP.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
             </Typography>

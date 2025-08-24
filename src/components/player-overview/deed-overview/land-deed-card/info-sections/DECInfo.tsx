@@ -9,6 +9,7 @@ import React from "react";
 type Props = {
   productionInfo?: ProductionInfo;
   resource: string;
+  includeFee?: boolean;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
@@ -136,6 +137,7 @@ function tooltipContent(
 export const DECInfo: React.FC<Props> = ({
   productionInfo,
   resource,
+  includeFee = true,
   pos = { x: "0px", y: "0px", w: "auto" },
 }) => {
   const { consume, produce, netDEC } = productionInfo ?? {
@@ -166,7 +168,7 @@ export const DECInfo: React.FC<Props> = ({
       </Typography>
 
       <Box display="inline-flex" flexDirection="column" alignItems="flex-start">
-        <Box display="inline-flex" alignItems="center" gap={0.2}>
+        <Box display="inline-flex" alignItems="center" gap={0.2} ml={1}>
           <Tooltip
             title={tooltipContent(
               resource,
@@ -197,7 +199,7 @@ export const DECInfo: React.FC<Props> = ({
           </Typography>
         </Box>
 
-        {resource !== "AURA" && (
+        {resource !== "AURA" && includeFee && (
           <Typography variant="caption" color="gray" fontSize="0.625rem">
             (incl. hub fee)
           </Typography>
