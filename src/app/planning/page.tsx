@@ -29,7 +29,7 @@ const emptyPlan: ResourceWithDEC = {
   sellPriceDEC: 0,
 };
 
-export default function RegionOverviewPage() {
+export default function PlanningPage() {
   const { setTitle } = usePageTitle();
   const { cardDetails, loading, error } = useCardDetails();
   const { prices, loading: loadingPrices, error: errorPrices } = usePrices();
@@ -116,7 +116,7 @@ export default function RegionOverviewPage() {
   // Data ready
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 8 } }}>
-      <Stack spacing={3}>
+      <Stack spacing={3} mt={2}>
         {/* Top: Result, full width */}
         <SimulationResult items={plans} />
 

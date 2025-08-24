@@ -6,7 +6,7 @@ import React from "react";
 type GlowingTabProps = TabProps & { compact?: boolean };
 
 const StyledTab = styled((props: GlowingTabProps) => <Tab {...props} />)(
-  ({ theme, compact = false }) => ({
+  ({ theme, compact = "false" }) => ({
     position: "relative",
     transition: "all 0.2s ease-in-out",
     // Base (desktop/normal)

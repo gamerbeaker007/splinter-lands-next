@@ -10,11 +10,11 @@ import {
   Typography,
 } from "@mui/material";
 
-import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
-import { SplCardDetails } from "@/types/splCardDetails";
-import { useEffect } from "react";
-import Planner from "./planner/Planner";
 import { Prices } from "@/types/price";
+import { ProductionInfo } from "@/types/productionInfo";
+import { SplCardDetails } from "@/types/splCardDetails";
+import Planner from "./planner/Planner";
+import { useCallback } from "react";
 
 export type Props = {
   index: number;
@@ -25,7 +25,6 @@ export type Props = {
   deletable?: boolean;
 };
 
-// super simple placeholder: emits a stable ProductionInfo once on mount
 export function DeedPlanning({
   index,
   cardDetails,
@@ -34,21 +33,10 @@ export function DeedPlanning({
   onDelete,
   deletable,
 }: Props) {
-  useEffect(() => {
-    const sampleProduce: ResourceWithDEC = {
-      resource: "GRAIN",
-      amount: 0,
-      buyPriceDEC: 0,
-      sellPriceDEC: 0,
-    };
-
-    const sample: ProductionInfo = {
-      consume: [],
-      produce: sampleProduce,
-      netDEC: 0,
-    };
-    onChange(index, sample);
-  }, [index, onChange]);
+  const emitPlanChange = useCallback(
+    (info: ProductionInfo) => onChange(index, info),
+    [index, onChange],
+  );
 
   return (
     <Card
@@ -57,7 +45,7 @@ export function DeedPlanning({
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        borderRadius: 2, // rounded corners
+        borderRadius: 2,
         position: "relative",
       }}
     >
@@ -84,7 +72,11 @@ export function DeedPlanning({
             Deed Planning #{index + 1}
           </Typography>
           <Divider />
-          <Planner cardDetails={cardDetails} prices={prices} />
+          <Planner
+            cardDetails={cardDetails}
+            prices={prices}
+            onPlanChange={emitPlanChange}
+          />
         </Stack>
       </CardContent>
     </Card>

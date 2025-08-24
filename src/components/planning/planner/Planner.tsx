@@ -21,7 +21,7 @@ import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   calcProductionInfo,
   calcTotalPP,
@@ -36,6 +36,7 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
+import { ProductionInfo } from "@/types/productionInfo";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -48,9 +49,10 @@ const DEFAULTS = {
 export type Props = {
   cardDetails: SplCardDetails[];
   prices: Prices;
+  onPlanChange: (info: ProductionInfo) => void;
 };
 
-export default function Planner({ cardDetails, prices }: Props) {
+export default function Planner({ cardDetails, prices, onPlanChange }: Props) {
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -85,6 +87,20 @@ export default function Planner({ cardDetails, prices }: Props) {
       ),
     [plot.magicType, plot.deedType, plot.plotStatus, plot.plotRarity],
   );
+
+  const { totalBasePP, totalBoostedPP } = useMemo(
+    () => calcTotalPP(slots, plot),
+    [slots, plot],
+  );
+
+  const productionInfo = useMemo(
+    () => calcProductionInfo(totalBasePP, totalBoostedPP, plot, prices),
+    [totalBasePP, totalBoostedPP, plot, prices],
+  );
+
+  useEffect(() => {
+    if (onPlanChange) onPlanChange(productionInfo);
+  }, [onPlanChange, productionInfo]);
 
   const updatePlot = (patch: Partial<PlotModifiers>) =>
     setPlot((prev) => ({ ...prev, ...patch }));
@@ -292,14 +308,6 @@ export default function Planner({ cardDetails, prices }: Props) {
 
   const updateSlot = (i: number, next: SlotInput) =>
     setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
-
-  const { totalBasePP, totalBoostedPP } = calcTotalPP(slots, plot);
-  const productionInfo = calcProductionInfo(
-    totalBasePP,
-    totalBoostedPP,
-    plot,
-    prices,
-  );
 
   return (
     <Stack spacing={2}>
