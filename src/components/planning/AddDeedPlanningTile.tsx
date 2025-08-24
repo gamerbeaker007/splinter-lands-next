@@ -13,12 +13,25 @@ export function AddDeedPlanningTile({ onAdd }: AddDeedTileProps) {
     <Card
       variant="outlined"
       sx={{
-        borderRadius: 2, // rounded corners
-        opacity: 0.8, // requested opacity
+        width: 960, // Note this is matching with deed planner box
+        height: 690, // Height is match manually
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        border: "4px dashed",
+        borderColor: "divider",
+        borderRadius: 2,
+        backgroundColor: "background.default",
+        opacity: 0.85,
+        cursor: "pointer",
+        "&:hover": {
+          borderColor: "primary.main",
+          opacity: 1,
+        },
       }}
+      onClick={onAdd}
     >
       <CardActionArea
-        onClick={onAdd}
         sx={{
           height: "100%",
           display: "flex",
@@ -26,15 +39,8 @@ export function AddDeedPlanningTile({ onAdd }: AddDeedTileProps) {
           justifyContent: "center",
         }}
       >
-        <Box
-          sx={{
-            display: "grid",
-            placeItems: "center",
-            width: "100%",
-            height: "100%",
-          }}
-        >
-          <AddIcon sx={{ fontSize: 64 }} />
+        <Box sx={{ display: "grid", placeItems: "center" }}>
+          <AddIcon sx={{ fontSize: 72, color: "text.secondary" }} />
         </Box>
       </CardActionArea>
     </Card>

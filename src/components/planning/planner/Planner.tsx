@@ -315,7 +315,7 @@ export default function Planner({ cardDetails, prices }: Props) {
       <Box
         aria-label="Deed preview"
         sx={{
-          width: 960,
+          width: 960, // Note this matching with the add deed planning button
           height: 510,
           border: "1px solid",
           borderColor: "divider",
@@ -383,10 +383,9 @@ export default function Planner({ cardDetails, prices }: Props) {
         <Box
           sx={{
             position: "absolute",
-            left: 12,
-            bottom: 12,
+            left: 80,
+            bottom: 1,
             px: 1,
-            py: 0.5,
             bgcolor: "rgba(0,0,0,0.5)",
             borderRadius: 1,
           }}
