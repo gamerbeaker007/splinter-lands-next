@@ -1,11 +1,11 @@
 "use client";
 import { land_default_off_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import {
-  DEED_BLOCKED,
   DeedType,
   deedTypeOptions,
   MagicType,
   PlotStatus,
+  TERRAIN_ALLOWED,
 } from "@/types/planner";
 import {
   Box,
@@ -40,7 +40,7 @@ export function DeedTypeSelector({
   const disabledDeed = (d: DeedType) =>
     plotStatus === "magical" &&
     magicType !== "" &&
-    (DEED_BLOCKED[magicType]?.includes(d) ?? false);
+    !(TERRAIN_ALLOWED[d]?.includes(magicType) ?? false);
 
   const renderIcon = (tier: DeedType, size = 24) => {
     const icon = land_default_off_icon_url_placeholder.replace(

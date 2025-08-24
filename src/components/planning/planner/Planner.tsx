@@ -4,7 +4,6 @@ import { DeedComplete } from "@/types/deed";
 import {
   cardElementColorMap,
   cardRarityOptions,
-  DEED_BLOCKED,
   DeedType,
   deedTypeOptions,
   MagicType,
@@ -13,6 +12,7 @@ import {
   PlotStatus,
   RuniTier,
   SlotInput,
+  TERRAIN_ALLOWED,
   TitleTier,
   TotemTier,
   WorksiteType,
@@ -29,13 +29,13 @@ import {
 } from "../utils/calc";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
+import { DECOutput } from "./output/DECOutput";
 import { PPOutput } from "./output/PPOutput";
 import { ResourceOutput } from "./output/ResourceOutput";
 import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
-import { DECOutput } from "./output/DECOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -140,16 +140,26 @@ export default function Planner({ cardDetails, prices }: Props) {
     if (next === "magical") updatePlot({ magicType: "fire" });
   };
 
+  function checkMagicCompatibility(next: MagicType) {
+    if (plot.plotStatus !== "magical" || !next) return;
+
+    // Is the current terrain allowed for the selected magic?
+    const isAllowed = TERRAIN_ALLOWED[plot.deedType]?.includes(next) ?? false;
+
+    if (isAllowed) return;
+
+    // Find the first terrain that DOES allow this magic
+    const fallback =
+      deedTypeOptions.find((t) => TERRAIN_ALLOWED[t]?.includes(next)) ??
+      plot.deedType; // defensive fallback
+    if (fallback !== plot.deedType) {
+      updatePlot({ deedType: fallback });
+    }
+  }
+
   const onMagicTypeChange = (next: MagicType) => {
     updatePlot({ magicType: next });
-    if (plot.plotStatus === "magical") {
-      // Update Geography is its a impossible combination
-      const blocked = DEED_BLOCKED[next] ?? [];
-      if (blocked.includes(plot.deedType)) {
-        const fallback = deedTypeOptions.find((d) => !blocked.includes(d));
-        if (fallback) updatePlot({ deedType: fallback });
-      }
-    }
+    checkMagicCompatibility(next);
   };
 
   const onDeedTypeChange = (next: DeedType) => updatePlot({ deedType: next });

@@ -44,41 +44,22 @@ export const deedTypeOptions = [
 ];
 export type DeedType = (typeof deedTypeOptions)[number];
 
-export const DEED_BLOCKED: Record<MagicType, readonly DeedType[]> = {
-  fire: ["bog", "hills", "lake", "river", "swamp", "tundra"],
-  water: [
-    "caldera",
-    "canyon",
-    "desert",
-    "forest",
-    "hills",
-    "jungle",
-    "mountain",
-    "plains",
-  ],
-  life: ["badlands", "bog", "canyon", "desert", "swamp"],
-  death: [
-    "caldera",
-    "forest",
-    "hills",
-    "jungle",
-    "lake",
-    "plains",
-    "river",
-    "tundra",
-  ],
-  earth: ["badlands", "bog", "caldera", "canyon", "mountain", "plains"],
-  dragon: [
-    "badlands",
-    "desert",
-    "forest",
-    "jungle",
-    "lake",
-    "mountain",
-    "river",
-    "swamp",
-    "tundra",
-  ],
+//source: https://discord.com/channels/447924793048825866/1248769576586580070/1408441757217329345
+export const TERRAIN_ALLOWED: Record<string, string[]> = {
+  badlands: ["death", "fire", "water"],
+  bog: ["water", "death", "dragon"],
+  caldera: ["dragon", "fire", "life"],
+  canyon: ["fire", "dragon", "death"],
+  desert: ["death", "fire", "earth"],
+  forest: ["earth", "life", "fire"],
+  hills: ["dragon", "life", "earth"],
+  jungle: ["life", "earth", "fire"],
+  lake: ["water", "earth", "life"],
+  mountain: ["fire", "death", "life"],
+  plains: ["life", "dragon", "fire"],
+  river: ["earth", "water", "life"],
+  swamp: ["death", "water", "earth"],
+  tundra: ["water", "earth", "life"],
 };
 
 export const cardElementOptions = [
