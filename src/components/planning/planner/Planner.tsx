@@ -49,10 +49,16 @@ const DEFAULTS = {
 export type Props = {
   cardDetails: SplCardDetails[];
   prices: Prices;
+  spsRatio: number;
   onPlanChange: (info: ProductionInfo) => void;
 };
 
-export default function Planner({ cardDetails, prices, onPlanChange }: Props) {
+export default function Planner({
+  cardDetails,
+  prices,
+  spsRatio,
+  onPlanChange,
+}: Props) {
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -94,8 +100,9 @@ export default function Planner({ cardDetails, prices, onPlanChange }: Props) {
   );
 
   const productionInfo = useMemo(
-    () => calcProductionInfo(totalBasePP, totalBoostedPP, plot, prices),
-    [totalBasePP, totalBoostedPP, plot, prices],
+    () =>
+      calcProductionInfo(totalBasePP, totalBoostedPP, plot, prices, spsRatio),
+    [totalBasePP, totalBoostedPP, plot, prices, spsRatio],
   );
 
   useEffect(() => {

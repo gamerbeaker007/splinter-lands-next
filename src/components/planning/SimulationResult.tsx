@@ -5,6 +5,7 @@ import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography, useTheme } from "@mui/material";
 import Image from "next/image";
+import SPSWarning from "./planner/output/SPSWarning";
 
 type ResultProps = { items: ProductionInfo[] };
 
@@ -95,6 +96,7 @@ export function SimulationResult({ items }: ResultProps) {
                 height={25}
                 style={{ display: "block" }}
               />
+              {res === "SPS" && <SPSWarning />}
             </Box>
           ))}
         </Box>

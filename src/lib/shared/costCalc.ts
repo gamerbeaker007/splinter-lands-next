@@ -96,13 +96,21 @@ export function calcConsumeCosts(
   return [];
 }
 
-export function calcProduceCosts(
+export function calcProduction(
   resource: Resource,
   total_harvest_pp: number,
   prices: Record<string, number>,
   siteEfficiency: number,
+  spsRatio?: number,
 ): ResourceWithDEC {
-  const amount = total_harvest_pp * PRODUCE_RATES[resource] * siteEfficiency;
+  const rate =
+    resource === "SPS"
+      ? Number.isFinite(spsRatio)
+        ? (spsRatio as number)
+        : 0 // use spsRatio for SPS
+      : PRODUCE_RATES[resource]; // static for others
+
+  const amount = total_harvest_pp * rate * siteEfficiency;
   return {
     resource,
     amount,

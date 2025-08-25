@@ -12,7 +12,7 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
-import * as React from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   open: boolean;
@@ -21,11 +21,11 @@ type Props = {
 };
 
 export function ImportDeedDialog({ open, onClose, onImported }: Props) {
-  const [plotId, setPlotId] = React.useState("");
-  const [localError, setLocalError] = React.useState<string | null>(null);
+  const [plotId, setPlotId] = useState("");
+  const [localError, setLocalError] = useState<string | null>(null);
   const { loading, error: fetchError, fetchPlot, reset } = useFetchPlot();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!open) {
       setPlotId("");
       setLocalError(null);

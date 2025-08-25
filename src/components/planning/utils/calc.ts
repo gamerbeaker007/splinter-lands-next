@@ -1,4 +1,4 @@
-import { calcConsumeCosts, calcProduceCosts } from "@/lib/shared/costCalc";
+import { calcConsumeCosts, calcProduction } from "@/lib/shared/costCalc";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
@@ -111,10 +111,11 @@ export function calcProductionInfo(
   totalBoostedPP: number,
   plotModifiers: PlotModifiers,
   prices: Prices,
+  spsRatio: number,
 ): ProductionInfo {
   const resource = resourceWorksiteMap[plotModifiers.worksiteType];
   const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
-  const produce = calcProduceCosts(resource, totalBoostedPP, prices, 1);
+  const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
 
   const totalDECConsume = consume.reduce(
     (sum, row) => sum + Number(row.sellPriceDEC || 0),

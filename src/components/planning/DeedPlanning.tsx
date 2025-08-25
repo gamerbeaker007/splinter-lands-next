@@ -20,6 +20,7 @@ export type Props = {
   index: number;
   cardDetails: SplCardDetails[];
   prices: Prices;
+  spsRatio: number;
   onChange: (index: number, info: ProductionInfo) => void;
   onDelete?: (index: number) => void;
   deletable?: boolean;
@@ -29,6 +30,7 @@ export function DeedPlanning({
   index,
   cardDetails,
   prices,
+  spsRatio,
   onChange,
   onDelete,
   deletable,
@@ -75,6 +77,7 @@ export function DeedPlanning({
           <Planner
             cardDetails={cardDetails}
             prices={prices}
+            spsRatio={spsRatio}
             onPlanChange={emitPlanChange}
           />
         </Stack>

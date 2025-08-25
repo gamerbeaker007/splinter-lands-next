@@ -3,6 +3,7 @@ import { AddDeedPlanningTile } from "@/components/planning/AddDeedPlanningTile";
 import { DeedPlanning } from "@/components/planning/DeedPlanning";
 import { SimulationResult } from "@/components/planning/SimulationResult";
 import { useCardDetails } from "@/hooks/useCardDetails";
+import { useFetchSPSRatio } from "@/hooks/useFetchSPSRatio";
 import { usePrices } from "@/hooks/usePrices";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
@@ -33,6 +34,11 @@ export default function PlanningPage() {
   const { setTitle } = usePageTitle();
   const { cardDetails, loading, error } = useCardDetails();
   const { prices, loading: loadingPrices, error: errorPrices } = usePrices();
+  const {
+    spsRatio,
+    loading: loadingSPSRatio,
+    error: errorSPSRatio,
+  } = useFetchSPSRatio();
 
   useEffect(() => {
     setTitle("Land Planning");
@@ -81,8 +87,7 @@ export default function PlanningPage() {
   };
   // -----------------------------------
 
-  // Loading state
-  if (loading || loadingPrices) {
+  if (loading || loadingPrices || loadingSPSRatio) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack
@@ -93,27 +98,25 @@ export default function PlanningPage() {
         >
           <CircularProgress />
           <Typography variant="body2" color="text.secondary">
-            Loading card details…
+            Loading data (card details/ prices / sps ratio)…
           </Typography>
         </Stack>
       </Container>
     );
   }
 
-  // Error state
-  if (error || errorPrices) {
+  if (error || errorPrices || errorSPSRatio) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack spacing={3}>
           <Alert severity="error">
-            Failed to load card details or prices: {String(error)}
+            Failed to load card details or prices or sps ratio: {String(error)}
           </Alert>
         </Stack>
       </Container>
     );
   }
 
-  // Data ready
   return (
     <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 8 } }}>
       <Stack spacing={3} mt={2}>
@@ -144,7 +147,7 @@ export default function PlanningPage() {
         )}
 
         {/* Bottom: DeedPlanning tiles + Add tile */}
-        {prices && cardDetails && (
+        {prices && cardDetails && spsRatio && (
           <Box display="flex" flexWrap="wrap" gap={1}>
             {plans.map((_, idx) => (
               <Box
@@ -163,6 +166,7 @@ export default function PlanningPage() {
                   index={idx}
                   cardDetails={cardDetails}
                   prices={prices}
+                  spsRatio={spsRatio}
                   onChange={handlePlanChange}
                   onDelete={deletePlan}
                   deletable={idx !== 0}
