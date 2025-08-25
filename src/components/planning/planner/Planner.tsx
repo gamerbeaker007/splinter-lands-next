@@ -355,13 +355,13 @@ export default function Planner({
         <TotemSelector
           value={plot.totem as TotemTier}
           onChange={onTotemChange}
-          pos={{ x: "80px", y: "30px" }}
+          pos={{ x: "20px", y: "30px" }}
         />
 
         <TitleSelector
           value={plot.title as TitleTier}
           onChange={onTitleChange}
-          pos={{ x: "230px", y: "30px" }}
+          pos={{ x: "170px", y: "30px" }}
         />
 
         <RuniSelector
@@ -369,13 +369,13 @@ export default function Planner({
           plotModifiers={plot}
           runiImgUrl={runiImgUrl}
           onChange={onRuniChange}
-          pos={{ x: "360px", y: "30px" }}
+          pos={{ x: "300px", y: "30px" }}
         />
 
         <WorksiteSelector
           value={plot.worksiteType}
           onChange={onWorksiteChange}
-          pos={{ x: "80px", y: "90px" }}
+          pos={{ x: "20px", y: "90px" }}
         />
 
         {slots.map((slot, i) => (
@@ -385,7 +385,7 @@ export default function Planner({
             value={slot}
             plot={plot}
             onChange={(next) => updateSlot(i, next)}
-            pos={{ x: "80px", y: `${180 + 60 * i}px`, w: "655px" }}
+            pos={{ x: "20px", y: `${180 + 60 * i}px`, w: "695px" }}
           />
         ))}
 

@@ -68,9 +68,12 @@ export function SetSelector({ value, onChange }: Props) {
           renderValue={(val) => {
             const v = (val as CardSetName) ?? value;
             return (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                minWidth={60}
+              >
                 {renderIcon(v)}
-                <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                <Typography fontSize={14} fontWeight={600}>
                   {cardSetModifiers[v]}x
                 </Typography>
               </Box>

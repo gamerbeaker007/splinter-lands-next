@@ -50,7 +50,15 @@ export default function SlotEditor({
       }}
     >
       <Box display={"flex"} flexDirection={"row"} gap={1}>
-        <Typography variant="subtitle1">{index + 1}</Typography>
+        <Box
+          width={100}
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+          textAlign="center"
+        >
+          <Typography variant="subtitle1">{index + 1}</Typography>
+        </Box>
         <SetSelector value={value.set} onChange={onSelect("set")} />
         <CardRaritySelector
           value={value.rarity}

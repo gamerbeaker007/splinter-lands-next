@@ -1,5 +1,5 @@
 "use client";
-import { CardFoil, cardFoilOptions } from "@/types/planner";
+import { CardFoil, cardFoilModifiers, cardFoilOptions } from "@/types/planner";
 import { TbCardsFilled } from "react-icons/tb";
 
 import {
@@ -86,6 +86,9 @@ export function CardFoilSelector({ value, onChange }: Props) {
     );
   }
 
+  const hasMultiplier = value != "regular" && value != "gold";
+  const multiplier = cardFoilModifiers[value];
+
   return (
     <Box borderRadius={1}>
       <FormControl size="small" variant="outlined">
@@ -97,8 +100,14 @@ export function CardFoilSelector({ value, onChange }: Props) {
           renderValue={(val) => {
             const v = (val as CardFoil) ?? value;
             return (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                {renderIcon(v)}
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                minWidth={50}
+              >
+                {renderIcon(v)}{" "}
+                <Typography fontSize={14} fontWeight={600}>
+                  {hasMultiplier && `${multiplier}x`}
+                </Typography>
               </Box>
             );
           }}
@@ -123,7 +132,7 @@ export function CardFoilSelector({ value, onChange }: Props) {
                 }}
               >
                 <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {capitalize(foil)}
+                  {capitalize(foil)} ({cardFoilModifiers[foil]}x)
                 </Typography>
               </Box>
             </MenuItem>
