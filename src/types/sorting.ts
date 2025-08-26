@@ -3,7 +3,7 @@ export type SortOptionKey =
   | "regionNumber"
   | "tractNumber"
   | "plotNumber"
-  | "rawPP"
+  | "basePP"
   | "boostedPP"
   | "percentComplete"
   | "netDEC";
@@ -25,12 +25,12 @@ export const defaultSortOptions: SortOption[] = [
   { key: "tractNumber", label: "Tract Number" },
   { key: "plotNumber", label: "Plot Number" },
   {
-    key: "rawPP",
-    label: "RAW PP",
+    key: "basePP",
+    label: "Base PP",
   },
   {
     key: "boostedPP",
-    label: "BOOSTED PP",
+    label: "Boosted PP",
   },
   {
     key: "percentComplete",

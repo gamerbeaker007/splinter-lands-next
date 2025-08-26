@@ -53,10 +53,10 @@ export async function POST(req: Request) {
       }
 
       if (!result.perResource[resource][groupKey]) {
-        result.perResource[resource][groupKey] = { rawPP: 0, boostedPP: 0 };
+        result.perResource[resource][groupKey] = { basePP: 0, boostedPP: 0 };
       }
 
-      result.perResource[resource][groupKey].rawPP += basePP;
+      result.perResource[resource][groupKey].basePP += basePP;
       result.perResource[resource][groupKey].boostedPP += harvestPP;
     }
 

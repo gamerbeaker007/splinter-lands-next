@@ -30,7 +30,7 @@ export async function POST(req: Request) {
         result[resource] = {
           totalActiveDeeds: 0,
           activeEmpty: 0,
-          productionPoints: { rawPP: 0, boostedPP: 0 },
+          productionPoints: { basePP: 0, boostedPP: 0 },
           totalConstruction: 0,
         };
       }
@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       if (isActive) result[resource].totalActiveDeeds++;
       if (isActiveButEmpty) result[resource].activeEmpty++;
       if (isConstruction) result[resource].totalConstruction++;
-      result[resource].productionPoints.rawPP += basePP;
+      result[resource].productionPoints.basePP += basePP;
       result[resource].productionPoints.boostedPP += harvestPP;
     }
 

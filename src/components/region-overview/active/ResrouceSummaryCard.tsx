@@ -95,7 +95,7 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Raw PP: {formatNumberWithSuffix(summary.productionPoints.rawPP)}
+            Base PP: {formatNumberWithSuffix(summary.productionPoints.basePP)}
           </Typography>
         </Box>
       </CardContent>

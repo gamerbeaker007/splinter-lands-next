@@ -3,7 +3,7 @@
 import Box from "@mui/material/Box";
 import { useMediaQuery, useTheme } from "@mui/material";
 import { RegionPP } from "@/types/regionProductionSummary";
-import RawVsBoostedPPChart from "@/components/region-overview/production/RawVsBoostedPPChart";
+import BaseVsBoostedPPChart from "@/components/region-overview/production/RawVsBoostedPPChart";
 import ResourcePPChart from "@/components/region-overview/production/ResourcePPChart";
 import TopRegionsByResourceChart from "@/components/region-overview/production/TopRegionsByResourceChart";
 
@@ -23,7 +23,7 @@ export function ProductionOverviewPage({ data }: Props) {
         gap={1}
       >
         <Box flex={1} maxWidth={"250px"}>
-          <RawVsBoostedPPChart data={data} />
+          <BaseVsBoostedPPChart data={data} />
         </Box>
         <Box flex={1}>
           <ResourcePPChart data={data.perResource} />

@@ -23,7 +23,7 @@ export default function LCEPage({ currentPlayer, playerSummaryData }: Props) {
         }}
       >
         Land Card Efficiency (LCE ratio) = log10(DEC earned per hour / Total PP
-        Employed (RAW PP))
+        Employed (Base PP))
         {"\n"}
         Land Card Efficiency (LCE ratio) = log10(DEC earned per hour / Total PP
         Employed (Boosted PP))
@@ -37,7 +37,7 @@ export default function LCEPage({ currentPlayer, playerSummaryData }: Props) {
         yColumn="LCE_base_rank"
         hoverLabel="LCE Score"
         title="LCE Score vs Rank"
-        xAxisTitle="RAW Score"
+        xAxisTitle="Base Score"
         yAxisTitle="Rank"
       />
       <RatioRankPlot
@@ -47,7 +47,7 @@ export default function LCEPage({ currentPlayer, playerSummaryData }: Props) {
         yColumn="LCE_boosted_rank"
         hoverLabel="LCE Score"
         title="LCE Score vs Rank"
-        xAxisTitle="BOOSTED Score"
+        xAxisTitle="Boosted Score"
         yAxisTitle="Rank"
       />
     </Box>
