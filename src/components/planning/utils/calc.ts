@@ -103,6 +103,7 @@ export function calcTotalPP(slots: SlotInput[], plot: PlotModifiers) {
   const boostedPP = calcBoostedPP(basePP, plot, 0);
   const totalBasePP = sumBasePP + basePP;
   const totalBoostedPP = sumBoostedPP + boostedPP;
+
   return { totalBasePP, totalBoostedPP };
 }
 
@@ -113,7 +114,7 @@ export function calcProductionInfo(
   prices: Prices,
   spsRatio: number,
 ): ProductionInfo {
-  const resource = resourceWorksiteMap[plotModifiers.worksiteType];
+  const resource = resourceWorksiteMap[plotModifiers.worksiteType ?? "GRAIN"];
   const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
   const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
 

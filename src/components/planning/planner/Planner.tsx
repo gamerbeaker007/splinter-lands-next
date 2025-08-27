@@ -260,7 +260,7 @@ export default function Planner({
     const importedRarity = deed.rarity ?? "common";
     const importedDeedType = deed.deed_type?.toLowerCase() ?? "bog";
     const importedMagic = deed.magic_type ?? "fire";
-    const importedWorksite = deed.worksite_type ?? "Grain Farm";
+    const importedWorksite = deed.worksite_type?.trim() || "Grain Farm"; // fallback to grain farm when empty
     const importedTotem = findTotem(deed);
     const importedTitle = findTitle(deed);
     const importedRuni = findRuni(deed);

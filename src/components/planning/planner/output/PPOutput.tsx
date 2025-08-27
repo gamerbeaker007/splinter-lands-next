@@ -3,6 +3,7 @@ import { CSSSize } from "@/types/cssSize";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
+import PPWarning from "./PPWarning";
 
 type Props = {
   totalBasePP: number;
@@ -39,7 +40,7 @@ export const PPOutput: React.FC<Props> = ({
           color={"white"}
           mb={0.5}
         >
-          Production:
+          Production: {totalBasePP > 100_000 && <PPWarning />}
         </Typography>
 
         {/* Base PP */}

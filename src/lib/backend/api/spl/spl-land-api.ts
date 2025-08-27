@@ -7,6 +7,7 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
+import { NotFoundError } from "../../error";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -120,8 +121,7 @@ export async function fetchDeedUid(plotId: number) {
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;
-
-  if (!data) throw new Error("Invalid response from Splinterlands API");
+  if (!data) throw new NotFoundError(`Plot ${plotId} not found`);
 
   return data as DeedComplete;
 }
