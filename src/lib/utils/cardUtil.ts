@@ -159,6 +159,5 @@ export function determineBcxCap(
   actualBcx: number,
 ) {
   const maxBCX = determineCardMaxBCX(set, rarity as Rarity, foilId);
-  console.log("determineBcxCap Max: ", maxBCX, "Actual: ", actualBcx);
   return Math.min(actualBcx, maxBCX);
 }
