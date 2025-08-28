@@ -27,7 +27,10 @@ export const resource_fortune_ticket_icon_url = `${WEB_URL}website/icons/img_for
 export const resource_midnight_potion_icon_url = `${WEB_URL}website/icons/img_midnight-potion_400.png`;
 export const resource_wagon_kit_icon_url = `${WEB_URL}website/icons/img_wagon-kit_400.webp`;
 
-export const land_default_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
+export const land_default_off_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
+export const land_default_on_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__On.svg`;
+export const land_default_element_icon_url_placeholder = `${WEB_URL}website/collection/icon_element___NAME__.svg`;
+
 export const land_mythic_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/legendaryOff.svg`;
 export const land_unsurveyd_deed_icon_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23wC7viFdG9aaUG2ExWbVuUA3aXqt5W273W2Fa3NEGsWHsHHEw3JLbTX1o7pFQsCgh7qV.svg";
@@ -39,10 +42,14 @@ export const land_title_legendary_icon_url = `${WEB_URL}website/icons/icon_activ
 export const land_runi_boost_icon_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/AJiyscF5BsZYHGkTSYAPvbcZjoP1UpBSwuoCD3E9mcrPuAafRgPxNtaq32sETQE.png";
 
-export const land_common_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_1_common_300.png`;
-export const land_rare_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_2_rare_300.png`;
-export const land_epic_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_3_epic_300.png`;
-export const land_legendary_totem_icon_url_placeholder = `${WEB_URL}website/icons/icon_totem_4_legendary_300.png`;
+export const land_runi_regular_icon_url = `${WEB_URL}cards_v2.2/Runi.jpg`;
+export const land_runi_gold_icon_url = `${WEB_URL}cards_v2.2/Runi_gold.jpg`;
+export const land_runi_power_core_icon_url = `${WEB_URL}website/ui_elements/lands/consumable/power_core.png`;
+
+export const land_common_totem_icon_url = `${WEB_URL}website/icons/icon_totem_1_common_300.png`;
+export const land_rare_totem_icon_url = `${WEB_URL}website/icons/icon_totem_2_rare_300.png`;
+export const land_epic_totem_icon_url = `${WEB_URL}website/icons/icon_totem_3_epic_300.png`;
+export const land_legendary_totem_icon_url = `${WEB_URL}website/icons/icon_totem_4_legendary_300.png`;
 
 export const land_region_icon_url = `${WEB_URL}website/icons/icon_claim_region.svg`;
 export const land_tract_icon_url = `${WEB_URL}website/icons/icon_claim_tract.svg`;
@@ -84,3 +91,15 @@ export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
 
 export const alert_gif_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23vsb3F8eJic8GixxxZEDupcjbm63GJEg6JRSn9QroYcV3hdEsjPqCp4VuoxvfDC6SfpW.gif";
+
+export const edition_apha_icon_url = `${WEB_URL}website/icons/icon-edition-alpha.svg`;
+export const edition_beta_icon_url = `${WEB_URL}website/icons/icon-edition-beta.svg`;
+export const edition_untamed_icon_url = `${WEB_URL}website/icons/icon-edition-untamed.svg`;
+export const edition_chaos_icon_url = `${WEB_URL}website/icons/icon-edition-chaos.svg`;
+export const edition_rebellion_icon_url = `${WEB_URL}website/icons/icon-edition-rebellion.svg`;
+export const edition_conclave_icon_url = `${WEB_URL}website/icons/icon-edition-conclave-arcana.svg`;
+
+export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_rarity_common_new.svg`;
+export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;
+export const card_rarity_epic_icon_url = `${WEB_URL}website/create_team/icon_rarity_epic_new.svg`;
+export const card_rarity_legendary_icon_url = `${WEB_URL}website/create_team/icon_rarity_legendary_new.svg`;

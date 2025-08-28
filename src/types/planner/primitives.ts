@@ -1,0 +1,241 @@
+import { Resource } from "@/constants/resource/resource";
+import { PlotModifiers } from "./domain";
+
+export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
+export const plotRarityModifiers: Record<PlotRarity, number> = {
+  common: 0,
+  rare: 0.1,
+  epic: 0.4,
+  legendary: 1,
+};
+export type PlotRarity = (typeof plotRarityOptions)[number];
+
+export const cardRarityOptions = ["common", "rare", "epic", "legendary"];
+export type CardRarity = (typeof cardRarityOptions)[number];
+
+export const plotStatusOptions = ["natural", "magical", "occupied"];
+export type PlotStatus = (typeof plotStatusOptions)[number];
+
+export const magicTypeOptions = [
+  "fire",
+  "water",
+  "life",
+  "death",
+  "earth",
+  "dragon",
+];
+export type MagicType = (typeof magicTypeOptions)[number];
+
+export const deedTypeOptions = [
+  "badlands",
+  "bog",
+  "caldera",
+  "canyon",
+  "desert",
+  "forest",
+  "hills",
+  "jungle",
+  "lake",
+  "mountain",
+  "plains",
+  "river",
+  "swamp",
+  "tundra",
+];
+export type DeedType = (typeof deedTypeOptions)[number];
+
+//source: https://discord.com/channels/447924793048825866/1248769576586580070/1408441757217329345
+export const TERRAIN_ALLOWED: Record<string, string[]> = {
+  badlands: ["death", "fire", "water"],
+  bog: ["water", "death", "dragon"],
+  caldera: ["dragon", "fire", "life"],
+  canyon: ["fire", "dragon", "death"],
+  desert: ["death", "fire", "earth"],
+  forest: ["earth", "life", "fire"],
+  hills: ["dragon", "life", "earth"],
+  jungle: ["life", "earth", "fire"],
+  lake: ["water", "earth", "life"],
+  mountain: ["fire", "death", "life"],
+  plains: ["life", "dragon", "fire"],
+  river: ["earth", "water", "life"],
+  swamp: ["death", "water", "earth"],
+  tundra: ["water", "earth", "life"],
+};
+
+export const cardElementOptions = [
+  "fire",
+  "water",
+  "life",
+  "death",
+  "earth",
+  "dragon",
+  "neutral",
+];
+
+export const cardElementColorMap: Record<string, CardElement> = {
+  red: "fire",
+  blue: "water",
+  white: "life",
+  black: "death",
+  green: "earth",
+  gold: "dragon",
+  gray: "neutral",
+};
+
+export type CardElement = (typeof cardElementOptions)[number];
+
+export const titleOptions = ["none", "rare", "epic", "legendary"];
+export const titleModifiers: Record<TitleTier, number> = {
+  none: 0,
+  rare: 0.1,
+  epic: 0.25,
+  legendary: 0.5,
+};
+export type TitleTier = (typeof titleOptions)[number];
+
+export const totemOptions = ["none", "common", "rare", "epic", "legendary"];
+export const totemModifiers: Record<TotemTier, number> = {
+  none: 0,
+  common: 0.1,
+  rare: 0.25,
+  epic: 0.5,
+  legendary: 1,
+};
+export type TotemTier = (typeof totemOptions)[number];
+
+export const runiOptions = ["none", "regular", "gold"];
+export const runiModifiers: Record<RuniTier, number> = {
+  none: 0,
+  regular: 1,
+  gold: 1,
+};
+export type RuniTier = (typeof runiOptions)[number];
+
+// Runi flat base PP bonus
+export const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
+  none: 0,
+  regular: 1500, // +1.5k base PP
+  gold: 10000, // +10k base PP
+};
+
+export const cardSetOptions = [
+  "alpha",
+  "beta",
+  "untamed",
+  "chaos",
+  "rebellion",
+  "conclave",
+];
+export const cardSetModifiers: Record<CardSetName, number> = {
+  alpha: 10,
+  beta: 5,
+  untamed: 2,
+  chaos: 1,
+  rebellion: 0.5,
+  conclave: 0.5,
+};
+export type CardSetName = (typeof cardRarityOptions)[number];
+
+export const cardFoilOptions = [
+  "regular",
+  "gold",
+  "gold arcane",
+  "black",
+  "black arcane",
+];
+export type CardFoil = (typeof cardFoilOptions)[number];
+
+export const cardFoilModifiers: Record<CardFoil, number> = {
+  regular: 1,
+  gold: 1,
+  "gold arcane": 5,
+  black: 5,
+  "black arcane": 5,
+};
+
+export const basePPMax: Record<CardRarity, Record<CardFoil, number>> = {
+  common: { regular: 1000, gold: 2000 },
+  rare: { regular: 1100, gold: 4000 },
+  epic: { regular: 1250, gold: 6000 },
+  legendary: { regular: 1500, gold: 10000 },
+};
+
+export const TERRAIN_BONUS: Record<
+  DeedType,
+  Partial<Record<CardElement, number>>
+> = {
+  badlands: { fire: 0.1, life: -0.5, death: 0.1, earth: -0.5 },
+  bog: { fire: -0.5, water: 0.1, life: -0.5, death: 0.1 },
+  caldera: { fire: 0.1, death: -0.5, earth: -0.5, dragon: 0.1 },
+  canyon: {
+    fire: 0.1,
+    water: -0.5,
+    life: -0.5,
+    death: 0.1,
+    earth: -0.5,
+    dragon: 0.1,
+  },
+  desert: { fire: 0.1, water: -0.5, life: -0.5, dragon: 0.1 },
+  forest: { life: 0.1, death: -0.5, earth: 0.1, dragon: -0.5 },
+  hills: { water: -0.5, life: 0.1, death: -0.5, dragon: 0.1 },
+  jungle: { life: 0.1, death: -0.5, earth: 0.1, dragon: -0.5 },
+  lake: { fire: -0.5, water: 0.1, earth: 0.1, dragon: -0.5 },
+  mountain: { fire: 0.1, water: -0.5, death: 0.1, earth: -0.5 },
+  plains: { water: -0.5, life: 0.1, earth: -0.5, dragon: 0.1 },
+  river: { fire: -0.5, water: 0.1, earth: 0.1, dragon: -0.5 },
+  swamp: { fire: -0.5, water: 0.1, life: -0.5, death: 0.1 },
+  tundra: {
+    fire: -0.5,
+    water: 0.1,
+    life: 0.1,
+    death: -0.5,
+    earth: 0.1,
+    dragon: -0.5,
+  },
+};
+
+export const TERRAIN_OPTIONS: DeedType[] = Object.keys(
+  TERRAIN_BONUS,
+) as DeedType[];
+
+export const worksiteTypeOptions = [
+  "Grain Farm",
+  "Logging Camp",
+  "Ore Mine",
+  "Quarry",
+  "Research Hut",
+  "Aura Lab",
+  "Shard Mine",
+];
+
+export type WorksiteType = (typeof worksiteTypeOptions)[number];
+
+export const resourceWorksiteMap: Record<
+  WorksiteType,
+  Exclude<Resource, "VOUCHER" | "TAX" | "DEC">
+> = {
+  "Grain Farm": "GRAIN",
+  "Logging Camp": "WOOD",
+  "Ore Mine": "IRON",
+  Quarry: "STONE",
+  "Research Hut": "RESEARCH",
+  "Aura Lab": "AURA",
+  "Shard Mine": "SPS",
+};
+
+export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
+  magical: ["Research Hut", "Aura Lab"],
+  occupied: ["Shard Mine"],
+};
+
+export const resourceOptions = [
+  "grain",
+  "wood",
+  "iron",
+  "stone",
+  "research",
+  "aura",
+  "sps",
+];
+
+export type resource = (typeof resourceOptions)[number];

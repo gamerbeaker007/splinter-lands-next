@@ -13,15 +13,13 @@ import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
+import { PPRangeFilter } from "./PPRangeFilter";
 
 type Props = {
   options: FilterInput;
 };
 
-type BooleanFilterKey =
-  | "filter_developed"
-  | "filter_under_construction"
-  | "filter_has_pp";
+type BooleanFilterKey = "filter_developed" | "filter_under_construction";
 
 export default function AttributeFilter({ options }: Props) {
   const { filters, setFilters } = useFilters();
@@ -30,12 +28,20 @@ export default function AttributeFilter({ options }: Props) {
     setFilters((prev) => {
       const newFilters = { ...prev };
       if (prev[key]) {
-        delete newFilters[key]; // remove filter if unchecked
+        delete newFilters[key];
       } else {
         newFilters[key] = true;
       }
       return newFilters;
     });
+  };
+
+  const updatePP = (min?: number | null, max?: number | null) => {
+    setFilters((prev) => ({
+      ...prev,
+      filter_pp_min: min ?? null,
+      filter_pp_max: max ?? null,
+    }));
   };
 
   return (
@@ -49,12 +55,21 @@ export default function AttributeFilter({ options }: Props) {
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
 
+      {/* New PP min/max */}
+      <Typography variant="subtitle2" sx={{ mt: 2 }}>
+        Base PP
+      </Typography>
+      <PPRangeFilter
+        min={filters.filter_pp_min ?? null}
+        max={filters.filter_pp_max ?? null}
+        onChange={updatePP}
+      />
+
       <FormGroup sx={{ mt: 2 }}>
         {(
           [
             "filter_developed",
             "filter_under_construction",
-            "filter_has_pp",
           ] as BooleanFilterKey[]
         ).map((key) => (
           <FormControlLabel

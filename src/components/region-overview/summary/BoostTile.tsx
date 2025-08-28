@@ -2,11 +2,11 @@
 
 import SummaryTile from "@/components/ui/region/SummaryTile";
 import {
-  land_common_totem_icon_url_placeholder,
-  land_default_icon_url_placeholder,
-  land_epic_totem_icon_url_placeholder,
-  land_legendary_totem_icon_url_placeholder,
-  land_rare_totem_icon_url_placeholder,
+  land_common_totem_icon_url,
+  land_default_off_icon_url_placeholder,
+  land_epic_totem_icon_url,
+  land_legendary_totem_icon_url,
+  land_rare_totem_icon_url,
   land_runi_boost_icon_url,
   land_title_epic_icon_url,
   land_title_legendary_icon_url,
@@ -27,10 +27,10 @@ const boostMetaMapRarity: Record<string, { name: string }> = {
 };
 
 const boostMetaMapTotem: Record<string, { name: string; icon: string }> = {
-  "0.1": { name: "Common", icon: land_common_totem_icon_url_placeholder },
-  "0.25": { name: "Rare", icon: land_rare_totem_icon_url_placeholder },
-  "0.5": { name: "Epic", icon: land_epic_totem_icon_url_placeholder },
-  "1": { name: "Legendary", icon: land_legendary_totem_icon_url_placeholder },
+  "0.1": { name: "Common", icon: land_common_totem_icon_url },
+  "0.25": { name: "Rare", icon: land_rare_totem_icon_url },
+  "0.5": { name: "Epic", icon: land_epic_totem_icon_url },
+  "1": { name: "Legendary", icon: land_legendary_totem_icon_url },
 };
 
 interface BoostProps {
@@ -90,7 +90,7 @@ export default function BoostTile({
             .map(([type, count]) => {
               const meta = boostMetaMapRarity[type];
               if (!meta) return null;
-              const image = land_default_icon_url_placeholder.replace(
+              const image = land_default_off_icon_url_placeholder.replace(
                 "__NAME__",
                 meta.name.toLowerCase(),
               );

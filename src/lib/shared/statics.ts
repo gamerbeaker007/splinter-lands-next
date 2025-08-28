@@ -40,6 +40,15 @@ export const CONSUME_RATES: Record<string, number> = {
   IRON: 0.0005,
 };
 
+export const PRODUCE_RATES: Record<string, number> = {
+  GRAIN: 0.02,
+  WOOD: 0.005,
+  STONE: 0.002,
+  IRON: 0.0005,
+  AURA: 0.0005,
+  RESEARCH: 0.0001,
+};
+
 export const GRAIN_CONVERSION_RATIOS: Record<string, number> = {
   GRAIN: 1,
   WOOD: 4,

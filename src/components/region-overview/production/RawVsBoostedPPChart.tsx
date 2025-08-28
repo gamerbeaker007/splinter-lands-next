@@ -8,7 +8,7 @@ type Props = {
   data: RegionPP;
 };
 
-export default function RawVsBoostedPPChart({ data }: Props) {
+export default function BaseVsBoostedPPChart({ data }: Props) {
   return (
     <>
       <Box
@@ -20,9 +20,9 @@ export default function RawVsBoostedPPChart({ data }: Props) {
         <FullscreenPlotWrapper
           data={[
             {
-              x: ["RAW"],
-              y: [data.totalPP.rawPP],
-              name: "Raw PP",
+              x: ["BASE"],
+              y: [data.totalPP.basePP],
+              name: "Base PP",
               type: "bar",
               marker: { color: "steelblue" },
             },
@@ -35,7 +35,7 @@ export default function RawVsBoostedPPChart({ data }: Props) {
             },
           ]}
           layout={{
-            title: { text: "Raw vs Boosted PP" },
+            title: { text: "Base vs Boosted PP" },
             barmode: "group",
             xaxis: {
               title: { text: "Regions" },

@@ -1,11 +1,13 @@
+import { PlayerTradeHubPosition } from "@/generated/prisma";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
+import { DeedComplete } from "@/types/deed";
+import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
 import axios from "axios";
 import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
-import { PlayerTradeHubPosition } from "@/generated/prisma";
-import { AuraPrices } from "@/types/price";
+import { NotFoundError } from "../../error";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -79,7 +81,7 @@ export async function fetchPlayerLiquidity(player: string) {
   return data;
 }
 
-export async function fetchPlayerStakedAssets(deed_uid: string) {
+export async function fetchStakedAssets(deed_uid: string) {
   const url = `/land/stake/deeds/${deed_uid}/assets`;
   const res = await splLandClient.get(url);
 
@@ -112,6 +114,16 @@ export async function fetchPlayerPoolInfo(
       fees_earned_resource_30: pos.fees_earned_resource_30,
       share_percentage: 0,
     }));
+}
+
+export async function fetchDeedUid(plotId: number) {
+  const url = `/land/deeds/${plotId}`;
+  const res = await splLandClient.get(url);
+
+  const data = res.data?.data;
+  if (!data) throw new NotFoundError(`Plot ${plotId} not found`);
+
+  return data as DeedComplete;
 }
 
 export async function getLandResourcesPools() {

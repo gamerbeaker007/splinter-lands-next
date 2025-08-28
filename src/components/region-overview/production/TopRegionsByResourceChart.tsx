@@ -30,7 +30,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
   }, [resourceTypes, selectedResource]);
 
   let topRegions: string[] = [];
-  let rawValues: number[] = [];
+  let baseValues: number[] = [];
   let boostedValues: number[] = [];
 
   if (selectedResource && data[selectedResource]) {
@@ -39,13 +39,13 @@ export default function TopRegionsByResourceChart({ data }: Props) {
     const regionEntries = Object.entries(perRegion)
       .map(([region, pp]) => ({
         region,
-        raw: pp.rawPP,
+        base: pp.basePP,
         boosted: pp.boostedPP,
       }))
       .sort((a, b) => a.boosted - b.boosted);
 
     topRegions = regionEntries.map((r) => r.region);
-    rawValues = regionEntries.map((r) => r.raw);
+    baseValues = regionEntries.map((r) => r.base);
     boostedValues = regionEntries.map((r) => r.boosted);
   }
 
@@ -70,9 +70,9 @@ export default function TopRegionsByResourceChart({ data }: Props) {
           <FullscreenPlotWrapper
             data={[
               {
-                x: rawValues,
+                x: baseValues,
                 y: topRegions,
-                name: "Raw PP",
+                name: "Base PP",
                 type: "bar",
                 orientation: "h",
                 marker: { color: "steelblue" },

@@ -13,6 +13,24 @@ function isInFilter(
   return false;
 }
 
+function inRange(
+  value: number | null | undefined,
+  min?: number | null,
+  max?: number | null,
+): boolean {
+  // If both min/max are empty => no filtering
+  const hasMin = typeof min === "number";
+  const hasMax = typeof max === "number";
+  if (!hasMin && !hasMax) return true;
+
+  // If we need to filter but the value is missing, exclude
+  if (value == null || Number.isNaN(value)) return false;
+
+  if (hasMin && value < (min as number)) return false;
+  if (hasMax && value > (max as number)) return false;
+  return true;
+}
+
 export function filterDeeds(
   data: DeedComplete[],
   filters: FilterInput,
@@ -42,9 +60,11 @@ export function filterDeeds(
         return false;
     }
 
-    if (filters.filter_has_pp !== undefined) {
-      const isPositive = (deed.stakingDetail?.total_harvest_pp ?? 0) > 0;
-      if (filters.filter_has_pp !== isPositive) return false;
+    const pp = deed.stakingDetail?.total_harvest_pp;
+    if (
+      !inRange(pp, filters.filter_pp_min ?? null, filters.filter_pp_max ?? null)
+    ) {
+      return false;
     }
 
     return true;
@@ -88,7 +108,7 @@ function getSortValue(
       return deed.tract_number!;
     case "plotNumber":
       return deed.plot_number!;
-    case "rawPP":
+    case "basePP":
       return deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     case "boostedPP":
       return deed.stakingDetail?.total_harvest_pp ?? 0;

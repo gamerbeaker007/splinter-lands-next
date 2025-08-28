@@ -15,11 +15,11 @@ export function getDeedImg(
   deedType: string,
   plotStatus: string,
   rarity: string,
-  worksiteType: string,
+  worksiteType?: string,
 ) {
-  if (magicType) {
+  if (plotStatus.toLowerCase() === "magical" && magicType) {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${magicType.toLowerCase()}_${rarity.toLowerCase()}.jpg`;
-  } else if (plotStatus === "kingdom") {
+  } else if (plotStatus.toLowerCase() === "kingdom") {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${worksiteType?.toLowerCase()}.jpg`;
   } else {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${rarity.toLowerCase()}.jpg`;

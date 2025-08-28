@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     const filteredDeeds = filterDeeds(blob, filters);
 
     const result: RegionPP = {
-      totalPP: { rawPP: 0, boostedPP: 0 },
+      totalPP: { basePP: 0, boostedPP: 0 },
       perResource: {},
     };
 
@@ -24,28 +24,28 @@ export async function POST(req: Request) {
       const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
       const harvestPP = deed.stakingDetail?.total_harvest_pp ?? 0;
 
-      result.totalPP.rawPP += basePP;
+      result.totalPP.basePP += basePP;
       result.totalPP.boostedPP += harvestPP;
 
       // initialize bucket if needed
       if (!result.perResource[resource]) {
         result.perResource[resource] = {
-          totalPP: { rawPP: 0, boostedPP: 0 },
+          totalPP: { basePP: 0, boostedPP: 0 },
           perRegion: {},
         };
       }
-      result.perResource[resource].totalPP.rawPP += basePP;
+      result.perResource[resource].totalPP.basePP += basePP;
       result.perResource[resource].totalPP.boostedPP += harvestPP;
 
       // initialize region bucket if needed
       if (!result.perResource[resource].perRegion[region]) {
         result.perResource[resource].perRegion[region] = {
-          rawPP: 0,
+          basePP: 0,
           boostedPP: 0,
         };
       }
 
-      result.perResource[resource].perRegion[region].rawPP += basePP;
+      result.perResource[resource].perRegion[region].basePP += basePP;
       result.perResource[resource].perRegion[region].boostedPP += harvestPP;
     }
 

@@ -15,7 +15,7 @@ export default function ResourcePPChart({ data }: Props) {
   const resourceLabels = Object.keys(data).filter((r) => r !== "");
   const rawTraces: Partial<PlotData>[] = resourceLabels.map(
     (resourceLabel, i) => {
-      const rawPP = data[Object.keys(data)[i]].totalPP.rawPP;
+      const rawPP = data[Object.keys(data)[i]].totalPP.basePP;
       const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
       return {
         x: [resourceLabel],
@@ -53,7 +53,7 @@ export default function ResourcePPChart({ data }: Props) {
             },
           ]}
           layout={{
-            title: { text: "Resource Raw vs Boosted PP" },
+            title: { text: "Resource Base vs Boosted PP" },
             barmode: "group",
             xaxis: {
               title: { text: "Resources" },

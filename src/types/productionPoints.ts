@@ -1,4 +1,4 @@
 export type ProductionPoints = {
-  rawPP: number;
+  basePP: number;
   boostedPP: number;
 };

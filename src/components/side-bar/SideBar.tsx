@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { FiDatabase, FiHome, FiMap, FiMenu, FiUsers } from "react-icons/fi";
+import { GrPlan } from "react-icons/gr";
 import { MdOutlineLeaderboard } from "react-icons/md";
 
 const links = [
@@ -27,6 +28,11 @@ const links = [
     icon: <MdOutlineLeaderboard />,
   },
   { href: "/player-overview", label: "Player Overview", icon: <FiUsers /> },
+  {
+    href: "/planning",
+    label: "Land  Planning",
+    icon: <GrPlan />,
+  },
 ];
 
 const SIDEBAR_WIDTH_EXPANDED = 240;

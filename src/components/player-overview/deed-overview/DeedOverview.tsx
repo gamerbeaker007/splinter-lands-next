@@ -30,6 +30,7 @@ export default function DeedOverview({ player }: Props) {
   const [total, setTotal] = useState<number>(0);
   const [warning, setWarning] = useState<string | null>(null);
 
+  //TODO use new hook useCardDetails
   const [cardDetails, setCardDetails] = useState<SplCardDetails[] | null>(null);
 
   const { filters } = useFilters();
