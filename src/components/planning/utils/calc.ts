@@ -62,6 +62,18 @@ export function computeSlot(
   slot: SlotInput,
   plot: PlotModifiers,
 ): SlotComputedPP {
+  const basePP = calcBasePP(slot);
+
+  const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
+  const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
+
+  return {
+    basePP,
+    boostedPP,
+  };
+}
+
+function calcBasePP(slot: SlotInput) {
   const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
   const maxBasePP =
     basePPMax[slot.rarity][slot.foil === "regular" ? "regular" : "gold"];
@@ -78,20 +90,13 @@ export function computeSlot(
     slot.bcx *
     (cardSetModifiers[slot.set] ?? 0) *
     (cardFoilModifiers[slot.foil] ?? 1);
-  const tPct = terrainBonusPct(plot.deedType, slot.element);
-
-  const boostedPP = calcBoostedPP(basePP, plot, tPct);
-
-  return {
-    basePP,
-    boostedPP,
-  };
+  return basePP;
 }
 
-export function calcTotalPP(slots: SlotInput[], plot: PlotModifiers) {
+export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {
   const { sumBasePP, sumBoostedPP } = slots.reduce(
     (acc, slot) => {
-      const { basePP, boostedPP } = computeSlot(slot, plot);
+      const { basePP, boostedPP } = computeSlot(slot, plotModifiers);
       acc.sumBasePP += basePP;
       acc.sumBoostedPP += boostedPP;
       return acc;
@@ -99,10 +104,10 @@ export function calcTotalPP(slots: SlotInput[], plot: PlotModifiers) {
     { sumBasePP: 0, sumBoostedPP: 0 },
   );
 
-  const basePP = RUNI_FLAT_ADD[plot.runi];
-  const boostedPP = calcBoostedPP(basePP, plot, 0);
-  const totalBasePP = sumBasePP + basePP;
-  const totalBoostedPP = sumBoostedPP + boostedPP;
+  const runiBasePP = RUNI_FLAT_ADD[plotModifiers.runi];
+  const runiBoostedPP = calcBoostedPP(runiBasePP, plotModifiers, 0);
+  const totalBasePP = sumBasePP + runiBasePP;
+  const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
   return { totalBasePP, totalBoostedPP };
 }

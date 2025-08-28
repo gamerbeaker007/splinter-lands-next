@@ -37,6 +37,7 @@ import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
 import { ProductionInfo } from "@/types/productionInfo";
+import { determineBcxCap } from "@/lib/utils/cardUtil";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -119,7 +120,12 @@ export default function Planner({
     const foil = card.foil === 0 ? "regular" : "gold";
     const color = splCard?.color.toLowerCase() ?? "red";
     const element = cardElementColorMap[color];
-    const bcx = card.bcx;
+    const bcx = determineBcxCap(
+      setName,
+      capitalize(rarity),
+      foil === "regular" ? 0 : 1,
+      card.bcx,
+    );
 
     return {
       id: idx,

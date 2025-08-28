@@ -151,3 +151,14 @@ export function determineCardInfo(
 
   return { name, rarity };
 }
+
+export function determineBcxCap(
+  set: string,
+  rarity: string,
+  foilId: number,
+  actualBcx: number,
+) {
+  const maxBCX = determineCardMaxBCX(set, rarity as Rarity, foilId);
+  console.log("determineBcxCap Max: ", maxBCX, "Actual: ", actualBcx);
+  return Math.min(actualBcx, maxBCX);
+}
