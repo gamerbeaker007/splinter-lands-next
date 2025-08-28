@@ -3,7 +3,7 @@
 import { CSSSize } from "@/types/cssSize";
 import { PlotModifiers, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
-import { computeSlot } from "../../utils/calc";
+import { computeSlot } from "../../../../lib/frontend/utils/plannerCalcs";
 import { BcxInput } from "./BcxInput";
 import { CardFoilSelector } from "./CardFoilSelector";
 import { CardPPInfo } from "./CardPPInfo";

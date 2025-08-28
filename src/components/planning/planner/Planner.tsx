@@ -26,7 +26,7 @@ import {
   calcProductionInfo,
   calcTotalPP,
   determineDeedResourceBoost,
-} from "../utils/calc";
+} from "../../../lib/frontend/utils/plannerCalcs";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
 import { DECOutput } from "./output/DECOutput";

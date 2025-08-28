@@ -25,7 +25,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { calcBoostedPP } from "../utils/calc";
+import { calcBoostedPP } from "../../../lib/frontend/utils/plannerCalcs";
 
 const ICONS: Record<RuniTier, string> = {
   none: land_runi_power_core_icon_url,
