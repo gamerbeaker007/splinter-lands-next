@@ -1,4 +1,5 @@
 import { SortSelection } from "./sorting";
+import { CardRarity } from "@/types/planner";
 
 export type FilterInput = {
   filter_regions?: number[];
@@ -24,4 +25,10 @@ export type EnableFilterOptions = {
   attributes: boolean;
   player: boolean;
   sorting: boolean;
+};
+
+export type CardFilterInput = {
+  filter_rarity?: CardRarity[];
+  filter_on_land?: boolean;
+  filter_in_set?: boolean;
 };

@@ -10,6 +10,7 @@ import {
 import { StakedAssets } from "@/types/stakedAssets";
 import {
   fetchPlayerBalances,
+  fetchPlayerCardCollection,
   fetchPlayerDetails,
 } from "../api/spl/spl-base-api";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
@@ -37,6 +38,7 @@ import {
   calculateLDERatio,
   calculateLPERatio,
 } from "@/lib/backend/helpers/productionUtils";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
 const TAX_RATE = 0.1;
 
@@ -92,6 +94,27 @@ export async function getCachedPlayerDetails(
   } catch (err) {
     throw new Error(
       `Failed to fetch player details: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
+export async function getCachedPlayerCardCollection(
+  player: string,
+  force = false,
+): Promise<SplPlayerCardCollection[]> {
+  const key = `player-card-collection:${player}`;
+  if (!force) {
+    const cached = cache.get<SplPlayerCardCollection[]>(key);
+    if (cached) return cached;
+  }
+
+  try {
+    const res = await fetchPlayerCardCollection(player);
+    cache.set(key, res);
+    return res;
+  } catch (err) {
+    throw new Error(
+      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`,
     );
   }
 }

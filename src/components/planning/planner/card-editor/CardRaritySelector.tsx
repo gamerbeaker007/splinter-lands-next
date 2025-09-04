@@ -1,11 +1,5 @@
 "use client";
-import {
-  card_rarity_common_icon_url,
-  card_rarity_epic_icon_url,
-  card_rarity_legendary_icon_url,
-  card_rarity_rare_icon_url,
-} from "@/lib/shared/statics_icon_urls";
-import { CardRarity, cardRarityOptions } from "@/types/planner";
+import { cardIconMap, CardRarity, cardRarityOptions } from "@/types/planner";
 import {
   Box,
   capitalize,
@@ -24,13 +18,6 @@ export type Props = {
   onChange: (tier: CardRarity) => void;
 };
 
-const ICONS: Record<CardRarity, string> = {
-  common: card_rarity_common_icon_url,
-  rare: card_rarity_rare_icon_url,
-  epic: card_rarity_epic_icon_url,
-  legendary: card_rarity_legendary_icon_url,
-};
-
 export function CardRaritySelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<CardRarity>) => {
     onChange(e.target.value as CardRarity);
@@ -39,7 +26,7 @@ export function CardRaritySelector({ value, onChange }: Props) {
   const renderIcon = (tier: CardRarity, size = 24) => {
     return (
       <Image
-        src={ICONS[tier]}
+        src={cardIconMap[tier]}
         alt={`${tier} element`}
         width={size}
         height={size}

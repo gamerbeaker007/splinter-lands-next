@@ -2,11 +2,14 @@
 
 import PlayerPageInner from "@/components/player-overview/PlayerPageInner";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
+import { CardFilterProvider } from "@/lib/frontend/context/CardFilterContext";
 
 export default function PlayerPage() {
   return (
     <FilterProvider>
-      <PlayerPageInner />
+      <CardFilterProvider>
+        <PlayerPageInner />
+      </CardFilterProvider>
     </FilterProvider>
   );
 }

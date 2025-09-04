@@ -1,5 +1,11 @@
 import { Resource } from "@/constants/resource/resource";
 import { PlotModifiers } from "./domain";
+import {
+  card_rarity_common_icon_url,
+  card_rarity_rare_icon_url,
+  card_rarity_epic_icon_url,
+  card_rarity_legendary_icon_url,
+} from "@/lib/shared/statics_icon_urls";
 
 export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
 export const plotRarityModifiers: Record<PlotRarity, number> = {
@@ -12,6 +18,13 @@ export type PlotRarity = (typeof plotRarityOptions)[number];
 
 export const cardRarityOptions = ["common", "rare", "epic", "legendary"];
 export type CardRarity = (typeof cardRarityOptions)[number];
+
+export const cardIconMap: Record<CardRarity, string> = {
+  common: card_rarity_common_icon_url,
+  rare: card_rarity_rare_icon_url,
+  epic: card_rarity_epic_icon_url,
+  legendary: card_rarity_legendary_icon_url,
+};
 
 export const plotStatusOptions = ["natural", "magical", "occupied"];
 export type PlotStatus = (typeof plotStatusOptions)[number];

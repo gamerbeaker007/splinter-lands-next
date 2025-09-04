@@ -4,6 +4,7 @@ import * as rax from "retry-axios";
 import logger from "../../log/logger.server";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import { Balance } from "@/types/balance";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -55,6 +56,20 @@ export async function fetchPlayerDetails(player: string) {
   }
 
   return data as SplPlayerDetails;
+}
+
+export async function fetchPlayerCardCollection(player: string) {
+  const url = `cards/collection/${player}`;
+  logger.info(`Fetch player card collection for: ${player}`);
+  const res = await splBaseClient.get(url);
+
+  const data = res.data;
+  // Handle API-level error even if HTTP status is 200
+  if (!data || typeof data !== "object" || "error" in data) {
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+
+  return data.cards as SplPlayerCardCollection[];
 }
 
 export async function fetchPlayerBalances(
