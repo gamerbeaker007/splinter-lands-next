@@ -12,6 +12,8 @@ import { usePlayerCardAlerts } from "@/hooks/usePlayerCardAlerts";
 import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
 import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
+import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
+import { NoWorkersAlerts } from "./NoWorkersAlerts";
 
 type Props = { player: string };
 
@@ -73,17 +75,11 @@ export default function CollectionOverview({ player }: Props) {
       >
         {cardAlerts && (
           <Box>
-            <Typography>Not enough workers assigned</Typography>
-            {cardAlerts.assignedWorkersAlerts.map((alert, idx) => (
-              <Box key={idx}>
-                {alert.assignedCards} / 5 PLOTID: {alert.deedInfo.plotId}
-              </Box>
-            ))}
+            <AssignedWorkersAlerts
+              assignedWorkersAlerts={cardAlerts.assignedWorkersAlerts}
+            />
 
-            <Typography>No Workers assigned</Typography>
-            {cardAlerts.noWorkersAlerts.map((alert, idx) => (
-              <Box key={idx}>PLOTID: {alert.plotId}</Box>
-            ))}
+            <NoWorkersAlerts noWorkersAlerts={cardAlerts.noWorkersAlerts} />
 
             <Typography>NEGATIVE BOOSTS</Typography>
             {cardAlerts.terrainBoostAlerts.negative.map((alert, idx) => (

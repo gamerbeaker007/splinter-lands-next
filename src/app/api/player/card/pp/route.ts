@@ -1,34 +1,13 @@
+import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
+import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
-import { NextResponse } from "next/server";
+import { GroupedCardRow } from "@/types/GroupedCardRow";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-
-export type CardPPResult = {
-  top100BasePP: GroupedCardRow[];
-  top100PPRatio: GroupedCardRow[];
-};
-
-// ---- Helper / result types ----
-type Tri = "include" | "exclude" | "any";
-
-export type CardFilters = {
-  onLand?: Tri; // include: (stake_plot != null && stake_end_date == null)
-  inSet?: Tri; // include: (set_id != null)
-  onWagon?: Tri; // include: (wagon_uid != null)
-};
-
-export type GroupedCardRow = {
-  card_detail_id: number;
-  bcx: number;
-  foil: number;
-  base_pp: number; // per-card base PP (parsed from string)
-  land_dec_stake_needed: number; // per-card stake DEC
-  ratio: number; // base_pp / land_dec_stake_needed
-  count: number; // how many identical (detail_id, bcx, foil)
-};
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const { player, force, filters } = await req.json();
+    const { player, force, cardFilters } = await req.json();
 
     if (!player) {
       return NextResponse.json(
@@ -37,16 +16,22 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("Received Filter: ", cardFilters);
+
     const playerCardCollection = await getCachedPlayerCardCollection(
       player,
       force,
     );
 
-    const topByBasePP1 = top100ByBasePP(playerCardCollection, filters);
-    const topByPPtoDecRatio = top100ByPPtoDecRatio(
+    const cardDetails = await getCachedCardDetailsData();
+
+    const filtered = filterCardCollection(
       playerCardCollection,
-      filters,
+      cardDetails,
+      cardFilters,
     );
+    const topByBasePP1 = top100ByBasePP(filtered);
+    const topByPPtoDecRatio = top100ByPPtoDecRatio(filtered);
 
     return NextResponse.json(
       {
@@ -66,35 +51,10 @@ export async function POST(req: Request) {
   }
 }
 
-// ---- Core helpers ----
 const parsePP = (ppStr: string | number | null | undefined): number => {
   if (ppStr == null) return 0;
   const n = typeof ppStr === "number" ? ppStr : parseFloat(ppStr);
   return Number.isFinite(n) ? n : 0;
-};
-
-const boolTest = (cond: boolean, mode: Tri | undefined): boolean => {
-  if (!mode || mode === "any") return true;
-  return mode === "include" ? cond : !cond;
-};
-
-const buildPredicate = (filters?: CardFilters) => {
-  const { onLand = "any", inSet = "any", onWagon = "any" } = filters ?? {};
-  return (c: SplPlayerCardCollection): boolean => {
-    // onLand
-    const isOnLand = c.stake_plot != null && c.stake_end_date == null;
-    if (!boolTest(isOnLand, onLand)) return false;
-
-    // inSet
-    const isInSet = c.set_id != null;
-    if (!boolTest(isInSet, inSet)) return false;
-
-    // onWagon
-    const hasWagon = c.wagon_uid != null;
-    if (!boolTest(hasWagon, onWagon)) return false;
-
-    return true;
-  };
 };
 
 const groupKey = (c: SplPlayerCardCollection) =>
@@ -143,11 +103,8 @@ const groupCards = (
  */
 function top100ByPPtoDecRatio(
   data: SplPlayerCardCollection[],
-  filters?: CardFilters,
 ): GroupedCardRow[] {
-  const filtered = data.filter(buildPredicate(filters));
-
-  const grouped = groupCards(filtered);
+  const grouped = groupCards(data);
 
   return Array.from(grouped.values())
     .sort((a, b) => {
@@ -163,13 +120,8 @@ function top100ByPPtoDecRatio(
  * Top 100 groups by base_pp DESC.
  * Applies tri-state filters and groups identical (detail_id, bcx, foil).
  */
-function top100ByBasePP(
-  data: SplPlayerCardCollection[],
-  filters?: CardFilters,
-): GroupedCardRow[] {
-  const filtered = data.filter(buildPredicate(filters));
-
-  const grouped = groupCards(filtered);
+function top100ByBasePP(data: SplPlayerCardCollection[]): GroupedCardRow[] {
+  const grouped = groupCards(data);
 
   return Array.from(grouped.values())
     .sort((a, b) => {

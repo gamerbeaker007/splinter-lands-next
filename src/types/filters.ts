@@ -1,5 +1,5 @@
 import { SortSelection } from "./sorting";
-import { CardRarity } from "@/types/planner";
+import { CardRarity, CardSetName } from "@/types/planner";
 
 export type FilterInput = {
   filter_regions?: number[];
@@ -28,7 +28,11 @@ export type EnableFilterOptions = {
 };
 
 export type CardFilterInput = {
+  filter_set?: CardSetName[];
   filter_rarity?: CardRarity[];
-  filter_on_land?: boolean;
-  filter_in_set?: boolean;
+  filter_on_land?: Tri;
+  filter_in_set?: Tri;
+  filter_on_wagon?: Tri;
 };
+
+export type Tri = "include" | "exclude" | "any";

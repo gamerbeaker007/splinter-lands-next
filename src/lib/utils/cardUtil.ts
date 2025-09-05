@@ -1,4 +1,5 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
+import { CardRarity, cardRarityOptions } from "@/types/planner";
 import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
 
@@ -160,4 +161,13 @@ export function determineBcxCap(
 ) {
   const maxBCX = determineCardMaxBCX(set, rarity as Rarity, foilId);
   return Math.min(actualBcx, maxBCX);
+}
+
+export function getCardRarit(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+): CardRarity {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  const rarity = cardRarityOptions[(splCard?.rarity ?? 1) - 1];
+  return rarity;
 }

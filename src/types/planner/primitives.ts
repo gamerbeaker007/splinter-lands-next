@@ -1,11 +1,17 @@
 import { Resource } from "@/constants/resource/resource";
-import { PlotModifiers } from "./domain";
 import {
   card_rarity_common_icon_url,
-  card_rarity_rare_icon_url,
   card_rarity_epic_icon_url,
   card_rarity_legendary_icon_url,
+  card_rarity_rare_icon_url,
+  edition_apha_icon_url,
+  edition_beta_icon_url,
+  edition_chaos_icon_url,
+  edition_conclave_icon_url,
+  edition_rebellion_icon_url,
+  edition_untamed_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { PlotModifiers } from "./domain";
 
 export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
 export const plotRarityModifiers: Record<PlotRarity, number> = {
@@ -148,6 +154,15 @@ export const cardSetModifiers: Record<CardSetName, number> = {
   conclave: 0.5,
 };
 export type CardSetName = (typeof cardRarityOptions)[number];
+
+export const cardSetIconMap: Record<CardSetName, string> = {
+  alpha: edition_apha_icon_url,
+  beta: edition_beta_icon_url,
+  untamed: edition_untamed_icon_url,
+  chaos: edition_chaos_icon_url,
+  rebellion: edition_rebellion_icon_url,
+  conclave: edition_conclave_icon_url,
+};
 
 export const cardFoilOptions = [
   "regular",

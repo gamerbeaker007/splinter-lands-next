@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import logger from "@/lib/frontend/log/logger.client";
-import { CardAlerts } from "@/app/api/player/card/alerts/route";
+import { CardAlerts } from "@/types/CardAlerts";
 
 export function usePlayerCardAlerts(player: string, force = false) {
   const [cardAlerts, setCardAlerts] = useState<CardAlerts | null>(null);

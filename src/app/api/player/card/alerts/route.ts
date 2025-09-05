@@ -8,56 +8,20 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import {
   CardElement,
   cardElementColorMap,
-  DeedType,
-  MagicType,
-  PlotRarity,
-  PlotStatus,
   TERRAIN_BONUS,
-  WorksiteType,
 } from "@/types/planner";
 import logger from "@/lib/backend/log/logger.server";
-import * as console from "node:console";
-
-export type TerrainCardInfo = {
-  terrainBoost: number;
-  element: CardElement;
-  cardDetailId: number;
-  cardName: string;
-  edition: number;
-  foil: number;
-  deedInfo: DeedInfo;
-};
-
-export type DeedInfo = {
-  plotId: number;
-  region: number;
-  deedType: DeedType;
-  magicType: MagicType;
-  plotStatus: PlotStatus;
-  rarity: PlotRarity;
-  worksiteType?: WorksiteType;
-};
-
-export type CountAlert = {
-  deedInfo: DeedInfo;
-  assignedCards: number;
-};
-
-export type BoostCategory = "negative" | "zeroNeutral" | "zeroNonNeutral";
-
-export type TerrainBoostAlerts = Record<BoostCategory, TerrainCardInfo[]>;
-
-export type CardAlerts = {
-  assignedWorkersAlerts: CountAlert[];
-  noWorkersAlerts: DeedInfo[];
-  terrainBoostAlerts: TerrainBoostAlerts;
-};
+import {
+  CardAlerts,
+  CountAlert,
+  DeedInfo,
+  TerrainBoostAlerts,
+  TerrainCardInfo,
+} from "@/types/CardAlerts";
 
 export async function POST(req: Request) {
   try {
     const { player, force } = await req.json();
-    console.log(`DO ALERTS ${player} - ${force}`);
-
     if (!player) {
       return NextResponse.json(
         { error: "Missing 'player' parameter" },
@@ -130,25 +94,33 @@ function plotsWithLessThanCards(
       if (current.deedInfo == null && c.stake_region != null) {
         current.deedInfo = {
           plotId: c.stake_plot,
-          region: c.stake_region,
+          regionNumber: c.stake_region,
+          plotNumber: deed?.plot_number ?? 0,
           deedType: deed?.deed_type ?? "Unknown",
           magicType: deed?.magic_type ?? "Unknown",
           plotStatus: deed?.plot_status ?? "Unknown",
           rarity: deed?.rarity ?? "Unknown",
           worksiteType: deed?.worksite_type ?? "Unknown",
+          regionName: deed?.region_name ?? "Unknown",
+          tractNumber: deed?.tract_number ?? 0,
+          territory: deed?.territory ?? "Unknown",
         };
       }
     } else {
       byPlot.set(c.stake_plot, {
         assignedCards: 1,
         deedInfo: {
-          region: c.stake_region,
+          regionNumber: c.stake_region,
           plotId: c.stake_plot,
+          plotNumber: deed?.plot_number ?? 0,
           deedType: deed?.deed_type ?? "Unknown",
           magicType: deed?.magic_type ?? "Unknown",
           plotStatus: deed?.plot_status ?? "Unknown",
           rarity: deed?.rarity ?? "Unknown",
           worksiteType: deed?.worksite_type ?? "Unknown",
+          regionName: deed?.region_name ?? "Unknown",
+          tractNumber: deed?.tract_number ?? 0,
+          territory: deed?.territory ?? "Unknown",
         },
       });
     }
@@ -174,12 +146,16 @@ function plotsWithNoWorkers(
     .filter((d) => !plotsWithCards.has(d.plot_id!))
     .map((d) => ({
       plotId: d.plot_id!,
-      region: d.region_number!,
+      regionNumber: d.region_number!,
+      plotNumber: d.plot_number!,
       deedType: d.deed_type!,
       magicType: d.magic_type!,
       plotStatus: d.plot_status!,
       rarity: d.rarity!,
-      worksiteType: d?.worksite_type ?? "Unknown",
+      worksiteType: d.worksite_type!,
+      regionName: d.region_name!,
+      tractNumber: d.tract_number!,
+      territory: d.territory!,
     }));
 }
 
@@ -222,12 +198,16 @@ function classifyCardsByTerrainBonus(
       foil: c.foil,
       deedInfo: {
         plotId: c.stake_plot,
-        region: c.stake_region,
+        regionNumber: c.stake_region,
         deedType: deedType,
+        plotNumber: deed?.plot_number ?? 0,
         magicType: deed?.magic_type ?? "Unknown",
         plotStatus: deed?.plot_status ?? "Unknown",
         rarity: deed?.rarity ?? "Unknown",
         worksiteType: deed?.worksite_type ?? "Unknown",
+        regionName: deed?.region_name ?? "Unknown",
+        tractNumber: deed?.tract_number ?? 0,
+        territory: deed?.territory ?? "Unknown",
       },
     };
 

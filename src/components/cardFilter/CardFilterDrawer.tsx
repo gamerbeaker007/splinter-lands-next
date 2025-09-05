@@ -1,38 +1,17 @@
 "use client";
 
-import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { cardRarityOptions } from "@/types/planner";
-import {
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
-  Typography,
-} from "@mui/material";
+import { FormGroup, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
 import { useEffect, useState } from "react";
 import CardFilterRarityGroup from "./CardFilterRarityGroup";
+import CardFilterSetGroup from "./CardFilterSetGroup";
+import CardTriFilter from "./CardTriFilter";
 import ResetCardFiltersButton from "./ResetCardFiltersButton";
-
-type BooleanFilterKey = "filter_on_land" | "filter_in_set";
 
 export default function CardFilterDrawer() {
   const [drawerOpen, setDrawerOpen] = useState(true);
-
-  const { cardFilters, setCardFilters } = useCardFilters();
-
-  const toggleBoolean = (key: BooleanFilterKey) => {
-    setCardFilters((prev) => {
-      const newFilters = { ...prev };
-      if (prev[key]) {
-        delete newFilters[key];
-      } else {
-        newFilters[key] = true;
-      }
-      return newFilters;
-    });
-  };
 
   useEffect(() => {
     const isLarge = window.innerWidth >= 1024;
@@ -102,26 +81,13 @@ export default function CardFilterDrawer() {
           },
         }}
       >
-        <CardFilterRarityGroup options={cardRarityOptions} />
+        <CardFilterSetGroup />
+        <CardFilterRarityGroup />
+
         <FormGroup sx={{ mt: 2 }}>
-          {(["filter_on_land", "filter_in_set"] as BooleanFilterKey[]).map(
-            (key) => (
-              <FormControlLabel
-                key={key}
-                control={
-                  <Checkbox
-                    checked={cardFilters?.[key] === true}
-                    onChange={() => toggleBoolean(key)}
-                    size="small"
-                  />
-                }
-                label={key
-                  .replace("filter_", "")
-                  .replace(/_/g, " ")
-                  .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase())}
-              />
-            ),
-          )}
+          <CardTriFilter title="On Land" filterKey="filter_on_land" />
+          <CardTriFilter title="In Set" filterKey="filter_in_set" />
+          <CardTriFilter title="On Wagon" filterKey="filter_on_wagon" />
         </FormGroup>
 
         <ResetCardFiltersButton />

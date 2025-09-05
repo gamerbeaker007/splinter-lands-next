@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import logger from "@/lib/frontend/log/logger.client";
-import { CardAlerts } from "@/app/api/player/card/alerts/route";
-import { CardPPResult } from "@/app/api/player/card/pp/route";
+import { CardPPResult } from "@/types/GroupedCardRow";
 import { CardFilterInput } from "@/types/filters";
+import { useEffect, useState } from "react";
 
 export function usePlayerCardPP(
   player: string,
   force = false,
-  filters: CardFilterInput = {},
+  cardFilters: CardFilterInput = {},
 ) {
   const [cardPPResult, setCardPPResult] = useState<CardPPResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -24,14 +23,13 @@ export function usePlayerCardPP(
       }
 
       try {
-        console.log("Give Filter: ", filters);
         setLoading(true);
         setError(null);
         const url = `/api/player/card/pp`;
         const res = await fetch(url, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ player, force, filters }),
+          body: JSON.stringify({ player, force, cardFilters }),
         });
 
         const payload = await res.json().catch(() => ({}));
@@ -42,7 +40,7 @@ export function usePlayerCardPP(
         }
 
         setCardPPResult(payload as CardPPResult);
-        return payload as CardAlerts;
+        return payload as CardPPResult;
       } catch (err) {
         logger.error("Failed to fetch player collection:", err);
         setError("Could not load player collection.");
@@ -52,7 +50,7 @@ export function usePlayerCardPP(
         setLoading(false);
       }
     })();
-  }, [player, force, filters]);
+  }, [player, force, cardFilters]);
 
   return { cardPPResult, loading, error };
 }

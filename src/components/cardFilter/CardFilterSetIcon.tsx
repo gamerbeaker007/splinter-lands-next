@@ -1,12 +1,12 @@
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { cardIconMap as cardRarityIconMap, CardRarity } from "@/types/planner";
+import { cardSetIconMap, CardSetName } from "@/types/planner";
 import FilterIcon from "../filter/FilterIcon";
 
 type Props = {
   name: string;
 };
 
-export default function CardFilterRaritySetIcon({ name }: Props) {
+export default function CardFilterSetIcon({ name }: Props) {
   const { cardFilters, setCardFilters } = useCardFilters();
 
   //Skip empty name
@@ -14,19 +14,19 @@ export default function CardFilterRaritySetIcon({ name }: Props) {
     return null;
   }
 
-  const image = cardRarityIconMap[name];
+  const image = cardSetIconMap[name];
 
-  const value = cardFilters.filter_rarity;
+  const value = cardFilters.filter_set;
   const isArray = Array.isArray(value);
   const isActive = isArray ? value.includes(name) : false;
 
   const toggleFilter = () => {
     const current = Array.isArray(value) ? value : [];
     const updated = isActive
-      ? current.filter((item: CardRarity) => item !== name)
+      ? current.filter((item: CardSetName) => item !== name)
       : [...current, name];
 
-    setCardFilters((prev) => ({ ...prev, filter_rarity: updated }));
+    setCardFilters((prev) => ({ ...prev, filter_set: updated }));
   };
 
   return (
