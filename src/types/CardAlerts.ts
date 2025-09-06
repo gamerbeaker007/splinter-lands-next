@@ -5,11 +5,17 @@ import {
   PlotStatus,
   PlotRarity,
   WorksiteType,
+  CardRarity,
 } from "./planner";
 
 export type TerrainCardInfo = {
+  uid: string;
   terrainBoost: number;
   element: CardElement;
+  rarity: CardRarity;
+  bcx: number;
+  maxBcx: number;
+  basePP: number;
   cardDetailId: number;
   cardName: string;
   edition: number;

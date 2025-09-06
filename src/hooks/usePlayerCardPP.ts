@@ -1,7 +1,7 @@
 "use client";
 
 import logger from "@/lib/frontend/log/logger.client";
-import { CardPPResult } from "@/types/GroupedCardRow";
+import { CardPPResult } from "@/types/groupedCardRow";
 import { CardFilterInput } from "@/types/filters";
 import { useEffect, useState } from "react";
 

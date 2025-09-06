@@ -1,4 +1,4 @@
-import { getCardRarit as getCardRarity } from "@/lib/utils/cardUtil";
+import { findCardRarity as findCardRarity } from "@/lib/utils/cardUtil";
 import { CardFilterInput, Tri } from "@/types/filters";
 import { CardSetName } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -8,8 +8,8 @@ import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
  * Helper to test tri-state filter logic.
  */
 const boolTest = (cond: boolean, mode: Tri | undefined): boolean => {
-  if (!mode || mode === "any") return true;
-  return mode === "include" ? cond : !cond;
+  if (!mode || mode === "all") return true;
+  return mode === "only" ? cond : !cond;
 };
 
 /**
@@ -21,15 +21,15 @@ export function filterCardCollection(
   filters?: CardFilterInput,
 ): SplPlayerCardCollection[] {
   const {
-    filter_on_land = "any",
-    filter_in_set = "any",
-    filter_on_wagon = "any",
+    filter_on_land = "all",
+    filter_in_set = "all",
+    filter_on_wagon = "all",
     filter_set,
     filter_rarity,
   } = filters ?? {};
 
   return cards.filter((c) => {
-    const rarityName = getCardRarity(cardDetails, c.card_detail_id);
+    const rarityName = findCardRarity(cardDetails, c.card_detail_id);
 
     // onLand
     const isOnLand = c.stake_plot != null && c.stake_end_date == null;

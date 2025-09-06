@@ -1,23 +1,24 @@
-import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
-import { NextResponse } from "next/server";
 import { getPlayerData } from "@/lib/backend/api/internal/player-data";
-import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
-import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { DeedComplete } from "@/types/deed";
-import { SplCardDetails } from "@/types/splCardDetails";
-import {
-  CardElement,
-  cardElementColorMap,
-  TERRAIN_BONUS,
-} from "@/types/planner";
 import logger from "@/lib/backend/log/logger.server";
+import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
+import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
+import { determineCardMaxBCX, findCardRarity } from "@/lib/utils/cardUtil";
 import {
   CardAlerts,
   CountAlert,
   DeedInfo,
   TerrainBoostAlerts,
   TerrainCardInfo,
-} from "@/types/CardAlerts";
+} from "@/types/cardAlerts";
+import { DeedComplete } from "@/types/deed";
+import {
+  CardElement,
+  cardElementColorMap,
+  TERRAIN_BONUS,
+} from "@/types/planner";
+import { SplCardDetails } from "@/types/splCardDetails";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -169,6 +170,9 @@ function classifyCardsByTerrainBonus(
   const zeroNonNeutral: Array<TerrainCardInfo> = [];
 
   for (const c of cards) {
+    const rarity = findCardRarity(cardDetails, c.card_detail_id);
+    const maxBcx = determineCardMaxBCX(c.card_set, rarity, c.foil);
+
     if (c.stake_plot == null || c.stake_end_date != null) continue;
 
     const deed = deedByPlot.get(c.stake_plot);
@@ -190,12 +194,17 @@ function classifyCardsByTerrainBonus(
     const boost = TERRAIN_BONUS[deedType]?.[element] ?? 0;
 
     const item: TerrainCardInfo = {
+      uid: c.uid,
       terrainBoost: boost,
       element: element,
       cardDetailId: c.card_detail_id,
       cardName: cd.name,
       edition: c.edition,
       foil: c.foil,
+      rarity: rarity,
+      bcx: c.bcx,
+      maxBcx: maxBcx,
+      basePP: c.land_base_pp,
       deedInfo: {
         plotId: c.stake_plot,
         regionNumber: c.stake_region,

@@ -1,7 +1,9 @@
 import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
-import { GroupedCardRow } from "@/types/GroupedCardRow";
+import { determineCardInfo } from "@/lib/utils/cardUtil";
+import { GroupedCardRow } from "@/types/groupedCardRow";
+import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { NextResponse } from "next/server";
 
@@ -16,8 +18,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Received Filter: ", cardFilters);
-
     const playerCardCollection = await getCachedPlayerCardCollection(
       player,
       force,
@@ -25,18 +25,24 @@ export async function POST(req: Request) {
 
     const cardDetails = await getCachedCardDetailsData();
 
+    console.log(
+      `Player ${player} has ${playerCardCollection.length} cards before applying filters`,
+    );
     const filtered = filterCardCollection(
       playerCardCollection,
       cardDetails,
       cardFilters,
     );
-    const topByBasePP1 = top100ByBasePP(filtered);
-    const topByPPtoDecRatio = top100ByPPtoDecRatio(filtered);
+    console.log(
+      `Player ${player} has ${filtered.length} cards after applying filters`,
+    );
+    const topByBasePP1 = top100ByBasePP(filtered, cardDetails);
+    const topByPPtoDecRatio = top100ByPPtoDecRatio(filtered, cardDetails);
 
     return NextResponse.json(
       {
-        top100BasePP: topByBasePP1,
-        top100PPRatio: topByPPtoDecRatio,
+        basePPList: topByBasePP1,
+        ratioPPList: topByPPtoDecRatio,
       },
       { status: 200 },
     );
@@ -63,6 +69,7 @@ const groupKey = (c: SplPlayerCardCollection) =>
 // We assume identical (detail_id, bcx, foil) share same base_pp/dec_need per card.
 const groupCards = (
   cards: SplPlayerCardCollection[],
+  cardDetails: SplCardDetails[],
 ): Map<string, GroupedCardRow> => {
   const map = new Map<string, GroupedCardRow>();
 
@@ -70,6 +77,7 @@ const groupCards = (
     const key = groupKey(c);
     const base_pp = parsePP(c.land_base_pp);
     const decNeed = c.land_dec_stake_needed ?? 0;
+    const { name, rarity } = determineCardInfo(c.card_detail_id, cardDetails);
 
     const ratio =
       decNeed > 0
@@ -81,7 +89,12 @@ const groupCards = (
     const existing = map.get(key);
     if (!existing) {
       map.set(key, {
+        uid: c.uid, // unique id of first card in group
         card_detail_id: c.card_detail_id,
+        set: c.card_set,
+        name: name,
+        rarity: rarity,
+        edition: c.edition,
         bcx: c.bcx,
         foil: c.foil,
         base_pp,
@@ -103,8 +116,9 @@ const groupCards = (
  */
 function top100ByPPtoDecRatio(
   data: SplPlayerCardCollection[],
+  cardDetails: SplCardDetails[],
 ): GroupedCardRow[] {
-  const grouped = groupCards(data);
+  const grouped = groupCards(data, cardDetails);
 
   return Array.from(grouped.values())
     .sort((a, b) => {
@@ -120,8 +134,11 @@ function top100ByPPtoDecRatio(
  * Top 100 groups by base_pp DESC.
  * Applies tri-state filters and groups identical (detail_id, bcx, foil).
  */
-function top100ByBasePP(data: SplPlayerCardCollection[]): GroupedCardRow[] {
-  const grouped = groupCards(data);
+function top100ByBasePP(
+  data: SplPlayerCardCollection[],
+  cardDetails: SplCardDetails[],
+): GroupedCardRow[] {
+  const grouped = groupCards(data, cardDetails);
 
   return Array.from(grouped.values())
     .sort((a, b) => {

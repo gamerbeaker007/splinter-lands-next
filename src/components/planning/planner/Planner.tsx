@@ -122,7 +122,7 @@ export default function Planner({
     const element = cardElementColorMap[color];
     const bcx = determineBcxCap(
       setName,
-      capitalize(rarity),
+      rarity,
       foil === "regular" ? 0 : 1,
       card.bcx,
     );

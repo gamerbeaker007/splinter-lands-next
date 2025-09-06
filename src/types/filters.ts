@@ -35,4 +35,4 @@ export type CardFilterInput = {
   filter_on_wagon?: Tri;
 };
 
-export type Tri = "include" | "exclude" | "any";
+export type Tri = "only" | "hide" | "all";

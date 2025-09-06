@@ -16,7 +16,7 @@ export type SplPlayerCardCollection = {
   stake_plot: number;
   stake_region: number;
   bcx: number;
-  land_base_pp: string;
+  land_base_pp: number;
   land_dec_stake_needed: number;
   set_id?: string;
   bcx_unbound: number;

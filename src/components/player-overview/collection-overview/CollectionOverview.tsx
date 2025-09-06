@@ -1,5 +1,8 @@
 "use client";
 
+import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
+import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
+import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import {
   Alert,
   Box,
@@ -8,26 +11,20 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { usePlayerCardAlerts } from "@/hooks/usePlayerCardAlerts";
-import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
-import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
-import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
-import { NoWorkersAlerts } from "./NoWorkersAlerts";
+import BasePPSection from "./BasePPSection";
 
 type Props = { player: string };
 
 export default function CollectionOverview({ player }: Props) {
-  const { cardAlerts, loading, error } = usePlayerCardAlerts(player, false);
   const { cardFilters } = useCardFilters();
 
-  const {
-    cardPPResult,
-    loading: loadingCardPP,
-    error: errorCardPP,
-  } = usePlayerCardPP(player, false, cardFilters);
+  const { cardPPResult, loading, error } = usePlayerCardPP(
+    player,
+    false,
+    cardFilters,
+  );
 
-  if (loading || loadingCardPP) {
+  if (loading) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack
@@ -45,7 +42,7 @@ export default function CollectionOverview({ player }: Props) {
     );
   }
 
-  if (error || errorCardPP) {
+  if (error) {
     return (
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Stack spacing={3}>
@@ -70,53 +67,14 @@ export default function CollectionOverview({ player }: Props) {
           borderColor: "divider",
           borderRadius: 1,
           overflow: "auto",
-          maxHeight: 480,
         }}
       >
-        {cardAlerts && (
-          <Box>
-            <AssignedWorkersAlerts
-              assignedWorkersAlerts={cardAlerts.assignedWorkersAlerts}
-            />
-
-            <NoWorkersAlerts noWorkersAlerts={cardAlerts.noWorkersAlerts} />
-
-            <Typography>NEGATIVE BOOSTS</Typography>
-            {cardAlerts.terrainBoostAlerts.negative.map((alert, idx) => (
-              <Box key={idx}>
-                {alert.cardDetailId} - Boost: {alert.terrainBoost * 100}% -
-                PLOTID: {alert.deedInfo.plotId}
-              </Box>
-            ))}
-
-            <Typography>ZERO NON NEUTRAL</Typography>
-            {cardAlerts.terrainBoostAlerts.zeroNonNeutral.map((alert, idx) => (
-              <Box key={idx}>
-                {alert.cardDetailId} - Boost: {alert.terrainBoost * 100}% -
-                PLOTID: {alert.deedInfo.plotId}
-              </Box>
-            ))}
-
-            <Typography>ZERO NEUTRAL BOOSTS</Typography>
-            {cardAlerts.terrainBoostAlerts.zeroNeutral.map((alert, idx) => (
-              <Box key={idx}>
-                {alert.cardDetailId} - Boost: {alert.terrainBoost * 100}% -
-                PLOTID: {alert.deedInfo.plotId}
-              </Box>
-            ))}
-          </Box>
-        )}
-
         {cardPPResult && (
           <Box>
-            <Typography>TOP 100 Base PP</Typography>
-            {cardPPResult.top100BasePP.map((card, idx) => (
-              <Box key={idx}>
-                {card.card_detail_id} - BASE PP: {card.base_pp}
-              </Box>
-            ))}
+            <BasePPSection basePPList={cardPPResult.basePPList} />
+
             <Typography>TOP 100 RATIO</Typography>
-            {cardPPResult.top100PPRatio.map((card, idx) => (
+            {cardPPResult.ratioPPList.map((card, idx) => (
               <Box key={idx}>
                 {card.card_detail_id} - RATIO (PP/DEC) {card.ratio}
               </Box>

@@ -1,9 +1,8 @@
+import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import { SlotInput } from "@/types/planner";
+import { Box } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import React from "react";
-import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { Rarity } from "@/types/rarity";
-import { SlotInput } from "@/types/planner";
-import { Box, capitalize } from "@mui/material";
 
 interface BcxInputProps {
   slot: SlotInput;
@@ -14,7 +13,7 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
   const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
   const maxBCX = determineCardMaxBCX(
     slot.set.toLowerCase(),
-    capitalize(slot.rarity) as Rarity, //TODO fix this with correct rarity accrons the application all lowercases.
+    slot.rarity,
     foilId,
   );
 

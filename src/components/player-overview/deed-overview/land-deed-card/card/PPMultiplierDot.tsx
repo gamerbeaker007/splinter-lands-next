@@ -1,21 +1,20 @@
 import { getFoilLabel } from "@/lib/utils/cardUtil";
+import { CardRarity } from "@/types/planner";
 import { Box, Tooltip } from "@mui/material";
 
-type Rarity = "Common" | "Rare" | "Epic" | "Legendary";
-
 interface Props {
-  rarity: Rarity;
+  rarity: CardRarity;
   foil: number; // 0 = regular, 1-4 = gold
   bcx: number;
   max_bcx: number;
   basePP: number;
 }
 
-const basePPMaxMap: Record<Rarity, Record<0 | 1, number>> = {
-  Common: { 0: 1000, 1: 2000 },
-  Rare: { 0: 1100, 1: 4000 },
-  Epic: { 0: 1250, 1: 6000 },
-  Legendary: { 0: 1500, 1: 10000 },
+const basePPMaxMap: Record<CardRarity, Record<0 | 1, number>> = {
+  common: { 0: 1000, 1: 2000 },
+  rare: { 0: 1100, 1: 4000 },
+  epic: { 0: 1250, 1: 6000 },
+  legendary: { 0: 1500, 1: 10000 },
 };
 
 const PPMultiplierDot = ({ rarity, foil, bcx, max_bcx, basePP }: Props) => {

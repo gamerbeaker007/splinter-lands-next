@@ -35,30 +35,30 @@ export default function CardTriFilter({ title, filterKey }: Props) {
       <Typography sx={{ minWidth: 100, mb: 0.5 }}>{title}:</Typography>
       <Box sx={{ display: "flex", gap: 1 }}>
         <Button
-          variant={value === "include" ? "contained" : "outlined"}
+          variant={value === "only" ? "contained" : "outlined"}
           color="success"
           size="small"
-          onClick={() => handleChange("include")}
+          onClick={() => handleChange("only")}
         >
-          Include
+          Only
         </Button>
         <Button
-          variant={value === "exclude" ? "contained" : "outlined"}
+          variant={value === "hide" ? "contained" : "outlined"}
           color="error"
           size="small"
-          onClick={() => handleChange("exclude")}
+          onClick={() => handleChange("hide")}
         >
-          Exclude
+          Hide
         </Button>
         <Button
           variant={
-            value === "any" || value === undefined ? "contained" : "outlined"
+            value === "all" || value === undefined ? "contained" : "outlined"
           }
           color="primary"
           size="small"
-          onClick={() => handleChange("any")}
+          onClick={() => handleChange("all")}
         >
-          Any
+          All
         </Button>
       </Box>
     </Box>
