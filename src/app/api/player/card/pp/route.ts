@@ -25,24 +25,15 @@ export async function POST(req: Request) {
 
     const cardDetails = await getCachedCardDetailsData();
 
-    console.log(
-      `Player ${player} has ${playerCardCollection.length} cards before applying filters`,
-    );
     const filtered = filterCardCollection(
       playerCardCollection,
       cardDetails,
       cardFilters,
     );
-    console.log(
-      `Player ${player} has ${filtered.length} cards after applying filters`,
-    );
-    const topByBasePP1 = top100ByBasePP(filtered, cardDetails);
-    const topByPPtoDecRatio = top100ByPPtoDecRatio(filtered, cardDetails);
-
+    const grouped = groupCards(filtered, cardDetails);
     return NextResponse.json(
       {
-        basePPList: topByBasePP1,
-        ratioPPList: topByPPtoDecRatio,
+        cards: Array.from(grouped.values()),
       },
       { status: 200 },
     );
@@ -75,14 +66,14 @@ const groupCards = (
 
   for (const c of cards) {
     const key = groupKey(c);
-    const base_pp = parsePP(c.land_base_pp);
+    const basePP = parsePP(c.land_base_pp);
     const decNeed = c.land_dec_stake_needed ?? 0;
     const { name, rarity } = determineCardInfo(c.card_detail_id, cardDetails);
 
     const ratio =
       decNeed > 0
-        ? base_pp / decNeed
-        : base_pp > 0
+        ? basePP / decNeed
+        : basePP > 0
           ? Number.POSITIVE_INFINITY
           : 0;
 
@@ -93,12 +84,13 @@ const groupCards = (
         card_detail_id: c.card_detail_id,
         set: c.card_set,
         name: name,
+        level: c.level,
         rarity: rarity,
         edition: c.edition,
         bcx: c.bcx,
         foil: c.foil,
-        base_pp,
-        land_dec_stake_needed: decNeed,
+        basePP: basePP,
+        landDecStakeNeeded: decNeed,
         ratio,
         count: 1,
       });
@@ -109,43 +101,3 @@ const groupCards = (
 
   return map;
 };
-
-/**
- * Top 100 groups by (base_pp / land_dec_stake_needed) DESC.
- * Applies tri-state filters and groups identical (detail_id, bcx, foil).
- */
-function top100ByPPtoDecRatio(
-  data: SplPlayerCardCollection[],
-  cardDetails: SplCardDetails[],
-): GroupedCardRow[] {
-  const grouped = groupCards(data, cardDetails);
-
-  return Array.from(grouped.values())
-    .sort((a, b) => {
-      // DESC by ratio, then DESC by base_pp as tiebreaker, then DESC by count
-      if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-      if (b.base_pp !== a.base_pp) return b.base_pp - a.base_pp;
-      return b.count - a.count;
-    })
-    .slice(0, 100);
-}
-
-/**
- * Top 100 groups by base_pp DESC.
- * Applies tri-state filters and groups identical (detail_id, bcx, foil).
- */
-function top100ByBasePP(
-  data: SplPlayerCardCollection[],
-  cardDetails: SplCardDetails[],
-): GroupedCardRow[] {
-  const grouped = groupCards(data, cardDetails);
-
-  return Array.from(grouped.values())
-    .sort((a, b) => {
-      // DESC by base_pp, then DESC by ratio, then DESC by count
-      if (b.base_pp !== a.base_pp) return b.base_pp - a.base_pp;
-      if (b.ratio !== a.ratio) return b.ratio - a.ratio;
-      return b.count - a.count;
-    })
-    .slice(0, 100);
-}

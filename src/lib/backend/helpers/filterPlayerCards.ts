@@ -1,6 +1,6 @@
 import { findCardRarity as findCardRarity } from "@/lib/utils/cardUtil";
 import { CardFilterInput, Tri } from "@/types/filters";
-import { CardSetName } from "@/types/planner";
+import { CardSetName, cardSetOptions } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
@@ -29,7 +29,12 @@ export function filterCardCollection(
   } = filters ?? {};
 
   return cards.filter((c) => {
+    // Exclude special cards like "Soulbound / Foundation / extra"
+    if (!cardSetOptions.includes(c.card_set)) return false;
     const rarityName = findCardRarity(cardDetails, c.card_detail_id);
+
+    // Exclude cards with no land base pp
+    if (c.land_base_pp == null || c.land_base_pp <= 0) return false;
 
     // onLand
     const isOnLand = c.stake_plot != null && c.stake_end_date == null;

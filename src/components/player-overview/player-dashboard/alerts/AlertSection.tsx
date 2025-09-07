@@ -110,10 +110,15 @@ const AlertSection: React.FC<Props> = ({ alerts, player, force }) => {
   ];
 
   return (
-    <Box width="100%">
-      <Typography variant={"h5"}>Alerts</Typography>
-
-      <Stack direction="row" spacing={2}>
+    <Box width="100%" display="flex" flexWrap="wrap" gap={2}>
+      <Typography variant="h5">Alerts</Typography>
+      <Stack
+        direction="row"
+        spacing={2}
+        flexWrap="wrap"
+        useFlexGap
+        sx={{ width: "100%" }}
+      >
         {buttons.map((btn) => (
           <Button
             key={btn.key}
@@ -121,12 +126,12 @@ const AlertSection: React.FC<Props> = ({ alerts, player, force }) => {
             variant="contained"
             onClick={() => setOpenDialog(btn.key)}
             sx={{
-              maxWidth: 250,
-              width: "100%",
+              maxWidth: 200,
+              width: { xs: "100%", sm: "auto" },
+              flex: "1 1 200px",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              py: 2,
             }}
           >
             {btn.icon}

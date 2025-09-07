@@ -72,6 +72,9 @@ enum Edition {
   rebellion = 12,
   soulboundrb = 13,
   conclave = 14,
+  foundations = 15,
+  foundations_sb = 16, // I believe this the soulbound version
+  extra = 17, // e.g. arena fanatic
 }
 
 // ----------------------------------
@@ -87,6 +90,9 @@ const getFoilType = (foil: number): FoilBCXType =>
   foilMetaMap[foil]?.bcxType ?? "normal";
 
 export function getEditionName(edition: Edition): string {
+  if (edition === Edition.foundations_sb) {
+    return Edition[Edition.foundations];
+  }
   return Edition[edition];
 }
 
@@ -94,12 +100,14 @@ export function getCardImg(
   cardName: string,
   edition: Edition,
   foil: number,
+  level?: number,
 ): string {
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const editionName = getEditionName(edition);
   const safeCardName = encodeURIComponent(cardName.trim());
-  return `${baseCardUrl}/${editionName}/${safeCardName}_lv1${suffix}.png`;
+  const lvl = level && level > 1 ? level : 1;
+  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
 }
 
 export const determineCardMaxBCX = (
