@@ -1,10 +1,9 @@
 import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { Rarity } from "@/types/rarity";
+import { CSSSize } from "@/types/cssSize";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { StakedAssets } from "@/types/stakedAssets";
 import { Box } from "@mui/material";
 import CardTile from "../card/CardTile";
-import { CSSSize } from "@/types/cssSize";
 
 export type Props = {
   stakedAssets: StakedAssets;
@@ -38,11 +37,7 @@ export const CardInfo: React.FC<Props> = ({
 
           if (name === "Runi") return null;
 
-          const max_bcx = determineCardMaxBCX(
-            card.card_set,
-            rarity as Rarity,
-            card.foil,
-          );
+          const max_bcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 
           return (
             <CardTile

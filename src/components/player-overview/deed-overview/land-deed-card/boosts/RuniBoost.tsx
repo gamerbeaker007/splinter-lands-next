@@ -1,5 +1,4 @@
 import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { Rarity } from "@/types/rarity";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card } from "@/types/stakedAssets";
 import { Box, Typography } from "@mui/material";
@@ -37,11 +36,7 @@ export const RuniBoost: React.FC<RuniBoostProps> = ({
             card.card_detail_id,
             cardDetails,
           );
-          const max_bcx = determineCardMaxBCX(
-            card.card_set,
-            rarity as Rarity,
-            card.foil,
-          );
+          const max_bcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 
           return (
             <CardTile

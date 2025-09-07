@@ -1,5 +1,6 @@
-import { DeedComplete } from "@/types/deed";
 import { useState, useCallback } from "react";
+import type { DeedComplete } from "@/types/deed";
+import logger from "@/lib/frontend/log/logger.client";
 
 export function useFetchPlot() {
   const [plot, setPlot] = useState<DeedComplete | null>(null);
@@ -7,31 +8,25 @@ export function useFetchPlot() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchPlot = useCallback(async (id: number) => {
-    setLoading(true);
-    setError(null);
-    setPlot(null);
-
     try {
+      setLoading(true);
+      setError(null);
+
       const res = await fetch(`/api/plot/${id}`);
 
+      const payload = await res.json();
+
       if (!res.ok) {
-        setPlot(null);
-        if (res.status === 404) {
-          setError("Invalid plot id");
-        } else if (res.status === 400) {
-          setError("Plot not found");
-        } else {
-          throw new Error("Unexpected error. Please try again.");
-        }
-        return null;
+        const msg = payload?.error || `Request failed (${res.status})`;
+        throw new Error(msg);
       }
 
-      const payload = await res.json();
       setPlot(payload as DeedComplete);
       return payload as DeedComplete;
-    } catch (e) {
-      setError((e as Error).message || "Could not load plot.");
-      return null;
+    } catch (err) {
+      logger.error(err);
+      setError("Could not load plot.");
+      setPlot(null);
     } finally {
       setLoading(false);
     }

@@ -1,18 +1,11 @@
 "use client";
 import {
-  edition_apha_icon_url,
-  edition_beta_icon_url,
-  edition_chaos_icon_url,
-  edition_conclave_icon_url,
-  edition_rebellion_icon_url,
-  edition_untamed_icon_url,
-} from "@/lib/shared/statics_icon_urls";
-import {
   CardElement,
   cardSetModifiers,
   CardSetName,
   cardSetOptions,
 } from "@/types/planner";
+import { cardSetIconMap } from "@/types/planner/primitives";
 import {
   Box,
   capitalize,
@@ -31,15 +24,6 @@ export type Props = {
   onChange: (tier: CardElement) => void;
 };
 
-const ICONS: Record<CardSetName, string> = {
-  alpha: edition_apha_icon_url,
-  beta: edition_beta_icon_url,
-  untamed: edition_untamed_icon_url,
-  chaos: edition_chaos_icon_url,
-  rebellion: edition_rebellion_icon_url,
-  conclave: edition_conclave_icon_url,
-};
-
 export function SetSelector({ value, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<CardSetName>) => {
     onChange(e.target.value as CardSetName);
@@ -48,7 +32,7 @@ export function SetSelector({ value, onChange }: Props) {
   const renderIcon = (tier: CardSetName, size = 24) => {
     return (
       <Image
-        src={ICONS[tier]}
+        src={cardSetIconMap[tier]}
         alt={`${tier} element`}
         width={size}
         height={size}

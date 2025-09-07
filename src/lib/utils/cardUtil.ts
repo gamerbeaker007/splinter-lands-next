@@ -1,5 +1,5 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
-import { Rarity } from "@/types/rarity";
+import { CardRarity, cardRarityOptions } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 
 // ----------------------------------
@@ -31,35 +31,27 @@ const foilMetaMap: Record<number, FoilMeta> = {
 // BCX Map
 // ----------------------------------
 
-const bcxMap: Record<FoilBCXType, Record<SetName, Record<Rarity, number>>> = {
+const bcxMap: Record<
+  FoilBCXType,
+  Record<SetName, Record<CardRarity, number>>
+> = {
   normal: {
-    alpha: { Common: 379, Rare: 86, Epic: 32, Legendary: 8 },
-    beta: { Common: 505, Rare: 115, Epic: 46, Legendary: 11 },
-    default: { Common: 400, Rare: 115, Epic: 46, Legendary: 11 },
+    alpha: { common: 379, rare: 86, epic: 32, legendary: 8 },
+    beta: { common: 505, rare: 115, epic: 46, legendary: 11 },
+    default: { common: 400, rare: 115, epic: 46, legendary: 11 },
   },
   gold: {
-    alpha: { Common: 31, Rare: 17, Epic: 8, Legendary: 3 },
-    beta: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
-    default: { Common: 38, Rare: 22, Epic: 10, Legendary: 4 },
+    alpha: { common: 31, rare: 17, epic: 8, legendary: 3 },
+    beta: { common: 38, rare: 22, epic: 10, legendary: 4 },
+    default: { common: 38, rare: 22, epic: 10, legendary: 4 },
   },
 };
 
-// ----------------------------------
-// Rarity Mapping & Colors
-// ----------------------------------
-
-const rarityMap: Record<number, Rarity> = {
-  1: "Common",
-  2: "Rare",
-  3: "Epic",
-  4: "Legendary",
-};
-
-export const RarityColor: Record<Rarity, string> = {
-  Common: "gray",
-  Rare: "blue",
-  Epic: "purple",
-  Legendary: "gold",
+export const RarityColor: Record<CardRarity, string> = {
+  common: "grey",
+  rare: "blue",
+  epic: "purple",
+  legendary: "gold",
 };
 
 // ----------------------------------
@@ -80,6 +72,9 @@ enum Edition {
   rebellion = 12,
   soulboundrb = 13,
   conclave = 14,
+  foundations = 15,
+  foundations_sb = 16, // I believe this the soulbound version
+  extra = 17, // e.g. arena fanatic
 }
 
 // ----------------------------------
@@ -95,6 +90,9 @@ const getFoilType = (foil: number): FoilBCXType =>
   foilMetaMap[foil]?.bcxType ?? "normal";
 
 export function getEditionName(edition: Edition): string {
+  if (edition === Edition.foundations_sb) {
+    return Edition[Edition.foundations];
+  }
   return Edition[edition];
 }
 
@@ -102,17 +100,19 @@ export function getCardImg(
   cardName: string,
   edition: Edition,
   foil: number,
+  level?: number,
 ): string {
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const editionName = getEditionName(edition);
   const safeCardName = encodeURIComponent(cardName.trim());
-  return `${baseCardUrl}/${editionName}/${safeCardName}_lv1${suffix}.png`;
+  const lvl = level && level > 1 ? level : 1;
+  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
 }
 
 export const determineCardMaxBCX = (
   cardSet: string,
-  rarity: Rarity,
+  rarity: CardRarity,
   foil: number,
 ): number => {
   const foilType = getFoilType(foil);
@@ -124,8 +124,8 @@ export const determineCardMaxBCX = (
   return bcxMap[foilType][set][rarity];
 };
 
-function rarityName(rarity: number): Rarity | string {
-  return rarityMap[rarity] ?? `Unknown (${rarity})`;
+function rarityName(rarity: number): CardRarity | string {
+  return cardRarityOptions[rarity - 1] ?? `Unknown (${rarity})`;
 }
 
 export function determineCardInfo(
@@ -133,7 +133,7 @@ export function determineCardInfo(
   cardDetails: SplCardDetails[] | null | undefined,
 ): {
   name: string;
-  rarity: Rarity | string;
+  rarity: CardRarity;
 } {
   if (!Array.isArray(cardDetails)) {
     console.warn("cardDetails is null or not an array");
@@ -154,10 +154,19 @@ export function determineCardInfo(
 
 export function determineBcxCap(
   set: string,
-  rarity: string,
+  rarity: CardRarity,
   foilId: number,
   actualBcx: number,
 ) {
-  const maxBCX = determineCardMaxBCX(set, rarity as Rarity, foilId);
+  const maxBCX = determineCardMaxBCX(set, rarity, foilId);
   return Math.min(actualBcx, maxBCX);
+}
+
+export function findCardRarity(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+): CardRarity {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  const rarity = cardRarityOptions[(splCard?.rarity ?? 1) - 1];
+  return rarity;
 }

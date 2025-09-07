@@ -22,8 +22,6 @@ import {
 } from "@/types/planner";
 import { Prices } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
-import { Rarity } from "@/types/rarity";
-import { capitalize } from "@mui/material";
 
 export function terrainBonusPct(
   terrain: DeedType,
@@ -77,12 +75,7 @@ function calcBasePP(slot: SlotInput) {
   const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
   const maxBasePP =
     basePPMax[slot.rarity][slot.foil === "regular" ? "regular" : "gold"];
-  // TODO look into converio to rarity with lower cases!
-  const maxBCX = determineCardMaxBCX(
-    slot.set,
-    capitalize(slot.rarity) as Rarity,
-    foilId,
-  );
+  const maxBCX = determineCardMaxBCX(slot.set, slot.rarity, foilId);
 
   const ppPerBcx = maxBasePP / maxBCX;
   const basePP =

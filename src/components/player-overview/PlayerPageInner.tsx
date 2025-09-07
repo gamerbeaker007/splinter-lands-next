@@ -12,6 +12,7 @@ import NavTabs from "../nav-tabs/NavTabs";
 import DeedOverview from "./deed-overview/DeedOverview";
 import PlayerInput from "./PlayerInput";
 import PlayerRegionOverview from "./region-overview/PlayerRegionOverview";
+import CollectionOverview from "@/components/player-overview/collection-overview/CollectionOverview";
 
 const defaultFilterConfig: EnableFilterOptions = {
   regions: true,
@@ -61,6 +62,11 @@ export default function PlayerPageInner() {
         label: "Deed",
         component: <DeedOverview player={selectedPlayer} />,
         filterOptions: defaultWithSortingFilterConfig,
+      },
+      {
+        key: "collection",
+        label: "Collection",
+        component: <CollectionOverview player={selectedPlayer} />,
       },
     ],
     [selectedPlayer],

@@ -1,7 +1,6 @@
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
-import { Rarity } from "@/types/rarity";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import PPMultiplierDot from "./PPMultiplierDot";
@@ -15,8 +14,8 @@ type Props = {
   actual_bcx: number;
   max_bcx: number;
   base_pp: number;
-  boosted_pp: number;
   uid: string;
+  boosted_pp?: number;
 };
 
 export default function CardTile({
@@ -41,6 +40,8 @@ export default function CardTile({
     name === "Runi"
       ? `https://runi.splinterlands.com/cards/${uid}.jpg`
       : getCardImg(name, edition, foil);
+
+  const displayPP = Number(boosted_pp !== undefined ? boosted_pp : base_pp);
 
   return (
     <>
@@ -97,12 +98,12 @@ export default function CardTile({
             height={14}
             borderRadius="50%"
             border={1}
-            bgcolor={RarityColor[rarity as Rarity]}
+            bgcolor={RarityColor[rarity]}
           />
 
           {/* bottom-left multiplier dot (placeholder logic) */}
           <PPMultiplierDot
-            rarity={rarity as Rarity}
+            rarity={rarity}
             foil={foil}
             bcx={actual_bcx}
             max_bcx={max_bcx}
@@ -153,8 +154,12 @@ export default function CardTile({
               <strong>Production Power (PP):</strong>
               <br />
               Base: {formatLargeNumber(Number(base_pp))}
-              <br />
-              Boosted: {formatLargeNumber(Number(boosted_pp))}
+              {boosted_pp !== undefined && (
+                <>
+                  <br />
+                  Boosted: {formatLargeNumber(Number(boosted_pp))}
+                </>
+              )}
             </>
           }
         >
@@ -177,7 +182,7 @@ export default function CardTile({
               height={15}
             />
             <Typography fontSize="0.9rem">
-              {formatLargeNumber(Number(boosted_pp.toFixed(0)))}
+              {formatLargeNumber(Number(displayPP.toFixed(0)))}
             </Typography>
           </Box>
         </Tooltip>

@@ -1,5 +1,6 @@
 "use client";
 
+import { InfoCreatableItem } from "@/components/player-overview/player-dashboard/InfoItemWithCraftable";
 import { PlayerCraftingOverview } from "@/components/player-overview/player-dashboard/PlayerCraftingOverview";
 import { ResourceOverviewCard } from "@/components/player-overview/player-dashboard/ResourceOverviewCard";
 import BoostTile from "@/components/region-overview/summary/BoostTile";
@@ -8,51 +9,27 @@ import DeedRarityTile from "@/components/region-overview/summary/DeedRarityTile"
 import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile";
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
+import { usePlayerDashboard } from "@/hooks/usePlayerDashboard";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { PlayerOverview } from "@/types/playerOverview";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
-import React, { useCallback, useEffect, useState } from "react";
-import { DeedAlertSection } from "./DeedAlertSection";
-import { InfoCreatableItem } from "@/components/player-overview/player-dashboard/InfoItemWithCraftable";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { useState } from "react";
+import AlertSection from "./alerts/AlertSection";
 
 type Props = {
   player: string;
 };
 
 export default function PlayerDashboardPage({ player }: Props) {
-  const [playerOverview, setPlayerOverview] = useState<PlayerOverview | null>(
-    null,
-  );
-  const [loadingText, setLoadingText] = useState<string | null>(null);
+  const [force, setForce] = useState(false);
+  const { playerOverview, loadingText, fetchPlayerData } =
+    usePlayerDashboard(player);
 
-  const fetchPlayerData = useCallback(
-    async (force: boolean = false) => {
-      try {
-        setLoadingText("Fetching base player data...");
-        setPlayerOverview(null);
-
-        const data = await fetchPlayerDashboardData(player, force);
-
-        setLoadingText(null);
-        setPlayerOverview(data);
-      } catch (err) {
-        console.error("Failed to fetch data", err);
-        setLoadingText("An error occurred while loading data.");
-      }
-    },
-    [player],
-  );
-
-  useEffect(() => {
-    if (!player || player === "") {
-      setLoadingText(null);
-      return;
-    }
-
-    fetchPlayerData(false);
-  }, [player, fetchPlayerData]);
+  function refetchData() {
+    setForce((prev) => !prev); // Toggle force to trigger useEffect in child components
+    fetchPlayerData(true); // Pass force as true to refetch data
+  }
 
   return (
     <>
@@ -66,7 +43,7 @@ export default function PlayerDashboardPage({ player }: Props) {
             size="small"
             variant="outlined"
             startIcon={<Refresh />}
-            onClick={() => fetchPlayerData(true)}
+            onClick={refetchData}
           >
             Refresh Data
           </Button>
@@ -78,9 +55,11 @@ export default function PlayerDashboardPage({ player }: Props) {
               flexDirection={"column"}
               mt={4}
             >
-              {playerOverview.alerts.length > 0 && (
-                <DeedAlertSection alerts={playerOverview.alerts} />
-              )}
+              <AlertSection
+                alerts={playerOverview.alerts}
+                player={player}
+                force={force}
+              />
               <Typography variant={"h5"}>Resource Stores</Typography>
               <Box display="flex" flexWrap="wrap" gap={2}>
                 {["GRAIN", "WOOD", "STONE", "IRON", "RESEARCH", "AURA"].map(
@@ -188,16 +167,4 @@ export default function PlayerDashboardPage({ player }: Props) {
       )}
     </>
   );
-}
-
-async function fetchPlayerDashboardData(
-  player: string,
-  force: boolean,
-): Promise<PlayerOverview> {
-  const res = await fetch("/api/player/dashboard", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ player, force }),
-  });
-  return await res.json();
 }
