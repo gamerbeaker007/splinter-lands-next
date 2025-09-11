@@ -5,6 +5,7 @@ import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import {
   cardElementColorMap,
+  cardFoilOptions,
   cardRarityOptions,
   DeedType,
   deedTypeOptions,
@@ -158,22 +159,17 @@ export default function Planner({
     const setName = card.card_set ?? "chaos";
     const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
     const rarity = cardRarityOptions[(splCard?.rarity ?? 0) - 1];
-    const foil = card.foil === 0 ? "regular" : "gold";
+    const foil = card.foil;
     const color = splCard?.color.toLowerCase() ?? "red";
     const element = cardElementColorMap[color];
-    const bcx = determineBcxCap(
-      setName,
-      rarity,
-      foil === "regular" ? 0 : 1,
-      card.bcx,
-    );
+    const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
 
     return {
       id: idx,
       set: setName,
       rarity,
       bcx,
-      foil,
+      foil: cardFoilOptions[foil],
       element,
     };
   };
