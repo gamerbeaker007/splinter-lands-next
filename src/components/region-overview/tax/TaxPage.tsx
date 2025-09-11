@@ -1,38 +1,36 @@
 "use client";
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { RegionTax } from "@/types/regionTax";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
 import { TaxChartsWrapper } from "./TaxChartSection";
 import { TopCaptureRateList } from "./TopCapturedRateList";
 import { TopTaxEarnersList } from "./TopTaxEarnersList";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
+import LoadingComponent from "@/components/ui/LoadingComponent";
+import ErrorComponent from "@/components/ui/ErrorComponent";
 
 export function TaxPage() {
-  const [data, setData] = useState<RegionTax[] | null>(null);
+  const { filters } = useFilters();
+  const { regionTax, error, loading } = useRegionTaxInfo(filters);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  const { filters } = useFilters();
+  if (loading) {
+    return (
+      <LoadingComponent title={"Loading data (region tax information)…"} />
+    );
+  }
 
-  useEffect(() => {
-    if (!filters) return;
-
-    fetch("/api/region/tax", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then((raw) => {
-        setData(raw);
-      })
-      .catch(console.error);
-  }, [filters]);
-
+  if (error) {
+    return (
+      <ErrorComponent
+        title={`Failed to load region tax information: ${error}`}
+      />
+    );
+  }
   return (
     <>
-      {data && (
+      {regionTax && (
         <Box>
           <Typography variant="h6">Leaderboard Tax Collectors</Typography>
           <Box
@@ -40,13 +38,13 @@ export function TaxPage() {
             flexDirection={isSmallScreen ? "column" : "row"}
             gap={1}
           >
-            <TopCaptureRateList data={data} type="castle" />
-            <TopCaptureRateList data={data} type="keep" />
-            <TopTaxEarnersList data={data} type="castle" />
-            <TopTaxEarnersList data={data} type="keep" />
+            <TopCaptureRateList data={regionTax} type="castle" />
+            <TopCaptureRateList data={regionTax} type="keep" />
+            <TopTaxEarnersList data={regionTax} type="castle" />
+            <TopTaxEarnersList data={regionTax} type="keep" />
           </Box>
 
-          <TaxChartsWrapper data={data} />
+          <TaxChartsWrapper data={regionTax} />
         </Box>
       )}
     </>

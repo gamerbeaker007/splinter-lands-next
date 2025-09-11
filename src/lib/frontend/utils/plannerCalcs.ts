@@ -52,8 +52,7 @@ export function calcBoostedPP(
 
   const totalBoostedMultiplier =
     1 + totemPct + titlePct + runiPct + rarityPct + plot.deedResourceBoost;
-  const boostedPP = terrainBoostedPP * totalBoostedMultiplier;
-  return boostedPP;
+  return terrainBoostedPP * totalBoostedMultiplier;
 }
 
 export function computeSlot(
@@ -78,12 +77,12 @@ function calcBasePP(slot: SlotInput) {
   const maxBCX = determineCardMaxBCX(slot.set, slot.rarity, foilId);
 
   const ppPerBcx = maxBasePP / maxBCX;
-  const basePP =
+  return (
     ppPerBcx *
     slot.bcx *
     (cardSetModifiers[slot.set] ?? 0) *
-    (cardFoilModifiers[slot.foil] ?? 1);
-  return basePP;
+    (cardFoilModifiers[slot.foil] ?? 1)
+  );
 }
 
 export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {

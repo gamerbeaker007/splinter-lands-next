@@ -16,6 +16,7 @@ import { MagicTypeSelector } from "./DeedMagicTypeSelector";
 import { PlotRaritySelector } from "./DeedRaritySelector";
 import { PlotStatusSelector } from "./DeedStatusSelector";
 import { DeedTypeSelector } from "./DeedTypeSelector";
+import { NumberSelection } from "@/components/planning/planner/deed-editor/NumberSelector";
 
 type Props = {
   value: PlotModifiers;
@@ -23,6 +24,8 @@ type Props = {
   onPlotStatusChange: (s: PlotStatus) => void;
   onMagicTypeChange: (m: MagicType) => void;
   onDeedTypeChange: (d: DeedType) => void;
+  onRegionChange: (n: number) => void;
+  onTractChange: (n: number) => void;
   applyImportedDeed: (d: DeedComplete) => void;
 };
 
@@ -32,6 +35,8 @@ export function PlannerControls({
   onPlotStatusChange,
   onMagicTypeChange,
   onDeedTypeChange,
+  onRegionChange,
+  onTractChange,
   applyImportedDeed,
 }: Props) {
   const [importOpen, setImportOpen] = React.useState(false);
@@ -49,6 +54,7 @@ export function PlannerControls({
 
       <PlotStatusSelector
         value={value.plotStatus}
+        rarity={value.plotRarity}
         deedResourceBoost={value.deedResourceBoost}
         onChange={(e) => onPlotStatusChange(e as PlotStatus)}
       />
@@ -66,6 +72,32 @@ export function PlannerControls({
         magicType={value.magicType}
         onChange={(e) => onDeedTypeChange(e as DeedType)}
       />
+      {value.plotStatus === "kingdom" && value.worksiteType === "KEEP" && (
+        <>
+          <NumberSelection
+            text={"Region"}
+            value={value.regionNumber}
+            range={150}
+            onChange={onRegionChange}
+          />
+          <NumberSelection
+            text={"Tract"}
+            value={value.tractNumber}
+            range={100}
+            onChange={onTractChange}
+          />
+        </>
+      )}
+      {value.plotStatus === "kingdom" && value.worksiteType === "CASTLE" && (
+        <>
+          <NumberSelection
+            text={"Region"}
+            value={value.regionNumber}
+            range={150}
+            onChange={onRegionChange}
+          />
+        </>
+      )}
 
       {/* Right: Import button */}
       <Tooltip title="Import by Plot ID">

@@ -23,6 +23,8 @@ export interface PlotModifiers {
   totem: TotemTier;
   runi: RuniTier;
   worksiteType: WorksiteType;
+  regionNumber: number;
+  tractNumber: number;
 }
 
 export interface SlotInput {

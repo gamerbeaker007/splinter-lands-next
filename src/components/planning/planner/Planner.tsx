@@ -10,6 +10,7 @@ import {
   PlotModifiers,
   PlotRarity,
   PlotStatus,
+  resourceWorksiteMap,
   RuniTier,
   SlotInput,
   TERRAIN_ALLOWED,
@@ -38,6 +39,9 @@ import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
 import { ProductionInfo } from "@/types/productionInfo";
 import { determineBcxCap } from "@/lib/utils/cardUtil";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
+import { ResourceOutputTax } from "@/components/planning/planner/output/ResourceOutputTax";
+import { TotemChanceOutput } from "@/components/planning/planner/output/TotomChangeOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -60,6 +64,8 @@ export default function Planner({
   spsRatio,
   onPlanChange,
 }: Props) {
+  const { regionTax, loading, error } = useRegionTaxInfo();
+
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -70,6 +76,8 @@ export default function Planner({
     totem: "none",
     runi: "none",
     worksiteType: "Grain Farm",
+    regionNumber: 1,
+    tractNumber: 1,
   });
   const [runiImgUrl, setRuniImgUrl] = useState<string | null>(null);
 
@@ -91,8 +99,15 @@ export default function Planner({
         plot.deedType,
         plot.plotStatus,
         plot.plotRarity,
+        plot.worksiteType,
       ),
-    [plot.magicType, plot.deedType, plot.plotStatus, plot.plotRarity],
+    [
+      plot.magicType,
+      plot.deedType,
+      plot.plotStatus,
+      plot.plotRarity,
+      plot.worksiteType,
+    ],
   );
 
   const { totalBasePP, totalBoostedPP } = useMemo(
@@ -100,10 +115,18 @@ export default function Planner({
     [slots, plot],
   );
 
+  const captureRate = useMemo(() => {
+    const alpha = plot.worksiteType === "KEEP" ? 0.5 : 0.2;
+    const denom = plot.worksiteType === "KEEP" ? 5_000 : 10_000;
+    if (plot.worksiteType !== "KEEP" && plot.worksiteType !== "CASTLE")
+      return null;
+    return alpha * (totalBoostedPP / (totalBoostedPP + denom));
+  }, [plot.worksiteType, totalBoostedPP]);
+
   const productionInfo = useMemo(
     () =>
       calcProductionInfo(totalBasePP, totalBoostedPP, plot, prices, spsRatio),
-    [totalBasePP, totalBoostedPP, plot, prices, spsRatio],
+    [totalBasePP, totalBoostedPP, plot, prices, spsRatio, regionTax],
   );
 
   useEffect(() => {
@@ -192,6 +215,8 @@ export default function Planner({
   };
 
   const onDeedTypeChange = (next: DeedType) => updatePlot({ deedType: next });
+  const onRegionChange = (next: number) => updatePlot({ regionNumber: next });
+  const onTractChange = (next: number) => updatePlot({ tractNumber: next });
 
   function findTotem(deed: DeedComplete): TotemTier {
     const items: Item[] = deed.stakedAssets?.items ?? [];
@@ -270,6 +295,8 @@ export default function Planner({
     const importedTotem = findTotem(deed);
     const importedTitle = findTitle(deed);
     const importedRuni = findRuni(deed);
+    const importedRegionNumber = deed.region_number!;
+    const importedTractNumber = deed.tract_number!;
 
     // update magical boost based on worsite
     const importedDeedResourceBoost = determineDeedResourceBoost(
@@ -287,6 +314,8 @@ export default function Planner({
       title: importedTitle,
       runi: importedRuni,
       worksiteType: importedWorksite,
+      tractNumber: importedTractNumber,
+      regionNumber: importedRegionNumber,
     });
 
     updateSlots(deed.stakedAssets?.cards ?? []);
@@ -306,7 +335,7 @@ export default function Planner({
   };
 
   const onWorksiteChange = (worksite: WorksiteType) => {
-    // update magical boost based on worsite
+    // update magical boost based on worksite
     updatePlot({
       deedResourceBoost: determineDeedResourceBoost(plot.plotStatus, worksite),
     });
@@ -337,6 +366,8 @@ export default function Planner({
             onPlotStatusChange={onPlotStatusChange}
             onMagicTypeChange={onMagicTypeChange}
             onDeedTypeChange={onDeedTypeChange}
+            onRegionChange={onRegionChange}
+            onTractChange={onTractChange}
             applyImportedDeed={applyImportedDeed}
           />
         </Stack>
@@ -363,13 +394,11 @@ export default function Planner({
           onChange={onTotemChange}
           pos={{ x: "20px", y: "30px" }}
         />
-
         <TitleSelector
           value={plot.title as TitleTier}
           onChange={onTitleChange}
           pos={{ x: "170px", y: "30px" }}
         />
-
         <RuniSelector
           value={plot.runi as RuniTier}
           plotModifiers={plot}
@@ -377,13 +406,13 @@ export default function Planner({
           onChange={onRuniChange}
           pos={{ x: "300px", y: "30px" }}
         />
-
         <WorksiteSelector
           value={plot.worksiteType}
+          deedType={plot.deedType}
+          plotStatus={plot.plotStatus}
           onChange={onWorksiteChange}
           pos={{ x: "20px", y: "90px" }}
         />
-
         {slots.map((slot, i) => (
           <SlotEditor
             key={i}
@@ -394,23 +423,45 @@ export default function Planner({
             pos={{ x: "20px", y: `${180 + 60 * i}px`, w: "695px" }}
           />
         ))}
-
         <PPOutput
           totalBasePP={totalBasePP}
           totalBoostPP={totalBoostedPP}
-          pos={{ x: "680px", y: "30px" }}
+          captureRate={captureRate}
+          pos={{ x: "680px", y: "20px" }}
         />
-
-        <ResourceOutput
-          productionInfo={productionInfo}
-          pos={{ x: "780px", y: "180px" }}
-        />
-
-        <DECOutput
-          productionInfo={productionInfo}
-          pos={{ x: "780px", y: "390px" }}
-        />
-
+        :
+        {(plot.worksiteType === "Research Hut" ||
+          plot.plotStatus === "kingdom") && (
+          <TotemChanceOutput
+            worksiteType={plot.worksiteType}
+            basePP={totalBasePP}
+            pos={{ x: "680px", y: "145px" }}
+          />
+        )}
+        {resourceWorksiteMap[plot.worksiteType] === "TAX" ? (
+          <ResourceOutputTax
+            worksiteType={plot.worksiteType}
+            regionNumber={plot.regionNumber}
+            tractNumber={plot.tractNumber}
+            captureRate={captureRate ?? 0}
+            prices={prices}
+            regionTax={regionTax}
+            loading={loading}
+            error={error}
+            pos={{ x: "750px", y: "185px" }}
+          />
+        ) : (
+          <>
+            <ResourceOutput
+              productionInfo={productionInfo}
+              pos={{ x: "750px", y: "185px" }}
+            />
+            <DECOutput
+              productionInfo={productionInfo}
+              pos={{ x: "750px", y: "395px" }}
+            />
+          </>
+        )}
         <Box
           sx={{
             position: "absolute",

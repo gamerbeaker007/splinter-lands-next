@@ -4,19 +4,22 @@ import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 import PPWarning from "./PPWarning";
+import { FaPercent } from "react-icons/fa";
 
 type Props = {
   totalBasePP: number;
   totalBoostPP: number;
+  captureRate: number | null;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const sizeHammerIcon = 20;
+const sizeIcon = 20;
 const fontSize = "1.0rem";
 
 export const PPOutput: React.FC<Props> = ({
   totalBasePP,
   totalBoostPP,
+  captureRate,
   pos,
 }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
@@ -48,8 +51,8 @@ export const PPOutput: React.FC<Props> = ({
           <Image
             src={land_hammer_icon_url}
             alt="production PP"
-            width={sizeHammerIcon}
-            height={sizeHammerIcon}
+            width={sizeIcon}
+            height={sizeIcon}
             style={{ display: "block" }}
           />
           <Box display="flex" justifyContent="space-between" flex={1}>
@@ -73,8 +76,8 @@ export const PPOutput: React.FC<Props> = ({
           <Image
             src={land_hammer_icon_url}
             alt="production PP"
-            width={sizeHammerIcon}
-            height={sizeHammerIcon}
+            width={sizeIcon}
+            height={sizeIcon}
             style={{ display: "block" }}
           />
           <Box display="flex" justifyContent="space-between" flex={1}>
@@ -92,6 +95,27 @@ export const PPOutput: React.FC<Props> = ({
             </Typography>
           </Box>
         </Box>
+
+        {/* Add capture rate on castle and keeps */}
+        {captureRate && (
+          <Box display="flex" alignItems="center" gap={1} ml={0.5} mt={0.5}>
+            <FaPercent size={sizeIcon} color={"orange"} />
+            <Box display="flex" justifyContent="space-between" flex={1}>
+              <Typography fontSize={fontSize} color="common.white">
+                Capture rate:
+              </Typography>
+              <Typography
+                fontSize={fontSize}
+                fontWeight="bold"
+                color="success.main"
+              >
+                {(captureRate * 100).toLocaleString(undefined, {
+                  maximumFractionDigits: 1,
+                })}
+              </Typography>
+            </Box>
+          </Box>
+        )}
       </Box>
     </Box>
   );

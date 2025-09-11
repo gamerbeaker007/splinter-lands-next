@@ -29,9 +29,10 @@ export function PlotRaritySelector({ value, onChange }: Props) {
   };
 
   const renderIcon = (tier: PlotRarity, size = 24) => {
+    const rarity = tier == "mythic" ? "legendary" : tier;
     const icon = land_default_off_icon_url_placeholder.replace(
       "__NAME__",
-      tier.toLowerCase(),
+      rarity.toLowerCase(),
     );
     return (
       <Image

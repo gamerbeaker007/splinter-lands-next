@@ -1,15 +1,13 @@
 "use client";
-import {
-  land_aura_lab_icon_url,
-  land_grain_farm_icon_url,
-  land_logging_camp_icon_url,
-  land_ore_mine_icon_url,
-  land_quarry_icon_url,
-  land_research_hut_icon_url,
-  land_shard_mine_icon_url,
-} from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { WorksiteType, worksiteTypeOptions } from "@/types/planner";
+import {
+  allowedTerrainsByWorksite,
+  DeedType,
+  PlotStatus,
+  worksiteIconMap,
+  WorksiteType,
+  worksiteTypeOptions,
+} from "@/types/planner";
 import {
   Box,
   capitalize,
@@ -22,25 +20,58 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-
-const ICONS: Record<WorksiteType, string> = {
-  "Grain Farm": land_grain_farm_icon_url,
-  "Logging Camp": land_logging_camp_icon_url,
-  "Ore Mine": land_ore_mine_icon_url,
-  Quarry: land_quarry_icon_url,
-  "Research Hut": land_research_hut_icon_url,
-  "Aura Lab": land_aura_lab_icon_url,
-  "Shard Mine": land_shard_mine_icon_url,
-};
+import { useEffect, useMemo } from "react";
 
 export type Props = {
   value: WorksiteType;
+  deedType: DeedType;
+  plotStatus: PlotStatus;
   onChange: (tier: WorksiteType) => void;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-export function WorksiteSelector({ value, onChange, pos }: Props) {
+const FORTS = new Set<WorksiteType>(["CASTLE", "KEEP"]);
+
+export function isAllowed(
+  worksite: WorksiteType,
+  deedType: DeedType,
+  plotStatus: PlotStatus,
+): boolean {
+  // Forts are only valid on kingdom plots
+  if (FORTS.has(worksite)) return plotStatus === "kingdom";
+
+  // On kingdom plots, only CASTLE/KEEP are allowed
+  if (plotStatus === "kingdom") return false;
+
+  // Terrain-gated worksites
+  const terrains = allowedTerrainsByWorksite[worksite];
+  return !terrains || terrains.includes(deedType);
+}
+
+export function WorksiteSelector({
+  value,
+  onChange,
+  pos,
+  deedType,
+  plotStatus,
+}: Props) {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
+
+  const allowedOptions = useMemo(
+    () => worksiteTypeOptions.filter((w) => isAllowed(w, deedType, plotStatus)),
+    [deedType, plotStatus],
+  );
+
+  // Auto-correct selection when it becomes disallowed
+  useEffect(() => {
+    if (!isAllowed(value, deedType, plotStatus)) {
+      // Pick the first allowed option according to fallbackPriority
+      const next =
+        worksiteTypeOptions.find((w) => isAllowed(w, deedType, plotStatus)) ??
+        allowedOptions[0]; // safety fallback
+      if (next && next !== value) onChange(next);
+    }
+  }, [value, deedType, plotStatus, onChange, allowedOptions]);
 
   const handleChange = (e: SelectChangeEvent<WorksiteType>) => {
     onChange(e.target.value as WorksiteType);
@@ -56,7 +87,7 @@ export function WorksiteSelector({ value, onChange, pos }: Props) {
       }}
     >
       <Image
-        src={ICONS[worksite]}
+        src={worksiteIconMap[worksite]}
         alt={`${worksite} icon`}
         fill
         sizes={`${size}px`}
@@ -112,16 +143,20 @@ export function WorksiteSelector({ value, onChange, pos }: Props) {
             },
           }}
         >
-          {worksiteTypeOptions.map((v) => (
-            <MenuItem key={v} value={v}>
-              <ListItemIcon sx={{ minWidth: 28 }}>
-                {renderIcon(v, 40)}
-              </ListItemIcon>
-              <Typography variant="body2" sx={{ flexGrow: 1 }} ml={1}>
-                {capitalize(v)}
-              </Typography>
-            </MenuItem>
-          ))}
+          {worksiteTypeOptions.map((v) => {
+            const allowed = isAllowed(v, deedType, plotStatus);
+
+            return (
+              <MenuItem key={v} value={v} disabled={!allowed}>
+                <ListItemIcon sx={{ minWidth: 28 }}>
+                  {renderIcon(v, 40)}
+                </ListItemIcon>
+                <Typography variant="body2" sx={{ flexGrow: 1 }} ml={1}>
+                  {capitalize(v)}
+                </Typography>
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
     </Box>
