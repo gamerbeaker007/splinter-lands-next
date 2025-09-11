@@ -27,9 +27,11 @@ export function SimulationResult({ items }: ResultProps) {
         consumed[c.resource] += c.amount ?? 0;
       }
     }
-    const p = it.produce;
-    if (p?.resource && PRODUCING_RESOURCES.includes(p.resource)) {
-      produced[p.resource] += p.amount ?? 0;
+
+    for (const p of it.produce ?? []) {
+      if (p?.resource && PRODUCING_RESOURCES.includes(p.resource)) {
+        produced[p.resource] += p.amount ?? 0;
+      }
     }
   }
 

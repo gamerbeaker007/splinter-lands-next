@@ -132,7 +132,7 @@ export function calcDECPrice(
   resource: string,
   amount: number,
   prices: Prices,
-) {
+): number {
   const price = prices[resource.toLowerCase()] ?? 0;
   return resource === "AURA"
     ? amount * price

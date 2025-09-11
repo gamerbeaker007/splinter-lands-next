@@ -6,7 +6,7 @@ import { useCardDetails } from "@/hooks/useCardDetails";
 import { useFetchSPSRatio } from "@/hooks/useFetchSPSRatio";
 import { usePrices } from "@/hooks/usePrices";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
-import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
+import { ProductionInfo } from "@/types/productionInfo";
 import {
   Alert,
   Box,
@@ -23,13 +23,6 @@ import { useCallback, useEffect, useState } from "react";
 
 type ZoomKey = "small" | "medium" | "large";
 
-const emptyPlan: ResourceWithDEC = {
-  resource: "GRAIN",
-  amount: 0,
-  buyPriceDEC: 0,
-  sellPriceDEC: 0,
-};
-
 export default function PlanningPage() {
   const { setTitle } = usePageTitle();
   const { cardDetails, loading, error } = useCardDetails();
@@ -45,7 +38,7 @@ export default function PlanningPage() {
   }, [setTitle]);
 
   const [plans, setPlans] = useState<ProductionInfo[]>([
-    { consume: [], produce: emptyPlan, netDEC: 0 },
+    { consume: [], produce: [], netDEC: 0 },
   ]);
 
   const handlePlanChange = useCallback(
@@ -60,10 +53,7 @@ export default function PlanningPage() {
   );
 
   const addPlan = useCallback(() => {
-    setPlans((prev) => [
-      ...prev,
-      { consume: [], produce: emptyPlan, netDEC: 0 },
-    ]);
+    setPlans((prev) => [...prev, { consume: [], produce: [], netDEC: 0 }]);
   }, []);
 
   const deletePlan = useCallback((index: number) => {
@@ -183,8 +173,6 @@ export default function PlanningPage() {
                   lg: isLargeUp ? zoomMap[lgZoom] : "80%",
                 },
               }}
-              width={980}
-              height={422}
             >
               <AddDeedPlanningTile onAdd={addPlan} />
             </Box>

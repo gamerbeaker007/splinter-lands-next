@@ -1,26 +1,30 @@
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { CSSSize } from "@/types/cssSize";
+import { WorksiteType } from "@/types/planner";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import SPSWarning from "./SPSWarning";
+import TaxWarning from "./TaxWarning";
 
 type Props = {
+  worksiteType: WorksiteType;
   productionInfo: ProductionInfo;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-export const ResourceOutput: React.FC<Props> = ({ productionInfo, pos }) => {
+export const ResourceOutput: React.FC<Props> = ({
+  worksiteType,
+  productionInfo,
+  pos,
+}) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
-
-  const produce = productionInfo.produce ?? null; // be safe in case it's null
-  const produceIcon = produce ? RESOURCE_ICON_MAP[produce.resource] : undefined;
 
   const fontSize = "1.0rem";
   const iconSize = 25;
 
-  const isSps = produce?.resource === "SPS";
+  const isTax = worksiteType === "CASTLE" || worksiteType === "KEEP";
+  const suffix = isTax ? "" : "/h";
 
   return (
     <Box
@@ -45,24 +49,32 @@ export const ResourceOutput: React.FC<Props> = ({ productionInfo, pos }) => {
             gap={0.5}
           >
             Produce:
-            {isSps && <SPSWarning />}
+            {isTax && <TaxWarning />}
           </Typography>
 
-          {produce && (
-            <Box display="flex" alignItems="center" gap={0.5} mb={0.5} ml={1}>
-              {produceIcon && (
+          {productionInfo.produce?.map((row, idx) => {
+            const icon = RESOURCE_ICON_MAP[row.resource];
+            return (
+              <Box
+                key={idx}
+                display="flex"
+                alignItems="center"
+                gap={0.5}
+                mb={0.5}
+                ml={1}
+              >
                 <Image
-                  src={produceIcon}
-                  alt={produce.resource}
+                  src={icon}
+                  alt={row.resource}
                   width={iconSize}
                   height={iconSize}
                 />
-              )}
-              <Typography fontSize={fontSize}>
-                {produce.amount.toFixed(3)} /h
-              </Typography>
-            </Box>
-          )}
+                <Typography fontSize={fontSize}>
+                  {row.amount.toFixed(3)} /h
+                </Typography>
+              </Box>
+            );
+          })}
         </Box>
 
         <Box>
@@ -95,7 +107,7 @@ export const ResourceOutput: React.FC<Props> = ({ productionInfo, pos }) => {
                   />
                 )}
                 <Typography fontSize={fontSize}>
-                  {row.amount.toFixed(3)} /h
+                  {row.amount.toFixed(3)} {suffix}
                 </Typography>
               </Box>
             );

@@ -1,45 +1,26 @@
 import { totem_fragment_common_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { WorksiteType } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 
 type Props = {
-  worksiteType: WorksiteType;
-  basePP: number;
+  estimateChange: number;
+  perHour?: boolean;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const fontSize = "1.0rem";
+const fontSize = "0.85rem";
 const iconSize = 25;
 
-function calcTotemChancePerHour(
-  worksiteType: WorksiteType,
-  basePP: number,
-): number {
-  if (worksiteType === "KEEP" || worksiteType === "CASTLE") {
-    let multiplier = 1;
-    switch (worksiteType) {
-      case "KEEP":
-        multiplier = 3;
-        break;
-      case "CASTLE":
-        multiplier = 10;
-        break;
-    }
-    return (basePP / 1000) * 0.0007 * multiplier;
-  }
-  return 0; // not applicable for other types
-}
-
 export const TotemChanceOutput: React.FC<Props> = ({
-  worksiteType,
-  basePP,
+  estimateChange,
+  perHour,
   pos,
 }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
-  const totemChance = calcTotemChancePerHour(worksiteType, basePP);
+
+  const suffix = perHour ? "\h" : "";
 
   return (
     <Box
@@ -55,7 +36,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
       <Tooltip
         title={
           <Typography fontSize={fontSize} color="common.white">
-            Totem Fragment change per hour
+            Totem Fragment change
           </Typography>
         }
       >
@@ -75,10 +56,10 @@ export const TotemChanceOutput: React.FC<Props> = ({
               fontWeight="bold"
               color="common.white"
             >
-              {totemChance.toLocaleString(undefined, {
-                maximumFractionDigits: 6,
+              {(estimateChange * 100).toLocaleString(undefined, {
+                maximumFractionDigits: 2,
               })}
-              % /h
+              % {suffix}
             </Typography>
           </Box>
         </Box>

@@ -1,5 +1,6 @@
 "use client";
 
+import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   land_plot_icon_url,
@@ -11,17 +12,19 @@ import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Stack } from "@mui/material";
+import BoostInfo from "./info-sections/BoostsInfo";
 import { CardInfo } from "./info-sections/CardInfo";
 import { ConsumeProduceInfo } from "./info-sections/ConsumeProduceInfo";
 import { DECInfo } from "./info-sections/DECInfo";
 import { PlotInfo } from "./info-sections/PlotInfo";
 import { PPInfo } from "./info-sections/PPInfo";
 import { StoreInfo } from "./info-sections/StoreInfo";
+import { TotalBoostInfo } from "./info-sections/TotalBoostInfo";
 import { WorksiteInfo } from "./info-sections/WorksiteInfo";
 import { HarvestLink } from "./link-components/HarvestLink";
 import { ManageLink } from "./link-components/ManageLink";
-import { TotalBoostInfo } from "./info-sections/TotalBoostInfo";
-import BoostInfo from "./info-sections/BoostsInfo";
+import { TotemChanceOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/TotemChangeOutput";
+import { CaptureRateOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/CaptureRateOutput";
 
 export type LandDeedCardProps = {
   data: DeedComplete;
@@ -47,7 +50,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
   const rarity = data.rarity!;
   const worksiteType = data.worksite_type!;
 
-  const productionInfo = data.productionIfo;
+  const productionInfo = data.productionInfo;
   const resource = data.worksiteDetail?.token_symbol ?? "";
 
   const isConstruction = data.worksiteDetail?.is_construction ?? false;
@@ -64,6 +67,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
     worksiteType,
   );
 
+  const isTax = resource === "TAX";
   return (
     <Box
       // Responsive wrapper: scales the canvas by width, preserves 800:422 ratio
@@ -112,7 +116,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         regionNumber={regionNumber}
         tractNumber={tractNumber}
         plotNumber={plotNumber}
-        pos={{ x: "570px", y: "75px", w: "auto" }}
+        pos={{ x: "570px", y: "60px", w: "auto" }}
       />
 
       <WorksiteInfo
@@ -138,6 +142,20 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         boostedPP={data.stakingDetail?.total_harvest_pp ?? 0}
         pos={{ x: "157px", y: "125px", w: "300px" }}
       />
+
+      {(resource === "TAX" || resource === "RESEARCH") && (
+        <TotemChanceOutput
+          estimateChange={data.worksiteDetail?.estimated_totem_chance ?? 0}
+          pos={{ x: "350px", y: "120px", w: "110px" }}
+        />
+      )}
+
+      {resource === "TAX" && (
+        <CaptureRateOutput
+          captureRate={data.worksiteDetail?.captured_tax_rate ?? 0}
+          pos={{ x: "350px", y: "90px", w: "110px" }}
+        />
+      )}
 
       <BoostInfo
         rarity={rarity}
@@ -165,13 +183,18 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
       <ConsumeProduceInfo
         produce={productionInfo?.produce}
         consume={productionInfo?.consume}
-        pos={{ x: "600px", y: "210px", w: "auto" }}
+        resource={resource as Resource}
+        pos={{ x: isTax ? "525px" : "600px", y: "200px", w: "auto" }}
       />
 
       <DECInfo
         productionInfo={productionInfo}
         resource={resource}
-        pos={{ x: "600px", y: "310px", w: "auto" }}
+        pos={{
+          x: isTax ? "675px" : "600px",
+          y: isTax ? "200px" : "300px",
+          w: "auto",
+        }}
       />
     </Box>
   );

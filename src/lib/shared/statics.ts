@@ -103,3 +103,4 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
 };
 
 export const TRADE_HUB_FEE = 0.9;
+export const TAX_RATE = 0.1;
