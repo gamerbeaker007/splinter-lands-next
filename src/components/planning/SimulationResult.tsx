@@ -1,5 +1,6 @@
 "use client";
 
+import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimulationWarning";
 import { Resource, RESOURCES } from "@/constants/resource/resource";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
@@ -21,15 +22,20 @@ export function SimulationResult({ items }: ResultProps) {
   const consumed: Record<Resource, number> = makeZeroMap();
   const produced: Record<Resource, number> = makeZeroMap();
 
+  const containsTax = items.find((p) => p.resource === "TAX") != null;
+
   for (const it of items) {
     for (const c of it.consume ?? []) {
+      if (it.resource === "TAX") continue;
       if (c?.resource && PRODUCING_RESOURCES.includes(c.resource)) {
         consumed[c.resource] += c.amount ?? 0;
       }
     }
-    const p = it.produce;
-    if (p?.resource && PRODUCING_RESOURCES.includes(p.resource)) {
-      produced[p.resource] += p.amount ?? 0;
+
+    for (const p of it.produce ?? []) {
+      if (p?.resource && PRODUCING_RESOURCES.includes(p.resource)) {
+        produced[p.resource] += p.amount ?? 0;
+      }
     }
   }
 
@@ -97,6 +103,7 @@ export function SimulationResult({ items }: ResultProps) {
                 style={{ display: "block" }}
               />
               {res === "SPS" && <SPSWarning />}
+              {res === "GRAIN" && containsTax && <TaxSimulationWarning />}
             </Box>
           ))}
         </Box>

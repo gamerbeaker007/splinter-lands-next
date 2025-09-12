@@ -1,6 +1,5 @@
-import { getFoilLabel } from "@/lib/utils/cardUtil";
-import { CardRarity } from "@/types/planner";
-import { Box, Tooltip } from "@mui/material";
+import { cardFoilOptions, CardRarity } from "@/types/planner";
+import { Box, capitalize, Tooltip } from "@mui/material";
 
 interface Props {
   rarity: CardRarity;
@@ -31,7 +30,7 @@ const PPMultiplierDot = ({ rarity, foil, bcx, max_bcx, basePP }: Props) => {
         <>
           <strong>Base PP Multiplier:</strong>
           <br />
-          Foil: {getFoilLabel(foil)}
+          Foil: {capitalize(cardFoilOptions[foil])}
           <br />1 BCX PP: {productionPointsPerBCX.toFixed(2)}
           <br />
           {bcx} BCX PP: {wihtoutMultiplierPP.toFixed(2)}

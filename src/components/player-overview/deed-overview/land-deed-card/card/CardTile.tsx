@@ -1,9 +1,10 @@
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
-import { getCardImg, RarityColor } from "@/lib/utils/cardUtil";
+import { getCardImg } from "@/lib/utils/cardUtil";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import PPMultiplierDot from "./PPMultiplierDot";
+import { RarityColor } from "@/types/planner";
 
 type Props = {
   name: string;

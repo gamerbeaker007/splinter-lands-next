@@ -1,6 +1,6 @@
 "use client";
 import { land_default_off_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { PlotStatus, plotStatusOptions } from "@/types/planner";
+import { PlotRarity, PlotStatus, plotStatusOptions } from "@/types/planner";
 import {
   Box,
   capitalize,
@@ -13,18 +13,45 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { useEffect, useMemo } from "react";
 
 export type Props = {
   value: PlotStatus;
+  rarity?: PlotRarity;
   deedResourceBoost: number;
   onChange: (tier: PlotStatus) => void;
 };
+
+export function isAllowedStatus(
+  status: PlotStatus,
+  rarity?: PlotRarity,
+): boolean {
+  if (rarity === "mythic") return status === "kingdom";
+  return status !== "kingdom";
+}
 
 export function PlotStatusSelector({
   value,
   deedResourceBoost,
   onChange,
+  rarity,
 }: Props) {
+  // allowed statuses for current rarity
+  const allowedOptions = useMemo(
+    () => plotStatusOptions.filter((s) => isAllowedStatus(s, rarity)),
+    [rarity],
+  );
+
+  // auto-correct if current value becomes invalid
+  useEffect(() => {
+    if (!isAllowedStatus(value, rarity)) {
+      const next =
+        plotStatusOptions.find((s) => isAllowedStatus(s, rarity)) ??
+        allowedOptions[0];
+      if (next && next !== value) onChange(next);
+    }
+  }, [value, rarity, onChange, allowedOptions]);
+
   const handleChange = (e: SelectChangeEvent<PlotStatus>) => {
     onChange(e.target.value as PlotStatus);
   };
@@ -71,25 +98,29 @@ export function PlotStatusSelector({
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >
-          {plotStatusOptions.map((rarity) => (
-            <MenuItem key={rarity} value={rarity}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(rarity, 18)}
-              </ListItemIcon>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {capitalize(rarity)}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
+          {plotStatusOptions.map((s) => {
+            const allowed = isAllowedStatus(s, rarity);
+
+            return (
+              <MenuItem key={s} value={s} disabled={!allowed}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {renderIcon(s, 18)}
+                </ListItemIcon>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                    {capitalize(s)}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
     </Box>

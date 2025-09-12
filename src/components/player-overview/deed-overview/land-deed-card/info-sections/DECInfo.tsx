@@ -140,6 +140,8 @@ export const DECInfo: React.FC<Props> = ({
   includeFee = true,
   pos = { x: "0px", y: "0px", w: "auto" },
 }) => {
+  const { x, y, w } = pos;
+
   const { consume, produce, netDEC } = productionInfo ?? {
     consume: null,
     produce: null,
@@ -151,7 +153,12 @@ export const DECInfo: React.FC<Props> = ({
   const totalConsumeBuy =
     consume?.reduce((sum, r) => sum + r.buyPriceDEC, 0) ?? 0;
 
-  const { x, y, w } = pos;
+  const totalProduceSell =
+    produce?.reduce((sum, r) => sum + r.sellPriceDEC, 0) ?? 0;
+  const totalProduceBuy =
+    produce?.reduce((sum, r) => sum + r.buyPriceDEC, 0) ?? 0;
+
+  const isTax = resource === "TAX";
 
   return (
     <Box
@@ -168,14 +175,14 @@ export const DECInfo: React.FC<Props> = ({
       </Typography>
 
       <Box display="inline-flex" flexDirection="column" alignItems="flex-start">
-        <Box display="inline-flex" alignItems="center" gap={0.2} ml={1}>
+        <Box display="inline-flex" alignItems="center" gap={0.2}>
           <Tooltip
             title={tooltipContent(
               resource,
               totalConsumeSell,
               totalConsumeBuy,
-              produce?.sellPriceDEC ?? 0,
-              produce?.buyPriceDEC ?? 0,
+              totalProduceSell,
+              totalProduceBuy,
               netDEC,
             )}
             placement="top"
@@ -195,13 +202,13 @@ export const DECInfo: React.FC<Props> = ({
             fontWeight="bold"
             color={netDEC >= 0 ? "green" : "error"}
           >
-            {netDEC.toFixed(3)} /h
+            {netDEC.toFixed(3)} {isTax ? "" : "/h"}
           </Typography>
         </Box>
 
         {resource !== "AURA" && includeFee && (
           <Typography variant="caption" color="gray" fontSize="0.625rem">
-            (incl. hub fee)
+            {isTax ? "" : "(incl. hub fee)"}
           </Typography>
         )}
       </Box>

@@ -10,20 +10,43 @@ import {
   edition_conclave_icon_url,
   edition_rebellion_icon_url,
   edition_untamed_icon_url,
+  land_aura_lab_icon_url,
+  land_castle_icon_url,
+  land_grain_farm_icon_url,
+  land_keep_icon_url,
+  land_logging_camp_icon_url,
+  land_ore_mine_icon_url,
+  land_quarry_icon_url,
+  land_research_hut_icon_url,
+  land_shard_mine_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { PlotModifiers } from "./domain";
 
-export const plotRarityOptions = ["common", "rare", "epic", "legendary"];
+export const plotRarityOptions = [
+  "common",
+  "rare",
+  "epic",
+  "legendary",
+  "mythic",
+];
 export const plotRarityModifiers: Record<PlotRarity, number> = {
   common: 0,
   rare: 0.1,
   epic: 0.4,
   legendary: 1,
+  mythic: 0,
 };
 export type PlotRarity = (typeof plotRarityOptions)[number];
 
 export const cardRarityOptions = ["common", "rare", "epic", "legendary"];
 export type CardRarity = (typeof cardRarityOptions)[number];
+
+export const RarityColor: Record<CardRarity, string> = {
+  common: "grey",
+  rare: "blue",
+  epic: "purple",
+  legendary: "gold",
+};
 
 export const cardIconMap: Record<CardRarity, string> = {
   common: card_rarity_common_icon_url,
@@ -32,7 +55,7 @@ export const cardIconMap: Record<CardRarity, string> = {
   legendary: card_rarity_legendary_icon_url,
 };
 
-export const plotStatusOptions = ["natural", "magical", "occupied"];
+export const plotStatusOptions = ["natural", "magical", "occupied", "kingdom"];
 export type PlotStatus = (typeof plotStatusOptions)[number];
 
 export const magicTypeOptions = [
@@ -137,6 +160,41 @@ export const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
   gold: 10000, // +10k base PP
 };
 
+export const editionIdByName = {
+  alpha: 0,
+  beta: 1,
+  promo: 2,
+  reward: 3,
+  untamed: 4,
+  dice: 5,
+  gladius: 6,
+  chaos: 7,
+  rift: 8,
+  soulbound: 10,
+  rebellion: 12,
+  soulboundrb: 13,
+  conclave: 14,
+  foundations: 15,
+  foundations_sb: 16,
+  extra: 17,
+};
+export type EditionName = keyof typeof editionIdByName;
+
+export const editionOptions = Object.keys(editionIdByName) as EditionName[];
+
+export const editionNameById = Object.fromEntries(
+  Object.entries(editionIdByName).map(([name, id]) => [
+    id,
+    name as EditionName,
+  ]),
+) as Record<number, EditionName>;
+
+export const editionAliasById: Partial<Record<number, EditionName>> = {
+  [editionIdByName.foundations_sb]: "foundations",
+};
+
+export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);
+
 export const cardSetOptions = [
   "alpha",
   "beta",
@@ -234,13 +292,15 @@ export const worksiteTypeOptions = [
   "Research Hut",
   "Aura Lab",
   "Shard Mine",
+  "KEEP",
+  "CASTLE",
 ];
 
 export type WorksiteType = (typeof worksiteTypeOptions)[number];
 
 export const resourceWorksiteMap: Record<
   WorksiteType,
-  Exclude<Resource, "VOUCHER" | "TAX" | "DEC">
+  Exclude<Resource, "VOUCHER" | "DEC">
 > = {
   "Grain Farm": "GRAIN",
   "Logging Camp": "WOOD",
@@ -249,21 +309,39 @@ export const resourceWorksiteMap: Record<
   "Research Hut": "RESEARCH",
   "Aura Lab": "AURA",
   "Shard Mine": "SPS",
+  KEEP: "TAX",
+  CASTLE: "TAX",
+};
+
+export const worksiteIconMap: Record<WorksiteType, string> = {
+  "Grain Farm": land_grain_farm_icon_url,
+  "Logging Camp": land_logging_camp_icon_url,
+  "Ore Mine": land_ore_mine_icon_url,
+  Quarry: land_quarry_icon_url,
+  "Research Hut": land_research_hut_icon_url,
+  "Aura Lab": land_aura_lab_icon_url,
+  "Shard Mine": land_shard_mine_icon_url,
+  KEEP: land_keep_icon_url,
+  CASTLE: land_castle_icon_url,
+};
+
+export const allowedTerrainsByWorksite: Partial<
+  Record<WorksiteType, DeedType[]>
+> = {
+  "Grain Farm": ["plains", "river", "bog", "lake"],
+  "Logging Camp": ["swamp", "forest", "tundra", "jungle"],
+  Quarry: ["desert", "canyon", "hills"],
+  "Ore Mine": ["mountain", "badlands", "caldera"],
+  // not restricting these by terrain per spec:
+  "Research Hut": undefined,
+  "Aura Lab": undefined,
+  "Shard Mine": undefined,
+  // CASTLE/KEEP handled via plotStatus rule below
+  CASTLE: undefined,
+  KEEP: undefined,
 };
 
 export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
   magical: ["Research Hut", "Aura Lab"],
   occupied: ["Shard Mine"],
 };
-
-export const resourceOptions = [
-  "grain",
-  "wood",
-  "iron",
-  "stone",
-  "research",
-  "aura",
-  "sps",
-];
-
-export type resource = (typeof resourceOptions)[number];

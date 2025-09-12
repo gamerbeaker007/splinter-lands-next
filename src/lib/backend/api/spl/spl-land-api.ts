@@ -8,6 +8,7 @@ import * as rax from "retry-axios";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
 import { NotFoundError } from "../../error";
+import { SplTaxes } from "@/types/splTaxes";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -180,4 +181,15 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
     logError("❌ Failed to fetch Midnight Potion price:", error);
     return [];
   }
+}
+
+export async function fetchTaxes(deedUid: string) {
+  const url = `land/resources/taxes/${deedUid}`;
+
+  const res = await splLandClient.get(url);
+
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return data as SplTaxes;
 }

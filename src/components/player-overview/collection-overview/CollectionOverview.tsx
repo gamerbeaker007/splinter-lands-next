@@ -1,18 +1,12 @@
 "use client";
 
 import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
+import ErrorComponent from "@/components/ui/ErrorComponent";
+import LoadingComponent from "@/components/ui/LoadingComponent";
 import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { Refresh } from "@mui/icons-material";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import CardTable from "./CardTable";
 
 type Props = { player: string };
@@ -30,36 +24,15 @@ export default function CollectionOverview({ player }: Props) {
   }
 
   if (loading) {
-    return (
-      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-        <Stack
-          spacing={3}
-          alignItems="center"
-          justifyContent="center"
-          minHeight="40vh"
-        >
-          <CircularProgress />
-          <Typography variant="body2" color="text.secondary">
-            Loading data (player collection)…
-          </Typography>
-        </Stack>
-      </Container>
-    );
+    return <LoadingComponent title={"Loading data (player collection)…"} />;
   }
 
   if (error) {
     return (
-      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-        <Stack spacing={3}>
-          <Alert severity="error">
-            Failed to load player collection: {error}
-          </Alert>
-        </Stack>
-      </Container>
+      <ErrorComponent title={`Failed to load player collection: ${error}`} />
     );
   }
 
-  console.log("cardPPResult", cardPPResult);
   return (
     <Box
       sx={{

@@ -8,5 +8,5 @@ export type DeedComplete = Deed & {
   stakingDetail: StakingDetail | null;
   stakedAssets?: StakedAssets;
   progressInfo?: ProgressInfo;
-  productionIfo?: ProductionInfo;
+  productionInfo?: ProductionInfo;
 };

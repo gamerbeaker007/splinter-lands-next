@@ -6,10 +6,14 @@ import { DeedComplete } from "@/types/deed";
 import { ProgressInfo } from "@/types/progressInfo";
 import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
-import { ProductionInfo } from "@/types/productionInfo";
+import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { calcConsumeCosts, calcDECPrice } from "@/lib/shared/costCalc";
 import { Resource } from "@/constants/resource/resource";
 import { Prices } from "@/types/price";
+import { RegionTax } from "@/types/regionTax";
+import { TAX_RATE } from "@/lib/shared/statics";
+import { getCachedTaxes } from "./playerService";
+import { formatNumberWithSuffix } from "@/lib/formatters";
 
 export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   // Initialize all count buckets
@@ -201,75 +205,155 @@ export async function getAvailableFilterValues(
   };
 }
 
-export function enrichWithProgressInfo(deeds: DeedComplete[]): DeedComplete[] {
-  return deeds.map((deed) => {
-    const isTaxSymbol = deed.worksiteDetail?.token_symbol === "TAX";
-    const progressInfo: ProgressInfo = isTaxSymbol
-      ? {
-          percentageDone: 0,
-          infoStr: "N/A",
-          progressTooltip:
-            "The status of Keeps and Castles remains a mystery for now.",
-        }
-      : getProgressInfo(
-          deed.worksiteDetail?.hours_since_last_op ?? 0,
-          deed.worksiteDetail?.project_created_date ?? null,
-          deed.worksiteDetail?.projected_end ?? null,
-          deed.stakingDetail?.total_harvest_pp ?? 0,
-        );
+async function getTaxInfo(deedUid: string) {
+  const taxDetails = await getCachedTaxes(deedUid);
 
+  if (taxDetails) {
+    const totalCapacity = taxDetails.capacity;
+    const totalBalance = taxDetails.taxes.reduce(
+      (sum, tax) => sum + tax.balance,
+      0,
+    );
+    const percentageDone = (totalBalance / totalCapacity) * 100;
+    const infoStr = `${percentageDone.toFixed(2)}% Capacity`;
+    const progressTooltip = `The current balance of your tax vaults.
+     Once the total balance reaches the total capacity, 
+     no more taxes will be collected until you withdraw some DEC. total balance: ${formatNumberWithSuffix(totalCapacity)}`;
     return {
-      ...deed,
-      progressInfo,
+      percentageDone,
+      infoStr,
+      progressTooltip,
     };
-  });
+  } else {
+    return {
+      percentageDone: 0,
+      infoStr: "Failed to load",
+      progressTooltip: "No tax details available",
+    };
+  }
+}
+
+export async function enrichWithProgressInfo(
+  deeds: DeedComplete[],
+): Promise<DeedComplete[]> {
+  return Promise.all(
+    deeds.map(async (deed) => {
+      const isTaxSymbol = deed.worksiteDetail?.token_symbol === "TAX";
+      const progressInfo: ProgressInfo = isTaxSymbol
+        ? await getTaxInfo(deed.deed_uid)
+        : getProgressInfo(
+            deed.worksiteDetail?.hours_since_last_op ?? 0,
+            deed.worksiteDetail?.project_created_date ?? null,
+            deed.worksiteDetail?.projected_end ?? null,
+            deed.stakingDetail?.total_harvest_pp ?? 0,
+          );
+
+      return {
+        ...deed,
+        progressInfo,
+      };
+    }),
+  );
 }
 
 export function enrichWithProductionInfo(
   deeds: DeedComplete[],
   prices: Prices,
-): DeedComplete[] {
-  return deeds.map((deed) => {
-    const ws = deed.worksiteDetail;
-    const st = deed.stakingDetail;
-    if (!ws || !st) return { ...deed };
+): Promise<DeedComplete[]> {
+  return Promise.all(
+    deeds.map(async (deed) => {
+      const ws = deed.worksiteDetail;
+      const st = deed.stakingDetail;
+      if (!ws || !st) return { ...deed };
 
-    const resource = ws.token_symbol as Resource;
+      const resource = ws.token_symbol as Resource;
 
-    if (resource === "TAX") return { ...deed }; // Investigate if tax should be included
+      if (resource === "TAX") {
+        const taxesDetails = await getCachedTaxes(deed.deed_uid);
 
-    const production = (ws.rewards_per_hour ?? 0) * 0.9; // Tax Fee
-    const decIncomeBuy = calcDECPrice("buy", resource, production, prices);
-    const decIncomeSell = calcDECPrice("sell", resource, production, prices);
+        const worksiteType = ws.worksite_type;
+        const consume = worksiteType === "KEEP" ? 1000 : 10_000;
 
-    const consumeCosts = calcConsumeCosts(
-      resource,
-      st.total_base_pp_after_cap ?? 0,
-      prices,
-      ws.site_efficiency ?? 0,
-    );
-    const totalDECConsume = consumeCosts.reduce(
-      (sum, row) => sum + Number(row.sellPriceDEC || 0),
-      0,
-    );
-    const netDEC = decIncomeSell - totalDECConsume;
+        const buyConsumeDEC = calcDECPrice("buy", "GRAIN", consume, prices);
+        const sellConsumeDEC = calcDECPrice("sell", "GRAIN", consume, prices);
+        const consumeCost: ResourceWithDEC = {
+          resource: "GRAIN",
+          amount: consume,
+          buyPriceDEC: buyConsumeDEC,
+          sellPriceDEC: sellConsumeDEC,
+        };
 
-    const productionIfo: ProductionInfo = {
-      produce: {
-        resource: resource,
-        amount: production,
-        buyPriceDEC: decIncomeBuy,
-        sellPriceDEC: decIncomeSell,
-      },
-      consume: consumeCosts,
-      netDEC: netDEC,
-    };
+        const produces: ResourceWithDEC[] = taxesDetails.taxes.map((tax) => {
+          const amount = tax.balance;
+          const resource = tax.token as Resource;
+          return {
+            resource,
+            amount,
+            buyPriceDEC: calcDECPrice("buy", resource, amount, prices),
+            sellPriceDEC: calcDECPrice("sell", resource, amount, prices),
+          };
+        });
 
-    return {
-      ...deed,
-      productionIfo,
-    };
-  });
+        const totalProducedInDEC = produces.reduce(
+          (sum, row) => sum + Number(row.buyPriceDEC || 0),
+          0,
+        );
+        const netDEC = totalProducedInDEC - sellConsumeDEC;
+
+        const productionInfo: ProductionInfo = {
+          resource,
+          consume: [consumeCost],
+          produce: produces,
+          netDEC: netDEC,
+        };
+
+        return {
+          ...deed,
+          productionInfo,
+        };
+      } else {
+        const production = (ws.rewards_per_hour ?? 0) * (1 - TAX_RATE);
+        const decIncomeBuy = calcDECPrice("buy", resource, production, prices);
+        const decIncomeSell = calcDECPrice(
+          "sell",
+          resource,
+          production,
+          prices,
+        );
+
+        const consumeCosts = calcConsumeCosts(
+          resource,
+          st.total_base_pp_after_cap ?? 0,
+          prices,
+          ws.site_efficiency ?? 0,
+        );
+        const totalDECConsume = consumeCosts.reduce(
+          (sum, row) => sum + Number(row.sellPriceDEC || 0),
+          0,
+        );
+        const netDEC = decIncomeSell - totalDECConsume;
+
+        const productionIfo: ProductionInfo = {
+          resource,
+          produce: [
+            {
+              resource: resource,
+              amount: production,
+              buyPriceDEC: decIncomeBuy,
+              sellPriceDEC: decIncomeSell,
+            },
+          ],
+          consume: consumeCosts,
+          netDEC: netDEC,
+        };
+
+        return {
+          ...deed,
+          productionInfo: productionIfo,
+        };
+      }
+    }),
+  );
 }
 
 export function getDeedsAlerts(deeds: DeedComplete[]): DeedAlertsInfo[] {
@@ -297,4 +381,117 @@ export function getDeedsAlerts(deeds: DeedComplete[]): DeedAlertsInfo[] {
         plotStatus: deed.plot_status!,
       } as DeedAlertsInfo;
     });
+}
+
+function ensureRegionBucket(
+  result: Record<string, RegionTax>,
+  regionUid: string,
+  regionNumber: number,
+): RegionTax {
+  if (!result[regionUid]) {
+    result[regionUid] = {
+      castleOwner: { regionUid, regionNumber },
+      resourceRewardsPerHour: {},
+      capturedTaxInResource: {},
+      capturedTaxInDEC: {},
+      perTract: {},
+    };
+  }
+  return result[regionUid];
+}
+
+function ensureTractBucket(region: RegionTax, tractNumber: number) {
+  if (!region.perTract[tractNumber]) {
+    region.perTract[tractNumber] = {
+      keepOwner: {
+        regionUid: region.castleOwner.regionUid,
+        regionNumber: region.castleOwner.regionNumber,
+        tractNumber,
+      },
+      resourceRewardsPerHour: {},
+      capturedTaxInResource: {},
+      capturedTaxInDEC: {},
+    };
+  }
+}
+
+export function calculateRegionTax(
+  deeds: DeedComplete[],
+  resourcePrices: Prices,
+): RegionTax[] {
+  const result: Record<string, RegionTax> = {};
+
+  for (const deed of deeds) {
+    const resource = deed.worksiteDetail?.token_symbol ?? "";
+    if (!resource) continue;
+
+    const regionUid = deed.region_uid!;
+    const regionNumber = deed.region_number!;
+    const tractNumber = deed.tract_number!;
+    const plotNumber = deed.plot_number!;
+    const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
+    const worksiteType = deed.worksiteDetail?.worksite_type ?? "";
+
+    const region = ensureRegionBucket(result, regionUid, regionNumber);
+    ensureTractBucket(region, tractNumber);
+
+    if (resource === "TAX") {
+      const player = deed.player!;
+      const captureRate = deed.worksiteDetail?.captured_tax_rate ?? 0;
+      if (worksiteType === "CASTLE") {
+        region.castleOwner = {
+          regionUid,
+          regionNumber,
+          tractNumber,
+          plotNumber,
+          player,
+          captureRate,
+        };
+      } else {
+        region.perTract[tractNumber].keepOwner = {
+          regionUid,
+          regionNumber,
+          tractNumber,
+          plotNumber,
+          player,
+          captureRate,
+        };
+      }
+    } else {
+      region.resourceRewardsPerHour[resource] =
+        (region.resourceRewardsPerHour[resource] ?? 0) + rewardsPerHour;
+      region.perTract[tractNumber].resourceRewardsPerHour[resource] =
+        (region.perTract[tractNumber].resourceRewardsPerHour[resource] ?? 0) +
+        rewardsPerHour;
+    }
+  }
+
+  // Calculate taxes
+  for (const region of Object.values(result)) {
+    // Region level
+    for (const [token, rewardsPerHour] of Object.entries(
+      region.resourceRewardsPerHour,
+    )) {
+      const captureRate = region.castleOwner.captureRate ?? 0;
+      const tax = rewardsPerHour * TAX_RATE * captureRate;
+      const decPrice = resourcePrices[token.toLowerCase()] ?? 0;
+      region.capturedTaxInResource[token] = tax;
+      region.capturedTaxInDEC[token] = tax * decPrice;
+    }
+
+    // Tract level
+    for (const tract of Object.values(region.perTract)) {
+      const captureRate = tract.keepOwner.captureRate ?? 0;
+      for (const [token, rewardsPerHour] of Object.entries(
+        tract.resourceRewardsPerHour,
+      )) {
+        const tax = rewardsPerHour * TAX_RATE * captureRate;
+        const decPrice = resourcePrices[token.toLowerCase()] ?? 0;
+        tract.capturedTaxInResource[token] = tax;
+        tract.capturedTaxInDEC[token] = tax * decPrice;
+      }
+    }
+  }
+
+  return Object.values(result);
 }

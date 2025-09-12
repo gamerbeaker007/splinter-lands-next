@@ -171,13 +171,16 @@ const completeDeedFixture1: DeedComplete = {
     progressTooltip:
       "How close this plot is to full. Once capacity reached 100%, resources no longer accumulate until they are harvested",
   },
-  productionIfo: {
-    produce: {
-      resource: "GRAIN",
-      amount: 178.20000000000002,
-      buyPriceDEC: 1.830717441522447,
-      sellPriceDEC: 1.4828811276331821,
-    },
+  productionInfo: {
+    resource: "GRAIN",
+    produce: [
+      {
+        resource: "GRAIN",
+        amount: 178.20000000000002,
+        buyPriceDEC: 1.830717441522447,
+        sellPriceDEC: 1.4828811276331821,
+      },
+    ],
     consume: [
       {
         resource: "GRAIN",

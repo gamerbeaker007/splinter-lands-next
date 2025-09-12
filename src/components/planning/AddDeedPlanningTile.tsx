@@ -13,8 +13,8 @@ export function AddDeedPlanningTile({ onAdd }: AddDeedTileProps) {
     <Card
       variant="outlined"
       sx={{
-        width: 960, // Note this is matching with deed planner box
-        height: 690, // Height is match manually
+        width: 1056, // Note this is matching with deed planner box
+        height: 561, // Height is match manually
         display: "flex",
         alignItems: "center",
         justifyContent: "center",

@@ -115,7 +115,7 @@ function getSortValue(
     case "percentComplete":
       return deed.progressInfo?.percentageDone ?? 0;
     case "netDEC":
-      return deed.productionIfo?.netDEC ?? 0;
+      return deed.productionInfo?.netDEC ?? 0;
     default:
       return undefined;
   }

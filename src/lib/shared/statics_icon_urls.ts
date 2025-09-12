@@ -103,3 +103,5 @@ export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_r
 export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;
 export const card_rarity_epic_icon_url = `${WEB_URL}website/create_team/icon_rarity_epic_new.svg`;
 export const card_rarity_legendary_icon_url = `${WEB_URL}website/create_team/icon_rarity_legendary_new.svg`;
+
+export const totem_fragment_common_icon_url = `${WEB_URL}website/icons/fragment_common.png`;

@@ -1,5 +1,12 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
-import { CardRarity, cardRarityOptions } from "@/types/planner";
+import {
+  CardRarity,
+  cardRarityOptions,
+  editionAliasById,
+  editionIdByName,
+  EditionName,
+  editionNameById,
+} from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 
 // ----------------------------------
@@ -47,58 +54,26 @@ const bcxMap: Record<
   },
 };
 
-export const RarityColor: Record<CardRarity, string> = {
-  common: "grey",
-  rare: "blue",
-  epic: "purple",
-  legendary: "gold",
-};
-
-// ----------------------------------
-// Edition Enum
-// ----------------------------------
-
-enum Edition {
-  alpha = 0,
-  beta = 1,
-  promo = 2,
-  reward = 3,
-  untamed = 4,
-  dice = 5,
-  gladius = 6,
-  chaos = 7,
-  rift = 8,
-  soulbound = 10,
-  rebellion = 12,
-  soulboundrb = 13,
-  conclave = 14,
-  foundations = 15,
-  foundations_sb = 16, // I believe this the soulbound version
-  extra = 17, // e.g. arena fanatic
-}
-
 // ----------------------------------
 // Utilities
 // ----------------------------------
-
-export const getFoilLabel = (foil: number): string =>
-  foilMetaMap[foil]?.label ?? "Unknown";
 
 const getFoilSuffix = (foil: number): string => foilMetaMap[foil]?.suffix ?? "";
 
 const getFoilType = (foil: number): FoilBCXType =>
   foilMetaMap[foil]?.bcxType ?? "normal";
 
-export function getEditionName(edition: Edition): string {
-  if (edition === Edition.foundations_sb) {
-    return Edition[Edition.foundations];
-  }
-  return Edition[edition];
+export function getEditionId(name: EditionName): number {
+  return editionIdByName[name];
+}
+
+export function getEditionName(id: number): EditionName | undefined {
+  return editionAliasById[id] ?? editionNameById[id];
 }
 
 export function getCardImg(
   cardName: string,
-  edition: Edition,
+  edition: number,
   foil: number,
   level?: number,
 ): string {
@@ -167,6 +142,5 @@ export function findCardRarity(
   cardDetailId: number,
 ): CardRarity {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
-  const rarity = cardRarityOptions[(splCard?.rarity ?? 1) - 1];
-  return rarity;
+  return cardRarityOptions[(splCard?.rarity ?? 1) - 1];
 }

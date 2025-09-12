@@ -5,10 +5,10 @@ import {
   enrichWithProductionInfo,
   enrichWithProgressInfo,
 } from "@/lib/backend/services/regionService";
+import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { sortDeeds } from "@/lib/filters";
 import { DeedComplete } from "@/types/deed";
 import pLimit from "p-limit";
-import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 
 const DEED_LIMIT = 200;
 
@@ -17,10 +17,10 @@ export async function POST(req: Request) {
     const { filters, player } = await req.json();
     const deeds: DeedComplete[] = await getPlayerData(player, filters);
     if (!deeds) return new Response("No deeds found", { status: 404 });
-
     const prices = await getCachedResourcePrices();
-    const enriched1 = enrichWithProgressInfo(deeds);
-    const enrichedDeeds = enrichWithProductionInfo(enriched1, prices);
+
+    const enriched1 = await enrichWithProgressInfo(deeds);
+    const enrichedDeeds = await enrichWithProductionInfo(enriched1, prices);
 
     const sorted = sortDeeds(enrichedDeeds, filters.sorting);
 

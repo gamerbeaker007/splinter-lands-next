@@ -1,8 +1,11 @@
 "use client";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
+import { determineBcxCap } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import {
   cardElementColorMap,
+  cardFoilOptions,
   cardRarityOptions,
   DeedType,
   deedTypeOptions,
@@ -18,6 +21,7 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import { Prices } from "@/types/price";
+import { ProductionInfo } from "@/types/productionInfo";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
@@ -25,19 +29,18 @@ import { useEffect, useMemo, useState } from "react";
 import {
   calcProductionInfo,
   calcTotalPP,
+  calcTotemChancePerHour,
   determineDeedResourceBoost,
 } from "../../../lib/frontend/utils/plannerCalcs";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
 import { DECOutput } from "./output/DECOutput";
-import { PPOutput } from "./output/PPOutput";
+import { ProductionOutput } from "./output/ProductionOutput";
 import { ResourceOutput } from "./output/ResourceOutput";
 import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
-import { ProductionInfo } from "@/types/productionInfo";
-import { determineBcxCap } from "@/lib/utils/cardUtil";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -60,6 +63,8 @@ export default function Planner({
   spsRatio,
   onPlanChange,
 }: Props) {
+  const { regionTax } = useRegionTaxInfo();
+
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -70,6 +75,8 @@ export default function Planner({
     totem: "none",
     runi: "none",
     worksiteType: "Grain Farm",
+    regionNumber: 1,
+    tractNumber: 1,
   });
   const [runiImgUrl, setRuniImgUrl] = useState<string | null>(null);
 
@@ -91,8 +98,15 @@ export default function Planner({
         plot.deedType,
         plot.plotStatus,
         plot.plotRarity,
+        plot.worksiteType,
       ),
-    [plot.magicType, plot.deedType, plot.plotStatus, plot.plotRarity],
+    [
+      plot.magicType,
+      plot.deedType,
+      plot.plotStatus,
+      plot.plotRarity,
+      plot.worksiteType,
+    ],
   );
 
   const { totalBasePP, totalBoostedPP } = useMemo(
@@ -100,11 +114,39 @@ export default function Planner({
     [slots, plot],
   );
 
+  const captureRate = useMemo(() => {
+    const alpha = plot.worksiteType === "KEEP" ? 0.5 : 0.2;
+    const denom = plot.worksiteType === "KEEP" ? 5_000 : 10_000;
+    if (plot.worksiteType !== "KEEP" && plot.worksiteType !== "CASTLE")
+      return null;
+    return alpha * (totalBoostedPP / (totalBoostedPP + denom));
+  }, [plot.worksiteType, totalBoostedPP]);
+
   const productionInfo = useMemo(
     () =>
-      calcProductionInfo(totalBasePP, totalBoostedPP, plot, prices, spsRatio),
-    [totalBasePP, totalBoostedPP, plot, prices, spsRatio],
+      calcProductionInfo(
+        totalBasePP,
+        totalBoostedPP,
+        plot,
+        prices,
+        spsRatio,
+        regionTax,
+        captureRate,
+      ),
+    [
+      totalBasePP,
+      totalBoostedPP,
+      plot,
+      prices,
+      spsRatio,
+      regionTax,
+      captureRate,
+    ],
   );
+
+  const totemChance = useMemo(() => {
+    return calcTotemChancePerHour(plot.worksiteType, totalBasePP);
+  }, [plot.worksiteType, totalBasePP]);
 
   useEffect(() => {
     if (onPlanChange) onPlanChange(productionInfo);
@@ -117,22 +159,17 @@ export default function Planner({
     const setName = card.card_set ?? "chaos";
     const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
     const rarity = cardRarityOptions[(splCard?.rarity ?? 0) - 1];
-    const foil = card.foil === 0 ? "regular" : "gold";
+    const foil = card.foil;
     const color = splCard?.color.toLowerCase() ?? "red";
     const element = cardElementColorMap[color];
-    const bcx = determineBcxCap(
-      setName,
-      rarity,
-      foil === "regular" ? 0 : 1,
-      card.bcx,
-    );
+    const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
 
     return {
       id: idx,
       set: setName,
       rarity,
       bcx,
-      foil,
+      foil: cardFoilOptions[foil],
       element,
     };
   };
@@ -192,6 +229,8 @@ export default function Planner({
   };
 
   const onDeedTypeChange = (next: DeedType) => updatePlot({ deedType: next });
+  const onRegionChange = (next: number) => updatePlot({ regionNumber: next });
+  const onTractChange = (next: number) => updatePlot({ tractNumber: next });
 
   function findTotem(deed: DeedComplete): TotemTier {
     const items: Item[] = deed.stakedAssets?.items ?? [];
@@ -270,6 +309,8 @@ export default function Planner({
     const importedTotem = findTotem(deed);
     const importedTitle = findTitle(deed);
     const importedRuni = findRuni(deed);
+    const importedRegionNumber = deed.region_number!;
+    const importedTractNumber = deed.tract_number!;
 
     // update magical boost based on worsite
     const importedDeedResourceBoost = determineDeedResourceBoost(
@@ -287,6 +328,8 @@ export default function Planner({
       title: importedTitle,
       runi: importedRuni,
       worksiteType: importedWorksite,
+      tractNumber: importedTractNumber,
+      regionNumber: importedRegionNumber,
     });
 
     updateSlots(deed.stakedAssets?.cards ?? []);
@@ -306,7 +349,7 @@ export default function Planner({
   };
 
   const onWorksiteChange = (worksite: WorksiteType) => {
-    // update magical boost based on worsite
+    // update magical boost based on worksite
     updatePlot({
       deedResourceBoost: determineDeedResourceBoost(plot.plotStatus, worksite),
     });
@@ -337,6 +380,8 @@ export default function Planner({
             onPlotStatusChange={onPlotStatusChange}
             onMagicTypeChange={onMagicTypeChange}
             onDeedTypeChange={onDeedTypeChange}
+            onRegionChange={onRegionChange}
+            onTractChange={onTractChange}
             applyImportedDeed={applyImportedDeed}
           />
         </Stack>
@@ -346,8 +391,8 @@ export default function Planner({
       <Box
         aria-label="Deed preview"
         sx={{
-          width: 960, // Note this matching with the add deed planning button
-          height: 510,
+          width: 1056, // Note this matching with the add deed planning button
+          height: 561,
           border: "1px solid",
           borderColor: "divider",
           overflow: "hidden",
@@ -363,13 +408,11 @@ export default function Planner({
           onChange={onTotemChange}
           pos={{ x: "20px", y: "30px" }}
         />
-
         <TitleSelector
           value={plot.title as TitleTier}
           onChange={onTitleChange}
           pos={{ x: "170px", y: "30px" }}
         />
-
         <RuniSelector
           value={plot.runi as RuniTier}
           plotModifiers={plot}
@@ -377,13 +420,13 @@ export default function Planner({
           onChange={onRuniChange}
           pos={{ x: "300px", y: "30px" }}
         />
-
         <WorksiteSelector
           value={plot.worksiteType}
+          deedType={plot.deedType}
+          plotStatus={plot.plotStatus}
           onChange={onWorksiteChange}
           pos={{ x: "20px", y: "90px" }}
         />
-
         {slots.map((slot, i) => (
           <SlotEditor
             key={i}
@@ -391,31 +434,33 @@ export default function Planner({
             value={slot}
             plot={plot}
             onChange={(next) => updateSlot(i, next)}
-            pos={{ x: "20px", y: `${180 + 60 * i}px`, w: "695px" }}
+            pos={{ x: "20px", y: `${200 + 60 * i}px`, w: "695px" }}
           />
         ))}
-
-        <PPOutput
+        <ProductionOutput
           totalBasePP={totalBasePP}
           totalBoostPP={totalBoostedPP}
-          pos={{ x: "680px", y: "30px" }}
+          captureRate={captureRate ?? undefined}
+          totemChance={totemChance ?? undefined}
+          pos={{ x: "750px", y: "20px", w: "250px" }}
         />
 
         <ResourceOutput
+          worksiteType={plot.worksiteType}
           productionInfo={productionInfo}
-          pos={{ x: "780px", y: "180px" }}
+          pos={{ x: "750px", y: "195px" }}
         />
-
         <DECOutput
+          worksiteType={plot.worksiteType}
           productionInfo={productionInfo}
-          pos={{ x: "780px", y: "390px" }}
+          pos={{ x: "910px", y: "195px" }}
         />
 
         <Box
           sx={{
             position: "absolute",
-            left: 80,
-            bottom: 1,
+            left: 60,
+            bottom: 25,
             px: 1,
             bgcolor: "rgba(0,0,0,0.5)",
             borderRadius: 1,

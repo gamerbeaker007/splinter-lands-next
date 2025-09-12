@@ -1,4 +1,10 @@
-import { calcConsumeCosts, calcProduction } from "@/lib/shared/costCalc";
+import { Resource } from "@/constants/resource/resource";
+import {
+  calcConsumeCosts,
+  calcDECPrice,
+  calcProduction,
+} from "@/lib/shared/costCalc";
+import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
@@ -21,7 +27,8 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import { Prices } from "@/types/price";
-import { ProductionInfo } from "@/types/productionInfo";
+import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
+import { RegionTax } from "@/types/regionTax";
 
 export function terrainBonusPct(
   terrain: DeedType,
@@ -52,8 +59,7 @@ export function calcBoostedPP(
 
   const totalBoostedMultiplier =
     1 + totemPct + titlePct + runiPct + rarityPct + plot.deedResourceBoost;
-  const boostedPP = terrainBoostedPP * totalBoostedMultiplier;
-  return boostedPP;
+  return terrainBoostedPP * totalBoostedMultiplier;
 }
 
 export function computeSlot(
@@ -78,12 +84,12 @@ function calcBasePP(slot: SlotInput) {
   const maxBCX = determineCardMaxBCX(slot.set, slot.rarity, foilId);
 
   const ppPerBcx = maxBasePP / maxBCX;
-  const basePP =
+  return (
     ppPerBcx *
     slot.bcx *
     (cardSetModifiers[slot.set] ?? 0) *
-    (cardFoilModifiers[slot.foil] ?? 1);
-  return basePP;
+    (cardFoilModifiers[slot.foil] ?? 1)
+  );
 }
 
 export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {
@@ -111,11 +117,74 @@ export function calcProductionInfo(
   plotModifiers: PlotModifiers,
   prices: Prices,
   spsRatio: number,
+  regionTax: RegionTax[] | null,
+  captureRate: number | null,
 ): ProductionInfo {
-  const resource = resourceWorksiteMap[plotModifiers.worksiteType ?? "GRAIN"];
+  const worksiteType = plotModifiers.worksiteType;
+
+  const resource = resourceWorksiteMap[worksiteType ?? "GRAIN"];
+
+  if (resource === "TAX" && captureRate && regionTax) {
+    const regionNumber = plotModifiers.regionNumber;
+    const tractNumber = plotModifiers.tractNumber;
+
+    const consume = worksiteType === "KEEP" ? 1000 : 10_000;
+
+    const region = regionTax?.find(
+      (r) => r.castleOwner?.regionNumber === regionNumber,
+    );
+
+    const rewardsPerHour =
+      worksiteType === "KEEP"
+        ? region?.perTract?.[String(tractNumber ?? "")]?.resourceRewardsPerHour
+        : region?.resourceRewardsPerHour;
+
+    const capturedTaxInResource: Record<string, number> = {};
+    for (const resource of Object.keys(rewardsPerHour ?? [])) {
+      if (rewardsPerHour) {
+        capturedTaxInResource[resource] =
+          rewardsPerHour[resource] * TAX_RATE * captureRate;
+      }
+    }
+
+    const produces: ResourceWithDEC[] = Object.entries(
+      capturedTaxInResource,
+    ).map(([resource, amount]) => ({
+      resource: resource as Resource,
+      amount,
+      sellPriceDEC: calcDECPrice(
+        "sell",
+        resource as ResourceWithDEC["resource"],
+        amount,
+        prices,
+      ),
+      buyPriceDEC: calcDECPrice(
+        "buy",
+        resource as ResourceWithDEC["resource"],
+        amount,
+        prices,
+      ),
+    }));
+
+    const produceDEC = produces.reduce((acc, row) => acc + row.sellPriceDEC, 0);
+
+    return {
+      resource,
+      consume: [
+        {
+          resource: "GRAIN",
+          amount: consume,
+          sellPriceDEC: 0, // because of the flat fee remove cost of grain
+          buyPriceDEC: 0,
+        },
+      ],
+      produce: produces,
+      netDEC: produceDEC,
+    };
+  }
+
   const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
   const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
-
   const totalDECConsume = consume.reduce(
     (sum, row) => sum + Number(row.sellPriceDEC || 0),
     0,
@@ -123,8 +192,32 @@ export function calcProductionInfo(
   const netDEC = produce.sellPriceDEC - totalDECConsume;
 
   return {
+    resource,
     consume,
-    produce,
+    produce: [produce],
     netDEC,
   };
+}
+
+export function calcTotemChancePerHour(
+  worksiteType: WorksiteType,
+  basePP: number,
+): number | undefined {
+  if (
+    worksiteType === "KEEP" ||
+    worksiteType === "CASTLE" ||
+    worksiteType === "Research Hut"
+  ) {
+    let multiplier = 1;
+    switch (worksiteType) {
+      case "KEEP":
+        multiplier = 3;
+        break;
+      case "CASTLE":
+        multiplier = 10;
+        break;
+    }
+    return (basePP / 1000) * 0.0007 * multiplier;
+  }
+  return undefined;
 }

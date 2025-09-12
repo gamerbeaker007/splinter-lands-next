@@ -6,6 +6,7 @@ import {
   fetchStakedAssets,
   fetchRegionDataPlayer,
   getLandResourcesPools,
+  fetchTaxes,
 } from "../api/spl/spl-land-api";
 import { StakedAssets } from "@/types/stakedAssets";
 import {
@@ -39,6 +40,7 @@ import {
   calculateLPERatio,
 } from "@/lib/backend/helpers/productionUtils";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { SplTaxes } from "@/types/splTaxes";
 
 const TAX_RATE = 0.1;
 
@@ -119,6 +121,27 @@ export async function getCachedPlayerCardCollection(
   }
 }
 
+export async function getCachedTaxes(
+  deedUid: string,
+  force = false,
+): Promise<SplTaxes> {
+  const key = `taxes:${deedUid}`;
+  if (!force) {
+    const cached = cache.get<SplTaxes>(key);
+    if (cached) return cached;
+  }
+
+  try {
+    const res = await fetchTaxes(deedUid);
+    cache.set(key, res);
+    return res;
+  } catch (err) {
+    throw new Error(
+      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
 export async function getCachedPlayerOverviewData(
   player: string,
   force = false,
@@ -132,7 +155,7 @@ export async function getCachedPlayerOverviewData(
   const deeds = mapRegionDataToDeedComplete(
     await fetchRegionDataPlayer(player),
   );
-  const enrichedDeeds = enrichWithProgressInfo(deeds);
+  const enrichedDeeds = await enrichWithProgressInfo(deeds);
   const summarizedRegionInfo = summarizeDeedsData(enrichedDeeds);
   const alerts = getDeedsAlerts(enrichedDeeds);
 
