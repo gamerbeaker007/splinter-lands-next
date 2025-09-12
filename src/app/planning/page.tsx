@@ -38,7 +38,12 @@ export default function PlanningPage() {
   }, [setTitle]);
 
   const [plans, setPlans] = useState<ProductionInfo[]>([
-    { consume: [], produce: [], netDEC: 0 },
+    {
+      consume: [],
+      produce: [],
+      netDEC: 0,
+      resource: "GRAIN",
+    },
   ]);
 
   const handlePlanChange = useCallback(
@@ -53,7 +58,10 @@ export default function PlanningPage() {
   );
 
   const addPlan = useCallback(() => {
-    setPlans((prev) => [...prev, { consume: [], produce: [], netDEC: 0 }]);
+    setPlans((prev) => [
+      ...prev,
+      { resource: "GRAIN", consume: [], produce: [], netDEC: 0 },
+    ]);
   }, []);
 
   const deletePlan = useCallback((index: number) => {

@@ -172,6 +172,7 @@ const completeDeedFixture1: DeedComplete = {
       "How close this plot is to full. Once capacity reached 100%, resources no longer accumulate until they are harvested",
   },
   productionInfo: {
+    resource: "GRAIN",
     produce: [
       {
         resource: "GRAIN",

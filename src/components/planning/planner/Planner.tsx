@@ -459,8 +459,8 @@ export default function Planner({
         <Box
           sx={{
             position: "absolute",
-            left: 80,
-            bottom: 1,
+            left: 60,
+            bottom: 25,
             px: 1,
             bgcolor: "rgba(0,0,0,0.5)",
             borderRadius: 1,

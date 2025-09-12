@@ -41,6 +41,13 @@ export type PlotRarity = (typeof plotRarityOptions)[number];
 export const cardRarityOptions = ["common", "rare", "epic", "legendary"];
 export type CardRarity = (typeof cardRarityOptions)[number];
 
+export const RarityColor: Record<CardRarity, string> = {
+  common: "grey",
+  rare: "blue",
+  epic: "purple",
+  legendary: "gold",
+};
+
 export const cardIconMap: Record<CardRarity, string> = {
   common: card_rarity_common_icon_url,
   rare: card_rarity_rare_icon_url,
@@ -152,6 +159,41 @@ export const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
   regular: 1500, // +1.5k base PP
   gold: 10000, // +10k base PP
 };
+
+export const editionIdByName = {
+  alpha: 0,
+  beta: 1,
+  promo: 2,
+  reward: 3,
+  untamed: 4,
+  dice: 5,
+  gladius: 6,
+  chaos: 7,
+  rift: 8,
+  soulbound: 10,
+  rebellion: 12,
+  soulboundrb: 13,
+  conclave: 14,
+  foundations: 15,
+  foundations_sb: 16,
+  extra: 17,
+};
+export type EditionName = keyof typeof editionIdByName;
+
+export const editionOptions = Object.keys(editionIdByName) as EditionName[];
+
+export const editionNameById = Object.fromEntries(
+  Object.entries(editionIdByName).map(([name, id]) => [
+    id,
+    name as EditionName,
+  ]),
+) as Record<number, EditionName>;
+
+export const editionAliasById: Partial<Record<number, EditionName>> = {
+  [editionIdByName.foundations_sb]: "foundations",
+};
+
+export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);
 
 export const cardSetOptions = [
   "alpha",
@@ -303,15 +345,3 @@ export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
   magical: ["Research Hut", "Aura Lab"],
   occupied: ["Shard Mine"],
 };
-
-export const resourceOptions = [
-  "grain",
-  "wood",
-  "iron",
-  "stone",
-  "research",
-  "aura",
-  "sps",
-];
-
-export type resource = (typeof resourceOptions)[number];

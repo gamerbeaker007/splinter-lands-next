@@ -169,6 +169,7 @@ export function calcProductionInfo(
     const produceDEC = produces.reduce((acc, row) => acc + row.sellPriceDEC, 0);
 
     return {
+      resource,
       consume: [
         {
           resource: "GRAIN",
@@ -191,6 +192,7 @@ export function calcProductionInfo(
   const netDEC = produce.sellPriceDEC - totalDECConsume;
 
   return {
+    resource,
     consume,
     produce: [produce],
     netDEC,

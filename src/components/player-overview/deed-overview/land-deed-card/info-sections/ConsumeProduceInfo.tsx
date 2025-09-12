@@ -1,4 +1,4 @@
-import { Resource } from "@/constants/resource/resource";
+import { Resource, RESOURCES } from "@/constants/resource/resource";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { CSSSize } from "@/types/cssSize";
 import { ResourceWithDEC } from "@/types/productionInfo";
@@ -26,6 +26,14 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
   const suffix = isTax ? "" : "\h";
   const iconSize = isTax ? 25 : 35;
   const fontSize = isTax ? "0.975rem" : "1.0rem";
+
+  (produce ?? []).sort(
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+  );
+
+  (consume ?? []).sort(
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+  );
 
   return (
     <Box

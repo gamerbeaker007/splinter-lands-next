@@ -1,7 +1,6 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
-import { RarityColor } from "@/lib/utils/cardUtil";
 import {
   Box,
   Typography,
@@ -13,6 +12,7 @@ import {
   TableRow,
   Paper,
   Tooltip,
+  capitalize,
 } from "@mui/material";
 import Image from "next/image";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -21,9 +21,11 @@ import {
   cardFoilOptions,
   cardSetIconMap,
   cardSetModifiers,
+  RarityColor,
 } from "@/types/planner";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import CardTableIcon from "./CardTableIcon";
+import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 
 type Props = {
   data: GroupedCardRow[];
@@ -33,7 +35,6 @@ type Props = {
 type SortKey =
   | "name"
   | "rarity"
-  | "edition"
   | "foil"
   | "bcx"
   | "count"
@@ -49,9 +50,8 @@ const columns: {
   { key: "name", label: "Card", align: "left" },
   { key: "set", label: "Set", align: "center" },
   { key: "rarity", label: "Rarity", align: "center" },
-  { key: "edition", label: "Edition", align: "center" },
   { key: "foil", label: "Foil", align: "center" },
-  { key: "bcx", label: "BCX", align: "center" },
+  { key: "bcx", label: "CC/Max CC", align: "center" },
   { key: "count", label: "Count", align: "center" },
   { key: "basePP", label: "Base PP", align: "left" },
   { key: "ratio", label: "PP/DEC (Ratio)", align: "left" },
@@ -182,12 +182,15 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
                   mx="auto"
                 />
               </TableCell>
-              {/* Edition */}
-              <TableCell align="center">{card.edition}</TableCell>
               {/* Foil */}
-              <TableCell align="center">{cardFoilOptions[card.foil]}</TableCell>
+              <TableCell align="center">
+                {capitalize(cardFoilOptions[card.foil])}
+              </TableCell>
               {/* BCX */}
-              <TableCell align="center">{card.bcx}</TableCell>
+              <TableCell align="center">
+                {card.bcx} /{" "}
+                {determineCardMaxBCX(card.set, card.rarity, card.foil)}
+              </TableCell>
               {/* Count */}
               <TableCell align="center">{card.count}</TableCell>
               {/* Base PP */}

@@ -6,6 +6,8 @@ import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography, useTheme } from "@mui/material";
 import Image from "next/image";
 import SPSWarning from "./planner/output/SPSWarning";
+import TaxWarning from "@/components/planning/planner/output/TaxWarning";
+import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimulationWarning";
 
 type ResultProps = { items: ProductionInfo[] };
 
@@ -21,8 +23,11 @@ export function SimulationResult({ items }: ResultProps) {
   const consumed: Record<Resource, number> = makeZeroMap();
   const produced: Record<Resource, number> = makeZeroMap();
 
+  const containsTax = items.find((p) => p.resource === "TAX") != null;
+
   for (const it of items) {
     for (const c of it.consume ?? []) {
+      if (it.resource === "TAX") continue;
       if (c?.resource && PRODUCING_RESOURCES.includes(c.resource)) {
         consumed[c.resource] += c.amount ?? 0;
       }
@@ -99,6 +104,7 @@ export function SimulationResult({ items }: ResultProps) {
                 style={{ display: "block" }}
               />
               {res === "SPS" && <SPSWarning />}
+              {res === "GRAIN" && containsTax && <TaxSimulationWarning />}
             </Box>
           ))}
         </Box>

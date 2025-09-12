@@ -6,6 +6,7 @@ import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 import TaxWarning from "./TaxWarning";
+import { RESOURCES } from "@/constants/resource/resource";
 
 type Props = {
   worksiteType: WorksiteType;
@@ -25,6 +26,14 @@ export const ResourceOutput: React.FC<Props> = ({
 
   const isTax = worksiteType === "CASTLE" || worksiteType === "KEEP";
   const suffix = isTax ? "" : "/h";
+
+  (productionInfo.produce ?? []).sort(
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+  );
+
+  (productionInfo.consume ?? []).sort(
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+  );
 
   return (
     <Box

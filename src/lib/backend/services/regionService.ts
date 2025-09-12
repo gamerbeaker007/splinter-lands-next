@@ -301,6 +301,7 @@ export function enrichWithProductionInfo(
         const netDEC = totalProducedInDEC - sellConsumeDEC;
 
         const productionInfo: ProductionInfo = {
+          resource,
           consume: [consumeCost],
           produce: produces,
           netDEC: netDEC,
@@ -333,6 +334,7 @@ export function enrichWithProductionInfo(
         const netDEC = decIncomeSell - totalDECConsume;
 
         const productionIfo: ProductionInfo = {
+          resource,
           produce: [
             {
               resource: resource,

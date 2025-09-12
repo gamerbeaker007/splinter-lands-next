@@ -66,7 +66,7 @@ export function TitleSelector({ value, onChange, pos }: Props) {
       }}
     >
       <FormControl size="small" variant="outlined" sx={{ minWidth: 100 }}>
-        <InputLabel sx={{ color: "common.white" }}>Totem:</InputLabel>
+        <InputLabel sx={{ color: "common.white" }}>Title:</InputLabel>
         <Select<TitleTier>
           value={value}
           onChange={handleChange}
