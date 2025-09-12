@@ -1,13 +1,12 @@
 "use client";
 
+import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimulationWarning";
 import { Resource, RESOURCES } from "@/constants/resource/resource";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography, useTheme } from "@mui/material";
 import Image from "next/image";
 import SPSWarning from "./planner/output/SPSWarning";
-import TaxWarning from "@/components/planning/planner/output/TaxWarning";
-import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimulationWarning";
 
 type ResultProps = { items: ProductionInfo[] };
 

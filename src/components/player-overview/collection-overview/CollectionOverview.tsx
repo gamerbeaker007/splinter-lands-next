@@ -1,21 +1,13 @@
 "use client";
 
 import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
+import ErrorComponent from "@/components/ui/ErrorComponent";
+import LoadingComponent from "@/components/ui/LoadingComponent";
 import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { Refresh } from "@mui/icons-material";
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Container,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import CardTable from "./CardTable";
-import LoadingComponent from "@/components/ui/LoadingComponent";
-import ErrorComponent from "@/components/ui/ErrorComponent";
 
 type Props = { player: string };
 
