@@ -1,4 +1,4 @@
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { Deed, PlayerTradeHubPosition } from "@/generated/prisma";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
 import { AuraPrices } from "@/types/price";
@@ -192,4 +192,16 @@ export async function fetchTaxes(deedUid: string) {
   if (!data) throw new Error("Invalid response from Splinterlands API");
 
   return data as SplTaxes;
+}
+
+export async function fetchMarketLandData() {
+  const url = `/land/deeds`;
+  const params = { status: "market" };
+
+  const res = await splLandClient.get(url, { params });
+
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return data.deeds as Deed[];
 }

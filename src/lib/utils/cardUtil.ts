@@ -1,7 +1,10 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import {
+  CardElement,
+  cardElementColorMap,
   CardRarity,
   cardRarityOptions,
+  CardSetName,
   editionAliasById,
   editionIdByName,
   EditionName,
@@ -143,4 +146,21 @@ export function findCardRarity(
 ): CardRarity {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
   return cardRarityOptions[(splCard?.rarity ?? 1) - 1];
+}
+
+export function findCardElement(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+): CardElement {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  const color = splCard?.color.toLowerCase() ?? "red";
+  return cardElementColorMap[color];
+}
+
+export function findCardSet(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+): CardSetName {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  return getEditionName(splCard?.tier ?? 0) as CardSetName;
 }

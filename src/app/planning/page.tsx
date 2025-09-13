@@ -4,7 +4,9 @@ import { DeedPlanning } from "@/components/planning/DeedPlanning";
 import { SimulationResult } from "@/components/planning/SimulationResult";
 import { useCardDetails } from "@/hooks/useCardDetails";
 import { useFetchSPSRatio } from "@/hooks/useFetchSPSRatio";
+import { useMarketData } from "@/hooks/useMarketData";
 import { usePrices } from "@/hooks/usePrices";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo } from "@/types/productionInfo";
 import {
@@ -32,6 +34,8 @@ export default function PlanningPage() {
     loading: loadingSPSRatio,
     error: errorSPSRatio,
   } = useFetchSPSRatio();
+  const { regionTax } = useRegionTaxInfo();
+  const { marketData } = useMarketData();
 
   useEffect(() => {
     setTitle("Land Planning");
@@ -165,6 +169,8 @@ export default function PlanningPage() {
                   cardDetails={cardDetails}
                   prices={prices}
                   spsRatio={spsRatio}
+                  regionTax={regionTax}
+                  marketData={marketData}
                   onChange={handlePlanChange}
                   onDelete={deletePlan}
                   deletable={idx !== 0}

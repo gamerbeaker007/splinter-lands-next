@@ -5,6 +5,7 @@ import logger from "../../log/logger.server";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import { Balance } from "@/types/balance";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { SplMarketCardData } from "@/types/splMarketCardData copy";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -70,6 +71,20 @@ export async function fetchPlayerCardCollection(player: string) {
   }
 
   return data.cards as SplPlayerCardCollection[];
+}
+
+export async function fetchMarketCardData() {
+  const url = `market/for_sale_grouped`;
+  logger.info("Fetch market card data");
+  const res = await splBaseClient.get(url);
+
+  const data = res.data;
+  // Handle API-level error even if HTTP status is 200
+  if (!data || typeof data !== "object" || "error" in data) {
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+
+  return data as SplMarketCardData[];
 }
 
 export async function fetchPlayerBalances(
