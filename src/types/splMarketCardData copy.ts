@@ -1,7 +1,7 @@
 export type SplMarketCardData = {
   card_detail_id: number;
   gold: boolean;
-  foil: boolean;
+  foil: number;
   edition: number;
   qty: number;
   level: number;

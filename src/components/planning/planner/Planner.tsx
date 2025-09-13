@@ -42,6 +42,7 @@ import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
 import { LowestMarketData } from "@/types/planner/market/market";
+import PriceOutput from "./output/PriceOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -387,14 +388,7 @@ export default function Planner({
             onTractChange={onTractChange}
             applyImportedDeed={applyImportedDeed}
           />
-          <Box sx={{ border: "1px solid red", width: "100%", height: "100%" }}>
-            <Typography variant="caption" color="text.secondary">
-              {marketData
-                ? `Market Data as of ${marketData.length}`
-                : "No market data available"}
-              TODO: Add more details about the market data including component
-            </Typography>
-          </Box>
+          <PriceOutput plot={plot} cards={slots} marketData={marketData} />
         </Stack>
       </Paper>
 

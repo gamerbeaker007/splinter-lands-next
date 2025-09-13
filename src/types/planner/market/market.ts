@@ -5,19 +5,20 @@ import {
   PlotRarity,
   PlotStatus,
   DeedType,
+  CardFoil,
 } from "../primitives";
 
 export type LowestCardPriceKey = {
   rarity: CardRarity;
   element: CardElement;
-  foil: boolean;
+  foil: CardFoil;
   set: CardSetName;
 };
 
 export type LowestDeedPriceKey = {
   rarity: PlotRarity;
   status: PlotStatus;
-  terrain: DeedType;
+  deedType: DeedType;
 };
 
 export type LowestCardPriceEntry = LowestCardPriceKey & {
@@ -30,4 +31,7 @@ export type LowestDeedPriceEntry = LowestDeedPriceKey & {
   deed_uid: string;
 };
 
-export type LowestMarketData = LowestCardPriceEntry[] & LowestDeedPriceEntry[];
+export type LowestMarketData = {
+  lowestCardPrices: LowestCardPriceEntry[];
+  lowestDeedPrices: LowestDeedPriceEntry[];
+};

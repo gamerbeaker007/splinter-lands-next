@@ -9,10 +9,16 @@ import {
   findCardRarity,
   findCardSet,
 } from "@/lib/utils/cardUtil";
-import { DeedType, PlotRarity, PlotStatus } from "@/types/planner";
+import {
+  cardFoilOptions,
+  DeedType,
+  PlotRarity,
+  PlotStatus,
+} from "@/types/planner";
 import {
   LowestCardPriceEntry,
   LowestDeedPriceEntry,
+  LowestMarketData,
 } from "@/types/planner/market/market";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
@@ -21,7 +27,6 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const { force } = await req.json();
-    console.log("Force refresh:", force);
     const cardDetails = await getCachedCardDetailsData(force);
     const cardMarket = await getCachedMarketCardData(force);
     const landMarket = await getCachedMarketLandData(force);
@@ -29,12 +34,12 @@ export async function POST(req: Request) {
     const lowestCardPrices = getLowestCardPriceList(cardDetails, cardMarket);
     const lowestDeedPrices = getLowestDeedPriceList(landMarket);
 
-    const lowestMarketData = {
-      ...lowestCardPrices,
-      ...lowestDeedPrices,
+    const lowestMarketData: LowestMarketData = {
+      lowestCardPrices,
+      lowestDeedPrices,
     };
 
-    return NextResponse.json({ lowestMarketData }, { status: 200 });
+    return NextResponse.json(lowestMarketData, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
 
@@ -54,9 +59,8 @@ export function getLowestCardPriceList(
   for (const card of cards) {
     const rarity = findCardRarity(cardDetails, card.card_detail_id);
     const element = findCardElement(cardDetails, card.card_detail_id);
-    console.log("Element", element);
     const set = findCardSet(cardDetails, card.card_detail_id);
-    const foil = card.foil;
+    const foil = cardFoilOptions[card.foil];
     const key = `${rarity}|${element}|${foil}|${set}`;
     if (
       !map.has(key) ||
@@ -81,14 +85,14 @@ export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
   for (const deed of deeds) {
     const rarity = deed.rarity as PlotRarity;
     const status = deed.plot_status as PlotStatus;
-    const terrain = deed.deed_type as DeedType;
+    const deedType = deed.deed_type?.toLowerCase() as DeedType;
     const price = Number(deed.listing_price ?? 0);
-    const key = `${rarity}|${status}|${terrain}`;
+    const key = `${rarity}|${status}|${deedType}`;
     if (!map.has(key) || price < (map.get(key)?.listing_price ?? Infinity)) {
       map.set(key, {
         rarity,
         status,
-        terrain,
+        deedType,
         listing_price: price,
         deed_uid: deed.deed_uid,
       });

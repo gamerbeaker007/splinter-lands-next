@@ -25,9 +25,7 @@ export async function getCachedMarketLandData(force = false): Promise<Deed[]> {
     if (cached) return cached;
   }
 
-  console.log("Fetching land data from API");
   const data = await fetchMarketLandData();
-  console.log("Fetched", data.length, "lands from market");
   cache.set(key, data);
   return data;
 }
