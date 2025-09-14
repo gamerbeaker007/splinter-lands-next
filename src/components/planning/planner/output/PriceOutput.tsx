@@ -19,7 +19,20 @@ import {
 } from "@/types/planner/market/market";
 import { SplPriceData } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box, capitalize, Tooltip, Typography } from "@mui/material";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import {
+  Box,
+  Button,
+  capitalize,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
+import { IoIosPricetags } from "react-icons/io";
 
 type Props = {
   plot: PlotModifiers;
@@ -258,8 +271,6 @@ export default function PriceOutput({
     (titleResult.price ?? 0) +
     stakedDECinUSD;
 
-  console.log("Total USD:", totalUSD);
-
   const totalUSDForPurchases =
     (deedResult.price ?? 0) +
     cardsTotalUSDPrice +
@@ -269,193 +280,255 @@ export default function PriceOutput({
     ? totalUSDForPurchases / (tokenPriceData?.dec ?? 1)
     : null;
 
-  console.log("Total DEC for Purchases:", totalDECForPurchases);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleDialogOpen = () => {
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+  };
+
+  const hasWarning =
+    deedResult.warning ||
+    cardResults.some((r) => r.warning) ||
+    totemResult.warning ||
+    titleResult.warning;
 
   return (
     <Box>
-      <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-        Market Prices
-      </Typography>
-      <Box>
-        {!marketData && (
-          <Tooltip title="No market data available. Prices may be outdated or missing.">
-            <Typography variant="caption" color="warning.main">
-              Market data unavailable.
-            </Typography>
-          </Tooltip>
-        )}
-
-        <Typography variant="body2" color="text.secondary">
-          Deed Price:
-        </Typography>
-        <Typography
-          variant="body1"
-          color={deedResult.price ? "success.main" : "text.disabled"}
-        >
-          {deedResult.price
-            ? `${deedResult.price.toLocaleString()} USD`
-            : "N/A"}
-        </Typography>
-        {deedResult.warning && (
-          <Tooltip title={deedResult.warning}>
-            <Typography variant="caption" color="warning.main">
-              {deedResult.warning}
-            </Typography>
-          </Tooltip>
-        )}
+      <Box
+        mt={1}
+        display="flex"
+        alignItems="center"
+        gap={2}
+        onClick={handleDialogOpen}
+        sx={{
+          cursor: "pointer",
+          border: "1px solid",
+          padding: 2,
+          borderRadius: 1,
+          transition: "box-shadow 0.2s",
+          boxShadow: "0 1px 4px rgba(0,0,0,0.08)",
+          "&:hover": {
+            boxShadow: "0 2px 8px rgba(0,128,0,0.15)",
+            borderColor: "success.main",
+          },
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={2}>
+          <Box color={"success.main"}>
+            <IoIosPricetags size={20} />
+          </Box>
+          <Typography variant="body2" color="text.secondary">
+            Total USD Price:
+          </Typography>
+          <Typography variant="body1" color="success.main">
+            {totalUSD.toLocaleString()} USD
+          </Typography>
+          {hasWarning && (
+            <WarningAmberIcon
+              fontSize="medium"
+              sx={{
+                color: "warning.main",
+                verticalAlign: "middle",
+                cursor: "help",
+              }}
+            />
+          )}
+        </Box>
       </Box>
-      <Box mt={1}>
-        <Typography variant="body2" color="text.secondary">
-          Card Prices (per slot):
-        </Typography>
-        {cardResults.map((result, idx) => {
-          // const editionNumber = editionIdByName[ as EditionName] || 0;
-          // const foilNumber = ;
 
-          const editionName = findEditionByCardName(
-            cardDetails,
-            result.cardDetails?.name || "Unknown",
-          );
+      {/* Dialog for detailed information */}
+      <Dialog open={dialogOpen} onClose={handleDialogClose}>
+        <DialogTitle>Detailed Price Information</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            Total USD Price:
+          </Typography>
+          <Typography variant="body1" color="success.main">
+            {totalUSD.toLocaleString()} USD
+          </Typography>
 
-          const image = getCardImgV2(
-            result.cardDetails?.name || "Unknown",
-            editionName,
-            result.cardDetails?.foil as CardFoil,
-          );
-          return (
-            <Box key={idx} display="flex" alignItems="center" gap={1}>
-              <Box
-                component="img"
-                src={image}
-                alt={result.cardDetails?.name || "Card Image"}
-                sx={{ width: 40, height: 56, borderRadius: 1 }}
-              />
+          <Box>
+            {!marketData && (
+              <Tooltip title="No market data available. Prices may be outdated or missing.">
+                <Typography variant="caption" color="warning.main">
+                  Market data unavailable.
+                </Typography>
+              </Tooltip>
+            )}
+
+            <Typography variant="body2" color="text.secondary">
+              Deed Price:
+            </Typography>
+            <Typography
+              variant="body1"
+              color={deedResult.price ? "success.main" : "text.disabled"}
+            >
+              {deedResult.price
+                ? `${deedResult.price.toLocaleString()} USD`
+                : "N/A"}
+            </Typography>
+            {deedResult.warning && (
+              <Tooltip title={deedResult.warning}>
+                <Typography variant="caption" color="warning.main">
+                  {deedResult.warning}
+                </Typography>
+              </Tooltip>
+            )}
+          </Box>
+          <Box mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Card Prices (per slot):
+            </Typography>
+            {cardResults.map((result, idx) => {
+              // const editionNumber = editionIdByName[ as EditionName] || 0;
+              // const foilNumber = ;
+
+              const editionName = findEditionByCardName(
+                cardDetails,
+                result.cardDetails?.name || "Unknown",
+              );
+
+              const image = getCardImgV2(
+                result.cardDetails?.name || "Unknown",
+                editionName,
+                result.cardDetails?.foil as CardFoil,
+              );
+              return (
+                <Box key={idx} display="flex" alignItems="center" gap={1}>
+                  <Box
+                    component="img"
+                    src={image}
+                    alt={result.cardDetails?.name || "Card Image"}
+                    sx={{ width: 40, height: 56, borderRadius: 1 }}
+                  />
+                  <Typography variant="body2" color="text.secondary">
+                    Slot {idx + 1}:
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    color={result.price ? "success.main" : "text.disabled"}
+                  >
+                    {result.price
+                      ? `${result.price.toLocaleString()} USD`
+                      : "N/A"}
+                  </Typography>
+                  <Typography variant="body1" color={"secondary"}>
+                    {result.cardDetails?.name
+                      ? `${result.cardDetails?.name}`
+                      : "N/A"}
+                  </Typography>
+                  {result.warning && (
+                    <Tooltip title={result.warning}>
+                      <Typography variant="caption" color="warning.main">
+                        {result.warning}
+                      </Typography>
+                    </Tooltip>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+
+          {plot.totem != "none" && (
+            <Box mt={1}>
               <Typography variant="body2" color="text.secondary">
-                Slot {idx + 1}:
+                Totem Price:
               </Typography>
-              <Typography
-                variant="body1"
-                color={result.price ? "success.main" : "text.disabled"}
-              >
-                {result.price ? `${result.price.toLocaleString()} USD` : "N/A"}
-              </Typography>
-              <Typography variant="body1" color={"secondary"}>
-                {result.cardDetails?.name
-                  ? `${result.cardDetails?.name}`
-                  : "N/A"}
-              </Typography>
-              {result.warning && (
-                <Tooltip title={result.warning}>
+              {totemResult.price ? (
+                <Box>
+                  <Typography variant="body1" color="success.main">
+                    {totemResult.price.toLocaleString()} USD
+                  </Typography>
+                  <Typography variant="body1" color="secondary">
+                    {capitalize(totemResult.title.toLocaleString())}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body1" color="text.disabled">
+                  N/A
+                </Typography>
+              )}
+              {totemResult.warning && (
+                <Tooltip title={totemResult.warning}>
                   <Typography variant="caption" color="warning.main">
-                    {result.warning}
+                    {totemResult.warning}
                   </Typography>
                 </Tooltip>
               )}
             </Box>
-          );
-        })}
-      </Box>
-
-      {plot.totem != "none" && (
-        <Box mt={1}>
-          <Typography variant="body2" color="text.secondary">
-            Totem Price:
-          </Typography>
-          {totemResult.price ? (
+          )}
+          {plot.title != "none" && (
+            <Box mt={1}>
+              <Typography variant="body2" color="text.secondary">
+                Title Price:
+              </Typography>
+              {titleResult.price ? (
+                <Box>
+                  <Typography variant="body1" color="success.main">
+                    {titleResult.price.toLocaleString()} USD
+                  </Typography>
+                  <Typography variant="body1" color="secondary">
+                    {titleResult.title.toLocaleString()}
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography variant="body1" color="text.disabled">
+                  N/A
+                </Typography>
+              )}
+              {titleResult.warning && (
+                <Tooltip title={titleResult.warning}>
+                  <Typography variant="caption" color="warning.main">
+                    {titleResult.warning}
+                  </Typography>
+                </Tooltip>
+              )}
+            </Box>
+          )}
+          <Box mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Total STAKED DEC NEEDED:
+            </Typography>
             <Box>
               <Typography variant="body1" color="success.main">
-                {totemResult.price.toLocaleString()} USD
-              </Typography>
-              <Typography variant="body1" color="secondary">
-                {capitalize(totemResult.title.toLocaleString())}
+                {formatNumberWithSuffix(stakedDECNeeded)} DEC
               </Typography>
             </Box>
-          ) : (
-            <Typography variant="body1" color="text.disabled">
-              N/A
+          </Box>
+          <Box mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Total DEC for Purchases:
             </Typography>
-          )}
-          {totemResult.warning && (
-            <Tooltip title={totemResult.warning}>
-              <Typography variant="caption" color="warning.main">
-                {totemResult.warning}
-              </Typography>
-            </Tooltip>
-          )}
-        </Box>
-      )}
-      {plot.title != "none" && (
-        <Box mt={1}>
-          <Typography variant="body2" color="text.secondary">
-            Title Price:
-          </Typography>
-          {titleResult.price ? (
             <Box>
               <Typography variant="body1" color="success.main">
-                {titleResult.price.toLocaleString()} USD
-              </Typography>
-              <Typography variant="body1" color="secondary">
-                {titleResult.title.toLocaleString()}
+                {formatNumberWithSuffix(totalDECForPurchases ?? 0)} DEC
               </Typography>
             </Box>
-          ) : (
-            <Typography variant="body1" color="text.disabled">
-              N/A
+          </Box>
+          <Box mt={1}>
+            <Typography variant="body2" color="text.secondary">
+              Total DEC:
             </Typography>
-          )}
-          {titleResult.warning && (
-            <Tooltip title={titleResult.warning}>
-              <Typography variant="caption" color="warning.main">
-                {titleResult.warning}
+            <Box>
+              <Typography variant="body1" color="success.main">
+                {formatNumberWithSuffix(
+                  (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
+                )}
+                DEC
               </Typography>
-            </Tooltip>
-          )}
-        </Box>
-      )}
-      <Box mt={1}>
-        <Typography variant="body2" color="text.secondary">
-          Total USD Price:
-        </Typography>
-        <Box>
-          <Typography variant="body1" color="success.main">
-            {totalUSD.toLocaleString()} USD
-          </Typography>
-        </Box>
-      </Box>
-
-      <Box mt={1}>
-        <Typography variant="body2" color="text.secondary">
-          Total STAKED DEC NEEDED:
-        </Typography>
-        <Box>
-          <Typography variant="body1" color="success.main">
-            {formatNumberWithSuffix(stakedDECNeeded)} DEC
-          </Typography>
-        </Box>
-      </Box>
-      <Box mt={1}>
-        <Typography variant="body2" color="text.secondary">
-          Total DEC for Purchases:
-        </Typography>
-        <Box>
-          <Typography variant="body1" color="success.main">
-            {formatNumberWithSuffix(totalDECForPurchases ?? 0)} DEC
-          </Typography>
-        </Box>
-      </Box>
-      <Box mt={1}>
-        <Typography variant="body2" color="text.secondary">
-          Total DEC:
-        </Typography>
-        <Box>
-          <Typography variant="body1" color="success.main">
-            {formatNumberWithSuffix(
-              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
-            )}
-            DEC
-          </Typography>
-        </Box>
-      </Box>
+            </Box>
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleDialogClose} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
