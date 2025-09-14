@@ -1,31 +1,181 @@
 import { Deed } from "@/generated/prisma";
+import {
+  determineCardInfo,
+  findCardElement,
+  findCardSet,
+} from "@/lib/utils/cardUtil";
+import {
+  cardFoilOptions,
+  DeedType,
+  PlotRarity,
+  PlotStatus,
+  TitleTier,
+  TotemRarity,
+} from "@/types/planner";
+import {
+  LowestCardPriceEntry,
+  LowestDeedPriceEntry,
+  LowestMarketData,
+  LowestTitlePriceEntry,
+  LowestTotemPriceEntry,
+  titleTierMap,
+} from "@/types/planner/market/market";
+import { SplCardDetails } from "@/types/splCardDetails";
+import { SplMarketAsset } from "@/types/splMarketAsset";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
 import { fetchMarketCardData } from "../api/spl/spl-base-api";
-import { fetchMarketLandData } from "../api/spl/spl-land-api";
+import {
+  fetchAssetsPrices,
+  fetchMarketLandData,
+} from "../api/spl/spl-land-api";
 import { cache } from "../cache/cache";
 
-export async function getCachedMarketCardData(
+export async function getCachedMarketData(
+  cardDetails: SplCardDetails[],
   force = false,
-): Promise<SplMarketCardData[]> {
-  const key = `market-cards`;
+): Promise<LowestMarketData> {
+  const key = `market-data`;
   if (!force) {
-    const cached = cache.get<SplMarketCardData[]>(key);
+    const cached = cache.get<LowestMarketData>(key);
     if (cached) return cached;
   }
 
-  const data = await fetchMarketCardData();
-  cache.set(key, data);
-  return data;
+  const cardMarket = await fetchMarketCardData();
+  const lowestCardPrices = getLowestCardPriceList(cardDetails, cardMarket);
+
+  const landMarket = await fetchMarketLandData();
+  const lowestDeedPrices = getLowestDeedPriceList(landMarket);
+
+  const otherMarketItems = await fetchAssetsPrices([
+    "TITLES",
+    "TOTEMS",
+    "TOTEM_ITEMS",
+  ]);
+
+  const lowestTotemPrices = getLowestTotemPriceList(otherMarketItems);
+  const lowestTitlePrices = getLowestTitlePriceList(otherMarketItems);
+
+  const lowestMarketData = {
+    lowestCardPrices,
+    lowestDeedPrices,
+    lowestTotemPrices,
+    lowestTitlePrices,
+  };
+  cache.set(key, lowestMarketData);
+  return lowestMarketData;
 }
 
-export async function getCachedMarketLandData(force = false): Promise<Deed[]> {
-  const key = `market-land`;
-  if (!force) {
-    const cached = cache.get<Deed[]>(key);
-    if (cached) return cached;
+export function getLowestCardPriceList(
+  cardDetails: SplCardDetails[],
+  cards: SplMarketCardData[],
+): LowestCardPriceEntry[] {
+  const map = new Map<string, LowestCardPriceEntry>();
+  for (const card of cards) {
+    const { name, rarity } = determineCardInfo(
+      card.card_detail_id,
+      cardDetails,
+    );
+    const element = findCardElement(cardDetails, card.card_detail_id);
+    const set = findCardSet(cardDetails, card.card_detail_id);
+    const foil = cardFoilOptions[card.foil];
+    const key = `${rarity}|${element}|${foil}|${set}`;
+    if (
+      !map.has(key) ||
+      card.low_price_bcx < (map.get(key)?.low_price_bcx ?? Infinity)
+    ) {
+      map.set(key, {
+        rarity,
+        element,
+        set,
+        foil,
+        low_price_bcx: card.low_price_bcx,
+        card_detail_id: card.card_detail_id,
+        name,
+      });
+    }
   }
+  return Array.from(map.values());
+}
 
-  const data = await fetchMarketLandData();
-  cache.set(key, data);
-  return data;
+export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
+  const map = new Map<string, LowestDeedPriceEntry>();
+  for (const deed of deeds) {
+    const rarity = deed.rarity as PlotRarity;
+    const status = deed.plot_status as PlotStatus;
+    const deedType = deed.deed_type?.toLowerCase() as DeedType;
+    const price = Number(deed.listing_price ?? 0);
+    const key = `${rarity}|${status}|${deedType}`;
+    if (!map.has(key) || price < (map.get(key)?.listing_price ?? Infinity)) {
+      map.set(key, {
+        rarity,
+        status,
+        deedType,
+        listing_price: price,
+        deed_uid: deed.deed_uid,
+      });
+    }
+  }
+  return Array.from(map.values());
+}
+
+export function getLowestTotemPriceList(
+  items: SplMarketAsset[],
+): LowestTotemPriceEntry[] {
+  const result: Record<string, LowestTotemPriceEntry> = {};
+  for (const item of items) {
+    if (item.assetName === "TOTEMS" || item.assetName === "TOTEM_ITEMS") {
+      const rarity =
+        (item.detailName &&
+          (item.detailName.split(" ")[0].toLowerCase() as TotemRarity)) ||
+        "common";
+
+      const priceObj = Array.isArray(item.prices)
+        ? item.prices.find((p) => p.currency === "USD")
+        : null;
+      const price = priceObj?.minPrice ?? null;
+      if (
+        rarity &&
+        price !== null &&
+        (!result[rarity] || price < result[rarity].listing_price)
+      ) {
+        result[rarity] = {
+          rarity,
+          listing_price: price,
+        };
+      }
+    }
+  }
+  return Object.values(result);
+}
+
+export function getLowestTitlePriceList(
+  items: SplMarketAsset[],
+): LowestTitlePriceEntry[] {
+  const result: Record<Exclude<TitleTier, "none">, LowestTitlePriceEntry> = {};
+
+  for (const item of items) {
+    if (item.assetName === "TITLES") {
+      // Try to map detailName to rarity
+      const rarity = titleTierMap[item.detailName] as Exclude<
+        TitleTier,
+        "none"
+      >;
+      const priceObj = Array.isArray(item.prices)
+        ? item.prices.find((p) => p.currency === "USD")
+        : null;
+      const price = priceObj?.minPrice ?? null;
+      if (
+        rarity &&
+        price !== null &&
+        (!result[rarity] || price < result[rarity].listing_price)
+      ) {
+        result[rarity] = {
+          rarity,
+          listing_price: price,
+          titleName: item.detailName,
+        };
+      }
+    }
+  }
+  return Object.values(result);
 }

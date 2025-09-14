@@ -19,7 +19,7 @@ import {
   TotemTier,
   WorksiteType,
 } from "@/types/planner";
-import { Prices } from "@/types/price";
+import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -55,6 +55,7 @@ const DEFAULTS = {
 export type Props = {
   cardDetails: SplCardDetails[];
   prices: Prices;
+  tokenPriceData: SplPriceData | null;
   spsRatio: number;
   regionTax: RegionTax[] | null;
   marketData: LowestMarketData | null;
@@ -64,6 +65,7 @@ export type Props = {
 export default function Planner({
   cardDetails,
   prices,
+  tokenPriceData,
   spsRatio,
   regionTax,
   marketData,
@@ -388,7 +390,13 @@ export default function Planner({
             onTractChange={onTractChange}
             applyImportedDeed={applyImportedDeed}
           />
-          <PriceOutput plot={plot} cards={slots} marketData={marketData} />
+          <PriceOutput
+            plot={plot}
+            cards={slots}
+            cardDetails={cardDetails}
+            tokenPriceData={tokenPriceData}
+            marketData={marketData}
+          />
         </Stack>
       </Paper>
 

@@ -1,14 +1,12 @@
-import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
-import { getCachedMarketData } from "@/lib/backend/services/marketService";
+import { getCachedSplPriceData } from "@/lib/backend/services/tokenService";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const { force } = await req.json();
-    const cardDetails = await getCachedCardDetailsData(force);
-    const lowestMarketData = await getCachedMarketData(cardDetails, force);
+    const splPriceData = await getCachedSplPriceData(force);
 
-    return NextResponse.json(lowestMarketData, { status: 200 });
+    return NextResponse.json(splPriceData, { status: 200 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
 

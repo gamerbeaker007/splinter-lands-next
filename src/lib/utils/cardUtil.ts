@@ -2,6 +2,8 @@ import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import {
   CardElement,
   cardElementColorMap,
+  CardFoil,
+  cardFoilSuffixMap,
   CardRarity,
   cardRarityOptions,
   CardSetName,
@@ -29,6 +31,9 @@ type FoilMeta = {
 // Foil Metadata Map
 // ----------------------------------
 
+/**
+ * @deprecated remove when possible.
+ */
 const foilMetaMap: Record<number, FoilMeta> = {
   0: { bcxType: "normal", suffix: "", label: "Regular" },
   1: { bcxType: "gold", suffix: "_gold", label: "Gold" },
@@ -74,6 +79,9 @@ export function getEditionName(id: number): EditionName | undefined {
   return editionAliasById[id] ?? editionNameById[id];
 }
 
+/**
+ * @deprecated Use getCardImgV2 instead.
+ */
 export function getCardImg(
   cardName: string,
   edition: number,
@@ -83,6 +91,20 @@ export function getCardImg(
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const editionName = getEditionName(edition);
+  const safeCardName = encodeURIComponent(cardName.trim());
+  const lvl = level && level > 1 ? level : 1;
+  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
+}
+
+// New version using Edition and CardFoil types from primitives.ts
+export function getCardImgV2(
+  cardName: string,
+  editionName: EditionName | undefined,
+  foil: CardFoil,
+  level?: number,
+): string {
+  const suffix = cardFoilSuffixMap[foil];
+  const baseCardUrl = `${WEB_URL}cards_by_level`;
   const safeCardName = encodeURIComponent(cardName.trim());
   const lvl = level && level > 1 ? level : 1;
   return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
@@ -163,4 +185,12 @@ export function findCardSet(
 ): CardSetName {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
   return getEditionName(splCard?.tier ?? 0) as CardSetName;
+}
+
+export function findEditionByCardName(
+  cardDetails: SplCardDetails[],
+  cardName: string,
+): EditionName | undefined {
+  const splCard = cardDetails.find((cd) => cd.name === cardName);
+  return getEditionName(Number(splCard?.editions) ?? 0);
 }

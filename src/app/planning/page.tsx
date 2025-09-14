@@ -7,6 +7,7 @@ import { useFetchSPSRatio } from "@/hooks/useFetchSPSRatio";
 import { useMarketData } from "@/hooks/useMarketData";
 import { usePrices } from "@/hooks/usePrices";
 import { useRegionTaxInfo } from "@/hooks/useRegionTax";
+import { useTokenPrices } from "@/hooks/useTokenPrices";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo } from "@/types/productionInfo";
 import {
@@ -36,6 +37,7 @@ export default function PlanningPage() {
   } = useFetchSPSRatio();
   const { regionTax } = useRegionTaxInfo();
   const { marketData } = useMarketData();
+  const { prices: tokenPriceData } = useTokenPrices();
 
   useEffect(() => {
     setTitle("Land Planning");
@@ -169,6 +171,7 @@ export default function PlanningPage() {
                   cardDetails={cardDetails}
                   prices={prices}
                   spsRatio={spsRatio}
+                  tokenPriceData={tokenPriceData}
                   regionTax={regionTax}
                   marketData={marketData}
                   onChange={handlePlanChange}

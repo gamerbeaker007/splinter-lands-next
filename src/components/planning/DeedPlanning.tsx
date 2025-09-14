@@ -10,7 +10,7 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Prices } from "@/types/price";
+import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { SplCardDetails } from "@/types/splCardDetails";
 import Planner from "./planner/Planner";
@@ -22,6 +22,7 @@ export type Props = {
   index: number;
   cardDetails: SplCardDetails[];
   prices: Prices;
+  tokenPriceData: SplPriceData | null;
   spsRatio: number;
   regionTax: RegionTax[] | null;
   marketData: LowestMarketData | null;
@@ -34,6 +35,7 @@ export function DeedPlanning({
   index,
   cardDetails,
   prices,
+  tokenPriceData,
   spsRatio,
   regionTax,
   marketData,
@@ -83,6 +85,7 @@ export function DeedPlanning({
           <Planner
             cardDetails={cardDetails}
             prices={prices}
+            tokenPriceData={tokenPriceData}
             spsRatio={spsRatio}
             regionTax={regionTax}
             marketData={marketData}

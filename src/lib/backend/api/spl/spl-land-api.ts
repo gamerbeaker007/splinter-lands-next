@@ -3,12 +3,14 @@ import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
+import { SplMarketAsset } from "@/types/splMarketAsset";
+import { SplTaxes } from "@/types/splTaxes";
 import axios from "axios";
 import * as rax from "retry-axios";
+import { NotFoundError } from "../../error";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
-import { NotFoundError } from "../../error";
-import { SplTaxes } from "@/types/splTaxes";
+import { Assets } from "@/types/planner/market/market";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -154,6 +156,26 @@ export async function fetchResourceSupply(resource: string) {
   return Array.isArray(data) ? (data as ResourceSupplyResponse[]) : [];
 }
 
+export async function fetchAssetsPrices(
+  filter?: Assets[],
+): Promise<SplMarketAsset[]> {
+  try {
+    const url = "/market/landing";
+    const params =
+      filter && filter.length > 0 ? { assets: filter.join(",") } : {};
+
+    const res = await splLandClient.get(url, { params });
+
+    const data = res.data?.data;
+    if (!data) throw new Error("Invalid response from Splinterlands API");
+
+    return data.assets as SplMarketAsset[];
+  } catch (error) {
+    logger.error("❌ Failed to fetch asset prices:", error);
+    return [];
+  }
+}
+
 export async function getAURAPrices(): Promise<AuraPrices[]> {
   try {
     const url = "/market/landing";
@@ -167,7 +189,7 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       return [];
     }
 
-    const auraItems = ["MIDNIGHTPOT", "FT", "AM", "WAGONKIT"];
+    const auraItems = ["NMIDIGHTPOT", "FT", "AM", "WAGONKIT"];
 
     return assets
       .filter((asset) => auraItems.includes(asset.detailId))
