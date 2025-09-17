@@ -1,22 +1,7 @@
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import {
-  determineCardMaxBCX,
-  findEditionByCardName,
-  getCardImgV2,
-} from "@/lib/utils/cardUtil";
-import {
-  CardFoil,
-  cardFoilOptions,
-  PlotModifiers,
-  SlotInput,
-} from "@/types/planner";
-import {
-  LowestCardPriceEntry,
-  LowestDeedPriceEntry,
-  LowestMarketData,
-  LowestTitlePriceEntry,
-  LowestTotemPriceEntry,
-} from "@/types/planner/market/market";
+import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import { cardFoilOptions, PlotModifiers, SlotInput } from "@/types/planner";
+import { LowestMarketData } from "@/types/planner/market/market";
 import { SplPriceData } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
@@ -31,8 +16,16 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import React, { useState } from "react";
 import { IoIosPricetags } from "react-icons/io";
+import {
+  findLowestCardPrice,
+  findLowestDeedPrice,
+  findLowestTitlePrice,
+  findLowestTotemPrice,
+} from "@/lib/frontend/utils/plannerValueCalcs";
+import PriceItem from "@/components/planning/planner/output/PriceItem";
+import PriceCardItem from "@/components/planning/planner/output/PriceCardItem";
 
 type Props = {
   plot: PlotModifiers;
@@ -42,183 +35,7 @@ type Props = {
   marketData: LowestMarketData | null;
 };
 
-// Helper to format fallback warning with dropped keys
-function formatFallbackWarning(preferredKeys: string[], usedKeys: string[]) {
-  const dropped = preferredKeys.filter(
-    (k, i) => usedKeys[i] === undefined || usedKeys[i] === "",
-  );
-  if (dropped.length === 0) return null;
-  return `Fallback used for price. Dropped keys: ${dropped.join(", ")}. Used: ${usedKeys
-    .filter(Boolean)
-    .join(" | ")}`;
-}
-
-// Helper to find the best match for deed price with fallback
-function findLowestDeedPrice(
-  plot: PlotModifiers,
-  deedPrices: LowestDeedPriceEntry[],
-) {
-  if (!deedPrices || deedPrices.length === 0)
-    return { price: null, usedKey: null, warning: "No market data." };
-
-  const preferredKeys = ["rarity", "status", "deedType"];
-  const keys = [
-    {
-      rarity: plot.plotRarity,
-      status: plot.plotStatus,
-      deedType: plot.deedType,
-    },
-    { rarity: plot.plotRarity, status: plot.plotStatus },
-    { rarity: plot.plotRarity, deedType: plot.deedType },
-    { status: plot.plotStatus, deedType: plot.deedType },
-    { rarity: plot.plotRarity },
-    { status: plot.plotStatus },
-    { deedType: plot.deedType },
-  ];
-
-  for (const keyObj of keys) {
-    const match = deedPrices.find((deed) =>
-      Object.entries(keyObj).every(
-        ([k, v]) => deed[k as keyof LowestDeedPriceEntry] === v,
-      ),
-    );
-    if (match) {
-      const usedKeyArr = preferredKeys.map(
-        (k) => (keyObj as Record<string, string>)[k],
-      );
-      const warning =
-        usedKeyArr.every((v) => v) === true
-          ? null
-          : formatFallbackWarning(preferredKeys, usedKeyArr);
-      return {
-        price: match.listing_price,
-        usedKey: usedKeyArr.filter(Boolean).join("|"),
-        warning,
-      };
-    }
-  }
-  return {
-    price: null,
-    usedKey: null,
-    warning: "No matching plot price found.",
-  };
-}
-
-function findLowestCardPrice(
-  card: SlotInput,
-  cardPrices: LowestCardPriceEntry[],
-) {
-  if (!cardPrices || cardPrices.length === 0)
-    return {
-      price: null,
-      usedKey: null,
-      cardDetails: null,
-      warning: "No market data.",
-    };
-
-  const preferredKeys = ["rarity", "element", "foil", "set"];
-  const keys = [
-    {
-      rarity: card.rarity,
-      element: card.element,
-      foil: card.foil,
-      set: card.set,
-    },
-    { rarity: card.rarity, element: card.element, foil: card.foil },
-    { rarity: card.rarity, element: card.element },
-    { rarity: card.rarity, foil: card.foil, set: card.set },
-    { rarity: card.rarity, foil: card.foil },
-    { rarity: card.rarity, set: card.set },
-    { rarity: card.rarity },
-  ];
-
-  for (const keyObj of keys) {
-    const match = cardPrices.find((cardEntry) =>
-      Object.entries(keyObj).every(
-        ([k, v]) => cardEntry[k as keyof LowestCardPriceEntry] === v,
-      ),
-    );
-    if (match) {
-      const usedKeyArr = preferredKeys.map(
-        (k) => (keyObj as Record<string, string>)[k],
-      );
-      const warning =
-        usedKeyArr.every((v) => v) === true
-          ? null
-          : formatFallbackWarning(preferredKeys, usedKeyArr);
-      return {
-        price: match.low_price_bcx * card.bcx,
-        cardDetails: {
-          id: match.card_detail_id,
-          bcx: card.bcx,
-          rarity: match.rarity,
-          element: match.element,
-          foil: match.foil,
-          set: match.set,
-          name: match.name,
-        },
-        usedKey: usedKeyArr.filter(Boolean).join("|"),
-        warning,
-      };
-    }
-  }
-  return {
-    price: null,
-    cardDetail: null,
-    usedKey: null,
-    warning: "No matching card price found.",
-  };
-}
-
-function findLowestTotemPrice(
-  plot: PlotModifiers,
-  totemPrices: LowestTotemPriceEntry[],
-) {
-  if (!totemPrices || totemPrices.length === 0)
-    return { price: null, usedKey: null, warning: "No market data." };
-
-  const match = totemPrices.find((totem) => totem.rarity === plot.totem);
-  if (match) {
-    return {
-      price: match.listing_price,
-      title: match.rarity,
-      usedKey: match.rarity,
-      warning: null,
-    };
-  }
-  return {
-    price: null,
-    title: null,
-    usedKey: null,
-    warning: "No matching totem price found.",
-  };
-}
-
-function findLowestTitlePrice(
-  plot: PlotModifiers,
-  titlePrices: LowestTitlePriceEntry[],
-) {
-  if (!titlePrices || titlePrices.length === 0)
-    return { price: null, usedKey: null, warning: "No market data." };
-
-  const match = titlePrices.find((title) => title.rarity === plot.title);
-  if (match) {
-    return {
-      price: match.listing_price,
-      title: match.titleName,
-      usedKey: match.rarity,
-      warning: null,
-    };
-  }
-  return {
-    price: null,
-    usedKey: null,
-    title: null,
-    warning: "No matching title price found.",
-  };
-}
-
-function calcStakedDECneeded(cards: SlotInput[]) {
+function calcStakedDECNeeded(cards: SlotInput[]) {
   return cards.reduce((acc, card) => {
     const cardFoilId = cardFoilOptions.indexOf(card.foil);
     const maxBCX = determineCardMaxBCX(card.set, card.rarity, cardFoilId);
@@ -245,23 +62,29 @@ export default function PriceOutput({
     : cards.map(() => ({
         price: null,
         usedKey: null,
-        cardDetails: null,
+        cardInfo: null,
         warning: "No market data.",
       }));
 
-  const totemResult = marketData
-    ? findLowestTotemPrice(plot, marketData.lowestTotemPrices ?? [])
-    : { price: null, usedKey: null, warning: "No market data." };
+  const totemResult =
+    plot.totem !== "none"
+      ? marketData
+        ? findLowestTotemPrice(plot, marketData.lowestTotemPrices ?? [])
+        : { price: null, usedKey: null, warning: "No market data." }
+      : { price: null, usedKey: null, warning: null };
 
-  const titleResult = marketData
-    ? findLowestTitlePrice(plot, marketData.lowestTitlePrices ?? [])
-    : { price: null, usedKey: null, warning: "No market data." };
+  const titleResult =
+    plot.title !== "none"
+      ? marketData
+        ? findLowestTitlePrice(plot, marketData.lowestTitlePrices ?? [])
+        : { price: null, usedKey: null, warning: "No market data." }
+      : { price: null, usedKey: null, warning: null };
 
   const cardsTotalUSDPrice = cardResults.reduce((acc, result) => {
     return acc + (result.price ?? 0);
   }, 0);
 
-  const stakedDECNeeded = calcStakedDECneeded(cards);
+  const stakedDECNeeded = calcStakedDECNeeded(cards);
   const stakedDECinUSD = stakedDECNeeded * (tokenPriceData?.dec ?? 0);
 
   const totalUSD =
@@ -296,6 +119,8 @@ export default function PriceOutput({
     totemResult.warning ||
     titleResult.warning;
 
+  const hasRuni = plot.runi != "none";
+
   return (
     <Box>
       <Box
@@ -328,14 +153,32 @@ export default function PriceOutput({
             {totalUSD.toLocaleString()} USD
           </Typography>
           {hasWarning && (
-            <WarningAmberIcon
-              fontSize="medium"
-              sx={{
-                color: "warning.main",
-                verticalAlign: "middle",
-                cursor: "help",
-              }}
-            />
+            <Tooltip
+              title={
+                "Fallback price is used for estimation, click here to view more details"
+              }
+            >
+              <WarningAmberIcon
+                fontSize="medium"
+                sx={{
+                  color: "warning.main",
+                  verticalAlign: "middle",
+                  cursor: "pointer",
+                }}
+              />
+            </Tooltip>
+          )}
+          {hasRuni && (
+            <Tooltip title={"Runi is not taken into price estimation!"}>
+              <WarningAmberIcon
+                fontSize="medium"
+                sx={{
+                  color: "error.main",
+                  verticalAlign: "middle",
+                  cursor: "pointer",
+                }}
+              />
+            </Tooltip>
           )}
         </Box>
       </Box>
@@ -344,184 +187,93 @@ export default function PriceOutput({
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
         <DialogTitle>Detailed Price Information</DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary">
-            Total USD Price:
+          <Typography
+            variant="body1"
+            color="warning.main"
+            sx={{ whiteSpace: "pre-line" }}
+          >
+            {`Prices shown are estimates based on the lowest market listings.
+For cards, the lowest BCX price is used.
+Therefor the exact card you want may not always be available for that price.`}
           </Typography>
-          <Typography variant="body1" color="success.main">
-            {totalUSD.toLocaleString()} USD
-          </Typography>
-
-          <Box>
-            {!marketData && (
-              <Tooltip title="No market data available. Prices may be outdated or missing.">
-                <Typography variant="caption" color="warning.main">
-                  Market data unavailable.
-                </Typography>
-              </Tooltip>
-            )}
-
-            <Typography variant="body2" color="text.secondary">
-              Deed Price:
-            </Typography>
+          {hasRuni && (
             <Typography
               variant="body1"
-              color={deedResult.price ? "success.main" : "text.disabled"}
+              color="warning.main"
+              sx={{ whiteSpace: "pre-line" }}
             >
-              {deedResult.price
-                ? `${deedResult.price.toLocaleString()} USD`
-                : "N/A"}
+              Runi is not included in these calculations.
             </Typography>
-            {deedResult.warning && (
-              <Tooltip title={deedResult.warning}>
-                <Typography variant="caption" color="warning.main">
-                  {deedResult.warning}
-                </Typography>
-              </Tooltip>
-            )}
-          </Box>
+          )}
+          <PriceItem
+            title={"Total USD Price"}
+            price={totalUSD.toLocaleString()}
+            currency={"USD"}
+          />
+          <PriceItem
+            title={"Deed Price"}
+            price={deedResult.price?.toLocaleString() ?? "N/A"}
+            currency={"USD"}
+            warning={deedResult.warning}
+          />
+
           <Box mt={1}>
             <Typography variant="body2" color="text.secondary">
               Card Prices (per slot):
             </Typography>
             {cardResults.map((result, idx) => {
-              // const editionNumber = editionIdByName[ as EditionName] || 0;
-              // const foilNumber = ;
-
-              const editionName = findEditionByCardName(
-                cardDetails,
-                result.cardDetails?.name || "Unknown",
-              );
-
-              const image = getCardImgV2(
-                result.cardDetails?.name || "Unknown",
-                editionName,
-                result.cardDetails?.foil as CardFoil,
-              );
               return (
-                <Box key={idx} display="flex" alignItems="center" gap={1}>
-                  <Box
-                    component="img"
-                    src={image}
-                    alt={result.cardDetails?.name || "Card Image"}
-                    sx={{ width: 40, height: 56, borderRadius: 1 }}
-                  />
-                  <Typography variant="body2" color="text.secondary">
-                    Slot {idx + 1}:
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    color={result.price ? "success.main" : "text.disabled"}
-                  >
-                    {result.price
-                      ? `${result.price.toLocaleString()} USD`
-                      : "N/A"}
-                  </Typography>
-                  <Typography variant="body1" color={"secondary"}>
-                    {result.cardDetails?.name
-                      ? `${result.cardDetails?.name}`
-                      : "N/A"}
-                  </Typography>
-                  {result.warning && (
-                    <Tooltip title={result.warning}>
-                      <Typography variant="caption" color="warning.main">
-                        {result.warning}
-                      </Typography>
-                    </Tooltip>
-                  )}
-                </Box>
+                <PriceCardItem
+                  key={idx}
+                  cardDetails={cardDetails}
+                  price={result.price?.toLocaleString() ?? "N/A"}
+                  currency={"USD"}
+                  warning={result.warning}
+                  cardInfo={result.cardInfo}
+                  slotId={idx + 1}
+                />
               );
             })}
           </Box>
 
-          {plot.totem != "none" && (
-            <Box mt={1}>
-              <Typography variant="body2" color="text.secondary">
-                Totem Price:
-              </Typography>
-              {totemResult.price ? (
-                <Box>
-                  <Typography variant="body1" color="success.main">
-                    {totemResult.price.toLocaleString()} USD
-                  </Typography>
-                  <Typography variant="body1" color="secondary">
-                    {capitalize(totemResult.title.toLocaleString())}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography variant="body1" color="text.disabled">
-                  N/A
-                </Typography>
-              )}
-              {totemResult.warning && (
-                <Tooltip title={totemResult.warning}>
-                  <Typography variant="caption" color="warning.main">
-                    {totemResult.warning}
-                  </Typography>
-                </Tooltip>
-              )}
-            </Box>
+          {plot.totem != "none" && totemResult.price && (
+            <PriceItem
+              title={"Totem Price"}
+              subTitle={capitalize(totemResult.title)}
+              price={totemResult.price.toLocaleString()}
+              currency={"USD"}
+              warning={totemResult.warning}
+            />
           )}
-          {plot.title != "none" && (
-            <Box mt={1}>
-              <Typography variant="body2" color="text.secondary">
-                Title Price:
-              </Typography>
-              {titleResult.price ? (
-                <Box>
-                  <Typography variant="body1" color="success.main">
-                    {titleResult.price.toLocaleString()} USD
-                  </Typography>
-                  <Typography variant="body1" color="secondary">
-                    {titleResult.title.toLocaleString()}
-                  </Typography>
-                </Box>
-              ) : (
-                <Typography variant="body1" color="text.disabled">
-                  N/A
-                </Typography>
-              )}
-              {titleResult.warning && (
-                <Tooltip title={titleResult.warning}>
-                  <Typography variant="caption" color="warning.main">
-                    {titleResult.warning}
-                  </Typography>
-                </Tooltip>
-              )}
-            </Box>
+          {plot.title != "none" && titleResult.price && (
+            <PriceItem
+              title={"Title Price"}
+              subTitle={capitalize(titleResult.title)}
+              price={titleResult.price.toLocaleString()}
+              currency={"USD"}
+              warning={titleResult.warning}
+            />
           )}
-          <Box mt={1}>
-            <Typography variant="body2" color="text.secondary">
-              Total STAKED DEC NEEDED:
-            </Typography>
-            <Box>
-              <Typography variant="body1" color="success.main">
-                {formatNumberWithSuffix(stakedDECNeeded)} DEC
-              </Typography>
-            </Box>
-          </Box>
-          <Box mt={1}>
-            <Typography variant="body2" color="text.secondary">
-              Total DEC for Purchases:
-            </Typography>
-            <Box>
-              <Typography variant="body1" color="success.main">
-                {formatNumberWithSuffix(totalDECForPurchases ?? 0)} DEC
-              </Typography>
-            </Box>
-          </Box>
-          <Box mt={1}>
-            <Typography variant="body2" color="text.secondary">
-              Total DEC:
-            </Typography>
-            <Box>
-              <Typography variant="body1" color="success.main">
-                {formatNumberWithSuffix(
-                  (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
-                )}
-                DEC
-              </Typography>
-            </Box>
-          </Box>
+
+          <PriceItem
+            title={"Staked DEC Needed"}
+            price={formatNumberWithSuffix(stakedDECNeeded)}
+            currency={"DEC"}
+          />
+
+          <PriceItem
+            title={"DEC For Purchases"}
+            price={formatNumberWithSuffix(totalDECForPurchases ?? 0)}
+            currency={"DEC"}
+          />
+
+          <PriceItem
+            title={"Total DEC"}
+            price={formatNumberWithSuffix(
+              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
+            )}
+            currency={"DEC"}
+          />
         </DialogContent>
         <DialogActions>
           <Button onClick={handleDialogClose} color="primary">

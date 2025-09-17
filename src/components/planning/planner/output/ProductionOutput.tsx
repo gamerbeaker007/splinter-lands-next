@@ -45,7 +45,7 @@ export const ProductionOutput: React.FC<Props> = ({
         <Typography
           fontSize="1.5rem"
           fontWeight="bold"
-          color={"white"}
+          color="common.white"
           mb={0.5}
         >
           Production: {totalBasePP > 100_000 && <PPWarning />}

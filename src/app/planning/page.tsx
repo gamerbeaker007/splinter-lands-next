@@ -159,8 +159,8 @@ export default function PlanningPage() {
                 sx={{
                   // For xs/sm/md: keep your defaults. For lg+: use toggle selection.
                   zoom: {
-                    xs: "30%",
-                    sm: "60%",
+                    xs: "28%",
+                    sm: "55%",
                     md: "75%",
                     lg: isLargeUp ? zoomMap[lgZoom] : "80%",
                   },

@@ -1,7 +1,7 @@
+import { getCardImg } from "@/lib/utils/cardUtil";
+import { GroupedCardRow } from "@/types/groupedCardRow";
 import { Box, Tooltip } from "@mui/material";
 import Image from "next/image";
-import { GroupedCardRow } from "@/types/groupedCardRow";
-import { getCardImg } from "@/lib/utils/cardUtil";
 
 type Props = {
   card: GroupedCardRow;

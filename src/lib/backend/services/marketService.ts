@@ -76,7 +76,7 @@ export function getLowestCardPriceList(
       cardDetails,
     );
     const element = findCardElement(cardDetails, card.card_detail_id);
-    const set = findCardSet(cardDetails, card.card_detail_id);
+    const set = findCardSet(cardDetails, card.card_detail_id, card.edition);
     const foil = cardFoilOptions[card.foil];
     const key = `${rarity}|${element}|${foil}|${set}`;
     if (

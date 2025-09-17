@@ -182,15 +182,25 @@ export function findCardElement(
 export function findCardSet(
   cardDetails: SplCardDetails[],
   cardDetailId: number,
+  edition: number,
 ): CardSetName {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
-  return getEditionName(splCard?.tier ?? 0) as CardSetName;
+  //tier is mapped to card set if no tier fallback on asked edition
+  // this is for rewards cards for example they are all 3 but can be alpha beta untamed chaos those will have a tier
+  return getEditionName(splCard?.tier ?? edition) as CardSetName;
 }
 
-export function findEditionByCardName(
+export function findCardEditionNameByName(
   cardDetails: SplCardDetails[],
   cardName: string,
-): EditionName | undefined {
+  set: CardSetName,
+): EditionName {
   const splCard = cardDetails.find((cd) => cd.name === cardName);
-  return getEditionName(Number(splCard?.editions) ?? 0);
+  const editionArray = splCard?.editions.split(",") ?? [];
+  if (editionArray.length > 1) {
+    //multiple editions assume alpha beta return set
+    return set as EditionName;
+  } else {
+    return getEditionName(Number(editionArray[0])) as EditionName;
+  }
 }

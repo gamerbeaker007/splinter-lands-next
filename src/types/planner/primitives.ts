@@ -172,6 +172,7 @@ export const editionIdByName = {
   gladius: 6,
   chaos: 7,
   rift: 8,
+  soulkeep: 9, //mostly ignore in the application
   soulbound: 10,
   rebellion: 12,
   soulboundrb: 13,

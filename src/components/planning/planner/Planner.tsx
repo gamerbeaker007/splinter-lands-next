@@ -390,14 +390,14 @@ export default function Planner({
             onTractChange={onTractChange}
             applyImportedDeed={applyImportedDeed}
           />
-          <PriceOutput
-            plot={plot}
-            cards={slots}
-            cardDetails={cardDetails}
-            tokenPriceData={tokenPriceData}
-            marketData={marketData}
-          />
         </Stack>
+        <PriceOutput
+          plot={plot}
+          cards={slots}
+          cardDetails={cardDetails}
+          tokenPriceData={tokenPriceData}
+          marketData={marketData}
+        />
       </Paper>
 
       {/* Preview with live background */}
