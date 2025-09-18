@@ -10,17 +10,22 @@ import {
   Typography,
 } from "@mui/material";
 
-import { Prices } from "@/types/price";
+import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { SplCardDetails } from "@/types/splCardDetails";
 import Planner from "./planner/Planner";
 import { useCallback } from "react";
+import { RegionTax } from "@/types/regionTax";
+import { LowestMarketData } from "@/types/planner/market/market";
 
 export type Props = {
   index: number;
   cardDetails: SplCardDetails[];
   prices: Prices;
+  tokenPriceData: SplPriceData | null;
   spsRatio: number;
+  regionTax: RegionTax[] | null;
+  marketData: LowestMarketData | null;
   onChange: (index: number, info: ProductionInfo) => void;
   onDelete?: (index: number) => void;
   deletable?: boolean;
@@ -30,7 +35,10 @@ export function DeedPlanning({
   index,
   cardDetails,
   prices,
+  tokenPriceData,
   spsRatio,
+  regionTax,
+  marketData,
   onChange,
   onDelete,
   deletable,
@@ -77,7 +85,10 @@ export function DeedPlanning({
           <Planner
             cardDetails={cardDetails}
             prices={prices}
+            tokenPriceData={tokenPriceData}
             spsRatio={spsRatio}
+            regionTax={regionTax}
+            marketData={marketData}
             onPlanChange={emitPlanChange}
           />
         </Stack>

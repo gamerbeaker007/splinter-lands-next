@@ -41,8 +41,7 @@ import {
 } from "@/lib/backend/helpers/productionUtils";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplTaxes } from "@/types/splTaxes";
-
-const TAX_RATE = 0.1;
+import { TAX_RATE } from "@/lib/shared/statics";
 
 export async function getCachedPlayerData(
   player: string,

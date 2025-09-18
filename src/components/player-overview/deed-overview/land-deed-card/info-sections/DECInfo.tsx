@@ -202,7 +202,7 @@ export const DECInfo: React.FC<Props> = ({
             fontWeight="bold"
             color={netDEC >= 0 ? "green" : "error"}
           >
-            {netDEC.toFixed(3)} {isTax ? "" : "/h"}
+            {netDEC.toFixed(3)} /h
           </Typography>
         </Box>
 

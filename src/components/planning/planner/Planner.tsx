@@ -1,5 +1,4 @@
 "use client";
-import { useRegionTaxInfo } from "@/hooks/useRegionTax";
 import { determineBcxCap } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
@@ -20,8 +19,9 @@ import {
   TotemTier,
   WorksiteType,
 } from "@/types/planner";
-import { Prices } from "@/types/price";
+import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
+import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
@@ -41,6 +41,8 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
+import { LowestMarketData } from "@/types/planner/market/market";
+import PriceOutput from "./output/PriceOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -53,18 +55,22 @@ const DEFAULTS = {
 export type Props = {
   cardDetails: SplCardDetails[];
   prices: Prices;
+  tokenPriceData: SplPriceData | null;
   spsRatio: number;
+  regionTax: RegionTax[] | null;
+  marketData: LowestMarketData | null;
   onPlanChange: (info: ProductionInfo) => void;
 };
 
 export default function Planner({
   cardDetails,
   prices,
+  tokenPriceData,
   spsRatio,
+  regionTax,
+  marketData,
   onPlanChange,
 }: Props) {
-  const { regionTax } = useRegionTaxInfo();
-
   const [plot, setPlot] = useState<PlotModifiers>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -385,6 +391,13 @@ export default function Planner({
             applyImportedDeed={applyImportedDeed}
           />
         </Stack>
+        <PriceOutput
+          plot={plot}
+          cards={slots}
+          cardDetails={cardDetails}
+          tokenPriceData={tokenPriceData}
+          marketData={marketData}
+        />
       </Paper>
 
       {/* Preview with live background */}

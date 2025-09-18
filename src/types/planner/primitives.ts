@@ -41,6 +41,8 @@ export type PlotRarity = (typeof plotRarityOptions)[number];
 export const cardRarityOptions = ["common", "rare", "epic", "legendary"];
 export type CardRarity = (typeof cardRarityOptions)[number];
 
+export type TotemRarity = (typeof cardRarityOptions)[number]; //same as card rarity
+
 export const RarityColor: Record<CardRarity, string> = {
   common: "grey",
   rare: "blue",
@@ -170,6 +172,7 @@ export const editionIdByName = {
   gladius: 6,
   chaos: 7,
   rift: 8,
+  soulkeep: 9, //mostly ignore in the application
   soulbound: 10,
   rebellion: 12,
   soulboundrb: 13,
@@ -237,6 +240,14 @@ export const cardFoilModifiers: Record<CardFoil, number> = {
   "gold arcane": 5,
   black: 5,
   "black arcane": 5,
+};
+
+export const cardFoilSuffixMap: Record<CardFoil, string> = {
+  regular: "",
+  gold: "_gold",
+  "gold arcane": "_gold",
+  black: "_blk",
+  "black arcane": "_blk",
 };
 
 export const basePPMax: Record<CardRarity, Record<CardFoil, number>> = {

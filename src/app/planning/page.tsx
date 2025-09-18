@@ -4,7 +4,10 @@ import { DeedPlanning } from "@/components/planning/DeedPlanning";
 import { SimulationResult } from "@/components/planning/SimulationResult";
 import { useCardDetails } from "@/hooks/useCardDetails";
 import { useFetchSPSRatio } from "@/hooks/useFetchSPSRatio";
+import { useMarketData } from "@/hooks/useMarketData";
 import { usePrices } from "@/hooks/usePrices";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
+import { useTokenPrices } from "@/hooks/useTokenPrices";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { ProductionInfo } from "@/types/productionInfo";
 import {
@@ -32,6 +35,9 @@ export default function PlanningPage() {
     loading: loadingSPSRatio,
     error: errorSPSRatio,
   } = useFetchSPSRatio();
+  const { regionTax } = useRegionTaxInfo();
+  const { marketData } = useMarketData();
+  const { prices: tokenPriceData } = useTokenPrices();
 
   useEffect(() => {
     setTitle("Land Planning");
@@ -153,8 +159,8 @@ export default function PlanningPage() {
                 sx={{
                   // For xs/sm/md: keep your defaults. For lg+: use toggle selection.
                   zoom: {
-                    xs: "30%",
-                    sm: "60%",
+                    xs: "28%",
+                    sm: "55%",
                     md: "75%",
                     lg: isLargeUp ? zoomMap[lgZoom] : "80%",
                   },
@@ -165,6 +171,9 @@ export default function PlanningPage() {
                   cardDetails={cardDetails}
                   prices={prices}
                   spsRatio={spsRatio}
+                  tokenPriceData={tokenPriceData}
+                  regionTax={regionTax}
+                  marketData={marketData}
                   onChange={handlePlanChange}
                   onDelete={deletePlan}
                   deletable={idx !== 0}

@@ -51,7 +51,7 @@ export const ResourceOutput: React.FC<Props> = ({
           <Typography
             fontSize="1.0rem"
             fontWeight="bold"
-            color="white"
+            color="common.white"
             mb={0.5}
             display="flex"
             alignItems="center"
@@ -78,7 +78,7 @@ export const ResourceOutput: React.FC<Props> = ({
                   width={iconSize}
                   height={iconSize}
                 />
-                <Typography fontSize={fontSize}>
+                <Typography fontSize={fontSize} color="common.white">
                   {row.amount.toFixed(3)} /h
                 </Typography>
               </Box>
@@ -90,7 +90,7 @@ export const ResourceOutput: React.FC<Props> = ({
           <Typography
             fontSize="1.0rem"
             fontWeight="bold"
-            color="white"
+            color="common.white"
             mb={0.5}
           >
             Consume:
@@ -115,7 +115,7 @@ export const ResourceOutput: React.FC<Props> = ({
                     height={iconSize}
                   />
                 )}
-                <Typography fontSize={fontSize}>
+                <Typography fontSize={fontSize} color="common.white">
                   {row.amount.toFixed(3)} {suffix}
                 </Typography>
               </Box>

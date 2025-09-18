@@ -1,7 +1,12 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import {
+  CardElement,
+  cardElementColorMap,
+  CardFoil,
+  cardFoilSuffixMap,
   CardRarity,
   cardRarityOptions,
+  CardSetName,
   editionAliasById,
   editionIdByName,
   EditionName,
@@ -26,6 +31,9 @@ type FoilMeta = {
 // Foil Metadata Map
 // ----------------------------------
 
+/**
+ * @deprecated remove when possible.
+ */
 const foilMetaMap: Record<number, FoilMeta> = {
   0: { bcxType: "normal", suffix: "", label: "Regular" },
   1: { bcxType: "gold", suffix: "_gold", label: "Gold" },
@@ -71,6 +79,9 @@ export function getEditionName(id: number): EditionName | undefined {
   return editionAliasById[id] ?? editionNameById[id];
 }
 
+/**
+ * @deprecated Use getCardImgV2 instead.
+ */
 export function getCardImg(
   cardName: string,
   edition: number,
@@ -80,6 +91,20 @@ export function getCardImg(
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const editionName = getEditionName(edition);
+  const safeCardName = encodeURIComponent(cardName.trim());
+  const lvl = level && level > 1 ? level : 1;
+  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
+}
+
+// New version using Edition and CardFoil types from primitives.ts
+export function getCardImgV2(
+  cardName: string,
+  editionName: EditionName | undefined,
+  foil: CardFoil,
+  level?: number,
+): string {
+  const suffix = cardFoilSuffixMap[foil];
+  const baseCardUrl = `${WEB_URL}cards_by_level`;
   const safeCardName = encodeURIComponent(cardName.trim());
   const lvl = level && level > 1 ? level : 1;
   return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
@@ -143,4 +168,39 @@ export function findCardRarity(
 ): CardRarity {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
   return cardRarityOptions[(splCard?.rarity ?? 1) - 1];
+}
+
+export function findCardElement(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+): CardElement {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  const color = splCard?.color.toLowerCase() ?? "red";
+  return cardElementColorMap[color];
+}
+
+export function findCardSet(
+  cardDetails: SplCardDetails[],
+  cardDetailId: number,
+  edition: number,
+): CardSetName {
+  const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
+  //tier is mapped to card set if no tier fallback on asked edition
+  // this is for rewards cards for example they are all 3 but can be alpha beta untamed chaos those will have a tier
+  return getEditionName(splCard?.tier ?? edition) as CardSetName;
+}
+
+export function findCardEditionNameByName(
+  cardDetails: SplCardDetails[],
+  cardName: string,
+  set: CardSetName,
+): EditionName {
+  const splCard = cardDetails.find((cd) => cd.name === cardName);
+  const editionArray = splCard?.editions.split(",") ?? [];
+  if (editionArray.length > 1) {
+    //multiple editions assume alpha beta return set
+    return set as EditionName;
+  } else {
+    return getEditionName(Number(editionArray[0])) as EditionName;
+  }
 }

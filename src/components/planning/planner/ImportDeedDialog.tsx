@@ -9,16 +9,63 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  IconButton,
+  InputAdornment,
   Stack,
   TextField,
+  Tooltip,
+  Box,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import Image from "next/image";
+import React, { useEffect, useState } from "react";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 
 type Props = {
   open: boolean;
   onClose: () => void;
   onImported: (deed: DeedComplete) => void;
 };
+
+const HELP_IMG_URL =
+  "https://files.peakd.com/file/peakd-hive/beaker007/23xoayKbz2jCnwM3HoR84H76qUPYq4rddzzrmifx5AjQKRwK3gwFr7RWvtALjPYqtauJa.png";
+
+const PlotIdHelpAdornment = (
+  <InputAdornment position="end">
+    <Tooltip
+      arrow
+      placement="top-start"
+      slotProps={{
+        tooltip: {
+          sx: {
+            maxWidth: "none",
+          },
+        },
+      }}
+      title={
+        <Box sx={{ p: 0.5 }}>
+          <Box sx={{ position: "relative", width: 620, height: 260 }}>
+            <Image
+              src={HELP_IMG_URL}
+              alt="Where to find your Plot ID"
+              fill
+              sizes="420px"
+              style={{ objectFit: "contain", display: "block" }}
+            />
+          </Box>
+        </Box>
+      }
+    >
+      <IconButton
+        size="small"
+        edge="end"
+        aria-label="Plot ID help"
+        tabIndex={-1}
+      >
+        <InfoOutlinedIcon fontSize="small" />
+      </IconButton>
+    </Tooltip>
+  </InputAdornment>
+);
 
 export function ImportDeedDialog({ open, onClose, onImported }: Props) {
   const [plotId, setPlotId] = useState("");
@@ -42,7 +89,6 @@ export function ImportDeedDialog({ open, onClose, onImported }: Props) {
     }
     const deed = await fetchPlot(id);
     if (deed) {
-      // only proceed on success
       onImported(deed);
       onClose();
     }
@@ -55,14 +101,23 @@ export function ImportDeedDialog({ open, onClose, onImported }: Props) {
         <Stack spacing={2} sx={{ mt: 1 }}>
           <TextField
             label="Plot ID"
+            fullWidth
+            type="number"
+            inputMode="numeric"
             value={plotId}
             onChange={(e) => setPlotId(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleImport()}
             autoFocus
             disabled={loading}
-            inputMode="numeric"
+            slotProps={{
+              input: {
+                endAdornment: PlotIdHelpAdornment,
+              },
+            }}
           />
+
           {loading && <CircularProgress size={24} />}
+
           {(localError || fetchError) && (
             <Alert severity="error">{localError || fetchError}</Alert>
           )}
