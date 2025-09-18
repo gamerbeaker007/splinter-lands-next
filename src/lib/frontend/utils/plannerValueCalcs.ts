@@ -39,20 +39,34 @@ export function findLowestDeedPrice(
   if (!deedPrices || deedPrices.length === 0)
     return { price: null, usedKey: null, warning: "No market data." };
 
-  const preferredKeys = ["rarity", "status", "deedType"];
-  const keys = [
-    {
-      rarity: plot.plotRarity,
-      status: plot.plotStatus,
-      deedType: plot.deedType,
-    },
-    { rarity: plot.plotRarity, status: plot.plotStatus },
-    { rarity: plot.plotRarity, deedType: plot.deedType },
-    { status: plot.plotStatus, deedType: plot.deedType },
-    { rarity: plot.plotRarity },
-    { status: plot.plotStatus },
-    { deedType: plot.deedType },
-  ];
+  const isCastleOrKeep =
+    plot.worksiteType === "CASTLE" || plot.worksiteType === "KEEP";
+
+  const preferredKeys = isCastleOrKeep
+    ? ["worksiteType", "deedType"]
+    : ["rarity", "status", "deedType"];
+
+  const keys = isCastleOrKeep
+    ? [
+        {
+          worksiteType: plot.worksiteType,
+          deedType: plot.deedType,
+        },
+        {
+          worksiteType: plot.worksiteType,
+        },
+      ]
+    : [
+        {
+          rarity: plot.plotRarity,
+          status: plot.plotStatus,
+          deedType: plot.deedType,
+        },
+        { rarity: plot.plotRarity, status: plot.plotStatus },
+        { rarity: plot.plotRarity, deedType: plot.deedType },
+        { status: plot.plotStatus, deedType: plot.deedType },
+        { rarity: plot.plotRarity },
+      ];
 
   for (const keyObj of keys) {
     const match = deedPrices.find((deed) =>

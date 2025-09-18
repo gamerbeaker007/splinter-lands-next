@@ -1,13 +1,14 @@
 import {
-  CardRarity,
   CardElement,
+  CardFoil,
+  CardRarity,
   CardSetName,
+  DeedType,
   PlotRarity,
   PlotStatus,
-  DeedType,
-  CardFoil,
   TitleTier,
   TotemRarity,
+  WorksiteType,
 } from "../primitives";
 
 export type LowestCardPriceKey = {
@@ -25,6 +26,7 @@ export type LowestDeedPriceKey = {
   rarity: PlotRarity;
   status: PlotStatus;
   deedType: DeedType;
+  worksiteType?: WorksiteType;
 };
 
 export type LowestCardPriceEntry = LowestCardPriceKey & {

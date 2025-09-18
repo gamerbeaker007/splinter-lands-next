@@ -103,8 +103,16 @@ export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
     const rarity = deed.rarity as PlotRarity;
     const status = deed.plot_status as PlotStatus;
     const deedType = deed.deed_type?.toLowerCase() as DeedType;
+    const worksiteType = deed.worksite_type || undefined;
     const price = Number(deed.listing_price ?? 0);
-    const key = `${rarity}|${status}|${deedType}`;
+
+    // Add worksiteType to key if it's KEEP or CASTLE
+    let key = `${rarity}|${status}|${deedType}`;
+    if (worksiteType === "KEEP" || worksiteType === "CASTLE") {
+      key += `|${worksiteType}`;
+    }
+
+    // When it's KEEP or CASTLE, also include worksiteType in the result object
     if (!map.has(key) || price < (map.get(key)?.listing_price ?? Infinity)) {
       map.set(key, {
         rarity,
@@ -112,6 +120,9 @@ export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
         deedType,
         listing_price: price,
         deed_uid: deed.deed_uid,
+        ...(worksiteType === "KEEP" || worksiteType === "CASTLE"
+          ? { worksiteType }
+          : {}),
       });
     }
   }
