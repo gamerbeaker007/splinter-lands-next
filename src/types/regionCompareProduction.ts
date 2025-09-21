@@ -1,3 +1,5 @@
+import { Resource } from "@/constants/resource/resource";
+import { PlotRarity } from "./planner";
 import { ProductionPoints } from "./productionPoints";
 
 export type CompareProductionPoint = {
@@ -7,4 +9,11 @@ export type CompareProductionPoint = {
     boostedPP: number;
   };
   perResource: Record<string, Record<string, ProductionPoints>>;
+};
+
+export type RarityResourceSummary = {
+  [rarity in PlotRarity]?: {
+    production: { [resource in Resource]?: number };
+    consumption: { [resource in Resource]?: number };
+  };
 };

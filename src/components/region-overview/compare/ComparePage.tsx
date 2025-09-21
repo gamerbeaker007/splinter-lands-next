@@ -1,16 +1,16 @@
 "use client";
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
+import { CompareProductionPoint } from "@/types/regionCompareProduction";
 import Container from "@mui/material/Container";
 import { useEffect, useState } from "react";
 import { ResourceSelector } from "../ResourceSelector";
+import { RarityResourceCompareChart } from "./RarityResourceCompareChart";
 import { ResourcePPChart } from "./ResourcePPChart";
-import { CompareProductionPoint } from "@/types/regionCompareProduction";
 
 export function ComparePage() {
   const [data, setData] = useState<CompareProductionPoint | null>(null);
   const [selectedResource, setSelectedResource] = useState<string | null>(null);
-
   const { filters } = useFilters();
 
   useEffect(() => {
@@ -47,6 +47,7 @@ export function ComparePage() {
           }
         </>
       )}
+      <RarityResourceCompareChart />
     </Container>
   );
 }
