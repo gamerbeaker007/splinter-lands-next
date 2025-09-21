@@ -49,13 +49,13 @@ export async function POST(req: Request) {
           rewardsPerHour;
       }
 
-      // Sum consumption (consumeCost is an object: { [resource]: amount })
-      consumeCost.entries().forEach(([, row]) => {
-        if (!row.resource) return;
-        raritySummary[rarity]!.consumption[row.resource as Resource] =
-          (raritySummary[rarity]!.consumption[row.resource as Resource] ?? 0) +
-          row.amount;
-      });
+      // Sum consumption
+      for (const row of consumeCost ?? []) {
+        if (!row?.resource || !Number.isFinite(row.amount)) continue;
+        const r = row.resource as Resource;
+        raritySummary[rarity]!.consumption[r] =
+          (raritySummary[rarity]!.consumption[r] ?? 0) + row.amount;
+      }
     }
 
     return NextResponse.json(raritySummary);
