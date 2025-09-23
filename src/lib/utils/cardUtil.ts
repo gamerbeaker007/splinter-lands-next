@@ -184,10 +184,29 @@ export function findCardSet(
   cardDetailId: number,
   edition: number,
 ): CardSetName {
+  const ALPHA_MAX_PROMO_ID = 79;
+
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
-  //tier is mapped to card set if no tier fallback on asked edition
-  // this is for rewards cards for example they are all 3 but can be alpha beta untamed chaos those will have a tier
-  return getEditionName(splCard?.tier ?? edition) as CardSetName;
+
+  // 1) If tier exists, it wins.
+  if (splCard?.tier != null) {
+    return getEditionName(splCard.tier) as CardSetName;
+  }
+
+  // 2) Tier is missing → fall back to edition-based rules.
+  //    - edition 3 → beta
+  if (edition === 3) return "beta";
+
+  //    - edition > 3 → use edition mapping (e.g., untamed/chaos/etc.)
+  if (edition > 3) return getEditionName(edition) as CardSetName;
+
+  //    - edition 2 → alpha if id <= 79 else beta
+  if (edition === 2) {
+    return cardDetailId <= ALPHA_MAX_PROMO_ID ? "alpha" : "beta";
+  }
+
+  // 3) Last resort: map by edition (covers any remaining edge cases)
+  return getEditionName(edition) as CardSetName;
 }
 
 export function findCardEditionNameByName(

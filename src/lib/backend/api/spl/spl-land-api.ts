@@ -189,7 +189,7 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       return [];
     }
 
-    const auraItems = ["NMIDIGHTPOT", "FT", "AM", "WAGONKIT"];
+    const auraItems = ["MIDNIGHTPOT", "FT", "AM", "WAGONKIT"];
 
     return assets
       .filter((asset) => auraItems.includes(asset.detailId))
