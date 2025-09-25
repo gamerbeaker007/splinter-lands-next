@@ -19,6 +19,7 @@ import {
   TotemTier,
   WorksiteType,
 } from "@/types/planner";
+import { LowestMarketData } from "@/types/planner/market/market";
 import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
@@ -35,14 +36,14 @@ import {
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
 import { DECOutput } from "./output/DECOutput";
+import ImportedPlotInfo from "./output/ImportedPlotInfo";
+import PriceOutput from "./output/PriceOutput";
 import { ProductionOutput } from "./output/ProductionOutput";
 import { ResourceOutput } from "./output/ResourceOutput";
 import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
-import { LowestMarketData } from "@/types/planner/market/market";
-import PriceOutput from "./output/PriceOutput";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -153,6 +154,13 @@ export default function Planner({
   const totemChance = useMemo(() => {
     return calcTotemChancePerHour(plot.worksiteType, totalBasePP);
   }, [plot.worksiteType, totalBasePP]);
+
+  const [importedPlotLocation, setImportedPlotLocation] = useState<{
+    regionNumber: number;
+    tractNumber: number;
+    plotNumber: number;
+    plotId: number;
+  } | null>(null);
 
   useEffect(() => {
     if (onPlanChange) onPlanChange(productionInfo);
@@ -317,6 +325,8 @@ export default function Planner({
     const importedRuni = findRuni(deed);
     const importedRegionNumber = deed.region_number!;
     const importedTractNumber = deed.tract_number!;
+    const importedPlotNumber = deed.plot_number!;
+    const importedPlotId = deed.plot_id!;
 
     // update magical boost based on worsite
     const importedDeedResourceBoost = determineDeedResourceBoost(
@@ -336,6 +346,13 @@ export default function Planner({
       worksiteType: importedWorksite,
       tractNumber: importedTractNumber,
       regionNumber: importedRegionNumber,
+    });
+
+    setImportedPlotLocation({
+      regionNumber: importedRegionNumber,
+      tractNumber: importedTractNumber,
+      plotNumber: importedPlotNumber,
+      plotId: importedPlotId,
     });
 
     updateSlots(deed.stakedAssets?.cards ?? []);
@@ -391,13 +408,18 @@ export default function Planner({
             applyImportedDeed={applyImportedDeed}
           />
         </Stack>
-        <PriceOutput
-          plot={plot}
-          cards={slots}
-          cardDetails={cardDetails}
-          tokenPriceData={tokenPriceData}
-          marketData={marketData}
-        />
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <PriceOutput
+            plot={plot}
+            cards={slots}
+            cardDetails={cardDetails}
+            tokenPriceData={tokenPriceData}
+            marketData={marketData}
+          />
+          {importedPlotLocation && (
+            <ImportedPlotInfo {...importedPlotLocation} />
+          )}
+        </Stack>
       </Paper>
 
       {/* Preview with live background */}

@@ -1,13 +1,10 @@
 "use client";
 
+import { CaptureRateOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/CaptureRateOutput";
+import { TotemChanceOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/TotemChangeOutput";
 import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import {
-  land_plot_icon_url,
-  land_region_icon_url,
-  land_tract_icon_url,
-  land_under_construction_icon_url,
-} from "@/lib/shared/statics_icon_urls";
+import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -23,8 +20,6 @@ import { TotalBoostInfo } from "./info-sections/TotalBoostInfo";
 import { WorksiteInfo } from "./info-sections/WorksiteInfo";
 import { HarvestLink } from "./link-components/HarvestLink";
 import { ManageLink } from "./link-components/ManageLink";
-import { TotemChanceOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/TotemChangeOutput";
-import { CaptureRateOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/CaptureRateOutput";
 
 export type LandDeedCardProps = {
   data: DeedComplete;
@@ -110,9 +105,6 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         deedType={deedType}
         territory={territory}
         regionName={regionName}
-        land_region_icon_url={land_region_icon_url}
-        land_tract_icon_url={land_tract_icon_url}
-        land_plot_icon_url={land_plot_icon_url}
         regionNumber={regionNumber}
         tractNumber={tractNumber}
         plotNumber={plotNumber}

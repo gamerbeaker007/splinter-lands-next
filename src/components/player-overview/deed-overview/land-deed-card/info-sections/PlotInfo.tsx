@@ -1,3 +1,8 @@
+import {
+  land_region_icon_url,
+  land_tract_icon_url,
+  land_plot_icon_url,
+} from "@/lib/shared/statics_icon_urls";
 import { getDeedGeographyImg } from "@/lib/utils/deedUtil";
 import { CSSSize } from "@/types/cssSize";
 import { Avatar, Box, Stack, Typography } from "@mui/material";
@@ -7,9 +12,6 @@ export type Props = {
   deedType: string;
   territory: string;
   regionName: string;
-  land_region_icon_url: string;
-  land_tract_icon_url: string;
-  land_plot_icon_url: string;
   regionNumber: number | string;
   tractNumber: number | string;
   plotNumber: number | string;
@@ -20,9 +22,6 @@ export const PlotInfo: React.FC<Props> = ({
   deedType,
   territory,
   regionName,
-  land_region_icon_url,
-  land_tract_icon_url,
-  land_plot_icon_url,
   regionNumber,
   tractNumber,
   plotNumber,

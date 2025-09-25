@@ -2,11 +2,6 @@ import { getDeedImg } from "@/lib/utils/deedUtil";
 import { CountAlert } from "@/types/cardAlerts";
 import { Box, Typography } from "@mui/material";
 
-import {
-  land_plot_icon_url,
-  land_region_icon_url,
-  land_tract_icon_url,
-} from "@/lib/shared/statics_icon_urls";
 import React from "react";
 import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotInfo";
 import { ManageLink } from "../../deed-overview/land-deed-card/link-components/ManageLink";
@@ -78,9 +73,6 @@ export const AssignedWorkersAlerts: React.FC<Props> = ({
                   deedType={deedType}
                   territory={territory}
                   regionName={regionName}
-                  land_region_icon_url={land_region_icon_url}
-                  land_tract_icon_url={land_tract_icon_url}
-                  land_plot_icon_url={land_plot_icon_url}
                   regionNumber={regionNumber}
                   tractNumber={tractNumber}
                   plotNumber={plotNumber}
