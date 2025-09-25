@@ -39,7 +39,7 @@ function calcStakedDECNeeded(cards: SlotInput[]) {
   return cards.reduce((acc, card) => {
     const cardFoilId = cardFoilOptions.indexOf(card.foil);
     const maxBCX = determineCardMaxBCX(card.set, card.rarity, cardFoilId);
-    const perBCX = 50_000 / maxBCX;
+    const perBCX = 10_000 / maxBCX;
     return acc + card.bcx * perBCX;
   }, 0);
 }
@@ -84,6 +84,17 @@ export default function PriceOutput({
     return acc + (result.price ?? 0);
   }, 0);
 
+  const hasWarning =
+    deedResult.warning ||
+    cardResults.some((r) => r.warning) ||
+    totemResult.warning ||
+    titleResult.warning;
+
+  const hasRuni = plot.runi != "none";
+
+  const powerCoreDEC = hasRuni ? 0 : 5000;
+  const powerCoreinUSD = powerCoreDEC * (tokenPriceData?.dec ?? 0);
+
   const stakedDECNeeded = calcStakedDECNeeded(cards);
   const stakedDECinUSD = stakedDECNeeded * (tokenPriceData?.dec ?? 0);
 
@@ -92,13 +103,16 @@ export default function PriceOutput({
     cardsTotalUSDPrice +
     (totemResult.price ?? 0) +
     (titleResult.price ?? 0) +
-    stakedDECinUSD;
+    stakedDECinUSD +
+    powerCoreinUSD;
 
   const totalUSDForPurchases =
     (deedResult.price ?? 0) +
     cardsTotalUSDPrice +
     (totemResult.price ?? 0) +
-    (titleResult.price ?? 0);
+    (titleResult.price ?? 0) +
+    powerCoreinUSD;
+
   const totalDECForPurchases = tokenPriceData
     ? totalUSDForPurchases / (tokenPriceData?.dec ?? 1)
     : null;
@@ -112,14 +126,6 @@ export default function PriceOutput({
   const handleDialogClose = () => {
     setDialogOpen(false);
   };
-
-  const hasWarning =
-    deedResult.warning ||
-    cardResults.some((r) => r.warning) ||
-    totemResult.warning ||
-    titleResult.warning;
-
-  const hasRuni = plot.runi != "none";
 
   return (
     <Box>
@@ -262,7 +268,7 @@ Therefor the exact card you want may not always be available for that price.`}
           />
 
           <PriceItem
-            title={"DEC For Purchases"}
+            title={`DEC For Purchases ${hasRuni ? "" : "(incl. 5K Power Core)"}`}
             price={formatNumberWithSuffix(totalDECForPurchases ?? 0)}
             currency={"DEC"}
           />

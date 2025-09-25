@@ -10,6 +10,7 @@ type Props = {
   productionInfo?: ProductionInfo;
   resource: string;
   includeFee?: boolean;
+  isPerHour?: boolean;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
@@ -138,6 +139,7 @@ export const DECInfo: React.FC<Props> = ({
   productionInfo,
   resource,
   includeFee = true,
+  isPerHour = true,
   pos = { x: "0px", y: "0px", w: "auto" },
 }) => {
   const { x, y, w } = pos;
@@ -202,7 +204,8 @@ export const DECInfo: React.FC<Props> = ({
             fontWeight="bold"
             color={netDEC >= 0 ? "green" : "error"}
           >
-            {netDEC.toFixed(3)} /h
+            {/* {netDEC.toFixed(3)} /h */}
+            {netDEC.toFixed(3)} {isPerHour ? "/h" : ""}
           </Typography>
         </Box>
 

@@ -36,6 +36,7 @@ export const DECOutput: React.FC<Props> = ({
           productionInfo={productionInfo}
           resource={resource}
           includeFee={false}
+          isPerHour={true}
         />
       </Box>
     </Box>

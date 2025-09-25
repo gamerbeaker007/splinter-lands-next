@@ -55,12 +55,7 @@ const PlotIdHelpAdornment = (
         </Box>
       }
     >
-      <IconButton
-        size="small"
-        edge="end"
-        aria-label="Plot ID help"
-        tabIndex={-1}
-      >
+      <IconButton edge="end" aria-label="Plot ID help" tabIndex={-1}>
         <InfoOutlinedIcon fontSize="small" />
       </IconButton>
     </Tooltip>
@@ -112,6 +107,20 @@ export function ImportDeedDialog({ open, onClose, onImported }: Props) {
             slotProps={{
               input: {
                 endAdornment: PlotIdHelpAdornment,
+                sx: {
+                  // Hide number input spinners
+                  "& input[type=number]": {
+                    MozAppearance: "textfield",
+                  },
+                  "& input[type=number]::-webkit-outer-spin-button": {
+                    WebkitAppearance: "none",
+                    margin: 0,
+                  },
+                  "& input[type=number]::-webkit-inner-spin-button": {
+                    WebkitAppearance: "none",
+                    margin: 0,
+                  },
+                },
               },
             }}
           />

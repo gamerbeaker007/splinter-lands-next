@@ -190,6 +190,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
       <DECInfo
         productionInfo={productionInfo}
         resource={resource}
+        isPerHour={isTax ? false : true}
         pos={{
           x: isTax ? "675px" : "600px",
           y: isTax ? "200px" : "300px",
