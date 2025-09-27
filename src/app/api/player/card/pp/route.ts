@@ -28,6 +28,7 @@ export async function POST(req: Request) {
     const filtered = filterCardCollection(
       playerCardCollection,
       cardDetails,
+      player,
       cardFilters,
     );
     const grouped = groupCards(filtered, cardDetails);

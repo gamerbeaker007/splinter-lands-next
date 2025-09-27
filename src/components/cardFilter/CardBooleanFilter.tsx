@@ -1,16 +1,20 @@
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { Tri } from "@/types/filters";
 import { Box, Button, Typography } from "@mui/material";
 
 type Props = {
   title: string;
-  filterKey: "filter_on_land" | "filter_in_set" | "filter_on_wagon";
+  filterKey:
+    | "filter_on_land"
+    | "filter_in_set"
+    | "filter_on_wagon"
+    | "filter_delegated"
+    | "filter_owned";
 };
 
-export default function CardTriFilter({ title, filterKey }: Props) {
+export default function CardBooleanFilter({ title, filterKey }: Props) {
   const { cardFilters, setCardFilters } = useCardFilters();
 
-  const handleChange = (newValue: Tri) => {
+  const handleChange = (newValue: boolean | undefined) => {
     setCardFilters((prev) => {
       const newFilters = { ...prev };
       if (newValue === undefined) {
@@ -23,6 +27,7 @@ export default function CardTriFilter({ title, filterKey }: Props) {
   };
 
   const value = cardFilters[filterKey];
+
   return (
     <Box
       sx={{
@@ -33,32 +38,24 @@ export default function CardTriFilter({ title, filterKey }: Props) {
       }}
     >
       <Typography sx={{ minWidth: 100, mb: 0.5 }}>{title}:</Typography>
-      <Box sx={{ display: "flex", gap: 1 }}>
+      <Box sx={{ display: "flex", gap: 0.5 }}>
         <Button
-          variant={value === "only" ? "contained" : "outlined"}
+          variant={value === true ? "contained" : "outlined"}
           color="success"
           size="small"
-          onClick={() => handleChange("only")}
+          sx={{ fontSize: "0.8rem", minWidth: 50, py: 0.2, px: 1 }}
+          onClick={() => handleChange(value === true ? undefined : true)}
         >
-          Only
+          Yes
         </Button>
         <Button
-          variant={value === "hide" ? "contained" : "outlined"}
+          variant={value === false ? "contained" : "outlined"}
           color="error"
           size="small"
-          onClick={() => handleChange("hide")}
+          sx={{ fontSize: "0.8rem", minWidth: 50, py: 0.2, px: 1 }}
+          onClick={() => handleChange(value === false ? undefined : false)}
         >
-          Hide
-        </Button>
-        <Button
-          variant={
-            value === "all" || value === undefined ? "contained" : "outlined"
-          }
-          color="primary"
-          size="small"
-          onClick={() => handleChange("all")}
-        >
-          All
+          No
         </Button>
       </Box>
     </Box>

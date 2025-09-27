@@ -30,9 +30,9 @@ export type EnableFilterOptions = {
 export type CardFilterInput = {
   filter_set?: CardSetName[];
   filter_rarity?: CardRarity[];
-  filter_on_land?: Tri;
-  filter_in_set?: Tri;
-  filter_on_wagon?: Tri;
+  filter_on_land?: boolean;
+  filter_in_set?: boolean;
+  filter_on_wagon?: boolean;
+  filter_delegated?: boolean;
+  filter_owned?: boolean;
 };
-
-export type Tri = "only" | "hide" | "all";

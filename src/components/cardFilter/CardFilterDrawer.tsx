@@ -5,9 +5,9 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
 import { useEffect, useState } from "react";
+import CardBooleanFilter from "./CardBooleanFilter";
 import CardFilterRarityGroup from "./CardFilterRarityGroup";
 import CardFilterSetGroup from "./CardFilterSetGroup";
-import CardTriFilter from "./CardTriFilter";
 import ResetCardFiltersButton from "./ResetCardFiltersButton";
 
 export default function CardFilterDrawer() {
@@ -85,9 +85,11 @@ export default function CardFilterDrawer() {
         <CardFilterRarityGroup />
 
         <FormGroup sx={{ mt: 2 }}>
-          <CardTriFilter title="On Land" filterKey="filter_on_land" />
-          <CardTriFilter title="In Set" filterKey="filter_in_set" />
-          <CardTriFilter title="On Wagon" filterKey="filter_on_wagon" />
+          <CardBooleanFilter title="On Land" filterKey="filter_on_land" />
+          <CardBooleanFilter title="In Set" filterKey="filter_in_set" />
+          <CardBooleanFilter title="On Wagon" filterKey="filter_on_wagon" />
+          <CardBooleanFilter title="Delegated" filterKey="filter_delegated" />
+          <CardBooleanFilter title="Owned" filterKey="filter_owned" />
         </FormGroup>
 
         <ResetCardFiltersButton />

@@ -26,6 +26,7 @@ export type SplPlayerCardCollection = {
   mint?: string;
   level: number;
   delegated_to_display_name?: string;
+  delegated_to?: string;
 
   //unused in this app
   //  "gold": boolean,
