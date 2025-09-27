@@ -67,15 +67,7 @@ export default function CollectionOverview({ player }: Props) {
         Note: Cards from special sets like "Soulbound" or "Foundation" or "Extra" are also excluded.`}
       </Typography>
 
-      <Box
-        sx={{
-          width: "100%",
-          maxWidth: { xs: "100vw", md: 1200 },
-          overflowX: "auto",
-        }}
-      >
-        {cardPPResult && <CardTable data={cardPPResult} pageSize={100} />}
-      </Box>
+      {cardPPResult && <CardTable data={cardPPResult} pageSize={100} />}
     </Box>
   );
 }

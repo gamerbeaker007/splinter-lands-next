@@ -91,7 +91,8 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
     const handleScroll = () => {
       if (!tableRef.current) return;
       const { scrollTop, scrollHeight, clientHeight } = tableRef.current;
-      if (scrollTop + clientHeight >= scrollHeight - 50) {
+      // Increase threshold and ensure loading triggers when near bottom
+      if (scrollTop + clientHeight >= scrollHeight - 150) {
         setVisibleRows((prev) => Math.min(prev + pageSize, sortedData.length));
       }
     };
@@ -113,117 +114,123 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
   };
 
   return (
-    <TableContainer
-      component={Paper}
+    <Box
       sx={{
-        minWidth: 900,
-        height: "100%",
-        maxHeight: "100vh",
-        overflowY: "auto",
-        display: "flex",
-        flexDirection: "column",
-        scrollbarWidth: "none", // Firefox
-        "&::-webkit-scrollbar": { display: "none" }, // Chrome, Safari
+        width: "100%",
+        overflowX: "auto",
       }}
-      ref={tableRef}
     >
-      <Table stickyHeader size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell align="center">Img</TableCell>
-            {columns.map((col) => (
-              <TableCell
-                key={col.key}
-                align={col.align ?? "left"}
-                sx={{ cursor: "pointer", userSelect: "none" }}
-                onClick={() => handleSort(col.key)}
-              >
-                {col.label}
-                {getSortIcon(sortKey === col.key, sortDir)}
-              </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {sortedData.slice(0, visibleRows).map((card, idx) => (
-            <TableRow key={idx} hover>
-              {/* Card image with hover preview */}
-              <TableCell align="center">
-                <CardTableIcon card={card} />
-              </TableCell>
-              {/* Card name */}
-              <TableCell align="left">{card.name}</TableCell>
-              {/* Set icon */}
-              <TableCell align="center">
-                <Tooltip title={`Set ${card.set}`}>
+      <TableContainer
+        component={Paper}
+        sx={{
+          border: "1px solid",
+          height: "100%",
+          minHeight: 400,
+          maxHeight: "calc(100vh - 380px)", // Adjust height based on viewport, minus header/footer
+          overflowY: "auto",
+          display: "flex",
+          flexDirection: "column",
+        }}
+        ref={tableRef}
+      >
+        <Table stickyHeader size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell align="center">Img</TableCell>
+              {columns.map((col) => (
+                <TableCell
+                  key={col.key}
+                  align={col.align ?? "left"}
+                  sx={{ cursor: "pointer", userSelect: "none" }}
+                  onClick={() => handleSort(col.key)}
+                >
+                  {col.label}
+                  {getSortIcon(sortKey === col.key, sortDir)}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {sortedData.slice(0, visibleRows).map((card, idx) => (
+              <TableRow key={idx} hover>
+                {/* Card image with hover preview */}
+                <TableCell align="center">
+                  <CardTableIcon card={card} />
+                </TableCell>
+                {/* Card name */}
+                <TableCell align="left">{card.name}</TableCell>
+                {/* Set icon */}
+                <TableCell align="center">
+                  <Tooltip title={`Set ${card.set}`}>
+                    <Box
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                    >
+                      <Image
+                        src={cardSetIconMap[card.set]}
+                        alt={`Set ${card.set}`}
+                        width={40}
+                        height={40}
+                      />
+                    </Box>
+                  </Tooltip>
+                  {cardSetModifiers[card.set]}x
+                </TableCell>
+                {/* Rarity dot */}
+                <TableCell align="center">
+                  <Box
+                    width={20}
+                    height={20}
+                    borderRadius="50%"
+                    bgcolor={RarityColor[card.rarity]}
+                    border={1}
+                    mx="auto"
+                  />
+                </TableCell>
+                {/* Foil */}
+                <TableCell align="center">
+                  {capitalize(cardFoilOptions[card.foil])}
+                </TableCell>
+                {/* BCX */}
+                <TableCell align="center">
+                  {card.bcx} /{" "}
+                  {determineCardMaxBCX(card.set, card.rarity, card.foil)}
+                </TableCell>
+                {/* Count */}
+                <TableCell align="center">{card.count}</TableCell>
+                {/* Base PP */}
+                <TableCell align="left">
                   <Box
                     display="flex"
-                    alignItems="center"
-                    justifyContent="center"
+                    alignItems="left"
+                    justifyContent="flex-start"
+                    gap={0.5}
                   >
                     <Image
-                      src={cardSetIconMap[card.set]}
-                      alt={`Set ${card.set}`}
-                      width={40}
-                      height={40}
+                      src={land_hammer_icon_url}
+                      alt="hammer"
+                      width={15}
+                      height={15}
                     />
+                    <Typography fontSize="0.9rem">
+                      {formatLargeNumber(Number(card.basePP.toFixed(0)))}
+                    </Typography>
                   </Box>
-                </Tooltip>
-                {cardSetModifiers[card.set]}x
-              </TableCell>
-              {/* Rarity dot */}
-              <TableCell align="center">
-                <Box
-                  width={20}
-                  height={20}
-                  borderRadius="50%"
-                  bgcolor={RarityColor[card.rarity]}
-                  border={1}
-                  mx="auto"
-                />
-              </TableCell>
-              {/* Foil */}
-              <TableCell align="center">
-                {capitalize(cardFoilOptions[card.foil])}
-              </TableCell>
-              {/* BCX */}
-              <TableCell align="center">
-                {card.bcx} /{" "}
-                {determineCardMaxBCX(card.set, card.rarity, card.foil)}
-              </TableCell>
-              {/* Count */}
-              <TableCell align="center">{card.count}</TableCell>
-              {/* Base PP */}
-              <TableCell align="left">
-                <Box
-                  display="flex"
-                  alignItems="left"
-                  justifyContent="flex-start"
-                  gap={0.5}
-                >
-                  <Image
-                    src={land_hammer_icon_url}
-                    alt="hammer"
-                    width={15}
-                    height={15}
-                  />
-                  <Typography fontSize="0.9rem">
-                    {formatLargeNumber(Number(card.basePP.toFixed(0)))}
-                  </Typography>
-                </Box>
-              </TableCell>
-              <TableCell align="left">{card.ratio.toFixed(2)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-      {visibleRows < sortedData.length && (
-        <Box textAlign="center" py={2}>
-          <Typography variant="body2" color="text.secondary">
-            Loading more cards...
-          </Typography>
-        </Box>
-      )}
-    </TableContainer>
+                </TableCell>
+                <TableCell align="left">{card.ratio.toFixed(2)}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        {visibleRows < sortedData.length && (
+          <Box textAlign="center" py={2}>
+            <Typography variant="body2" color="text.secondary">
+              Loading more cards...
+            </Typography>
+          </Box>
+        )}
+      </TableContainer>
+    </Box>
   );
 }
