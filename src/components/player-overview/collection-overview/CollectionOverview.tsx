@@ -3,7 +3,7 @@
 import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
 import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
-import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
+import { usePlayerCardPP } from "@/hooks/protected/usePlayerCardPP";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";

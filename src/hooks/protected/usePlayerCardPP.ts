@@ -4,6 +4,7 @@ import logger from "@/lib/frontend/log/logger.client";
 import { CardFilterInput } from "@/types/filters";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import { useCallback, useEffect, useState } from "react";
+import Cookies from "js-cookie";
 
 export function usePlayerCardPP(
   player: string,
@@ -21,9 +22,19 @@ export function usePlayerCardPP(
     force: boolean,
   ): Promise<{ cards: GroupedCardRow[] }> {
     const url = `/api/player/card/pp`;
+    // Get spl_jwt_token from cookies if available
+    const authHeader: Record<string, string> = {};
+    const token = Cookies.get("spl_jwt_token");
+    if (token) {
+      authHeader["Authorization"] = `Bearer ${token}`;
+    }
+
     const res = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeader,
+      },
       body: JSON.stringify({ player, force, cardFilters }),
     });
 
