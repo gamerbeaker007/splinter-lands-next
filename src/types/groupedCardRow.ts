@@ -1,5 +1,4 @@
 export type GroupedCardRow = {
-  uid: string; // unique id of first card in group usesd for runi
   card_detail_id: number;
   set: string;
   name: string;
@@ -12,4 +11,7 @@ export type GroupedCardRow = {
   landDecStakeNeeded: number;
   ratio: number; // base_pp / land_dec_stake_needed
   count: number; // how many identical (detail_id, bcx, foil)
+  lastUsedDate?: Record<string, Date>; //first string for UID, second for date
+  stakeEndDate?: Record<string, Date>; //first string for UID, second for date
+  survivalDate?: Record<string, Date>; //first string for UID, second for date
 };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth } from "@/hooks/protected/useAuth";
+import { useAuth } from "@/lib/frontend/context/AuthContext";
 import { Logout as LogoutIcon } from "@mui/icons-material";
 import {
   Alert,

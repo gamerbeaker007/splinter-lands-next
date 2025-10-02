@@ -39,10 +39,6 @@ export async function POST(request: NextRequest) {
     if (jwtToken) {
       const jwtValidation = await validateSplJwt(jwtToken);
       if (!jwtValidation.valid) {
-        console.log(
-          `JWT validation failed for player route: ${jwtValidation.error}`,
-        );
-
         // Clear expired JWT token (the other cookies are just convenience)
         const response = NextResponse.json(
           {
@@ -125,12 +121,16 @@ const groupCards = (
           : 0;
 
     const existing = map.get(key);
+
+    const landUsedDate = c.last_used_date;
+    const stakeEndDate = c.stake_end_date;
+    const survivalDate = c.survival_date;
+
     if (!existing) {
       map.set(key, {
-        uid: c.uid, // unique id of first card in group
+        name: name,
         card_detail_id: c.card_detail_id,
         set: c.card_set,
-        name: name,
         level: c.level,
         rarity: rarity,
         edition: c.edition,
@@ -140,9 +140,30 @@ const groupCards = (
         landDecStakeNeeded: decNeed,
         ratio,
         count: 1,
+        lastUsedDate: landUsedDate
+          ? { [c.uid]: new Date(landUsedDate) }
+          : undefined,
+        stakeEndDate: stakeEndDate
+          ? { [c.uid]: new Date(stakeEndDate) }
+          : undefined,
+        survivalDate: survivalDate
+          ? { [c.uid]: new Date(survivalDate) }
+          : undefined,
       });
     } else {
       existing.count += 1;
+      if (landUsedDate) {
+        if (!existing.lastUsedDate) existing.lastUsedDate = {};
+        existing.lastUsedDate[c.uid] = new Date(landUsedDate);
+      }
+      if (stakeEndDate) {
+        if (!existing.stakeEndDate) existing.stakeEndDate = {};
+        existing.stakeEndDate[c.uid] = new Date(stakeEndDate);
+      }
+      if (survivalDate) {
+        if (!existing.survivalDate) existing.survivalDate = {};
+        existing.survivalDate[c.uid] = new Date(survivalDate);
+      }
     }
   }
 

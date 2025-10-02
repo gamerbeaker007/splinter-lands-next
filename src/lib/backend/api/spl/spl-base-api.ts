@@ -7,11 +7,8 @@ import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import axios from "axios";
 import { cookies } from "next/headers";
 import * as rax from "retry-axios";
+import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
-import {
-  SplJwtValidationResult,
-  validateSplJwt,
-} from "../../jwt/splJwtValidation";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -41,13 +38,20 @@ splBaseClient.defaults.raxConfig = {
 /**
  * Helper function to get the JWT token from cookies in server-side contexts
  */
-export async function getAuthTokenFromCookies(): Promise<
-  SplJwtValidationResult | undefined
-> {
+export async function getAuthorizationHeader(
+  player: string,
+): Promise<Record<string, string> | undefined> {
   try {
     const cookieStore = await cookies();
-    const jwtCookie = cookieStore.get("jwt_token");
-    return validateSplJwt(jwtCookie?.value || "");
+    const jwtCookie = cookieStore.get("jwt_token")?.value || "";
+    const authToken = await validateSplJwt(jwtCookie);
+    const headers: Record<string, string> = {};
+    if (authToken && authToken.valid && authToken.username === player) {
+      headers.Authorization = `Bearer ${jwtCookie}`;
+      logger.info(`Using Bearer token for authenticated request`);
+    }
+
+    return headers ? headers : undefined;
   } catch (error) {
     logger.warn("Failed to read auth token from cookies:", error);
     return undefined;
@@ -125,13 +129,7 @@ export async function fetchPlayerDetails(player: string) {
 export async function fetchPlayerCardCollection(player: string) {
   const url = `cards/collection/${player}`;
   logger.info(`Fetch player card collection for: ${player}`);
-  const authToken = await getAuthTokenFromCookies();
-
-  const headers: Record<string, string> = {};
-  if (authToken && authToken.valid && authToken.username === player) {
-    headers.Authorization = `Bearer ${authToken}`;
-    logger.info(`Using Bearer token for authenticated request`);
-  }
+  const headers = await getAuthorizationHeader(player);
 
   const res = await splBaseClient.get(url, {
     headers,

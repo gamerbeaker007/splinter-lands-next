@@ -26,9 +26,12 @@ import {
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import CardTableIcon from "./CardTableIcon";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import DateColumn from "@/components/ui/DateColumn";
+import { getDateSortValue } from "@/lib/utils/dateSortUtils";
 
 type Props = {
   data: GroupedCardRow[];
+  isAuthenticated: boolean;
   pageSize?: number;
 };
 
@@ -40,7 +43,10 @@ type SortKey =
   | "count"
   | "basePP"
   | "ratio"
-  | "set";
+  | "set"
+  | "lastUsed"
+  | "stakeEnd"
+  | "survivalDate";
 
 const columns: {
   key: SortKey;
@@ -55,6 +61,9 @@ const columns: {
   { key: "count", label: "Count", align: "center" },
   { key: "basePP", label: "Base PP", align: "left" },
   { key: "ratio", label: "PP/DEC (Ratio)", align: "left" },
+  { key: "lastUsed", label: "Last Used", align: "left" },
+  { key: "stakeEnd", label: "Land Cooldown", align: "left" },
+  { key: "survivalDate", label: "Survival Cooldown", align: "left" },
 ];
 
 function getSortIcon(active: boolean, direction: "asc" | "desc") {
@@ -66,13 +75,35 @@ function getSortIcon(active: boolean, direction: "asc" | "desc") {
   );
 }
 
-export default function CardTable({ data, pageSize = 100 }: Props) {
+export default function CardTable({
+  data,
+  isAuthenticated,
+  pageSize = 100,
+}: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("basePP");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [visibleRows, setVisibleRows] = useState(pageSize);
 
   const sortedData = useMemo(() => {
     const sorted = [...data].sort((a, b) => {
+      // Handle date columns with special sorting logic
+      if (
+        sortKey === "lastUsed" ||
+        sortKey === "stakeEnd" ||
+        sortKey === "survivalDate"
+      ) {
+        const valueA = getDateSortValue(a, sortKey);
+        const valueB = getDateSortValue(b, sortKey);
+
+        // Put rows with no date at the end
+        if (valueA === 0 && valueB === 0) return 0;
+        if (valueA === 0) return 1;
+        if (valueB === 0) return -1;
+
+        return sortDir === "asc" ? valueA - valueB : valueB - valueA;
+      }
+
+      // Handle regular columns
       const vA = a[sortKey];
       const vB = b[sortKey];
       if (typeof vA === "string" && typeof vB === "string") {
@@ -137,17 +168,20 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
           <TableHead>
             <TableRow>
               <TableCell align="center">Img</TableCell>
-              {columns.map((col) => (
-                <TableCell
-                  key={col.key}
-                  align={col.align ?? "left"}
-                  sx={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={() => handleSort(col.key)}
-                >
-                  {col.label}
-                  {getSortIcon(sortKey === col.key, sortDir)}
-                </TableCell>
-              ))}
+              {columns.map((col) => {
+                if (col.key === "lastUsed" && !isAuthenticated) return null;
+                return (
+                  <TableCell
+                    key={col.key}
+                    align={col.align ?? "left"}
+                    sx={{ cursor: "pointer", userSelect: "none" }}
+                    onClick={() => handleSort(col.key)}
+                  >
+                    {col.label}
+                    {getSortIcon(sortKey === col.key, sortDir)}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -219,6 +253,20 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
                   </Box>
                 </TableCell>
                 <TableCell align="left">{card.ratio.toFixed(2)}</TableCell>
+                {/* Last Used Date */}
+                {isAuthenticated && (
+                  <TableCell align="center">
+                    <DateColumn record={card.lastUsedDate} type="lastUsed" />
+                  </TableCell>
+                )}
+                {/* Stake End Date */}
+                <TableCell align="center">
+                  <DateColumn record={card.stakeEndDate} type="stakeEnd" />
+                </TableCell>
+                {/* Survival Date */}
+                <TableCell align="center">
+                  <DateColumn record={card.survivalDate} type="survivalDate" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

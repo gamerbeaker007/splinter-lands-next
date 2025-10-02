@@ -13,8 +13,6 @@ export async function GET(request: NextRequest) {
     const jwtValidation = await validateSplJwt(jwtToken);
 
     if (!jwtValidation.valid) {
-      console.log(`JWT validation failed: ${jwtValidation.error}`);
-
       // Clear invalid/expired cookies
       const response = NextResponse.json({
         authenticated: false,

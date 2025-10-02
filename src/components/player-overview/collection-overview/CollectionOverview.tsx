@@ -5,6 +5,7 @@ import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
 import { usePlayerCardPP } from "@/hooks/protected/usePlayerCardPP";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
+import { useAuth } from "@/lib/frontend/context/AuthContext";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
 import CardTable from "./CardTable";
@@ -12,6 +13,7 @@ import CardTable from "./CardTable";
 type Props = { player: string };
 
 export default function CollectionOverview({ player }: Props) {
+  const { user } = useAuth();
   const { cardFilters } = useCardFilters();
 
   const { cardPPResult, loading, error, refetchPlayerCardPP } = usePlayerCardPP(
@@ -32,6 +34,8 @@ export default function CollectionOverview({ player }: Props) {
       <ErrorComponent title={`Failed to load player collection: ${error}`} />
     );
   }
+
+  const isAuthenticated = user?.username === player;
 
   return (
     <Box
@@ -67,7 +71,13 @@ export default function CollectionOverview({ player }: Props) {
         Note: Cards from special sets like "Soulbound" or "Foundation" or "Extra" are also excluded.`}
       </Typography>
 
-      {cardPPResult && <CardTable data={cardPPResult} pageSize={100} />}
+      {cardPPResult && (
+        <CardTable
+          data={cardPPResult}
+          isAuthenticated={isAuthenticated}
+          pageSize={100}
+        />
+      )}
     </Box>
   );
 }
