@@ -5,41 +5,55 @@ import { CardFilterInput } from "@/types/filters";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
+import { useCsrfToken } from "../useCsrf";
 
 export function usePlayerCardPP(
   player: string,
   cardFilters: CardFilterInput = {},
 ) {
+  const { getCsrfToken } = useCsrfToken();
+
   const [cardPPResult, setCardPPResult] = useState<GroupedCardRow[] | null>(
     null,
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  async function fetchPlayerCardPP(
-    player: string,
-    cardFilters: CardFilterInput,
-    force: boolean,
-  ): Promise<{ cards: GroupedCardRow[] }> {
-    const url = `/api/player/card/pp`;
-    // Get spl_jwt_token from cookies if available
-    const authHeader: Record<string, string> = {};
-    const token = Cookies.get("spl_jwt_token");
-    if (token) {
-      authHeader["Authorization"] = `Bearer ${token}`;
-    }
+  const fetchPlayerCardPP = useCallback(
+    async (
+      player: string,
+      cardFilters: CardFilterInput,
+      force: boolean,
+    ): Promise<{ cards: GroupedCardRow[] }> => {
+      const url = `/api/player/card/pp`;
+      // Get spl_jwt_token from cookies if available
+      const authHeader: Record<string, string> = {};
+      const token = Cookies.get("spl_jwt_token");
+      if (token) {
+        authHeader["Authorization"] = `Bearer ${token}`;
+      }
 
-    const res = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...authHeader,
-      },
-      body: JSON.stringify({ player, force, cardFilters }),
-    });
+      // Fetch CSRF token when needed (lazy loading)
+      const csrfToken = await getCsrfToken();
+      authHeader["X-CSRF-Token"] = csrfToken;
 
-    return await res.json();
-  }
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        body: JSON.stringify({
+          player,
+          force,
+          cardFilters,
+        }),
+      });
+
+      return await res.json();
+    },
+    [getCsrfToken],
+  );
 
   const refetchPlayerCardPP = useCallback(
     async (force: boolean = false) => {
@@ -64,7 +78,7 @@ export function usePlayerCardPP(
         setLoading(false);
       }
     },
-    [player, cardFilters],
+    [player, cardFilters, fetchPlayerCardPP],
   );
 
   useEffect(() => {

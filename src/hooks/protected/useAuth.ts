@@ -1,6 +1,7 @@
 import logger from "@/lib/frontend/log/logger.client";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import { useEffect, useState } from "react";
+import { useCsrfToken } from "../useCsrf";
 
 interface AuthUser {
   username: string;
@@ -8,6 +9,7 @@ interface AuthUser {
 }
 
 export function useAuth() {
+  const { getCsrfToken } = useCsrfToken();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -90,6 +92,9 @@ export function useAuth() {
     timestamp?: number,
     signature?: string,
   ) => {
+    // Fetch CSRF token when needed (lazy loading)
+    const csrfToken = await getCsrfToken();
+
     const finalTimestamp = timestamp || Date.now();
     const message = `${username.toLowerCase()}${finalTimestamp}`;
 
@@ -102,6 +107,7 @@ export function useAuth() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
           username: username.toLowerCase(),

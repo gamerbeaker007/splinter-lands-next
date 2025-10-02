@@ -1,15 +1,37 @@
+import { validateCsrfToken } from "@/lib/backend/csrf";
 import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
+import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import { determineCardInfo } from "@/lib/utils/cardUtil";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { player, force, cardFilters } = await req.json();
+    let player, force, cardFilters, requestBody;
+    try {
+      requestBody = await request.json();
+      player = requestBody.player;
+      force = requestBody.force || false;
+      cardFilters = requestBody.cardFilters || {};
+    } catch (err) {
+      logError("Failed to parse JSON body in login request", err);
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 },
+      );
+    }
+    // Validate CSRF token
+    const csrfValidation = await validateCsrfToken(request, requestBody);
+    if (!csrfValidation.isValid) {
+      return NextResponse.json(
+        { error: csrfValidation.error },
+        { status: 403 },
+      );
+    }
 
     if (!player) {
       return NextResponse.json(

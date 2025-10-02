@@ -1,20 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { splLogin } from "@/lib/backend/api/spl/spl-base-api";
 import { logError } from "@/lib/backend/log/logUtils";
+import { validateCsrfToken } from "@/lib/backend/csrf";
 
 export async function POST(request: NextRequest) {
   try {
-    let username, timestamp, signature;
+    let username, timestamp, signature, requestBody;
     try {
-      const body = await request.json();
-      username = body.username;
-      timestamp = body.timestamp;
-      signature = body.signature;
+      requestBody = await request.json();
+      username = requestBody.username;
+      timestamp = requestBody.timestamp;
+      signature = requestBody.signature;
     } catch (err) {
       logError("Failed to parse JSON body in login request", err);
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
         { status: 400 },
+      );
+    }
+
+    // Validate CSRF token
+    const csrfValidation = await validateCsrfToken(request, requestBody);
+    if (!csrfValidation.isValid) {
+      return NextResponse.json(
+        { error: csrfValidation.error },
+        { status: 403 },
       );
     }
 

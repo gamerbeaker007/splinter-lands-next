@@ -47,6 +47,16 @@ export async function getAuthTokenFromCookies(): Promise<string | undefined> {
     return undefined;
   }
 }
+export async function getAuthUser(): Promise<string | undefined> {
+  try {
+    const cookieStore = await cookies();
+    const username = cookieStore.get("spl_username");
+    return username?.value;
+  } catch (error) {
+    logger.warn("Failed to read auth user from cookies:", error);
+    return undefined;
+  }
+}
 
 export async function splLogin(
   username: string,
@@ -120,9 +130,10 @@ export async function fetchPlayerCardCollection(player: string) {
   const url = `cards/collection/${player}`;
   logger.info(`Fetch player card collection for: ${player}`);
   const authToken = await getAuthTokenFromCookies();
+  const authUser = await getAuthUser();
 
   const headers: Record<string, string> = {};
-  if (authToken) {
+  if (authToken && authUser === player) {
     headers.Authorization = `Bearer ${authToken}`;
     logger.info(`Using Bearer token for authenticated request`);
   }
