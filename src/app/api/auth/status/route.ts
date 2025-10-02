@@ -1,16 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
+import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
 
 export async function GET(request: NextRequest) {
   try {
-    const jwtToken = request.cookies.get("spl_jwt_token");
-    const username = request.cookies.get("spl_username");
-    if (!jwtToken || !username) {
-      return NextResponse.json({ authenticated: false }, { status: 200 });
+    const jwtToken = request.cookies.get("jwt_token")?.value;
+
+    if (!jwtToken) {
+      return NextResponse.json({ authenticated: false });
+    }
+
+    // Validate JWT token including expiration check
+    const jwtValidation = await validateSplJwt(jwtToken);
+
+    if (!jwtValidation.valid) {
+      console.log(`JWT validation failed: ${jwtValidation.error}`);
+
+      // Clear invalid/expired cookies
+      const response = NextResponse.json({
+        authenticated: false,
+        reason: jwtValidation.expired ? "Token expired" : "Invalid token",
+      });
+
+      response.cookies.delete("jwt_token");
+
+      return response;
     }
 
     return NextResponse.json({
       authenticated: true,
-      username: username.value,
+      username: jwtValidation.username,
     });
   } catch (error) {
     console.error("Auth check error:", error);

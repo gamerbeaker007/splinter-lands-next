@@ -28,7 +28,7 @@ export function usePlayerCardPP(
       const url = `/api/player/card/pp`;
       // Get spl_jwt_token from cookies if available
       const authHeader: Record<string, string> = {};
-      const token = Cookies.get("spl_jwt_token");
+      const token = Cookies.get("jwt_token");
       if (token) {
         authHeader["Authorization"] = `Bearer ${token}`;
       }

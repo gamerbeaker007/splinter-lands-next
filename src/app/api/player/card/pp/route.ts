@@ -1,4 +1,5 @@
 import { validateCsrfToken } from "@/lib/backend/csrf";
+import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
 import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
@@ -31,6 +32,29 @@ export async function POST(request: NextRequest) {
         { error: csrfValidation.error },
         { status: 403 },
       );
+    }
+
+    // Validate JWT token if present (for authenticated requests)
+    const jwtToken = request.cookies.get("jwt_token")?.value;
+    if (jwtToken) {
+      const jwtValidation = await validateSplJwt(jwtToken);
+      if (!jwtValidation.valid) {
+        console.log(
+          `JWT validation failed for player route: ${jwtValidation.error}`,
+        );
+
+        // Clear expired JWT token (the other cookies are just convenience)
+        const response = NextResponse.json(
+          {
+            error: "Authentication expired. Please log in again.",
+            expired: true,
+          },
+          { status: 401 },
+        );
+
+        response.cookies.delete("jwt_token");
+        return response;
+      }
     }
 
     if (!player) {

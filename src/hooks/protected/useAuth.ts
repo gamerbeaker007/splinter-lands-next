@@ -25,7 +25,7 @@ export function useAuth() {
         if (data && data.username) {
           setUser({
             username: data.username,
-            isAuthenticated: true,
+            isAuthenticated: data.authenticated,
           });
         } else {
           setUser(null);

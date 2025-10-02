@@ -17,8 +17,7 @@ export async function POST() {
       expires: new Date(0),
     };
 
-    response.cookies.set("spl_jwt_token", "", expiredCookieOptions);
-    response.cookies.set("spl_username", "", expiredCookieOptions);
+    response.cookies.set("jwt_token", "", expiredCookieOptions);
 
     return response;
   } catch (error) {

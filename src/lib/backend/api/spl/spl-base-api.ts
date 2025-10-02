@@ -8,6 +8,10 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import * as rax from "retry-axios";
 import logger from "../../log/logger.server";
+import {
+  SplJwtValidationResult,
+  validateSplJwt,
+} from "../../jwt/splJwtValidation";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -37,23 +41,15 @@ splBaseClient.defaults.raxConfig = {
 /**
  * Helper function to get the JWT token from cookies in server-side contexts
  */
-export async function getAuthTokenFromCookies(): Promise<string | undefined> {
+export async function getAuthTokenFromCookies(): Promise<
+  SplJwtValidationResult | undefined
+> {
   try {
     const cookieStore = await cookies();
-    const jwtCookie = cookieStore.get("spl_jwt_token");
-    return jwtCookie?.value;
+    const jwtCookie = cookieStore.get("jwt_token");
+    return validateSplJwt(jwtCookie?.value || "");
   } catch (error) {
     logger.warn("Failed to read auth token from cookies:", error);
-    return undefined;
-  }
-}
-export async function getAuthUser(): Promise<string | undefined> {
-  try {
-    const cookieStore = await cookies();
-    const username = cookieStore.get("spl_username");
-    return username?.value;
-  } catch (error) {
-    logger.warn("Failed to read auth user from cookies:", error);
     return undefined;
   }
 }
@@ -130,10 +126,9 @@ export async function fetchPlayerCardCollection(player: string) {
   const url = `cards/collection/${player}`;
   logger.info(`Fetch player card collection for: ${player}`);
   const authToken = await getAuthTokenFromCookies();
-  const authUser = await getAuthUser();
 
   const headers: Record<string, string> = {};
-  if (authToken && authUser === player) {
+  if (authToken && authToken.valid && authToken.username === player) {
     headers.Authorization = `Bearer ${authToken}`;
     logger.info(`Using Bearer token for authenticated request`);
   }

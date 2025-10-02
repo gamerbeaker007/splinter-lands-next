@@ -55,12 +55,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Set JWT token cookie
-    response.cookies.set("spl_jwt_token", splResponse.jwt_token, {
-      ...cookieOptions,
-    });
-
-    // Set username cookie (for easy client access)
-    response.cookies.set("spl_username", username, {
+    response.cookies.set("jwt_token", splResponse.jwt_token, {
       ...cookieOptions,
     });
 
