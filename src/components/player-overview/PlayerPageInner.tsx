@@ -13,6 +13,7 @@ import DeedOverview from "./deed-overview/DeedOverview";
 import PlayerInput from "./PlayerInput";
 import PlayerRegionOverview from "./region-overview/PlayerRegionOverview";
 import CollectionOverview from "@/components/player-overview/collection-overview/CollectionOverview";
+import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
 
 const defaultFilterConfig: EnableFilterOptions = {
   regions: true,
@@ -55,17 +56,20 @@ export default function PlayerPageInner() {
         key: "overview",
         label: "Region Overview",
         component: <PlayerRegionOverview player={selectedPlayer} />,
+        filterType: "land",
         filterOptions: defaultFilterConfig,
       },
       {
         key: "deed",
         label: "Deed",
         component: <DeedOverview player={selectedPlayer} />,
+        filterType: "land",
         filterOptions: defaultWithSortingFilterConfig,
       },
       {
         key: "collection",
         label: "Collection",
+        filterType: "card",
         component: <CollectionOverview player={selectedPlayer} />,
       },
     ],
@@ -144,12 +148,13 @@ export default function PlayerPageInner() {
 
         {!error && playerData && selectedPlayer && (
           <>
-            {activePage.filterOptions && (
+            {activePage.filterType === "land" && activePage.filterOptions && (
               <FilterDrawer
                 player={selectedPlayer}
                 filtersEnabled={activePage.filterOptions}
               />
             )}
+            {activePage.filterType === "card" && <CardFilterDrawer />}
             <Box mt={4} mb={4}>
               {activePage.component}
             </Box>

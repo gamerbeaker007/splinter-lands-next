@@ -1,18 +1,18 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import {
   Box,
-  Typography,
+  capitalize,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Tooltip,
-  capitalize,
+  Typography,
 } from "@mui/material";
 import Image from "next/image";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -27,7 +27,7 @@ import { GroupedCardRow } from "@/types/groupedCardRow";
 import CardTableIcon from "./CardTableIcon";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import DateColumn from "@/components/ui/DateColumn";
-import { getDateSortValue } from "@/lib/utils/dateSortUtils";
+import { DateSortType, getDateSortValue } from "@/lib/utils/dateColumnUtils";
 
 type Props = {
   data: GroupedCardRow[];
@@ -44,8 +44,8 @@ type SortKey =
   | "basePP"
   | "ratio"
   | "set"
-  | "lastUsed"
-  | "stakeEnd"
+  | "lastUsedDate"
+  | "stakeEndDate"
   | "survivalDate";
 
 const columns: {
@@ -61,8 +61,8 @@ const columns: {
   { key: "count", label: "Count", align: "center" },
   { key: "basePP", label: "Base PP", align: "left" },
   { key: "ratio", label: "PP/DEC (Ratio)", align: "left" },
-  { key: "lastUsed", label: "Last Used", align: "left" },
-  { key: "stakeEnd", label: "Land Cooldown", align: "left" },
+  { key: "lastUsedDate", label: "Last Used", align: "left" },
+  { key: "stakeEndDate", label: "Land Cooldown", align: "left" },
   { key: "survivalDate", label: "Survival Cooldown", align: "left" },
 ];
 
@@ -85,15 +85,19 @@ export default function CardTable({
   const [visibleRows, setVisibleRows] = useState(pageSize);
 
   const sortedData = useMemo(() => {
-    const sorted = [...data].sort((a, b) => {
+    return [...data].sort((a, b) => {
       // Handle date columns with special sorting logic
       if (
-        sortKey === "lastUsed" ||
-        sortKey === "stakeEnd" ||
+        sortKey === "lastUsedDate" ||
+        sortKey === "stakeEndDate" ||
         sortKey === "survivalDate"
       ) {
-        const valueA = getDateSortValue(a, sortKey);
-        const valueB = getDateSortValue(b, sortKey);
+        const sortType =
+          sortKey === "lastUsedDate" ? "recent" : ("cooldown" as DateSortType);
+        const vA = a[sortKey] as Record<string, Date>;
+        const vB = b[sortKey] as Record<string, Date>;
+        const valueA = getDateSortValue(vA, sortType);
+        const valueB = getDateSortValue(vB, sortType);
 
         // Put rows with no date at the end
         if (valueA === 0 && valueB === 0) return 0;
@@ -113,7 +117,6 @@ export default function CardTable({
         ? Number(vA) - Number(vB)
         : Number(vB) - Number(vA);
     });
-    return sorted;
   }, [data, sortKey, sortDir]);
 
   // Infinite scroll logic
@@ -169,7 +172,7 @@ export default function CardTable({
             <TableRow>
               <TableCell align="center">Img</TableCell>
               {columns.map((col) => {
-                if (col.key === "lastUsed" && !isAuthenticated) return null;
+                if (col.key === "lastUsedDate" && !isAuthenticated) return null;
                 return (
                   <TableCell
                     key={col.key}
@@ -256,16 +259,16 @@ export default function CardTable({
                 {/* Last Used Date */}
                 {isAuthenticated && (
                   <TableCell align="center">
-                    <DateColumn record={card.lastUsedDate} type="lastUsed" />
+                    <DateColumn record={card.lastUsedDate} type="recent" />
                   </TableCell>
                 )}
                 {/* Stake End Date */}
                 <TableCell align="center">
-                  <DateColumn record={card.stakeEndDate} type="stakeEnd" />
+                  <DateColumn record={card.stakeEndDate} type="cooldown" />
                 </TableCell>
                 {/* Survival Date */}
                 <TableCell align="center">
-                  <DateColumn record={card.survivalDate} type="survivalDate" />
+                  <DateColumn record={card.survivalDate} type="cooldown" />
                 </TableCell>
               </TableRow>
             ))}

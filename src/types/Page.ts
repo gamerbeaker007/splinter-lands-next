@@ -5,5 +5,6 @@ export type Page = {
   key: string;
   label: string;
   component: ReactNode;
+  filterType?: "card" | "land";
   filterOptions?: EnableFilterOptions;
 };

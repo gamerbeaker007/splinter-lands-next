@@ -1,6 +1,5 @@
 "use client";
 
-import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
 import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
 import { usePlayerCardPP } from "@/hooks/protected/usePlayerCardPP";
@@ -47,7 +46,6 @@ export default function CollectionOverview({ player }: Props) {
         maxWidth: "100vw",
       }}
     >
-      <CardFilterDrawer />
       <Button
         size="small"
         variant="outlined"

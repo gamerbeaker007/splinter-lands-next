@@ -32,6 +32,9 @@ export function filterCardCollection(
     filter_owned,
     filter_set,
     filter_rarity,
+    filter_last_used,
+    filter_land_cooldown,
+    filter_survival_cooldown,
   } = filters ?? {};
 
   return cards.filter((c) => {
@@ -79,6 +82,39 @@ export function filterCardCollection(
     //  filter_rarity
     if (filter_rarity?.length) {
       if (!filter_rarity.includes(rarityName)) return false;
+    }
+
+    //  filter_land_cooldown
+    const stakeEndDate = c.stake_end_date;
+    if (filter_land_cooldown != null) {
+      if (stakeEndDate == null) return !filter_land_cooldown;
+
+      const today = new Date().getTime();
+      const date = new Date(stakeEndDate).getTime();
+      return filter_land_cooldown ? today <= date : today >= date;
+    }
+
+    //  filter_survival_cooldown
+    const survivalDate = c.survival_date;
+    if (filter_survival_cooldown != null) {
+      if (survivalDate == null) return !filter_survival_cooldown;
+
+      const today = new Date().getTime();
+      const date = new Date(survivalDate).getTime();
+      return filter_survival_cooldown ? today <= date : today >= date;
+    }
+
+    //  filter_last_used
+    const lastUsedDate = c.last_used_date;
+    if (filter_last_used && lastUsedDate != null) {
+      // null value are considered to be viewed always
+      const today = new Date();
+
+      const diffTime = today.getTime() - new Date(lastUsedDate).getTime();
+      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); //divide by the number of milliseconds in one day
+
+      // If the difference in days is greater than the filter, the item will be included.
+      return diffDays >= filter_last_used;
     }
 
     return true;

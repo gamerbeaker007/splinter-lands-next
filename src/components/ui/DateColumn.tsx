@@ -5,11 +5,12 @@ import {
   getDateDisplayText,
   hasMultipleEntries,
   getDateTooltipContent,
+  DateSortType,
 } from "@/lib/utils/dateColumnUtils";
 
 interface DateColumnProps {
   record: Record<string, Date> | undefined;
-  type: "lastUsed" | "stakeEnd" | "survivalDate";
+  type: DateSortType;
 }
 
 export const DateColumn: React.FC<DateColumnProps> = ({ record, type }) => {
