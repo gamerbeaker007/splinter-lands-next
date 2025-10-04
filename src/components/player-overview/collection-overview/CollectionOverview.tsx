@@ -3,8 +3,8 @@
 import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
 import { usePlayerCardPP } from "@/hooks/protected/usePlayerCardPP";
-import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { useAuth } from "@/lib/frontend/context/AuthContext";
+import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
 import CardTable from "./CardTable";
@@ -65,8 +65,7 @@ export default function CollectionOverview({ player }: Props) {
         color="text.secondary"
         sx={{ whiteSpace: "pre-line" }}
       >
-        {`Note: Cards with 0 Base PP are not included in this list. 
-        Note: Cards from special sets like "Soulbound" or "Foundation" or "Extra" are also excluded.`}
+        {`Only cards relevant for Land are shown. Cards with 0 Base PP and cards from special sets like "Soulbound", "Foundation", or "Extra" are excluded by default.`}
       </Typography>
 
       {cardPPResult && (
