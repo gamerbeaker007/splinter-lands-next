@@ -1,11 +1,17 @@
-import { NextRequest } from "next/server";
-import { cookies } from "next/headers";
 import csrf from "csrf";
+import { cookies } from "next/headers";
+import { NextRequest } from "next/server";
 import { logError } from "./log/logUtils";
 
 const csrfInstance = new csrf();
-const CSRF_SECRET =
-  process.env.CSRF_SECRET || "default-csrf-secret-change-in-production";
+
+const getCsrfSecret = (): string => {
+  const secret = process.env.CSRF_SECRET;
+  if (!secret) {
+    throw new Error("CSRF_SECRET environment variable must be set");
+  }
+  return secret;
+};
 
 // Get allowed origins from environment
 const getAllowedOrigins = (): string[] => {
@@ -95,7 +101,7 @@ export async function validateCsrfToken(
     }
 
     // Verify the token
-    const isValid = csrfInstance.verify(CSRF_SECRET, tokenToValidate);
+    const isValid = csrfInstance.verify(getCsrfSecret(), tokenToValidate);
 
     if (!isValid) {
       return {

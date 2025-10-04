@@ -14,8 +14,41 @@ import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
 // Helper function for boolean filters: returns true if filter is null, otherwise compares value
 function boolTest(value: boolean, filter: boolean | null | undefined): boolean {
-  if (filter == null) return true;
+  if (filter == null) return true; // No filter, always pass
   return value === filter;
+}
+
+// Helper function for cooldown filters
+function cooldownTest(
+  date: string | null | undefined,
+  filter: boolean | null | undefined,
+): boolean {
+  if (filter == null) return true; // No filter, always pass
+
+  const now = new Date().getTime();
+  const target = date ? new Date(date).getTime() : null;
+
+  if (filter) {
+    // Looking for cards still in cooldown
+    if (!target) return false; // No target date, must be in cooldown, fail
+    return now <= target; // Only pass if cooldown is active
+  } else {
+    // Looking for cards NOT in cooldown
+    if (target && now <= target) return false; // If cooldown is active, fail
+    return true; // Otherwise pass
+  }
+}
+
+function lastUsedTest(
+  lastUsedDate: string | null | undefined,
+  filter: number | null | undefined,
+): boolean {
+  if (filter == null) return true;
+  if (lastUsedDate == null) return true; // Never used, always pass
+  const today = new Date();
+  const diffTime = today.getTime() - new Date(lastUsedDate).getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays >= filter;
 }
 
 export function filterCardCollection(
@@ -85,37 +118,13 @@ export function filterCardCollection(
     }
 
     //  filter_land_cooldown
-    const stakeEndDate = c.stake_end_date;
-    if (filter_land_cooldown != null) {
-      if (stakeEndDate == null) return !filter_land_cooldown;
-
-      const today = new Date().getTime();
-      const date = new Date(stakeEndDate).getTime();
-      return filter_land_cooldown ? today <= date : today >= date;
-    }
+    if (!cooldownTest(c.stake_end_date, filter_land_cooldown)) return false;
 
     //  filter_survival_cooldown
-    const survivalDate = c.survival_date;
-    if (filter_survival_cooldown != null) {
-      if (survivalDate == null) return !filter_survival_cooldown;
-
-      const today = new Date().getTime();
-      const date = new Date(survivalDate).getTime();
-      return filter_survival_cooldown ? today <= date : today >= date;
-    }
+    if (!cooldownTest(c.survival_date, filter_survival_cooldown)) return false;
 
     //  filter_last_used
-    const lastUsedDate = c.last_used_date;
-    if (filter_last_used && lastUsedDate != null) {
-      // null value are considered to be viewed always
-      const today = new Date();
-
-      const diffTime = today.getTime() - new Date(lastUsedDate).getTime();
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); //divide by the number of milliseconds in one day
-
-      // If the difference in days is greater than the filter, the item will be included.
-      return diffDays >= filter_last_used;
-    }
+    if (!lastUsedTest(c.last_used_date, filter_last_used)) return false;
 
     return true;
   });

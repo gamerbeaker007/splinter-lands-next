@@ -21,7 +21,14 @@ import Image from "next/image";
 import { useState } from "react";
 
 export default function LoginComponent() {
-  const { user, loading: authLoading, login, logout } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    error: authError,
+    clearError,
+    login,
+    logout,
+  } = useAuth();
 
   // Separate loading states
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -51,6 +58,7 @@ export default function LoginComponent() {
     setLoginDialogOpen(false);
     setUsername("");
     setError(null);
+    clearError();
     setSigningInProgress(false);
   };
 
@@ -65,6 +73,9 @@ export default function LoginComponent() {
 
     try {
       await login(username.toLowerCase());
+      if (authError) {
+        throw authError;
+      }
       // Close dialog on success
       handleDialogClose();
     } catch (err) {
