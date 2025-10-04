@@ -35,4 +35,7 @@ export type CardFilterInput = {
   filter_on_wagon?: boolean;
   filter_delegated?: boolean;
   filter_owned?: boolean;
+  filter_last_used?: number; // number represent days
+  filter_land_cooldown?: boolean;
+  filter_survival_cooldown?: boolean;
 };

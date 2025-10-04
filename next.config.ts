@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "runi.splinterlands.com",
       },
+      {
+        protocol: "https",
+        hostname: "images.hive.blog",
+      },
     ],
   },
 };

@@ -8,7 +8,9 @@ type Props = {
     | "filter_in_set"
     | "filter_on_wagon"
     | "filter_delegated"
-    | "filter_owned";
+    | "filter_owned"
+    | "filter_land_cooldown"
+    | "filter_survival_cooldown";
 };
 
 export default function CardBooleanFilter({ title, filterKey }: Props) {
@@ -28,22 +30,30 @@ export default function CardBooleanFilter({ title, filterKey }: Props) {
 
   const value = cardFilters[filterKey];
 
+  const fontSizeSmall = "0.8rem"; // Defining constant for small font size
+
   return (
     <Box
       sx={{
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
         mb: 1,
       }}
     >
-      <Typography sx={{ minWidth: 100, mb: 0.5 }}>{title}:</Typography>
-      <Box sx={{ display: "flex", gap: 0.5 }}>
+      <Typography sx={{ fontSize: fontSizeSmall }}>{title}:</Typography>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 0.5,
+        }}
+      >
         <Button
           variant={value === true ? "contained" : "outlined"}
           color="success"
           size="small"
-          sx={{ fontSize: "0.8rem", minWidth: 50, py: 0.2, px: 1 }}
+          sx={{ fontSize: fontSizeSmall, minWidth: 50, py: 0.2, px: 1 }}
           onClick={() => handleChange(value === true ? undefined : true)}
         >
           Yes
@@ -52,7 +62,7 @@ export default function CardBooleanFilter({ title, filterKey }: Props) {
           variant={value === false ? "contained" : "outlined"}
           color="error"
           size="small"
-          sx={{ fontSize: "0.8rem", minWidth: 50, py: 0.2, px: 1 }}
+          sx={{ fontSize: fontSizeSmall, minWidth: 50, py: 0.2, px: 1 }}
           onClick={() => handleChange(value === false ? undefined : false)}
         >
           No

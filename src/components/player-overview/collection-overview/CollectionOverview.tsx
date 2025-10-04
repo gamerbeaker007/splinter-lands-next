@@ -1,9 +1,9 @@
 "use client";
 
-import CardFilterDrawer from "@/components/cardFilter/CardFilterDrawer";
 import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
-import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
+import { usePlayerCardPP } from "@/hooks/protected/usePlayerCardPP";
+import { useAuth } from "@/lib/frontend/context/AuthContext";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
@@ -12,6 +12,7 @@ import CardTable from "./CardTable";
 type Props = { player: string };
 
 export default function CollectionOverview({ player }: Props) {
+  const { user } = useAuth();
   const { cardFilters } = useCardFilters();
 
   const { cardPPResult, loading, error, refetchPlayerCardPP } = usePlayerCardPP(
@@ -33,6 +34,8 @@ export default function CollectionOverview({ player }: Props) {
     );
   }
 
+  const isAuthenticated = user?.username === player;
+
   return (
     <Box
       sx={{
@@ -43,7 +46,6 @@ export default function CollectionOverview({ player }: Props) {
         maxWidth: "100vw",
       }}
     >
-      <CardFilterDrawer />
       <Button
         size="small"
         variant="outlined"
@@ -63,11 +65,16 @@ export default function CollectionOverview({ player }: Props) {
         color="text.secondary"
         sx={{ whiteSpace: "pre-line" }}
       >
-        {`Note: Cards with 0 Base PP are not included in this list. 
-        Note: Cards from special sets like "Soulbound" or "Foundation" or "Extra" are also excluded.`}
+        {`Only cards relevant for Land are shown. Cards with 0 Base PP and cards from special sets like "Soulbound", "Foundation", or "Extra" are excluded by default.`}
       </Typography>
 
-      {cardPPResult && <CardTable data={cardPPResult} pageSize={100} />}
+      {cardPPResult && (
+        <CardTable
+          data={cardPPResult}
+          isAuthenticated={isAuthenticated}
+          pageSize={100}
+        />
+      )}
     </Box>
   );
 }

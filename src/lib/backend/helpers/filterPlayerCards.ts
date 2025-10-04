@@ -14,8 +14,41 @@ import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
 // Helper function for boolean filters: returns true if filter is null, otherwise compares value
 function boolTest(value: boolean, filter: boolean | null | undefined): boolean {
-  if (filter == null) return true;
+  if (filter == null) return true; // No filter, always pass
   return value === filter;
+}
+
+// Helper function for cooldown filters
+function cooldownTest(
+  date: string | null | undefined,
+  filter: boolean | null | undefined,
+): boolean {
+  if (filter == null) return true; // No filter, always pass
+
+  const now = new Date().getTime();
+  const target = date ? new Date(date).getTime() : null;
+
+  if (filter) {
+    // Looking for cards still in cooldown
+    if (!target) return false; // No target date, must be in cooldown, fail
+    return now <= target; // Only pass if cooldown is active
+  } else {
+    // Looking for cards NOT in cooldown
+    if (target && now <= target) return false; // If cooldown is active, fail
+    return true; // Otherwise pass
+  }
+}
+
+function lastUsedTest(
+  lastUsedDate: string | null | undefined,
+  filter: number | null | undefined,
+): boolean {
+  if (filter == null) return true;
+  if (lastUsedDate == null) return true; // Never used, always pass
+  const today = new Date();
+  const diffTime = today.getTime() - new Date(lastUsedDate).getTime();
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays >= filter;
 }
 
 export function filterCardCollection(
@@ -32,6 +65,9 @@ export function filterCardCollection(
     filter_owned,
     filter_set,
     filter_rarity,
+    filter_last_used,
+    filter_land_cooldown,
+    filter_survival_cooldown,
   } = filters ?? {};
 
   return cards.filter((c) => {
@@ -80,6 +116,15 @@ export function filterCardCollection(
     if (filter_rarity?.length) {
       if (!filter_rarity.includes(rarityName)) return false;
     }
+
+    //  filter_land_cooldown
+    if (!cooldownTest(c.stake_end_date, filter_land_cooldown)) return false;
+
+    //  filter_survival_cooldown
+    if (!cooldownTest(c.survival_date, filter_survival_cooldown)) return false;
+
+    //  filter_last_used
+    if (!lastUsedTest(c.last_used_date, filter_last_used)) return false;
 
     return true;
   });

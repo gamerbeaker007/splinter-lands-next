@@ -1,11 +1,14 @@
-import { SplCardDetails } from "@/types/splCardDetails";
-import axios from "axios";
-import * as rax from "retry-axios";
-import logger from "../../log/logger.server";
-import { SplPlayerDetails } from "@/types/splPlayerDetails";
+import { LoginResponse } from "@/types/auth/auth";
 import { Balance } from "@/types/balance";
-import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { SplPlayerDetails } from "@/types/splPlayerDetails";
+import axios from "axios";
+import { cookies } from "next/headers";
+import * as rax from "retry-axios";
+import { validateSplJwt } from "../../jwt/splJwtValidation";
+import logger from "../../log/logger.server";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -31,6 +34,70 @@ splBaseClient.defaults.raxConfig = {
     logger.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
   },
 };
+
+/**
+ * Helper function to get the JWT token from cookies in server-side contexts
+ */
+export async function getAuthorizationHeader(
+  player: string,
+): Promise<Record<string, string> | undefined> {
+  try {
+    const cookieStore = await cookies();
+    const jwtCookie = cookieStore.get("jwt_token")?.value || "";
+    const authToken = await validateSplJwt(jwtCookie);
+    const headers: Record<string, string> = {};
+    if (authToken && authToken.valid && authToken.username === player) {
+      headers.Authorization = `Bearer ${jwtCookie}`;
+      logger.info(`Using Bearer token for authenticated request`);
+    }
+
+    return headers ? headers : undefined;
+  } catch (error) {
+    logger.warn("Failed to read auth token from cookies:", error);
+    return undefined;
+  }
+}
+
+export async function splLogin(
+  username: string,
+  timestamp: number,
+  signature: string,
+): Promise<LoginResponse> {
+  const url = "players/v2/login";
+
+  logger.info(`splLogin called for user: ${username}`);
+  const params = {
+    name: username,
+    ts: timestamp,
+    sig: signature,
+  };
+
+  try {
+    const response = await splBaseClient.get(url, {
+      params: { ...params },
+    });
+
+    if (response.status === 200 && response.data) {
+      if (response.data.error) {
+        throw new Error(response.data.error);
+      }
+      const result = response.data as LoginResponse;
+
+      return result as LoginResponse;
+    } else {
+      throw new Error("Login request failed");
+    }
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const errorData = error.response?.data;
+      if (errorData && typeof errorData === "object" && "error" in errorData) {
+        throw new Error(errorData.error);
+      }
+      throw new Error(error.message || "Network error occurred");
+    }
+    throw error;
+  }
+}
 
 export async function fetchCardDetails() {
   const url = "/cards/get_details";
@@ -62,7 +129,11 @@ export async function fetchPlayerDetails(player: string) {
 export async function fetchPlayerCardCollection(player: string) {
   const url = `cards/collection/${player}`;
   logger.info(`Fetch player card collection for: ${player}`);
-  const res = await splBaseClient.get(url);
+  const headers = await getAuthorizationHeader(player);
+
+  const res = await splBaseClient.get(url, {
+    headers,
+  });
 
   const data = res.data;
   // Handle API-level error even if HTTP status is 200

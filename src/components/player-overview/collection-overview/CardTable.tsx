@@ -1,18 +1,18 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import {
   Box,
-  Typography,
+  capitalize,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   Tooltip,
-  capitalize,
+  Typography,
 } from "@mui/material";
 import Image from "next/image";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
@@ -26,9 +26,12 @@ import {
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import CardTableIcon from "./CardTableIcon";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import DateColumn from "@/components/ui/DateColumn";
+import { DateSortType, getDateSortValue } from "@/lib/utils/dateColumnUtils";
 
 type Props = {
   data: GroupedCardRow[];
+  isAuthenticated: boolean;
   pageSize?: number;
 };
 
@@ -40,7 +43,10 @@ type SortKey =
   | "count"
   | "basePP"
   | "ratio"
-  | "set";
+  | "set"
+  | "lastUsedDate"
+  | "stakeEndDate"
+  | "survivalDate";
 
 const columns: {
   key: SortKey;
@@ -55,6 +61,9 @@ const columns: {
   { key: "count", label: "Count", align: "center" },
   { key: "basePP", label: "Base PP", align: "left" },
   { key: "ratio", label: "PP/DEC (Ratio)", align: "left" },
+  { key: "lastUsedDate", label: "Last Used", align: "left" },
+  { key: "stakeEndDate", label: "Land Cooldown", align: "left" },
+  { key: "survivalDate", label: "Survival Cooldown", align: "left" },
 ];
 
 function getSortIcon(active: boolean, direction: "asc" | "desc") {
@@ -66,13 +75,39 @@ function getSortIcon(active: boolean, direction: "asc" | "desc") {
   );
 }
 
-export default function CardTable({ data, pageSize = 100 }: Props) {
+export default function CardTable({
+  data,
+  isAuthenticated,
+  pageSize = 100,
+}: Props) {
   const [sortKey, setSortKey] = useState<SortKey>("basePP");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [visibleRows, setVisibleRows] = useState(pageSize);
 
   const sortedData = useMemo(() => {
-    const sorted = [...data].sort((a, b) => {
+    return [...data].sort((a, b) => {
+      // Handle date columns with special sorting logic
+      if (
+        sortKey === "lastUsedDate" ||
+        sortKey === "stakeEndDate" ||
+        sortKey === "survivalDate"
+      ) {
+        const sortType =
+          sortKey === "lastUsedDate" ? "recent" : ("cooldown" as DateSortType);
+        const vA = a[sortKey] as Record<string, Date>;
+        const vB = b[sortKey] as Record<string, Date>;
+        const valueA = getDateSortValue(vA, sortType);
+        const valueB = getDateSortValue(vB, sortType);
+
+        // Put rows with no date at the end
+        if (valueA === 0 && valueB === 0) return 0;
+        if (valueA === 0) return 1;
+        if (valueB === 0) return -1;
+
+        return sortDir === "asc" ? valueA - valueB : valueB - valueA;
+      }
+
+      // Handle regular columns
       const vA = a[sortKey];
       const vB = b[sortKey];
       if (typeof vA === "string" && typeof vB === "string") {
@@ -82,7 +117,6 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
         ? Number(vA) - Number(vB)
         : Number(vB) - Number(vA);
     });
-    return sorted;
   }, [data, sortKey, sortDir]);
 
   // Infinite scroll logic
@@ -137,17 +171,20 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
           <TableHead>
             <TableRow>
               <TableCell align="center">Img</TableCell>
-              {columns.map((col) => (
-                <TableCell
-                  key={col.key}
-                  align={col.align ?? "left"}
-                  sx={{ cursor: "pointer", userSelect: "none" }}
-                  onClick={() => handleSort(col.key)}
-                >
-                  {col.label}
-                  {getSortIcon(sortKey === col.key, sortDir)}
-                </TableCell>
-              ))}
+              {columns.map((col) => {
+                if (col.key === "lastUsedDate" && !isAuthenticated) return null;
+                return (
+                  <TableCell
+                    key={col.key}
+                    align={col.align ?? "left"}
+                    sx={{ cursor: "pointer", userSelect: "none" }}
+                    onClick={() => handleSort(col.key)}
+                  >
+                    {col.label}
+                    {getSortIcon(sortKey === col.key, sortDir)}
+                  </TableCell>
+                );
+              })}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -219,6 +256,20 @@ export default function CardTable({ data, pageSize = 100 }: Props) {
                   </Box>
                 </TableCell>
                 <TableCell align="left">{card.ratio.toFixed(2)}</TableCell>
+                {/* Last Used Date */}
+                {isAuthenticated && (
+                  <TableCell align="center">
+                    <DateColumn record={card.lastUsedDate} type="recent" />
+                  </TableCell>
+                )}
+                {/* Stake End Date */}
+                <TableCell align="center">
+                  <DateColumn record={card.stakeEndDate} type="cooldown" />
+                </TableCell>
+                {/* Survival Date */}
+                <TableCell align="center">
+                  <DateColumn record={card.survivalDate} type="cooldown" />
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>

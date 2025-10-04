@@ -16,7 +16,7 @@ export default async function AdminPage() {
   }
 
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
+    <Container maxWidth="xl" sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
       <Typography variant="h2">Admin Dashboard</Typography>
       <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
       <SignOutButton />

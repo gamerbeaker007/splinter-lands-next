@@ -9,6 +9,7 @@ import CardBooleanFilter from "./CardBooleanFilter";
 import CardFilterRarityGroup from "./CardFilterRarityGroup";
 import CardFilterSetGroup from "./CardFilterSetGroup";
 import ResetCardFiltersButton from "./ResetCardFiltersButton";
+import CardDayFilter from "@/components/cardFilter/CardDayFilter";
 
 export default function CardFilterDrawer() {
   const [drawerOpen, setDrawerOpen] = useState(true);
@@ -90,6 +91,18 @@ export default function CardFilterDrawer() {
           <CardBooleanFilter title="On Wagon" filterKey="filter_on_wagon" />
           <CardBooleanFilter title="Delegated" filterKey="filter_delegated" />
           <CardBooleanFilter title="Owned" filterKey="filter_owned" />
+          <CardBooleanFilter
+            title="Land Cooldown"
+            filterKey="filter_land_cooldown"
+          />
+          <CardBooleanFilter
+            title="Survial Cooldown"
+            filterKey="filter_survival_cooldown"
+          />
+        </FormGroup>
+
+        <FormGroup sx={{ mt: 2 }}>
+          <CardDayFilter title={"Last Used"} filterKey={"filter_last_used"} />
         </FormGroup>
 
         <ResetCardFiltersButton />
