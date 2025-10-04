@@ -1,4 +1,6 @@
 name: Build and Push Docker Image for Next.js App
+permissions:
+  contents: read
 
 on:
   release:
