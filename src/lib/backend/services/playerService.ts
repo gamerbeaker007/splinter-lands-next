@@ -43,6 +43,15 @@ import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplTaxes } from "@/types/splTaxes";
 import { TAX_RATE } from "@/lib/shared/statics";
 
+export async function invalidatePlayerCaches(player: string) {
+  const keysToInvalidate = [
+    `player-card-collection:${player}`, // for now that only contains data that needs to be cleared after login
+  ];
+  for (const key of keysToInvalidate) {
+    cache.del(key);
+  }
+}
+
 export async function getCachedPlayerData(
   player: string,
   force = false,

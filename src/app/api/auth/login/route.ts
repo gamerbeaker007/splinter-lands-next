@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { splLogin } from "@/lib/backend/api/spl/spl-base-api";
 import { logError } from "@/lib/backend/log/logUtils";
 import { validateCsrfToken } from "@/lib/backend/csrf";
+import { invalidatePlayerCaches } from "@/lib/backend/services/playerService";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,6 +39,9 @@ export async function POST(request: NextRequest) {
 
     // Call SPL API
     const splResponse = await splLogin(username, timestamp, signature);
+
+    // clear store caches that contains user-specific data
+    await invalidatePlayerCaches(username);
 
     // Create response
     const response = NextResponse.json({

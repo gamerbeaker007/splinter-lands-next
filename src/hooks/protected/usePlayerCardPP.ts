@@ -6,11 +6,13 @@ import { GroupedCardRow } from "@/types/groupedCardRow";
 import { useCallback, useEffect, useState } from "react";
 import Cookies from "js-cookie";
 import { useCsrfToken } from "../useCsrf";
+import { useAuth } from "@/lib/frontend/context/AuthContext";
 
 export function usePlayerCardPP(
   player: string,
   cardFilters: CardFilterInput = {},
 ) {
+  const { user } = useAuth();
   const { getCsrfToken } = useCsrfToken();
 
   const [cardPPResult, setCardPPResult] = useState<GroupedCardRow[] | null>(
@@ -82,12 +84,13 @@ export function usePlayerCardPP(
   );
 
   useEffect(() => {
+    // Only refetch if player is set and user is available
     if (!player || player === "") {
       return;
     }
-
+    console.log("user in usePlayerCardPP", user);
     refetchPlayerCardPP(false);
-  }, [player, cardFilters, refetchPlayerCardPP]);
+  }, [player, cardFilters, user, refetchPlayerCardPP]);
 
   return {
     cardPPResult,
