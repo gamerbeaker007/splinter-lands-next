@@ -10,6 +10,7 @@ import { CardPPInfo } from "./CardPPInfo";
 import { CardRaritySelector } from "./CardRaritySelector";
 import { CardElementSelector } from "./ElementSelector";
 import { SetSelector } from "./SetSelector";
+import LandBoostComponent from "./LandBoost";
 
 type Props = {
   index: number; // 0..4 (displayed as 1..5)
@@ -75,6 +76,12 @@ export default function SlotEditor({
         <BcxInput
           slot={value}
           onChange={(bcx) => onChange({ ...value, bcx })}
+        />
+        <LandBoostComponent
+          initialBoost={plot.cardInput[index].landBoosts}
+          onSave={(boost) => {
+            onChange({ ...plot.cardInput[index], landBoosts: boost });
+          }}
         />
         <CardPPInfo basePP={computed.basePP} boostedPP={computed.boostedPP} />
       </Box>

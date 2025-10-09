@@ -105,3 +105,5 @@ export const card_rarity_epic_icon_url = `${WEB_URL}website/create_team/icon_rar
 export const card_rarity_legendary_icon_url = `${WEB_URL}website/create_team/icon_rarity_legendary_new.svg`;
 
 export const totem_fragment_common_icon_url = `${WEB_URL}website/icons/fragment_common.png`;
+
+export const bloodline_icon_url = `${WEB_URL}website/abilities/summoner/ability_bloodline-dominion.png`;

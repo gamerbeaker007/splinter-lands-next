@@ -37,6 +37,7 @@ import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
 import { DECOutput } from "./output/DECOutput";
 import ImportedPlotInfo from "./output/ImportedPlotInfo";
+import { LandBoostOutput } from "./output/LandBoostOutput";
 import PriceOutput from "./output/PriceOutput";
 import { ProductionOutput } from "./output/ProductionOutput";
 import { ResourceOutput } from "./output/ResourceOutput";
@@ -44,6 +45,7 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
+import { Resource } from "@/constants/resource/resource";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],
@@ -51,7 +53,6 @@ const DEFAULTS = {
   bcx: 0,
   foil: "regular" as SlotInput["foil"],
   element: "fire" as SlotInput["element"],
-  bloodline: "Unknown" as SlotInput["bloodline"],
 };
 
 export type Props = {
@@ -184,7 +185,15 @@ export default function Planner({
       bcx,
       foil: cardFoilOptions[foil],
       element,
-      bloodline,
+      landBoosts: {
+        bloodline,
+        produceBoost: ({} = {} as Record<Resource, number>),
+        consumeDiscount: ({} = {} as Record<Resource, number>),
+        bloodlineBoost: 0,
+        decDiscount: 0,
+        replacePowerCore: false,
+        laborLuck: false,
+      },
     };
   };
   const updatePlotSlots = (cards: Card[]) => {
@@ -200,30 +209,10 @@ export default function Planner({
         bcx: DEFAULTS.bcx,
         foil: DEFAULTS.foil,
         element: DEFAULTS.element,
-        bloodline: DEFAULTS.bloodline,
       });
     }
 
     updatePlot({ cardInput: mapped });
-
-    // setSlots(() => {
-    //   // take first 5 cards (planner has 5 slots)
-    //   const mapped = cards.slice(0, 5).map((c, i) => toSlotInput(c, i + 1));
-    //   // pad to length 5 with defaults
-    //   while (mapped.length < 5) {
-    //     const i = mapped.length;
-    //     mapped.push({
-    //       id: i + 1,
-    //       set: DEFAULTS.set,
-    //       rarity: DEFAULTS.rarity,
-    //       bcx: DEFAULTS.bcx,
-    //       foil: DEFAULTS.foil,
-    //       element: DEFAULTS.element,
-    //       bloodline: DEFAULTS.bloodline,
-    //     });
-    //   }
-    //   return mapped;
-    // });
   };
 
   const onRarityChange = (next: PlotRarity) => updatePlot({ plotRarity: next });
@@ -460,7 +449,7 @@ export default function Planner({
           plotPlannerData={plot}
           runiImgUrl={runiImgUrl}
           onChange={onRuniChange}
-          pos={{ x: "300px", y: "30px" }}
+          pos={{ x: "295px", y: "30px" }}
         />
         <WorksiteSelector
           value={plot.worksiteType}
@@ -476,21 +465,27 @@ export default function Planner({
             value={slot}
             plot={plot}
             onChange={(next) => updateSlot(i, next)}
-            pos={{ x: "20px", y: `${200 + 60 * i}px`, w: "695px" }}
+            pos={{ x: "20px", y: `${200 + 60 * i}px`, w: "740px" }}
           />
         ))}
+
+        <LandBoostOutput
+          plotPlannerData={plot}
+          pos={{ x: "550px", y: "30px", w: "210px" }}
+        />
+
         <ProductionOutput
           totalBasePP={totalBasePP}
           totalBoostPP={totalBoostedPP}
           captureRate={captureRate ?? undefined}
           totemChance={totemChance ?? undefined}
-          pos={{ x: "750px", y: "20px", w: "250px" }}
+          pos={{ x: "770px", y: "20px", w: "250px" }}
         />
 
         <ResourceOutput
           worksiteType={plot.worksiteType}
           productionInfo={productionInfo}
-          pos={{ x: "750px", y: "195px" }}
+          pos={{ x: "770px", y: "195px" }}
         />
         <DECOutput
           worksiteType={plot.worksiteType}
