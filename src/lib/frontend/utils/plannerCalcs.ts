@@ -188,8 +188,31 @@ export function calcProductionInfo(
     };
   }
 
-  const consume = calcConsumeCosts(resource, totalBasePP, prices, 1);
-  const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
+  const consumeDiscount: Record<Resource, number> = determineConsumeReduction(
+    plotPlannerData.cardInput,
+  );
+  const consume = calcConsumeCosts(
+    resource,
+    totalBasePP,
+    prices,
+    1,
+    consumeDiscount,
+  );
+
+  const productionBoosts = determineProductionBoost(
+    resource,
+    plotPlannerData.cardInput,
+  );
+
+  const produce = calcProduction(
+    resource,
+    totalBoostedPP,
+    productionBoosts,
+    prices,
+    1,
+    spsRatio,
+  );
+
   const totalDECConsume = consume.reduce(
     (sum, row) => sum + Number(row.sellPriceDEC || 0),
     0,
@@ -225,4 +248,64 @@ export function calcTotemChancePerHour(
     return (basePP / 1000) * 0.0007 * multiplier;
   }
   return undefined;
+}
+
+/**
+ * Determines the total production boost (%) for a specific resource.
+ * @param resource The resource to check for boosts.
+ * @param cardInput The list of cards to evaluate.
+ * @returns The total production boost for the specified resource. 0.1 means 10% boost.
+ */
+export function determineProductionBoost(
+  resource: Resource,
+  cardInput: SlotInput[],
+): number {
+  let totalBoost = 0;
+
+  if (resource) {
+    cardInput.forEach((card) => {
+      if (card.landBoosts?.produceBoost) {
+        Object.entries(card.landBoosts.produceBoost).forEach(
+          ([resource, boost]) => {
+            if (resource === resource && boost > 0) {
+              totalBoost += boost;
+            }
+          },
+        );
+      }
+    });
+  }
+  return totalBoost;
+}
+
+/**
+ * Determines the total consume discount (%) for a specific resource.
+ * @param resource The resource to check for discounts.
+ * @param cardInput The list of cards to evaluate.
+ * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
+ */
+export function determineConsumeReduction(
+  cardInput: SlotInput[],
+): Record<Resource, number> {
+  const consumeDiscounts: Record<Resource, number> = {} as Record<
+    Resource,
+    number
+  >;
+
+  cardInput.forEach((card) => {
+    if (card.landBoosts?.consumeDiscount) {
+      Object.entries(card.landBoosts.consumeDiscount).forEach(
+        ([resource, discount]) => {
+          if (discount > 0) {
+            const resourceKey = resource as Resource;
+            if (!consumeDiscounts[resourceKey]) {
+              consumeDiscounts[resourceKey] = 0;
+            }
+            consumeDiscounts[resourceKey] += discount;
+          }
+        },
+      );
+    }
+  });
+  return consumeDiscounts;
 }

@@ -384,7 +384,6 @@ export default function Planner({
   //
   // setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
 
-  console.log("PlotPlannerData:", plot);
   return (
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2 }}>

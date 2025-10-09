@@ -238,10 +238,22 @@ export default function LandBoostComponent({
         </IconButton>
       </Box>
 
-      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={open}
+        onClose={handleClose}
+        fullWidth
+        fullScreen={false} // Could be made responsive: useMediaQuery(theme.breakpoints.down('sm'))
+        PaperProps={{
+          sx: {
+            margin: { xs: 1, sm: 2 },
+            maxWidth: "600px",
+            maxHeight: { xs: "90vh", sm: "80vh" },
+          },
+        }}
+      >
         <DialogTitle>Land Boost Configuration</DialogTitle>
         <DialogContent>
-          <Box sx={{ mt: 2 }}>
+          <Box>
             {/* Produce Boosts */}
             <Typography variant="h6" gutterBottom>
               Production Boosts
@@ -251,52 +263,73 @@ export default function LandBoostComponent({
             </Typography>
 
             {produceBoosts.map((boost, index) => (
-              <Grid
-                container
-                spacing={2}
+              <Box
                 key={index}
-                alignItems="center"
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: 1,
+                  borderColor: "grey.300",
+                  borderRadius: 1,
+                }}
               >
-                <Grid size={{ xs: 2 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Resource</InputLabel>
-                    <Select
-                      value={boost.resource}
-                      label="Resource"
-                      onChange={(e) =>
-                        updateProduceBoost(index, "resource", e.target.value)
-                      }
-                    >
-                      {PRODUCING_RESOURCES.map((resource) => (
-                        <MenuItem key={resource} value={resource}>
-                          {resource}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 5 }}>
-                  <PercentageSlider
-                    value={boost.value}
-                    onChange={(value) =>
-                      updateProduceBoost(index, "value", value)
-                    }
-                    label={`${boost.resource} production boost`}
-                  />
-                </Grid>
-                <Grid size={{ xs: 3 }}>
-                  <IconButton
-                    onClick={() => removeProduceBoost(index)}
-                    size="small"
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Grid>
-              </Grid>
-            ))}
+                <Grid container spacing={2} alignItems="stretch">
+                  {/* Resource Selection - Full width on mobile, 1/3 on tablet+ */}
+                  <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+                    <FormControl fullWidth size="small" sx={{ minWidth: 120 }}>
+                      <InputLabel>Resource</InputLabel>
+                      <Select
+                        value={boost.resource}
+                        label="Resource"
+                        onChange={(e) =>
+                          updateProduceBoost(index, "resource", e.target.value)
+                        }
+                      >
+                        {PRODUCING_RESOURCES.map((resource) => (
+                          <MenuItem key={resource} value={resource}>
+                            {resource}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
 
-            <Divider sx={{ my: 2 }} />
+                  {/* Percentage Slider - Full width on mobile, grows on larger screens */}
+                  <Grid size={{ xs: 12, sm: 6, md: 8 }}>
+                    <Box sx={{ minWidth: 200 }}>
+                      <PercentageSlider
+                        value={boost.value}
+                        onChange={(value) =>
+                          updateProduceBoost(index, "value", value)
+                        }
+                        label={`${boost.resource} production boost`}
+                      />
+                    </Box>
+                  </Grid>
+
+                  {/* Delete Button - Right aligned */}
+                  <Grid
+                    size={{ xs: 12, sm: 2, md: 1 }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: { xs: "center", sm: "flex-end" },
+                    }}
+                  >
+                    <IconButton
+                      onClick={() => removeProduceBoost(index)}
+                      size="small"
+                      color="error"
+                      sx={{
+                        minWidth: 40,
+                        height: 40,
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
+                </Grid>
+              </Box>
+            ))}
 
             {/* Consume Discounts */}
             <Typography variant="h6" gutterBottom>
@@ -311,49 +344,76 @@ export default function LandBoostComponent({
             </Typography>
 
             {consumeDiscounts.map((discount, index) => (
-              <Grid
-                container
-                spacing={2}
+              <Box
                 key={index}
-                alignItems="center"
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  p: 2,
+                  border: 1,
+                  borderColor: "grey.300",
+                  borderRadius: 1,
+                }}
               >
-                <Grid size={{ xs: 2 }}>
-                  <FormControl fullWidth size="small">
-                    <InputLabel>Resource</InputLabel>
-                    <Select
-                      value={discount.resource}
-                      label="Resource"
-                      onChange={(e) =>
-                        updateConsumeDiscount(index, "resource", e.target.value)
-                      }
-                    >
-                      {NATURAL_RESOURCES.map((resource) => (
-                        <MenuItem key={resource} value={resource}>
-                          {resource}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid size={{ xs: 5 }}>
-                  <PercentageSlider
-                    value={discount.value}
-                    onChange={(value) =>
-                      updateConsumeDiscount(index, "value", value)
-                    }
-                    label={`${discount.resource} consumption discount`}
-                  />
-                </Grid>
-                <Grid size={{ xs: 3 }}>
-                  <IconButton
-                    onClick={() => removeConsumeDiscount(index)}
-                    size="small"
+                <Grid container spacing={2} alignItems="stretch">
+                  {/* Resource Selection - Full width on mobile, 1/3 on tablet+ */}
+                  <Grid size={{ xs: 12, sm: 4, md: 3 }}>
+                    <FormControl fullWidth size="small" sx={{ minWidth: 120 }}>
+                      <InputLabel>Resource</InputLabel>
+                      <Select
+                        value={discount.resource}
+                        label="Resource"
+                        onChange={(e) =>
+                          updateConsumeDiscount(
+                            index,
+                            "resource",
+                            e.target.value,
+                          )
+                        }
+                      >
+                        {NATURAL_RESOURCES.map((resource) => (
+                          <MenuItem key={resource} value={resource}>
+                            {resource}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+
+                  {/* Percentage Slider - Full width on mobile, grows on larger screens */}
+                  <Grid size={{ xs: 12, sm: 6, md: 8 }}>
+                    <Box sx={{ minWidth: 200 }}>
+                      <PercentageSlider
+                        value={discount.value}
+                        onChange={(value) =>
+                          updateConsumeDiscount(index, "value", value)
+                        }
+                        label={`${discount.resource} consumption discount`}
+                      />
+                    </Box>
+                  </Grid>
+
+                  {/* Delete Button - Right aligned */}
+                  <Grid
+                    size={{ xs: 12, sm: 2, md: 1 }}
+                    sx={{
+                      display: "flex",
+                      justifyContent: { xs: "center", sm: "flex-end" },
+                    }}
                   >
-                    <DeleteIcon />
-                  </IconButton>
+                    <IconButton
+                      onClick={() => removeConsumeDiscount(index)}
+                      size="small"
+                      color="error"
+                      sx={{
+                        minWidth: 40,
+                        height: 40,
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Grid>
                 </Grid>
-              </Grid>
+              </Box>
             ))}
 
             <Divider sx={{ my: 2 }} />

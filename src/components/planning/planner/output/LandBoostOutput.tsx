@@ -1,14 +1,15 @@
+import { determineProductionBoost } from "@/lib/frontend/utils/plannerCalcs";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
   land_runi_power_core_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { PlotPlannerData } from "@/types/planner";
-import { resourceWorksiteMap } from "@/types/planner/primitives";
+import { PlotPlannerData, resourceWorksiteMap } from "@/types/planner";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
+import { PiCloverFill } from "react-icons/pi";
 
 type Props = {
   plotPlannerData: PlotPlannerData;
@@ -29,27 +30,8 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   }, 0);
 
   // Calculate Production Boosts (only for matching worksite resources)
-  const worksiteResource = worksiteType
-    ? resourceWorksiteMap[worksiteType]
-    : null;
-  const productionBoosts = new Map<string, number>();
-
-  if (worksiteResource) {
-    cardInput.forEach((card) => {
-      if (card.landBoosts?.produceBoost) {
-        Object.entries(card.landBoosts.produceBoost).forEach(
-          ([resource, boost]) => {
-            if (resource === worksiteResource && boost > 0) {
-              productionBoosts.set(
-                resource,
-                (productionBoosts.get(resource) || 0) + boost,
-              );
-            }
-          },
-        );
-      }
-    });
-  }
+  const resource = resourceWorksiteMap[worksiteType];
+  const productionBoosts = determineProductionBoost(resource, cardInput);
 
   // Calculate Consumption Discounts
   const consumptionDiscounts = new Map<string, number>();
@@ -133,7 +115,7 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           )}
 
           {/* Production Boosts */}
-          {Array.from(productionBoosts.entries()).map(([resource, boost]) => (
+          {productionBoosts > 0 && (
             <Tooltip
               key={resource}
               title={`Bountiful ${resource.charAt(0).toUpperCase() + resource.slice(1).toLowerCase()}`}
@@ -146,11 +128,11 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
                   height={sizeIcon}
                 />
                 <Typography fontSize={fontSize} color={fontColor}>
-                  +{formatPercentage(boost)}
+                  +{formatPercentage(productionBoosts)}
                 </Typography>
               </Box>
             </Tooltip>
-          ))}
+          )}
 
           {/* Consumption Discounts */}
           <Stack spacing={0.5}>
@@ -197,32 +179,43 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           {/* Labor Luck */}
           {laborLuckCount > 0 && (
             <Tooltip title="Labor's Luck">
-              <Typography fontSize={fontSize} color={fontColor}>
-                🍀 {laborLuckCount}
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <PiCloverFill color="green" size={sizeIcon} />
+                <Typography fontSize={fontSize} color={fontColor}>
+                  {laborLuckCount}
+                </Typography>
+              </Box>
             </Tooltip>
           )}
         </Stack>
 
         <Stack direction="row" spacing={0.5} flexWrap="wrap">
-          <Image
-            src={bloodline_icon_url}
-            alt={"Bloodline"}
-            width={sizeIcon}
-            height={sizeIcon}
-          />
-
           {/* Bloodline Boosts */}
-          {Array.from(bloodlineBoosts.entries()).map(([bloodline, boost]) => (
-            <Tooltip key={bloodline} title={`Toil and Kin - ${bloodline}`}>
-              <Chip
-                label={formatPercentage(boost)}
-                size="small"
-                variant="outlined"
-                sx={{ fontSize: fontSize, color: fontColor }}
+          {bloodlineBoosts && bloodlineBoosts.size > 0 && (
+            <>
+              <Image
+                src={bloodline_icon_url}
+                alt={"Bloodline"}
+                width={sizeIcon}
+                height={sizeIcon}
               />
-            </Tooltip>
-          ))}
+              {Array.from(bloodlineBoosts.entries()).map(
+                ([bloodline, boost]) => (
+                  <Tooltip
+                    key={bloodline}
+                    title={`Toil and Kin - ${bloodline}`}
+                  >
+                    <Chip
+                      label={formatPercentage(boost)}
+                      size="small"
+                      variant="outlined"
+                      sx={{ fontSize: fontSize, color: fontColor }}
+                    />
+                  </Tooltip>
+                ),
+              )}
+            </>
+          )}
         </Stack>
       </Stack>
     </Box>

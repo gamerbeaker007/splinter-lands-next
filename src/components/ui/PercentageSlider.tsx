@@ -31,9 +31,9 @@ export default function PercentageSlider({
   };
 
   return (
-    <Box sx={{ maxWidth: 400, width: "100%" }}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 8 }}>
+    <Box sx={{ maxWidth: 400, width: "100%", minWidth: 200 }}>
+      <Grid container spacing={1} alignItems="center">
+        <Grid size={{ xs: 7, sm: 8 }}>
           <Slider
             value={value}
             onChange={handleSliderChange}
@@ -44,9 +44,10 @@ export default function PercentageSlider({
             valueLabelFormat={(value) => `${value}%`}
             disabled={disabled}
             aria-label={label}
+            sx={{ minWidth: 120 }}
           />
         </Grid>
-        <Grid size={{ xs: 4 }}>
+        <Grid size={{ xs: 5, sm: 4 }}>
           <TextField
             type="number"
             value={value}
@@ -59,6 +60,7 @@ export default function PercentageSlider({
             aria-label={
               label ? `${label} percentage input` : "Percentage input"
             }
+            sx={{ minWidth: 80 }}
           />
         </Grid>
       </Grid>
