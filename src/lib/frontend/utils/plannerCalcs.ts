@@ -13,7 +13,7 @@ import {
   cardSetModifiers,
   deedResourceBoostRules,
   DeedType,
-  PlotModifiers,
+  PlotPlannerData,
   plotRarityModifiers,
   PlotStatus,
   resourceWorksiteMap,
@@ -47,7 +47,7 @@ export function determineDeedResourceBoost(
 
 export function calcBoostedPP(
   basePP: number,
-  plot: PlotModifiers,
+  plot: PlotPlannerData,
   terrainModifier?: number,
 ) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
@@ -57,14 +57,19 @@ export function calcBoostedPP(
 
   const terrainBoostedPP = basePP * (1 + (terrainModifier ?? 0));
 
+  const deedResourceBoost = determineDeedResourceBoost(
+    plot.plotStatus,
+    plot.worksiteType,
+  );
+
   const totalBoostedMultiplier =
-    1 + totemPct + titlePct + runiPct + rarityPct + plot.deedResourceBoost;
+    1 + totemPct + titlePct + runiPct + rarityPct + deedResourceBoost;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
 export function computeSlot(
   slot: SlotInput,
-  plot: PlotModifiers,
+  plot: PlotPlannerData,
 ): SlotComputedPP {
   const basePP = calcBasePP(slot);
 
@@ -92,10 +97,10 @@ function calcBasePP(slot: SlotInput) {
   );
 }
 
-export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {
-  const { sumBasePP, sumBoostedPP } = slots.reduce(
+export function calcTotalPP(plotPlannerData: PlotPlannerData) {
+  const { sumBasePP, sumBoostedPP } = plotPlannerData.cardInput.reduce(
     (acc, slot) => {
-      const { basePP, boostedPP } = computeSlot(slot, plotModifiers);
+      const { basePP, boostedPP } = computeSlot(slot, plotPlannerData);
       acc.sumBasePP += basePP;
       acc.sumBoostedPP += boostedPP;
       return acc;
@@ -103,8 +108,8 @@ export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {
     { sumBasePP: 0, sumBoostedPP: 0 },
   );
 
-  const runiBasePP = RUNI_FLAT_ADD[plotModifiers.runi];
-  const runiBoostedPP = calcBoostedPP(runiBasePP, plotModifiers, 0);
+  const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
+  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
   const totalBasePP = sumBasePP + runiBasePP;
   const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
@@ -114,19 +119,19 @@ export function calcTotalPP(slots: SlotInput[], plotModifiers: PlotModifiers) {
 export function calcProductionInfo(
   totalBasePP: number,
   totalBoostedPP: number,
-  plotModifiers: PlotModifiers,
+  plotPlannerData: PlotPlannerData,
   prices: Prices,
   spsRatio: number,
   regionTax: RegionTax[] | null,
   captureRate: number | null,
 ): ProductionInfo {
-  const worksiteType = plotModifiers.worksiteType;
+  const worksiteType = plotPlannerData.worksiteType;
 
   const resource = resourceWorksiteMap[worksiteType ?? "GRAIN"];
 
   if (resource === "TAX" && captureRate && regionTax) {
-    const regionNumber = plotModifiers.regionNumber;
-    const tractNumber = plotModifiers.tractNumber;
+    const regionNumber = plotPlannerData.regionNumber;
+    const tractNumber = plotPlannerData.tractNumber;
 
     const consume = worksiteType === "KEEP" ? 1000 : 10_000;
 

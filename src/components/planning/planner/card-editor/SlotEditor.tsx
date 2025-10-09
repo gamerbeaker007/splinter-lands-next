@@ -1,7 +1,7 @@
 "use client";
 
 import { CSSSize } from "@/types/cssSize";
-import { PlotModifiers, SlotInput } from "@/types/planner";
+import { PlotPlannerData, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
 import { computeSlot } from "@/lib/frontend/utils/plannerCalcs";
 import { BcxInput } from "./BcxInput";
@@ -14,7 +14,7 @@ import { SetSelector } from "./SetSelector";
 type Props = {
   index: number; // 0..4 (displayed as 1..5)
   value: SlotInput;
-  plot: PlotModifiers;
+  plot: PlotPlannerData;
   onChange: (next: SlotInput) => void;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };

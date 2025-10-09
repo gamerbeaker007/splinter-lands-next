@@ -1,4 +1,4 @@
-import { PlotModifiers, SlotInput } from "@/types/planner";
+import { PlotPlannerData, SlotInput } from "@/types/planner";
 import {
   LowestCardPriceEntry,
   LowestDeedPriceEntry,
@@ -33,7 +33,7 @@ export function formatFallbackWarning(
 }
 // Helper to find the best match for deed price with fallback
 export function findLowestDeedPrice(
-  plot: PlotModifiers,
+  plot: PlotPlannerData,
   deedPrices: LowestDeedPriceEntry[],
 ) {
   if (!deedPrices || deedPrices.length === 0)
@@ -159,7 +159,7 @@ export function findLowestCardPrice(
 }
 
 export function findLowestTotemPrice(
-  plot: PlotModifiers,
+  plot: PlotPlannerData,
   totemPrices: LowestTotemPriceEntry[],
 ) {
   if (!totemPrices || totemPrices.length === 0)
@@ -183,7 +183,7 @@ export function findLowestTotemPrice(
 }
 
 export function findLowestTitlePrice(
-  plot: PlotModifiers,
+  plot: PlotPlannerData,
   titlePrices: LowestTitlePriceEntry[],
 ) {
   if (!titlePrices || titlePrices.length === 0)

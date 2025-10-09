@@ -3,13 +3,14 @@ import { determineBcxCap } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import {
+  CardBloodline,
   cardElementColorMap,
   cardFoilOptions,
   cardRarityOptions,
   DeedType,
   deedTypeOptions,
   MagicType,
-  PlotModifiers,
+  PlotPlannerData,
   PlotRarity,
   PlotStatus,
   RuniTier,
@@ -31,7 +32,6 @@ import {
   calcProductionInfo,
   calcTotalPP,
   calcTotemChancePerHour,
-  determineDeedResourceBoost,
 } from "../../../lib/frontend/utils/plannerCalcs";
 import SlotEditor from "./card-editor/SlotEditor";
 import { PlannerControls } from "./deed-editor/PlanningControls";
@@ -51,6 +51,7 @@ const DEFAULTS = {
   bcx: 0,
   foil: "regular" as SlotInput["foil"],
   element: "fire" as SlotInput["element"],
+  bloodline: "Unknown" as SlotInput["bloodline"],
 };
 
 export type Props = {
@@ -72,31 +73,28 @@ export default function Planner({
   marketData,
   onPlanChange,
 }: Props) {
-  const [plot, setPlot] = useState<PlotModifiers>({
+  const [plot, setPlot] = useState<PlotPlannerData>({
     plotRarity: "common",
     plotStatus: "natural",
     deedType: "badlands",
     magicType: "",
-    deedResourceBoost: 0,
     title: "none",
     totem: "none",
     runi: "none",
     worksiteType: "Grain Farm",
     regionNumber: 1,
     tractNumber: 1,
-  });
-  const [runiImgUrl, setRuniImgUrl] = useState<string | null>(null);
-
-  const [slots, setSlots] = useState<SlotInput[]>(
-    Array.from({ length: 5 }).map((_, i) => ({
+    cardInput: Array.from({ length: 5 }).map((_, i) => ({
       id: i + 1,
       set: "chaos", // default set
       rarity: "common", // default rarity
       bcx: 0,
       foil: "regular",
       element: "fire",
+      bloodline: "Avian",
     })),
-  );
+  });
+  const [runiImgUrl, setRuniImgUrl] = useState<string | null>(null);
 
   const imgUrl = useMemo(
     () =>
@@ -117,8 +115,8 @@ export default function Planner({
   );
 
   const { totalBasePP, totalBoostedPP } = useMemo(
-    () => calcTotalPP(slots, plot),
-    [slots, plot],
+    () => calcTotalPP(plot),
+    [plot],
   );
 
   const captureRate = useMemo(() => {
@@ -166,7 +164,7 @@ export default function Planner({
     if (onPlanChange) onPlanChange(productionInfo);
   }, [onPlanChange, productionInfo]);
 
-  const updatePlot = (patch: Partial<PlotModifiers>) =>
+  const updatePlot = (patch: Partial<PlotPlannerData>) =>
     setPlot((prev) => ({ ...prev, ...patch }));
 
   const toSlotInput = (card: Card, idx: number): SlotInput => {
@@ -177,6 +175,7 @@ export default function Planner({
     const color = splCard?.color.toLowerCase() ?? "red";
     const element = cardElementColorMap[color];
     const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
+    const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
     return {
       id: idx,
@@ -185,36 +184,51 @@ export default function Planner({
       bcx,
       foil: cardFoilOptions[foil],
       element,
+      bloodline,
     };
   };
-  const updateSlots = (cards: Card[]) => {
-    setSlots(() => {
-      // take first 5 cards (planner has 5 slots)
-      const mapped = cards.slice(0, 5).map((c, i) => toSlotInput(c, i + 1));
-      // pad to length 5 with defaults
-      while (mapped.length < 5) {
-        const i = mapped.length;
-        mapped.push({
-          id: i + 1,
-          set: DEFAULTS.set,
-          rarity: DEFAULTS.rarity,
-          bcx: DEFAULTS.bcx,
-          foil: DEFAULTS.foil,
-          element: DEFAULTS.element,
-        });
-      }
-      return mapped;
-    });
+  const updatePlotSlots = (cards: Card[]) => {
+    // take first 5 cards (planner has 5 slots)
+    const mapped = cards.slice(0, 5).map((c, i) => toSlotInput(c, i + 1));
+    // pad to length 5 with defaults
+    while (mapped.length < 5) {
+      const i = mapped.length;
+      mapped.push({
+        id: i + 1,
+        set: DEFAULTS.set,
+        rarity: DEFAULTS.rarity,
+        bcx: DEFAULTS.bcx,
+        foil: DEFAULTS.foil,
+        element: DEFAULTS.element,
+        bloodline: DEFAULTS.bloodline,
+      });
+    }
+
+    updatePlot({ cardInput: mapped });
+
+    // setSlots(() => {
+    //   // take first 5 cards (planner has 5 slots)
+    //   const mapped = cards.slice(0, 5).map((c, i) => toSlotInput(c, i + 1));
+    //   // pad to length 5 with defaults
+    //   while (mapped.length < 5) {
+    //     const i = mapped.length;
+    //     mapped.push({
+    //       id: i + 1,
+    //       set: DEFAULTS.set,
+    //       rarity: DEFAULTS.rarity,
+    //       bcx: DEFAULTS.bcx,
+    //       foil: DEFAULTS.foil,
+    //       element: DEFAULTS.element,
+    //       bloodline: DEFAULTS.bloodline,
+    //     });
+    //   }
+    //   return mapped;
+    // });
   };
 
   const onRarityChange = (next: PlotRarity) => updatePlot({ plotRarity: next });
 
   const onPlotStatusChange = (next: PlotStatus) => {
-    // update magical boost based on worksite
-    updatePlot({
-      deedResourceBoost: determineDeedResourceBoost(next, plot.worksiteType),
-    });
-
     updatePlot({ plotStatus: next });
 
     if (next === "magical") updatePlot({ magicType: "fire" });
@@ -328,18 +342,11 @@ export default function Planner({
     const importedPlotNumber = deed.plot_number!;
     const importedPlotId = deed.plot_id!;
 
-    // update magical boost based on worsite
-    const importedDeedResourceBoost = determineDeedResourceBoost(
-      importedStatus,
-      importedWorksite,
-    );
-
     // Update plot first
     updatePlot({
       plotStatus: importedStatus,
       plotRarity: importedRarity,
       deedType: importedDeedType,
-      deedResourceBoost: importedDeedResourceBoost,
       totem: importedTotem,
       title: importedTitle,
       runi: importedRuni,
@@ -355,7 +362,7 @@ export default function Planner({
       plotId: importedPlotId,
     });
 
-    updateSlots(deed.stakedAssets?.cards ?? []);
+    updatePlotSlots(deed.stakedAssets?.cards ?? []);
 
     // Then update magic visual state
     updatePlot({
@@ -372,11 +379,6 @@ export default function Planner({
   };
 
   const onWorksiteChange = (worksite: WorksiteType) => {
-    // update magical boost based on worksite
-    updatePlot({
-      deedResourceBoost: determineDeedResourceBoost(plot.plotStatus, worksite),
-    });
-
     updatePlot({ worksiteType: worksite });
   };
 
@@ -386,8 +388,14 @@ export default function Planner({
   };
 
   const updateSlot = (i: number, next: SlotInput) =>
-    setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
+    updatePlot({
+      ...plot,
+      cardInput: plot.cardInput.map((v, idx) => (idx === i ? next : v)),
+    });
+  //
+  // setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
 
+  console.log("PlotPlannerData:", plot);
   return (
     <Stack spacing={2}>
       <Paper variant="outlined" sx={{ p: 2 }}>
@@ -411,7 +419,6 @@ export default function Planner({
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
           <PriceOutput
             plot={plot}
-            cards={slots}
             cardDetails={cardDetails}
             tokenPriceData={tokenPriceData}
             marketData={marketData}
@@ -450,7 +457,7 @@ export default function Planner({
         />
         <RuniSelector
           value={plot.runi as RuniTier}
-          plotModifiers={plot}
+          plotPlannerData={plot}
           runiImgUrl={runiImgUrl}
           onChange={onRuniChange}
           pos={{ x: "300px", y: "30px" }}
@@ -462,7 +469,7 @@ export default function Planner({
           onChange={onWorksiteChange}
           pos={{ x: "20px", y: "90px" }}
         />
-        {slots.map((slot, i) => (
+        {plot.cardInput.map((slot, i) => (
           <SlotEditor
             key={i}
             index={i}

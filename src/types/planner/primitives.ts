@@ -20,7 +20,7 @@ import {
   land_research_hut_icon_url,
   land_shard_mine_icon_url,
 } from "@/lib/shared/statics_icon_urls";
-import { PlotModifiers } from "./domain";
+import { PlotPlannerData } from "./domain";
 
 export const plotRarityOptions = [
   "common",
@@ -156,7 +156,7 @@ export const runiModifiers: Record<RuniTier, number> = {
 export type RuniTier = (typeof runiOptions)[number];
 
 // Runi flat base PP bonus
-export const RUNI_FLAT_ADD: Record<PlotModifiers["runi"], number> = {
+export const RUNI_FLAT_ADD: Record<PlotPlannerData["runi"], number> = {
   none: 0,
   regular: 1500, // +1.5k base PP
   gold: 10000, // +10k base PP
@@ -356,3 +356,53 @@ export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
   magical: ["Research Hut", "Aura Lab"],
   occupied: ["Shard Mine"],
 };
+
+export const CARD_BLOODLINES = [
+  "Unknown",
+  "Avian",
+  "Awakened Beast",
+  "Bruteborn",
+  "Canisan",
+  "Celestial",
+  "Chimeric Beast",
+  "Corrupted",
+  "Dhampir",
+  "Divine Construct",
+  "Djinn",
+  "Dragon",
+  "Dragonkin",
+  "Drakoshan",
+  "Dwarf",
+  "Elemental",
+  "Elf",
+  "Feliform",
+  "Fey",
+  "Fiend",
+  "Fungoid",
+  "Giant",
+  "Gnome",
+  "Goblin",
+  "Golem",
+  "Halfling",
+  "Human",
+  "Leonine",
+  "Llamataur",
+  "Lycanthrope",
+  "Materran",
+  "Minotaur",
+  "Mundane Beast",
+  "Orc",
+  "Plant",
+  "Rodentian",
+  "Saurian",
+  "Skitterkin",
+  "Suidae",
+  "Tideborn",
+  "Tortisian",
+  "Treefolk",
+  "Ulund",
+  "Undead",
+] as const;
+
+export type CardBloodline = (typeof CARD_BLOODLINES)[number];
+export const cardBloodlineOptions = [...CARD_BLOODLINES];

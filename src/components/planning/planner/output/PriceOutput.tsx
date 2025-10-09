@@ -1,6 +1,6 @@
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { cardFoilOptions, PlotModifiers, SlotInput } from "@/types/planner";
+import { cardFoilOptions, PlotPlannerData, SlotInput } from "@/types/planner";
 import { LowestMarketData } from "@/types/planner/market/market";
 import { SplPriceData } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -28,8 +28,7 @@ import PriceItem from "@/components/planning/planner/output/PriceItem";
 import PriceCardItem from "@/components/planning/planner/output/PriceCardItem";
 
 type Props = {
-  plot: PlotModifiers;
-  cards: SlotInput[];
+  plot: PlotPlannerData;
   cardDetails: SplCardDetails[];
   tokenPriceData: SplPriceData | null;
   marketData: LowestMarketData | null;
@@ -46,7 +45,6 @@ function calcStakedDECNeeded(cards: SlotInput[]) {
 
 export default function PriceOutput({
   plot,
-  cards,
   cardDetails,
   tokenPriceData,
   marketData,
@@ -54,6 +52,8 @@ export default function PriceOutput({
   const deedResult = marketData
     ? findLowestDeedPrice(plot, marketData.lowestDeedPrices)
     : { price: null, usedKey: null, warning: "No market data." };
+
+  const cards = plot.cardInput;
 
   const cardResults = marketData
     ? cards.map((card) =>

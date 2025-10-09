@@ -7,7 +7,7 @@ import {
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
 import {
-  PlotModifiers,
+  PlotPlannerData,
   RUNI_FLAT_ADD,
   runiModifiers,
   runiOptions,
@@ -33,7 +33,7 @@ const ICONS: Record<RuniTier, string> = {
   gold: land_runi_gold_icon_url,
 };
 
-const renderBoost = (value: RuniTier, plot: PlotModifiers, size = 15) => {
+const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
   const basePP = RUNI_FLAT_ADD[value];
   const boostedPP = calcBoostedPP(basePP, plot, 0);
   return (
@@ -106,7 +106,7 @@ const renderIcon = (tier: RuniTier, runiImgUrl: string | null, size = 50) => {
 
 export type Props = {
   value: RuniTier;
-  plotModifiers: PlotModifiers;
+  plotPlannerData: PlotPlannerData;
   runiImgUrl: string | null;
   onChange: (tier: RuniTier) => void;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
@@ -115,7 +115,7 @@ export type Props = {
 export function RuniSelector({
   value,
   runiImgUrl,
-  plotModifiers,
+  plotPlannerData,
   onChange,
   pos,
 }: Props) {
@@ -194,7 +194,7 @@ export function RuniSelector({
           ))}
         </Select>
       </FormControl>
-      {value !== "none" && renderBoost(value, plotModifiers)}
+      {value !== "none" && renderBoost(value, plotPlannerData)}
     </Box>
   );
 }

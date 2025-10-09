@@ -1,4 +1,6 @@
+import { Resource } from "@/constants/resource/resource";
 import {
+  CardBloodline,
   CardElement,
   CardFoil,
   CardRarity,
@@ -13,11 +15,10 @@ import {
   WorksiteType,
 } from "./primitives";
 
-export interface PlotModifiers {
+export interface PlotPlannerData {
   plotRarity: PlotRarity;
   deedType: DeedType;
   magicType: MagicType;
-  deedResourceBoost: number;
   plotStatus: PlotStatus;
   title: TitleTier;
   totem: TotemTier;
@@ -25,6 +26,7 @@ export interface PlotModifiers {
   worksiteType: WorksiteType;
   regionNumber: number;
   tractNumber: number;
+  cardInput: SlotInput[]; // set of card ids in the planner
 }
 
 export interface SlotInput {
@@ -34,14 +36,21 @@ export interface SlotInput {
   bcx: number; // 0..400
   foil: CardFoil;
   element: CardElement;
+  bloodline: CardBloodline;
+  landBoosts?: LandBoost;
+}
+
+export interface LandBoost {
+  produceBoost: Record<Resource, number>;
+  consumeDiscount: Record<Resource, number>;
+  bloodlineBoost: number;
+  decDiscount: number;
+  energize: number;
+  replacePowerCore: boolean;
+  laborLuck: boolean;
 }
 
 export interface SlotComputedPP {
   basePP: number;
   boostedPP: number;
 }
-
-// export interface Totals {
-//   totalBasePP: number;
-//   totalBoostedPP: number;
-// }
