@@ -1,20 +1,25 @@
 "use client";
 
 import { CSSSize } from "@/types/cssSize";
-import { PlotModifiers, SlotInput } from "@/types/planner";
+import { PlotPlannerData, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
-import { computeSlot } from "@/lib/frontend/utils/plannerCalcs";
+import {
+  computeSlot,
+  determineBloodlineBoost,
+} from "@/lib/frontend/utils/plannerCalcs";
 import { BcxInput } from "./BcxInput";
 import { CardFoilSelector } from "./CardFoilSelector";
 import { CardPPInfo } from "./CardPPInfo";
 import { CardRaritySelector } from "./CardRaritySelector";
 import { CardElementSelector } from "./ElementSelector";
 import { SetSelector } from "./SetSelector";
+import LandBoostComponent from "./LandBoost";
+import { CardBloodLineSelector } from "@/components/planning/planner/card-editor/CardBloodLineSelector";
 
 type Props = {
   index: number; // 0..4 (displayed as 1..5)
   value: SlotInput;
-  plot: PlotModifiers;
+  plot: PlotPlannerData;
   onChange: (next: SlotInput) => void;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
@@ -34,7 +39,12 @@ export default function SlotEditor({
       onChange({ ...value, [key]: val });
 
   const computed = computeSlot(value, plot);
+  const bloodlineBoost = determineBloodlineBoost(
+    value.bloodline,
+    plot.cardInput,
+  );
 
+  const fontColor = "common.white";
   return (
     <Box
       borderRadius={1}
@@ -49,15 +59,16 @@ export default function SlotEditor({
         zIndex: 2,
       }}
     >
-      <Box display={"flex"} flexDirection={"row"} gap={1}>
+      <Box display={"flex"} flexDirection={"row"} gap={0.5}>
         <Box
-          width={100}
+          width={5}
+          minWidth={5}
           display="flex"
           justifyContent="center"
           alignItems="center"
           textAlign="center"
         >
-          <Typography variant="subtitle1" color="common.white">
+          <Typography variant="subtitle1" color={fontColor}>
             {index + 1}
           </Typography>
         </Box>
@@ -76,7 +87,24 @@ export default function SlotEditor({
           slot={value}
           onChange={(bcx) => onChange({ ...value, bcx })}
         />
-        <CardPPInfo basePP={computed.basePP} boostedPP={computed.boostedPP} />
+
+        <CardBloodLineSelector
+          value={value.bloodline}
+          onChange={onSelect("bloodline")}
+        />
+
+        <LandBoostComponent
+          initialBloodline={plot.cardInput[index].bloodline}
+          initialBoost={plot.cardInput[index].landBoosts}
+          onSave={(boost) => {
+            onChange({ ...plot.cardInput[index], landBoosts: boost });
+          }}
+        />
+        <CardPPInfo
+          basePP={computed.basePP}
+          boostedPP={computed.boostedPP}
+          bloodlineBoost={bloodlineBoost}
+        />
       </Box>
     </Box>
   );

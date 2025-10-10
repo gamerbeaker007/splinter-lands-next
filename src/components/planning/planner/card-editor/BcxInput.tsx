@@ -24,8 +24,9 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
     if (current !== clamped) onChange(clamped);
   }, [maxBCX, slot.bcx, onChange]);
 
+  const fontColor = "common.white";
   return (
-    <Box minWidth={75}>
+    <Box minWidth={60}>
       <TextField
         type="number"
         label="BCX"
@@ -56,16 +57,25 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
           },
         }}
         sx={{
-          minWidth: 75,
-          maxWidth: 75,
-          "& .MuiInputBase-input": { color: "common.white" },
-          "& .MuiInputLabel-root": { color: "common.white" },
-          "& .MuiOutlinedInput-notchedOutline": { borderColor: "common.white" },
+          minWidth: 60,
+          maxWidth: 60,
+          // Hide arrows in Chrome, Safari, Edge, Opera
+          "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+            {
+              display: "none",
+            },
+          // Hide arrows in Firefox
+          "& input[type=number]": {
+            MozAppearance: "textfield",
+          },
+          "& .MuiInputBase-input": { color: fontColor },
+          "& .MuiInputLabel-root": { color: fontColor },
+          "& .MuiOutlinedInput-notchedOutline": { bordercolor: fontColor },
           "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "common.white",
+            bordercolor: fontColor,
           },
           "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-            borderColor: "common.white",
+            bordercolor: fontColor,
           },
         }}
       />

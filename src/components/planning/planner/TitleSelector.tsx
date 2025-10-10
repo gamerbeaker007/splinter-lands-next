@@ -51,6 +51,8 @@ export function TitleSelector({ value, onChange, pos }: Props) {
       />
     );
 
+  const fontColor = "common.white";
+
   return (
     <Box
       borderRadius={1}
@@ -66,7 +68,7 @@ export function TitleSelector({ value, onChange, pos }: Props) {
       }}
     >
       <FormControl size="small" variant="outlined" sx={{ minWidth: 100 }}>
-        <InputLabel sx={{ color: "common.white" }}>Title:</InputLabel>
+        <InputLabel sx={{ color: fontColor }}>Title:</InputLabel>
         <Select<TitleTier>
           value={value}
           onChange={handleChange}
@@ -86,7 +88,7 @@ export function TitleSelector({ value, onChange, pos }: Props) {
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
-            color: "common.white",
+            color: fontColor,
             "&:hover .MuiOutlinedInput-notchedOutline": {
               borderColor: "rgba(255,255,255,0.6)",
             },

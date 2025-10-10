@@ -58,14 +58,20 @@ export function calcConsumeCosts(
   total_base_pp_after_cap: number,
   prices: Record<string, number>,
   siteEfficiency: number,
+  consumeDiscount?: Record<Resource, number>,
 ): ResourceWithDEC[] {
   if (CONSUMES_ONLY_GRAIN.has(token_symbol)) {
+    const discount = consumeDiscount?.GRAIN ?? 0;
     const amount =
-      total_base_pp_after_cap * CONSUME_RATES.GRAIN * siteEfficiency;
+      total_base_pp_after_cap *
+      CONSUME_RATES.GRAIN *
+      siteEfficiency *
+      (1 - discount);
+
     return [
       {
         resource: "GRAIN",
-        amount,
+        amount: amount,
         buyPriceDEC: calcDirectDECPrice("buy", amount, prices["grain"] ?? 0),
         sellPriceDEC: calcDirectDECPrice("sell", amount, prices["grain"] ?? 0),
       },
@@ -73,11 +79,16 @@ export function calcConsumeCosts(
   } else if (MULTIPLE_CONSUMING_RESOURCES.has(token_symbol)) {
     const retVal: ResourceWithDEC[] = [];
     for (const res of NATURAL_RESOURCES) {
+      const discount = consumeDiscount?.[res as Resource] ?? 0;
       const amount =
-        total_base_pp_after_cap * CONSUME_RATES[res] * siteEfficiency;
+        total_base_pp_after_cap *
+        CONSUME_RATES[res] *
+        siteEfficiency *
+        (1 - discount);
+
       retVal.push({
         resource: res as Resource,
-        amount,
+        amount: amount,
         buyPriceDEC: calcDirectDECPrice(
           "buy",
           amount,
@@ -99,6 +110,7 @@ export function calcConsumeCosts(
 export function calcProduction(
   resource: Resource,
   total_harvest_pp: number,
+  productionBoosts: number,
   prices: Record<string, number>,
   siteEfficiency: number,
   spsRatio?: number,
@@ -110,7 +122,8 @@ export function calcProduction(
         : 0 // use spsRatio for SPS
       : PRODUCE_RATES[resource]; // static for others
 
-  const amount = total_harvest_pp * rate * siteEfficiency;
+  const amount =
+    total_harvest_pp * rate * siteEfficiency * (1 + productionBoosts);
   return {
     resource,
     amount,

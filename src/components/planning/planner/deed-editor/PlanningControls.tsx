@@ -4,7 +4,7 @@ import { DeedComplete } from "@/types/deed";
 import {
   DeedType,
   MagicType,
-  PlotModifiers,
+  PlotPlannerData,
   PlotRarity,
   PlotStatus,
 } from "@/types/planner";
@@ -19,7 +19,7 @@ import { DeedTypeSelector } from "./DeedTypeSelector";
 import { NumberSelection } from "@/components/planning/planner/deed-editor/NumberSelector";
 
 type Props = {
-  value: PlotModifiers;
+  value: PlotPlannerData;
   onRarityChange: (r: PlotRarity) => void;
   onPlotStatusChange: (s: PlotStatus) => void;
   onMagicTypeChange: (m: MagicType) => void;
@@ -55,7 +55,7 @@ export function PlannerControls({
       <PlotStatusSelector
         value={value.plotStatus}
         rarity={value.plotRarity}
-        deedResourceBoost={value.deedResourceBoost}
+        worksiteType={value.worksiteType}
         onChange={(e) => onPlotStatusChange(e as PlotStatus)}
       />
 

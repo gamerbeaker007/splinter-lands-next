@@ -1,6 +1,12 @@
 "use client";
+import { determineDeedResourceBoost } from "@/lib/frontend/utils/plannerCalcs";
 import { land_default_off_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { PlotRarity, PlotStatus, plotStatusOptions } from "@/types/planner";
+import {
+  PlotRarity,
+  PlotStatus,
+  plotStatusOptions,
+  WorksiteType,
+} from "@/types/planner";
 import {
   Box,
   capitalize,
@@ -17,8 +23,8 @@ import { useEffect, useMemo } from "react";
 
 export type Props = {
   value: PlotStatus;
-  rarity?: PlotRarity;
-  deedResourceBoost: number;
+  rarity: PlotRarity;
+  worksiteType: WorksiteType;
   onChange: (tier: PlotStatus) => void;
 };
 
@@ -32,9 +38,9 @@ export function isAllowedStatus(
 
 export function PlotStatusSelector({
   value,
-  deedResourceBoost,
   onChange,
   rarity,
+  worksiteType,
 }: Props) {
   // allowed statuses for current rarity
   const allowedOptions = useMemo(
@@ -71,6 +77,8 @@ export function PlotStatusSelector({
       />
     );
   };
+
+  const deedResourceBoost = determineDeedResourceBoost(value, worksiteType);
 
   return (
     <Box borderRadius={1}>

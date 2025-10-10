@@ -13,7 +13,7 @@ type Props = {
 export function ResourceActiveSummaryCard({ resource, summary }: Props) {
   const iconUrl = RESOURCE_ICON_MAP[resource] || "";
 
-  const resourceName = resource === "" ? "Unkown Resource" : resource;
+  const resourceName = resource === "" ? "Unknown Resource" : resource;
 
   return (
     <Card

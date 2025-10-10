@@ -35,10 +35,12 @@ export function CardRaritySelector({ value, onChange }: Props) {
     );
   };
 
+  const fontColor = "common.white";
+
   return (
-    <Box borderRadius={1}>
-      <FormControl size="small" variant="outlined">
-        <InputLabel sx={{ color: "common.white" }}>Rarity:</InputLabel>
+    <Box borderRadius={1} minWidth={70}>
+      <FormControl size="small" variant="outlined" fullWidth>
+        <InputLabel sx={{ color: fontColor }}>Rarity:</InputLabel>
         <Select<CardRarity>
           value={value}
           onChange={handleChange}
@@ -46,7 +48,7 @@ export function CardRaritySelector({ value, onChange }: Props) {
           renderValue={(val) => {
             const v = (val as CardRarity) ?? value;
             return (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.1 }}>
                 {renderIcon(v)}
               </Box>
             );
@@ -54,7 +56,7 @@ export function CardRaritySelector({ value, onChange }: Props) {
           MenuProps={{ MenuListProps: { dense: true } }}
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
-            color: "common.white",
+            color: fontColor,
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >

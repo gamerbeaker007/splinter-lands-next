@@ -87,11 +87,12 @@ export function CardElementSelector({ value, deedType, onChange }: Props) {
   };
 
   const boostFor = (tier: CardElement) => terrainBonusPct(deedType, tier);
+  const fontColor = "common.white";
 
   return (
-    <Box borderRadius={1} minWidth={130}>
-      <FormControl size="small" variant="outlined">
-        <InputLabel sx={{ color: "common.white" }}>Element</InputLabel>
+    <Box borderRadius={1} minWidth={115}>
+      <FormControl size="small" variant="outlined" fullWidth>
+        <InputLabel sx={{ color: fontColor }}>Element</InputLabel>
         <Select<CardElement>
           value={value}
           onChange={handleChange}
@@ -99,7 +100,7 @@ export function CardElementSelector({ value, deedType, onChange }: Props) {
           renderValue={(val) => {
             const v = (val as CardElement) ?? value;
             return (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 {renderIcon(v)}
                 {/* collapsed: icon + (optional) boost pill only */}
                 <BoostTag boost={boostFor(v)} />
@@ -109,7 +110,7 @@ export function CardElementSelector({ value, deedType, onChange }: Props) {
           MenuProps={{ MenuListProps: { dense: true } }}
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
-            color: "common.white",
+            color: fontColor,
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >

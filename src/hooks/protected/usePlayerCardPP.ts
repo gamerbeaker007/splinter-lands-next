@@ -88,7 +88,6 @@ export function usePlayerCardPP(
     if (!player || player === "") {
       return;
     }
-    console.log("user in usePlayerCardPP", user);
     refetchPlayerCardPP(false);
   }, [player, cardFilters, user, refetchPlayerCardPP]);
 

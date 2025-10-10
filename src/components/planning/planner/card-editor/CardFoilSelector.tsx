@@ -89,10 +89,12 @@ export function CardFoilSelector({ value, onChange }: Props) {
   const hasMultiplier = value != "regular" && value != "gold";
   const multiplier = cardFoilModifiers[value];
 
+  const fontColor = "common.white";
+
   return (
-    <Box borderRadius={1}>
-      <FormControl size="small" variant="outlined">
-        <InputLabel sx={{ color: "common.white" }}>Foil:</InputLabel>
+    <Box borderRadius={1} minWidth={85}>
+      <FormControl size="small" variant="outlined" fullWidth>
+        <InputLabel sx={{ color: fontColor }}>Foil:</InputLabel>
         <Select<CardFoil>
           value={value}
           onChange={handleChange}
@@ -101,8 +103,8 @@ export function CardFoilSelector({ value, onChange }: Props) {
             const v = (val as CardFoil) ?? value;
             return (
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                minWidth={50}
+                sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+                minWidth={45}
               >
                 {renderIcon(v)}{" "}
                 <Typography fontSize={14} fontWeight={600}>
@@ -114,7 +116,7 @@ export function CardFoilSelector({ value, onChange }: Props) {
           MenuProps={{ MenuListProps: { dense: true } }}
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
-            color: "common.white",
+            color: fontColor,
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >

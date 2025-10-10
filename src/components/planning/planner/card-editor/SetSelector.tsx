@@ -41,10 +41,12 @@ export function SetSelector({ value, onChange }: Props) {
     );
   };
 
+  const fontColor = "common.white";
+
   return (
-    <Box borderRadius={1} minWidth={105}>
-      <FormControl size="small" variant="outlined">
-        <InputLabel sx={{ color: "common.white" }}>Set:</InputLabel>
+    <Box borderRadius={1} minWidth={95}>
+      <FormControl size="small" variant="outlined" fullWidth>
+        <InputLabel sx={{ color: fontColor }}>Set:</InputLabel>
         <Select<CardSetName>
           value={value}
           onChange={handleChange}
@@ -52,10 +54,7 @@ export function SetSelector({ value, onChange }: Props) {
           renderValue={(val) => {
             const v = (val as CardSetName) ?? value;
             return (
-              <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                minWidth={60}
-              >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 {renderIcon(v)}
                 <Typography fontSize={14} fontWeight={600}>
                   {cardSetModifiers[v]}x
@@ -66,7 +65,7 @@ export function SetSelector({ value, onChange }: Props) {
           MenuProps={{ MenuListProps: { dense: true } }}
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
-            color: "common.white",
+            color: fontColor,
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >

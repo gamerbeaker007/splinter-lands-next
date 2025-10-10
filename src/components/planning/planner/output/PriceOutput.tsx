@@ -1,6 +1,14 @@
+import PriceCardItem from "@/components/planning/planner/output/PriceCardItem";
+import PriceItem from "@/components/planning/planner/output/PriceItem";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import {
+  findLowestCardPrice,
+  findLowestDeedPrice,
+  findLowestTitlePrice,
+  findLowestTotemPrice,
+} from "@/lib/frontend/utils/plannerValueCalcs";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { cardFoilOptions, PlotModifiers, SlotInput } from "@/types/planner";
+import { cardFoilOptions, PlotPlannerData, SlotInput } from "@/types/planner";
 import { LowestMarketData } from "@/types/planner/market/market";
 import { SplPriceData } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -16,20 +24,11 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import React, { useState } from "react";
+import { useState } from "react";
 import { IoIosPricetags } from "react-icons/io";
-import {
-  findLowestCardPrice,
-  findLowestDeedPrice,
-  findLowestTitlePrice,
-  findLowestTotemPrice,
-} from "@/lib/frontend/utils/plannerValueCalcs";
-import PriceItem from "@/components/planning/planner/output/PriceItem";
-import PriceCardItem from "@/components/planning/planner/output/PriceCardItem";
 
 type Props = {
-  plot: PlotModifiers;
-  cards: SlotInput[];
+  plot: PlotPlannerData;
   cardDetails: SplCardDetails[];
   tokenPriceData: SplPriceData | null;
   marketData: LowestMarketData | null;
@@ -46,7 +45,6 @@ function calcStakedDECNeeded(cards: SlotInput[]) {
 
 export default function PriceOutput({
   plot,
-  cards,
   cardDetails,
   tokenPriceData,
   marketData,
@@ -54,6 +52,8 @@ export default function PriceOutput({
   const deedResult = marketData
     ? findLowestDeedPrice(plot, marketData.lowestDeedPrices)
     : { price: null, usedKey: null, warning: "No market data." };
+
+  const cards = plot.cardInput;
 
   const cardResults = marketData
     ? cards.map((card) =>
@@ -92,10 +92,23 @@ export default function PriceOutput({
 
   const hasRuni = plot.runi != "none";
 
-  const powerCoreDEC = hasRuni ? 0 : 5000;
-  const powerCoreinUSD = powerCoreDEC * (tokenPriceData?.dec ?? 0);
+  const hasReplacePowerCore = plot.cardInput.some(
+    (card) => card.landBoosts?.replacePowerCore,
+  );
 
-  const stakedDECNeeded = calcStakedDECNeeded(cards);
+  const powerCoreDEC = hasRuni || hasReplacePowerCore ? 0 : 5000;
+  const powerCoreinUSD = hasReplacePowerCore
+    ? 0
+    : powerCoreDEC * (tokenPriceData?.dec ?? 0);
+
+  let stakedDECNeeded = hasRuni ? 0 : calcStakedDECNeeded(cards);
+  const totalDecDiscount = plot.cardInput.reduce((sum, card) => {
+    return sum + (card.landBoosts?.decDiscount || 0);
+  }, 0);
+  stakedDECNeeded = Math.max(
+    0,
+    stakedDECNeeded - stakedDECNeeded * totalDecDiscount,
+  );
   const stakedDECinUSD = stakedDECNeeded * (tokenPriceData?.dec ?? 0);
 
   const totalUSD =
@@ -262,13 +275,20 @@ Therefor the exact card you want may not always be available for that price.`}
           )}
 
           <PriceItem
-            title={"Staked DEC Needed"}
+            title={
+              "Staked DEC Needed" +
+              (hasRuni
+                ? " (0 because of Runi)"
+                : totalDecDiscount > 0
+                  ? ` (reduced DEC by ${totalDecDiscount * 100}%) `
+                  : "")
+            }
             price={formatNumberWithSuffix(stakedDECNeeded)}
             currency={"DEC"}
           />
 
           <PriceItem
-            title={`DEC For Purchases ${hasRuni ? "" : "(incl. 5K Power Core)"}`}
+            title={`DEC For Purchases ${hasRuni ? "" : hasReplacePowerCore ? "(power core reduction applied)" : "(incl. 5K Power Core)"}`}
             price={formatNumberWithSuffix(totalDECForPurchases ?? 0)}
             currency={"DEC"}
           />
