@@ -2,34 +2,38 @@
 
 import React, { useState } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Button,
-  IconButton,
-  Typography,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
   Box,
-  Switch,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
   FormControlLabel,
   Grid,
-  Divider,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Switch,
+  Tooltip,
+  Typography,
 } from "@mui/material";
 import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { LandBoost } from "@/types/planner/domain";
-import {
-  CardBloodline,
-  cardBloodlineOptions,
-} from "@/types/planner/primitives";
+import { CardBloodline } from "@/types/planner/primitives";
 import { Resource } from "@/constants/resource/resource";
-import { NATURAL_RESOURCES, PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import {
+  NATURAL_RESOURCES,
+  PRODUCING_RESOURCES,
+  RESOURCE_ICON_MAP,
+} from "@/lib/shared/statics";
 import PercentageSlider from "@/components/ui/PercentageSlider";
+import Image from "next/image";
 
 interface LandBoostProps {
+  initialBloodline: CardBloodline;
   initialBoost?: LandBoost;
   onSave: (boost: LandBoost) => void;
 }
@@ -39,14 +43,13 @@ interface ResourceBoost {
   value: number;
 }
 
+const fontSizeToolTip = "0.8rem";
+
 export default function LandBoostComponent({
   initialBoost,
   onSave,
 }: LandBoostProps) {
   const [open, setOpen] = useState(false);
-  const [bloodline, setBloodline] = useState<CardBloodline>(
-    initialBoost?.bloodline ?? "Avian",
-  );
 
   // Convert Record<Resource, number> to ResourceBoost arrays for easier editing
   const [produceBoosts, setProduceBoosts] = useState<ResourceBoost[]>(() => {
@@ -89,7 +92,6 @@ export default function LandBoostComponent({
   const handleOpen = () => {
     setOpen(true);
     // Reset to initial values when opening
-    setBloodline(initialBoost?.bloodline ?? "Avian");
     if (initialBoost) {
       setProduceBoosts(
         Object.entries(initialBoost.produceBoost ?? {})
@@ -135,7 +137,6 @@ export default function LandBoostComponent({
     });
 
     const landBoost: LandBoost = {
-      bloodline,
       produceBoost,
       consumeDiscount,
       bloodlineBoost: bloodlineBoost / 100,
@@ -212,6 +213,66 @@ export default function LandBoostComponent({
     );
   };
 
+  const resourceInfo = (
+    idx: number,
+    resource: Resource,
+    value: number, // Add parameters here
+  ) => (
+    <Box
+      key={resource}
+      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+    >
+      <Image
+        src={RESOURCE_ICON_MAP[resource]}
+        alt={resource}
+        width={20}
+        height={20}
+      />
+      <Typography fontSize={fontSizeToolTip}>{value}%</Typography>
+    </Box>
+  );
+
+  const title = (
+    <Box>
+      {produceBoosts.length > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Produce Boost:{" "}
+          {produceBoosts.map((item, idx) => {
+            //Change from .forEach to .map
+            return resourceInfo(idx, item.resource, item.value); // Add return and possibly the rest of parameters
+          })}
+        </Typography>
+      )}
+      {consumeDiscounts.length > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Consume Discount:{" "}
+          {consumeDiscounts.map((item, idx) => {
+            //Change from .forEach to .map
+            return resourceInfo(idx, item.resource, item.value); // Add return and possibly the rest of parameters
+          })}
+        </Typography>
+      )}
+      {bloodlineBoost > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Bloodline Boost: {bloodlineBoost}%
+        </Typography>
+      )}
+      {decDiscount > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Dec Discount: {decDiscount}%
+        </Typography>
+      )}
+      {replacePowerCore && (
+        <Typography fontSize={fontSizeToolTip}>
+          Replace Power Core: Yes
+        </Typography>
+      )}
+      {laborLuck && (
+        <Typography fontSize={fontSizeToolTip}>Labor Luck: Yes</Typography>
+      )}
+    </Box>
+  );
+
   return (
     <>
       <Box
@@ -221,21 +282,27 @@ export default function LandBoostComponent({
           justifyContent: "center",
         }}
       >
-        <IconButton
-          onClick={handleOpen}
-          color={hasLandBoost() ? "primary" : "default"}
-          sx={{
-            width: 25, // Make the button larger
-            height: 25,
-            border: hasLandBoost() ? 2 : 1,
-            borderColor: hasLandBoost() ? "primary.main" : "grey.400",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+        <Tooltip
+          title={title}
+          placement={"top-start"}
+          disableHoverListener={!hasLandBoost()}
         >
-          <AddIcon fontSize="small" />
-        </IconButton>
+          <IconButton
+            onClick={handleOpen}
+            color={hasLandBoost() ? "primary" : "default"}
+            sx={{
+              width: 25,
+              height: 25,
+              border: hasLandBoost() ? 2 : 1,
+              borderColor: hasLandBoost() ? "primary.main" : "grey.400",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Box>
 
       <Dialog
@@ -422,22 +489,6 @@ export default function LandBoostComponent({
             <Typography variant="h6" gutterBottom>
               Other Boosts
             </Typography>
-
-            {/* Bloodline Selection */}
-            <FormControl sx={{ mb: 3, minWidth: 200 }}>
-              <InputLabel>Card Bloodline</InputLabel>
-              <Select
-                value={bloodline}
-                label="Card Bloodline"
-                onChange={(e) => setBloodline(e.target.value as CardBloodline)}
-              >
-                {cardBloodlineOptions.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
 
             {/* Bloodline Boost */}
             <Box sx={{ mb: 3 }}>

@@ -53,6 +53,7 @@ const DEFAULTS = {
   bcx: 0,
   foil: "regular" as SlotInput["foil"],
   element: "fire" as SlotInput["element"],
+  bloodline: "Avian" as SlotInput["bloodline"],
 };
 
 export type Props = {
@@ -64,6 +65,8 @@ export type Props = {
   marketData: LowestMarketData | null;
   onPlanChange: (info: ProductionInfo) => void;
 };
+
+const fontColor = "common.white";
 
 export default function Planner({
   cardDetails,
@@ -185,8 +188,8 @@ export default function Planner({
       bcx,
       foil: cardFoilOptions[foil],
       element,
+      bloodline,
       landBoosts: {
-        bloodline,
         produceBoost: ({} = {} as Record<Resource, number>),
         consumeDiscount: ({} = {} as Record<Resource, number>),
         bloodlineBoost: 0,
@@ -209,6 +212,7 @@ export default function Planner({
         bcx: DEFAULTS.bcx,
         foil: DEFAULTS.foil,
         element: DEFAULTS.element,
+        bloodline: DEFAULTS.bloodline,
       });
     }
 
@@ -382,7 +386,6 @@ export default function Planner({
       cardInput: plot.cardInput.map((v, idx) => (idx === i ? next : v)),
     });
   //
-  // setSlots((s) => s.map((v, idx) => (idx === i ? next : v)));
 
   return (
     <Stack spacing={2}>
@@ -503,11 +506,11 @@ export default function Planner({
           }}
         >
           {plot.plotStatus !== "magical" ? (
-            <Typography variant="caption" color="common.white">
+            <Typography variant="caption" color={fontColor}>
               {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.deedType)} •`}
             </Typography>
           ) : (
-            <Typography variant="caption" color="common.white">
+            <Typography variant="caption" color={fontColor}>
               {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.magicType)} • ${capitalize(plot.deedType)} •`}
             </Typography>
           )}

@@ -358,7 +358,6 @@ export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
 };
 
 export const CARD_BLOODLINES = [
-  "Unknown",
   "Avian",
   "Awakened Beast",
   "Bruteborn",

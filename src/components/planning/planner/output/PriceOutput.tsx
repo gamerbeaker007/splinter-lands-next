@@ -276,14 +276,19 @@ Therefor the exact card you want may not always be available for that price.`}
 
           <PriceItem
             title={
-              "Staked DEC Needed" + (hasRuni ? " (0 because of Runi)" : "")
+              "Staked DEC Needed" +
+              (hasRuni
+                ? " (0 because of Runi)"
+                : totalDecDiscount > 0
+                  ? ` (reduced DEC by ${totalDecDiscount * 100}%) `
+                  : "")
             }
             price={formatNumberWithSuffix(stakedDECNeeded)}
             currency={"DEC"}
           />
 
           <PriceItem
-            title={`DEC For Purchases ${hasRuni ? "" : hasReplacePowerCore ? "(Power core reduction applied)" : "(incl. 5K Power Core)"}`}
+            title={`DEC For Purchases ${hasRuni ? "" : hasReplacePowerCore ? "(power core reduction applied)" : "(incl. 5K Power Core)"}`}
             price={formatNumberWithSuffix(totalDECForPurchases ?? 0)}
             currency={"DEC"}
           />

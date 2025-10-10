@@ -53,6 +53,8 @@ export function TotemSelector({ value, onChange, pos }: Props) {
       />
     );
 
+  const fontColor = "common.white";
+
   return (
     <Box
       borderRadius={1}
@@ -68,7 +70,7 @@ export function TotemSelector({ value, onChange, pos }: Props) {
       }}
     >
       <FormControl size="small" variant="outlined" sx={{ minWidth: 115 }}>
-        <InputLabel sx={{ color: "common.white" }}>Totem:</InputLabel>
+        <InputLabel sx={{ color: fontColor }}>Totem:</InputLabel>
         <Select<TotemTier>
           value={value}
           onChange={handleChange}
@@ -88,7 +90,7 @@ export function TotemSelector({ value, onChange, pos }: Props) {
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
-            color: "common.white",
+            color: fontColor,
             "&:hover .MuiOutlinedInput-notchedOutline": {
               borderColor: "rgba(255,255,255,0.6)",
             },

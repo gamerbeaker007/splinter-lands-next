@@ -64,7 +64,7 @@ export default function WorksiteTypeTile({ data }: WorksiteTypeTileProps) {
             return (
               <SummaryTile
                 key={type}
-                type={type === "" ? "Unkown" : type}
+                type={type === "" ? "Unknown" : type}
                 imageUrl={imageUrl}
                 count={Number(count)}
               />

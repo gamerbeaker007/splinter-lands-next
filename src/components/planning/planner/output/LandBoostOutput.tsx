@@ -64,7 +64,7 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const bloodlineBoosts = new Map<string, number>();
   cardInput.forEach((card) => {
     if (card.landBoosts?.bloodlineBoost && card.landBoosts.bloodlineBoost > 0) {
-      const bloodline = card.landBoosts.bloodline;
+      const bloodline = card.bloodline;
       bloodlineBoosts.set(
         bloodline,
         (bloodlineBoosts.get(bloodline) || 0) + card.landBoosts.bloodlineBoost,
@@ -88,18 +88,13 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
       }}
     >
       <Stack spacing={1}>
-        <Typography
-          fontSize="1.0rem"
-          fontWeight="bold"
-          color={fontColor}
-          mb={0.5}
-        >
+        <Typography fontSize="1.0rem" fontWeight="bold" color={fontColor}>
           Land Boosts:
         </Typography>
         {/* DEC Discount */}
-        <Stack direction="row" spacing={0.5} flexWrap="wrap">
+        <Stack direction="row" spacing={0.75} flexWrap="wrap">
           {totalDecDiscount > 0 && (
-            <Tooltip title="DEC Discount">
+            <Tooltip title="Dark Discount">
               <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
                 <Image
                   src={RESOURCE_ICON_MAP.DEC}
@@ -161,7 +156,7 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
         <Stack direction="row" spacing={5} flexWrap="wrap">
           {/* Replace Power Core */}
           {hasReplacePowerCore && (
-            <Tooltip title="Power Core Replacement">
+            <Tooltip title="Energized">
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Image
                   src={land_runi_power_core_icon_url}

@@ -35,6 +35,8 @@ export const ResourceOutput: React.FC<Props> = ({
     (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
   );
 
+  const fontColor = "common.white";
+
   return (
     <Box
       borderRadius={1}
@@ -51,7 +53,7 @@ export const ResourceOutput: React.FC<Props> = ({
           <Typography
             fontSize="1.0rem"
             fontWeight="bold"
-            color="common.white"
+            color={fontColor}
             mb={0.5}
             display="flex"
             alignItems="center"
@@ -78,7 +80,7 @@ export const ResourceOutput: React.FC<Props> = ({
                   width={iconSize}
                   height={iconSize}
                 />
-                <Typography fontSize={fontSize} color="common.white">
+                <Typography fontSize={fontSize} color={fontColor}>
                   {row.amount.toFixed(3)} /h
                 </Typography>
               </Box>
@@ -90,7 +92,7 @@ export const ResourceOutput: React.FC<Props> = ({
           <Typography
             fontSize="1.0rem"
             fontWeight="bold"
-            color="common.white"
+            color={fontColor}
             mb={0.5}
           >
             Consume:
@@ -115,7 +117,7 @@ export const ResourceOutput: React.FC<Props> = ({
                     height={iconSize}
                   />
                 )}
-                <Typography fontSize={fontSize} color="common.white">
+                <Typography fontSize={fontSize} color={fontColor}>
                   {row.amount.toFixed(3)} {suffix}
                 </Typography>
               </Box>

@@ -100,6 +100,8 @@ export function WorksiteSelector({
     </Box>
   );
 
+  const fontColor = "common.white";
+
   return (
     <Box
       borderRadius={1}
@@ -114,7 +116,7 @@ export function WorksiteSelector({
       }}
     >
       <FormControl size="small" variant="outlined" sx={{ minWidth: 250 }}>
-        <InputLabel sx={{ color: "common.white" }}>Worksite</InputLabel>
+        <InputLabel sx={{ color: fontColor }}>Worksite</InputLabel>
         <Select<WorksiteType>
           value={value}
           onChange={handleChange}
@@ -134,7 +136,7 @@ export function WorksiteSelector({
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
-            color: "common.white",
+            color: fontColor,
             "&:hover .MuiOutlinedInput-notchedOutline": {
               borderColor: "rgba(255,255,255,0.6)",
             },

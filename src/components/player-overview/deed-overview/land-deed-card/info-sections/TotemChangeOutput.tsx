@@ -22,6 +22,8 @@ export const TotemChanceOutput: React.FC<Props> = ({
 
   const suffix = perHour ? "\h" : "";
 
+  const fontColor = "common.white";
+
   return (
     <Box
       sx={{
@@ -35,7 +37,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
     >
       <Tooltip
         title={
-          <Typography fontSize={fontSize} color="common.white">
+          <Typography fontSize={fontSize} color={fontColor}>
             Totem Fragment change
           </Typography>
         }
@@ -51,11 +53,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
             />
           </Box>
           <Box display="flex" justifyContent="space-between" flex={1}>
-            <Typography
-              fontSize={fontSize}
-              fontWeight="bold"
-              color="common.white"
-            >
+            <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
               {(estimateChange * 100).toLocaleString(undefined, {
                 maximumFractionDigits: 2,
               })}

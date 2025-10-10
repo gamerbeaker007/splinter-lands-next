@@ -33,9 +33,11 @@ const ICONS: Record<RuniTier, string> = {
   gold: land_runi_gold_icon_url,
 };
 
+const fontColor = "common.white";
+
 const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
   const basePP = RUNI_FLAT_ADD[value];
-  const boostedPP = calcBoostedPP(basePP, plot, 0);
+  const boostedPP = calcBoostedPP(basePP, plot, "Golem", 0);
   return (
     <Box display={"flex"}>
       <Box display={"flex"} gap={1} ml={1} mt={1}>
@@ -46,7 +48,7 @@ const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
           height={size}
           style={{ display: "block" }}
         />
-        <Typography fontSize={10} color="common.white">
+        <Typography fontSize={10} color={fontColor}>
           Base PP : {basePP.toFixed()}
         </Typography>
       </Box>
@@ -58,7 +60,7 @@ const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
           height={size}
           style={{ display: "block" }}
         />
-        <Typography fontSize={10} color="common.white">
+        <Typography fontSize={10} color={fontColor}>
           Boosted PP :{" "}
         </Typography>
         <Typography fontSize={10} color="success">
@@ -145,7 +147,7 @@ export function RuniSelector({
       }}
     >
       <FormControl size="small" variant="outlined" sx={{ minWidth: 230 }}>
-        <InputLabel sx={{ color: "common.white" }}>Power Core:</InputLabel>
+        <InputLabel sx={{ color: fontColor }}>Power Core:</InputLabel>
         <Select<RuniTier>
           value={value}
           onChange={handleChange}
@@ -164,7 +166,7 @@ export function RuniSelector({
           sx={{
             bgcolor: "rgba(255,255,255,0.06)",
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
-            color: "common.white",
+            color: fontColor,
             "&:hover .MuiOutlinedInput-notchedOutline": {
               borderColor: "rgba(255,255,255,0.6)",
             },

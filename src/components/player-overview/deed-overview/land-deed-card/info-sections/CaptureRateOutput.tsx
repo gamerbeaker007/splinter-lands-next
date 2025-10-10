@@ -10,6 +10,7 @@ type Props = {
 
 const fontSize = "0.85rem";
 const iconSize = 20;
+const fontColor = "common.white";
 
 export const CaptureRateOutput: React.FC<Props> = ({ captureRate, pos }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
@@ -27,7 +28,7 @@ export const CaptureRateOutput: React.FC<Props> = ({ captureRate, pos }) => {
     >
       <Tooltip
         title={
-          <Typography fontSize={fontSize} color="common.white">
+          <Typography fontSize={fontSize} color={fontColor}>
             Capture Rate:
           </Typography>
         }
@@ -37,11 +38,7 @@ export const CaptureRateOutput: React.FC<Props> = ({ captureRate, pos }) => {
             <FaPercent size={iconSize} color={"orange"} />
           </Box>
           <Box display="flex" justifyContent="space-between" flex={1}>
-            <Typography
-              fontSize={fontSize}
-              fontWeight="bold"
-              color="common.white"
-            >
+            <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
               {(captureRate * 100).toLocaleString(undefined, {
                 maximumFractionDigits: 3,
               })}

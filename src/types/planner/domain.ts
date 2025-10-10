@@ -36,11 +36,11 @@ export interface SlotInput {
   bcx: number; // 0..400
   foil: CardFoil;
   element: CardElement;
+  bloodline: CardBloodline;
   landBoosts?: LandBoost;
 }
 
 export interface LandBoost {
-  bloodline: CardBloodline;
   produceBoost: Record<Resource, number>;
   consumeDiscount: Record<Resource, number>;
   bloodlineBoost: number;

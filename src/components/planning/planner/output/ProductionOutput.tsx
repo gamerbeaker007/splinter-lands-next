@@ -29,6 +29,8 @@ export const ProductionOutput: React.FC<Props> = ({
 }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
 
+  const fontColor = "common.white";
+
   return (
     <Box
       borderRadius={1}
@@ -45,7 +47,7 @@ export const ProductionOutput: React.FC<Props> = ({
         <Typography
           fontSize="1.5rem"
           fontWeight="bold"
-          color="common.white"
+          color={fontColor}
           mb={0.5}
         >
           Production: {totalBasePP > 100_000 && <PPWarning />}
@@ -61,14 +63,10 @@ export const ProductionOutput: React.FC<Props> = ({
             style={{ display: "block" }}
           />
           <Box display="flex" justifyContent="space-between" flex={1}>
-            <Typography fontSize={fontSize} color="common.white">
+            <Typography fontSize={fontSize} color={fontColor}>
               Base PP:
             </Typography>
-            <Typography
-              fontSize={fontSize}
-              fontWeight="bold"
-              color="common.white"
-            >
+            <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
               {totalBasePP.toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}
@@ -86,7 +84,7 @@ export const ProductionOutput: React.FC<Props> = ({
             style={{ display: "block" }}
           />
           <Box display="flex" justifyContent="space-between" flex={1}>
-            <Typography fontSize={fontSize} color="common.white">
+            <Typography fontSize={fontSize} color={fontColor}>
               Boosted PP:
             </Typography>
             <Typography
@@ -106,7 +104,7 @@ export const ProductionOutput: React.FC<Props> = ({
           <Box display="flex" alignItems="center" gap={1} ml={0.5} mt={0.5}>
             <FaPercent color="orange" size={sizeIcon} />
             <Box display="flex" justifyContent="space-between" flex={1}>
-              <Typography fontSize={fontSize} color="common.white">
+              <Typography fontSize={fontSize} color={fontColor}>
                 Capture Rate:
               </Typography>
               <Typography
@@ -134,7 +132,7 @@ export const ProductionOutput: React.FC<Props> = ({
               style={{ display: "block" }}
             />
             <Box display="flex" justifyContent="space-between" flex={1}>
-              <Typography fontSize={fontSize} color="common.white">
+              <Typography fontSize={fontSize} color={fontColor}>
                 Totem Chance /h:
               </Typography>
               <Typography

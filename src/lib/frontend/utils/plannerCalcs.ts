@@ -8,6 +8,7 @@ import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
+  CardBloodline,
   CardElement,
   cardFoilModifiers,
   cardSetModifiers,
@@ -48,14 +49,17 @@ export function determineDeedResourceBoost(
 export function calcBoostedPP(
   basePP: number,
   plot: PlotPlannerData,
-  terrainModifier?: number,
+  bloodline: CardBloodline,
+  terrainModifier: number,
 ) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
   const titlePct = titleModifiers[plot.title];
   const totemPct = totemModifiers[plot.totem];
   const runiPct = runiModifiers[plot.runi];
 
-  const terrainBoostedPP = basePP * (1 + (terrainModifier ?? 0));
+  const bloodlineBoost = determineBloodlineBoost(bloodline, plot.cardInput);
+
+  const terrainBoostedPP = basePP * (1 + terrainModifier);
 
   const deedResourceBoost = determineDeedResourceBoost(
     plot.plotStatus,
@@ -63,7 +67,13 @@ export function calcBoostedPP(
   );
 
   const totalBoostedMultiplier =
-    1 + totemPct + titlePct + runiPct + rarityPct + deedResourceBoost;
+    1 +
+    totemPct +
+    titlePct +
+    runiPct +
+    rarityPct +
+    deedResourceBoost +
+    bloodlineBoost;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
@@ -74,7 +84,7 @@ export function computeSlot(
   const basePP = calcBasePP(slot);
 
   const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
-  const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
+  const boostedPP = calcBoostedPP(basePP, plot, slot.bloodline, terrainBoost);
 
   return {
     basePP,
@@ -109,7 +119,7 @@ export function calcTotalPP(plotPlannerData: PlotPlannerData) {
   );
 
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
-  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
+  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, "Golem", 0);
   const totalBasePP = sumBasePP + runiBasePP;
   const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
@@ -266,8 +276,8 @@ export function determineProductionBoost(
     cardInput.forEach((card) => {
       if (card.landBoosts?.produceBoost) {
         Object.entries(card.landBoosts.produceBoost).forEach(
-          ([resource, boost]) => {
-            if (resource === resource && boost > 0) {
+          ([produceBoostResource, boost]) => {
+            if (resource === produceBoostResource && boost > 0) {
               totalBoost += boost;
             }
           },
@@ -280,7 +290,6 @@ export function determineProductionBoost(
 
 /**
  * Determines the total consume discount (%) for a specific resource.
- * @param resource The resource to check for discounts.
  * @param cardInput The list of cards to evaluate.
  * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
  */
@@ -308,4 +317,24 @@ export function determineConsumeReduction(
     }
   });
   return consumeDiscounts;
+}
+
+/**
+ * Determines the total boost (%) for a specific bloodline.
+ * @param bloodline The resource to check for discounts.
+ * @param cardInput The list of cards to evaluate.
+ * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
+ */
+export function determineBloodlineBoost(
+  bloodline: string,
+  cardInput: SlotInput[],
+): number {
+  let boost = 0;
+
+  cardInput.forEach((card) => {
+    if (card.bloodline === bloodline) {
+      boost += card.landBoosts?.bloodlineBoost ?? 0;
+    }
+  });
+  return boost;
 }
