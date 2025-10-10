@@ -213,14 +213,16 @@ export default function LandBoostComponent({
     );
   };
 
-  const resourceInfo = (
-    idx: number,
-    resource: Resource,
-    value: number, // Add parameters here
-  ) => (
-    <Box
-      key={resource}
-      sx={{ display: "flex", alignItems: "flex-start", gap: 1 }}
+  //Using Divs and spans for React hydration error
+  const resourceInfo = (idx: number, resource: Resource, value: number) => (
+    <span
+      key={idx}
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: "8px",
+        marginRight: "12px",
+      }}
     >
       <Image
         src={RESOURCE_ICON_MAP[resource]}
@@ -228,8 +230,8 @@ export default function LandBoostComponent({
         width={20}
         height={20}
       />
-      <Typography fontSize={fontSizeToolTip}>{value}%</Typography>
-    </Box>
+      <span style={{ fontSize: fontSizeToolTip }}>{value}%</span>
+    </span>
   );
 
   const title = (
