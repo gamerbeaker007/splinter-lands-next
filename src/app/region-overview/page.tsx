@@ -12,6 +12,7 @@ import { ProductionPage } from "@/components/region-overview/production/Producti
 import { ComparePage } from "@/components/region-overview/compare/ComparePage";
 import { TaxPage } from "@/components/region-overview/tax/TaxPage";
 import { EnableFilterOptions } from "@/types/filters";
+import TractDeedOverviewPage from "@/components/region-overview/tract-deed-overview/TractDeedOverviewPage";
 
 const defaultFilterConfig: EnableFilterOptions = {
   regions: true,
@@ -29,6 +30,15 @@ const taxFilterConfig: EnableFilterOptions = {
   attributes: false,
   player: false,
   sorting: false,
+};
+
+const tractFilterConfig: EnableFilterOptions = {
+  regions: false,
+  tracts: false,
+  plots: true,
+  attributes: true,
+  player: false,
+  sorting: true,
 };
 
 const pages: Page[] = [
@@ -56,6 +66,13 @@ const pages: Page[] = [
     component: <SummaryPage />,
     filterOptions: defaultFilterConfig,
   },
+  {
+    key: "Tract Deed Overview",
+    label: "Tract Deed Overview",
+    component: <TractDeedOverviewPage />,
+    filterOptions: tractFilterConfig,
+  },
+
   {
     key: "tax",
     label: "Tax",

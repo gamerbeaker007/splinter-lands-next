@@ -200,7 +200,7 @@ export default function DeedOverview({ player }: Props) {
                 >
                   <LandDeedCard
                     key={deed.deed_uid}
-                    data={deed}
+                    deed={deed}
                     cardDetails={cardDetails}
                   />
                 </Box>

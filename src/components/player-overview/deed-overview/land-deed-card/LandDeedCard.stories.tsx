@@ -472,7 +472,7 @@ export const Default: Story = {
           zoom: { xs: "35%", sm: "65%", md: "80%", lg: "90%" },
         }}
       >
-        <LandDeedCard data={completeDeedFixture1} cardDetails={cardDetails} />
+        <LandDeedCard deed={completeDeedFixture1} cardDetails={cardDetails} />
       </Box>
     );
   },
