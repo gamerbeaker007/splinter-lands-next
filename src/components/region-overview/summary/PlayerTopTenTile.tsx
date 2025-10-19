@@ -26,10 +26,9 @@ export default function PlayerTopTenTile({ players }: Props) {
       flexDirection={isSmallScreen ? "column" : "row"}
       flexWrap={"wrap"}
       gap={2}
-      mb={2}
     >
       <Box minWidth={250}>
-        <Paper elevation={3} sx={{ p: 2, borderRadius: 3 }}>
+        <Paper elevation={3} sx={{ p: 2, pt: 1, borderRadius: 3 }}>
           <Typography variant="h6" gutterBottom>
             Top 10 Players
           </Typography>
@@ -44,7 +43,7 @@ export default function PlayerTopTenTile({ players }: Props) {
         </Paper>
       </Box>
       <Box minWidth={250}>
-        <Paper elevation={3} sx={{ p: 2, borderRadius: 3 }}>
+        <Paper elevation={3} sx={{ p: 2, pt: 1, borderRadius: 3 }}>
           <Typography variant="h6">Unique Players:</Typography>
           <Typography variant="body2">{uniquePlayerCount}</Typography>
         </Paper>

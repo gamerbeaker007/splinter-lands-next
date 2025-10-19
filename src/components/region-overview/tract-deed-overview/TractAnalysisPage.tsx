@@ -10,11 +10,7 @@ import { ProductionPoints } from "@/types/productionPoints";
 import {
   Alert,
   Box,
-  FormControl,
-  InputLabel,
   LinearProgress,
-  MenuItem,
-  Select,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
@@ -26,6 +22,9 @@ import ResourceRewardChart from "./ResourceRewardChart";
 import ResourcePPChart from "./ResourcePPChart";
 import PlayerTopTenTile from "../summary/PlayerTopTenTile";
 import ActiveChart from "./ActiveChart";
+import RegionTractSelector from "./RegionTractSelector";
+import TotalActiveTile from "./TotalActiveTile";
+import TaxOwnerTile from "./TaxOwnerTile";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -60,6 +59,10 @@ export default function TractAnalysisPage() {
   const handleRegionChange = (value: number) => {
     setSelectedRegion(value);
     setSelectedTract(""); // Reset tract when region changes
+  };
+
+  const handleTractChange = (value: number) => {
+    setSelectedTract(value);
   };
 
   if (cardLoading) {
@@ -142,37 +145,12 @@ export default function TractAnalysisPage() {
 
   return (
     <>
-      <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-        <FormControl sx={{ minWidth: 120 }}>
-          <InputLabel>Region</InputLabel>
-          <Select
-            value={selectedRegion}
-            label="Region"
-            onChange={(e) => handleRegionChange(e.target.value as number)}
-          >
-            {Array.from({ length: 150 }, (_, i) => i + 1).map((region) => (
-              <MenuItem key={region} value={region}>
-                {region}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        <FormControl sx={{ minWidth: 120 }} disabled={!selectedRegion}>
-          <InputLabel>Tract</InputLabel>
-          <Select
-            value={selectedTract}
-            label="Tract"
-            onChange={(e) => setSelectedTract(e.target.value as number)}
-          >
-            {Array.from({ length: 100 }, (_, i) => i + 1).map((tract) => (
-              <MenuItem key={tract} value={tract}>
-                {tract}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </Box>
+      <RegionTractSelector
+        selectedRegion={selectedRegion}
+        selectedTract={selectedTract}
+        onRegionChange={handleRegionChange}
+        onTractChange={handleTractChange}
+      />
 
       {loadingText ? (
         <Box sx={{ mt: 2 }}>
@@ -193,7 +171,22 @@ export default function TractAnalysisPage() {
         <>
           {tractData && (
             <Box sx={{ mb: 2 }}>
-              <PlayerTopTenTile players={tractData.players} />
+              <Box
+                display={"flex"}
+                gap={2}
+                flexDirection={{ xs: "column", sm: "row" }}
+                mb={2}
+              >
+                <PlayerTopTenTile players={tractData.players} />
+                <TotalActiveTile
+                  totalActive={tractData.totalActive}
+                  totalInactive={tractData.totalInactive}
+                />
+                <TaxOwnerTile
+                  player={tractData.tax_owner}
+                  worksiteType={tractData.tax_type}
+                />
+              </Box>
               <Box mb={2}>
                 <ActiveChart playersActive={tractData.playersActive} />
               </Box>
@@ -215,7 +208,7 @@ export default function TractAnalysisPage() {
               </Box>
             </Box>
           )}
-          {isLargeUp && (
+          {tractData && isLargeUp && (
             <Box sx={{ display: "flex", justifyContent: "left", mb: 2 }}>
               <ToggleButtonGroup
                 color="primary"
