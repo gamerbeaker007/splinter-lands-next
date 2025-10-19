@@ -8,11 +8,12 @@ import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box, Stack, Typography } from "@mui/material";
+import { Box, Stack } from "@mui/material";
 import BoostInfo from "./info-sections/BoostsInfo";
 import { CardInfo } from "./info-sections/CardInfo";
 import { ConsumeProduceInfo } from "./info-sections/ConsumeProduceInfo";
 import { DECInfo } from "./info-sections/DECInfo";
+import { OwnerInfo } from "./info-sections/OwnerInfo";
 import { PlotInfo } from "./info-sections/PlotInfo";
 import { PPInfo } from "./info-sections/PPInfo";
 import { StoreInfo } from "./info-sections/StoreInfo";
@@ -104,30 +105,10 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
       </Stack>
 
       {showOwnershipInfo && (
-        <Box
-          sx={{
-            position: "absolute",
-            left: 40,
-            top: 15,
-            zIndex: 2,
-            bgcolor: "rgba(70, 71, 70, 0.9)",
-            color: "#333",
-            borderRadius: 1,
-            padding: "2px 10px 2px 10px",
-          }}
-        >
-          <Typography
-            variant="h6"
-            color="black"
-            fontWeight="bold"
-            textAlign="center"
-            sx={{
-              fontSize: "0.8rem",
-            }}
-          >
-            {`Owned by: ${deed.player}`}
-          </Typography>
-        </Box>
+        <OwnerInfo
+          owner={deed.player}
+          pos={{ x: "40px", y: "15px", w: "300px" }}
+        />
       )}
 
       <PlotInfo

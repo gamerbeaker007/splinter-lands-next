@@ -2,8 +2,11 @@
 
 import { LandDeedCard } from "@/components/player-overview/deed-overview/land-deed-card/LandDeedCard";
 import LoadingComponent from "@/components/ui/LoadingComponent";
+import { Resource } from "@/constants/resource/resource";
 import { useTractDeedData } from "@/hooks/region-overview/useTractDeedData";
 import { useCardDetails } from "@/hooks/useCardDetails";
+import { WorksiteType } from "@/types/planner/primitives";
+import { ProductionPoints } from "@/types/productionPoints";
 import {
   Alert,
   Box,
@@ -19,6 +22,10 @@ import {
   useTheme,
 } from "@mui/material";
 import { useState } from "react";
+import ResourceRewardChart from "./ResourceRewardChart";
+import ResourcePPChart from "./ResourcePPChart";
+import PlayerTopTenTile from "../summary/PlayerTopTenTile";
+import ActiveChart from "./ActiveChart";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -54,6 +61,7 @@ export default function TractDeedOverviewPage() {
     setSelectedRegion(value);
     setSelectedTract(""); // Reset tract when region changes
   };
+
   if (cardLoading) {
     return <LoadingComponent title="Loading card details..." />;
   }
@@ -65,6 +73,73 @@ export default function TractDeedOverviewPage() {
       </Alert>
     );
   }
+
+  type AccumulatedData = {
+    totalActive: number;
+    totalInactive: number;
+    players: Record<string, number>;
+    playersActive: Record<string, { active: number; inactive: number }>;
+    tax_type: WorksiteType;
+    tax_owner: string;
+    rewardsPerHour: Record<Resource, number>;
+    production: Record<Resource, ProductionPoints>;
+  };
+
+  const tractData = deeds?.reduce(
+    (acc, deed) => {
+      const player = deed.player ?? "Unknown";
+      const worksiteType = deed.worksite_type as WorksiteType;
+      const resource = deed.worksiteDetail?.token_symbol as Resource;
+      const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
+      const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
+      const boostedPP = deed.stakingDetail?.total_harvest_pp ?? 0;
+
+      acc.players[player] = (acc.players[player] || 0) + 1;
+      acc.playersActive[player] = {
+        active: (acc.playersActive[player]?.active || 0) + (basePP > 0 ? 1 : 0),
+        inactive:
+          (acc.playersActive[player]?.inactive || 0) + (basePP === 0 ? 1 : 0),
+      };
+
+      if (basePP > 0) {
+        acc.totalActive += 1;
+      } else {
+        acc.totalInactive += 1;
+      }
+
+      if (deed.worksiteDetail?.token_symbol === "TAX") {
+        acc.tax_type = worksiteType;
+        acc.tax_owner = player;
+      }
+
+      // Accumulate rewards per hour
+      if (rewardsPerHour && resource && rewardsPerHour > 0) {
+        acc.rewardsPerHour[resource] =
+          (acc.rewardsPerHour[resource] || 0) + rewardsPerHour;
+      }
+
+      // Accumulate PP
+      if (basePP && resource) {
+        acc.production[resource] = {
+          basePP: (acc.production[resource]?.basePP || 0) + basePP,
+          boostedPP: (acc.production[resource]?.boostedPP || 0) + boostedPP,
+        };
+      }
+
+      return acc;
+    },
+    {
+      totalActive: 0,
+      totalInactive: 0,
+      players: {},
+      playersActive: {},
+      tax_type: "",
+      tax_owner: "",
+      rewardsPerHour: {},
+      production: {},
+    } as AccumulatedData,
+  );
+
   return (
     <>
       <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
@@ -114,12 +189,32 @@ export default function TractDeedOverviewPage() {
         <Alert severity="warning" sx={{ mt: 2, mb: 2 }}>
           {warning}
         </Alert>
-      ) : error ? (
-        <Alert severity="error" sx={{ mt: 2, mb: 2 }}>
-          {error}
-        </Alert>
       ) : (
         <>
+          {tractData && (
+            <Box sx={{ mb: 2 }}>
+              <PlayerTopTenTile players={tractData.players} />
+              <Box mb={2}>
+                <ActiveChart playersActive={tractData.playersActive} />
+              </Box>
+              <Box
+                display="flex"
+                flexDirection={"row"}
+                flexWrap="wrap"
+                gap={2}
+                sx={{ width: "100%" }}
+              >
+                <Box sx={{ flex: 1, minWidth: 300 }}>
+                  <ResourcePPChart production={tractData.production} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 300 }}>
+                  <ResourceRewardChart
+                    rewardsPerHour={tractData.rewardsPerHour}
+                  />
+                </Box>
+              </Box>
+            </Box>
+          )}
           {isLargeUp && (
             <Box sx={{ display: "flex", justifyContent: "left", mb: 2 }}>
               <ToggleButtonGroup

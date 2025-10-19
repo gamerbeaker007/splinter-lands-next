@@ -67,8 +67,8 @@ const pages: Page[] = [
     filterOptions: defaultFilterConfig,
   },
   {
-    key: "Tract Deed Overview",
-    label: "Tract Deed Overview",
+    key: "Tract Analysis",
+    label: "Tract Analysis",
     component: <TractDeedOverviewPage />,
     filterOptions: tractFilterConfig,
   },

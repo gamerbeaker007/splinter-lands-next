@@ -3,21 +3,20 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { RegionResourcePP } from "@/types/regionProductionSummary";
 import { Box } from "@mui/material";
 import { PlotData } from "plotly.js";
 
 type Props = {
-  data: Record<Resource, RegionResourcePP>;
+  rewardsPerHour: Record<Resource, number>;
 };
 
-export default function ResourcePPChart({ data }: Props) {
+export default function ResourceRewardChart({ rewardsPerHour }: Props) {
   // Filter out Unknown Resource
-  const resourceLabels = Object.keys(data).filter(
+  const resourceLabels = Object.keys(rewardsPerHour).filter(
     (r) => r !== "",
   ) as Resource[];
   const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
-    const rawPP = data[resourceLabel].totalPP.basePP;
+    const rawPP = rewardsPerHour[resourceLabel];
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
     return {
       x: [resourceLabel],
@@ -28,10 +27,6 @@ export default function ResourcePPChart({ data }: Props) {
     };
   });
 
-  const boostedValues = resourceLabels.map(
-    (resourceLabel) => data[resourceLabel].totalPP.boostedPP,
-  );
-
   return (
     <>
       <Box
@@ -41,27 +36,16 @@ export default function ResourcePPChart({ data }: Props) {
         }}
       >
         <FullscreenPlotWrapper
-          data={[
-            ...rawTraces,
-            {
-              x: resourceLabels,
-              y: boostedValues,
-              name: "Boosted PP",
-              type: "scatter",
-              mode: "lines+markers",
-              marker: { color: "#94a3b8" },
-              line: { width: 2 },
-            },
-          ]}
+          data={[...rawTraces]}
           layout={{
-            title: { text: "Resource Base vs Boosted PP" },
+            title: { text: "Resource Rewards per Hour" },
             barmode: "group",
             xaxis: {
               title: { text: "Resources" },
               showgrid: false,
             },
             yaxis: {
-              title: { text: "Production Points" },
+              title: { text: "Rewards per Hour" },
             },
             legend: {
               orientation: "h",

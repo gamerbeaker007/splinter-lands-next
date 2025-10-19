@@ -3,21 +3,21 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import { RegionResourcePP } from "@/types/regionProductionSummary";
+import { ProductionPoints } from "@/types/productionPoints";
 import { Box } from "@mui/material";
 import { PlotData } from "plotly.js";
 
 type Props = {
-  data: Record<Resource, RegionResourcePP>;
+  production: Record<Resource, ProductionPoints>;
 };
 
-export default function ResourcePPChart({ data }: Props) {
+export default function ResourcePPChart({ production }: Props) {
   // Filter out Unknown Resource
-  const resourceLabels = Object.keys(data).filter(
+  const resourceLabels = Object.keys(production).filter(
     (r) => r !== "",
   ) as Resource[];
   const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
-    const rawPP = data[resourceLabel].totalPP.basePP;
+    const rawPP = production[resourceLabel].basePP;
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
     return {
       x: [resourceLabel],
@@ -29,7 +29,7 @@ export default function ResourcePPChart({ data }: Props) {
   });
 
   const boostedValues = resourceLabels.map(
-    (resourceLabel) => data[resourceLabel].totalPP.boostedPP,
+    (resourceLabel) => production[resourceLabel].boostedPP,
   );
 
   return (
