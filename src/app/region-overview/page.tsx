@@ -12,7 +12,7 @@ import { ProductionPage } from "@/components/region-overview/production/Producti
 import { ComparePage } from "@/components/region-overview/compare/ComparePage";
 import { TaxPage } from "@/components/region-overview/tax/TaxPage";
 import { EnableFilterOptions } from "@/types/filters";
-import TractDeedOverviewPage from "@/components/region-overview/tract-deed-overview/TractDeedOverviewPage";
+import TractDeedOverviewPage from "@/components/region-overview/tract-deed-overview/TractAnalysisPage";
 
 const defaultFilterConfig: EnableFilterOptions = {
   regions: true,

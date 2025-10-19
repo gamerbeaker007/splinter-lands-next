@@ -2,7 +2,10 @@
 
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { Resource } from "@/constants/resource/resource";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import {
+  DEFAULT_ORDER_RESOURCES,
+  RESOURCE_COLOR_MAP,
+} from "@/lib/shared/statics";
 import { Box } from "@mui/material";
 import { PlotData } from "plotly.js";
 
@@ -12,9 +15,14 @@ type Props = {
 
 export default function ResourceRewardChart({ rewardsPerHour }: Props) {
   // Filter out Unknown Resource
-  const resourceLabels = Object.keys(rewardsPerHour).filter(
-    (r) => r !== "",
-  ) as Resource[];
+  const resourceLabels = Object.keys(rewardsPerHour)
+    .filter((r) => r !== "" && r !== "TAX")
+    .sort((a, b) => {
+      const indexA = DEFAULT_ORDER_RESOURCES.indexOf(a as Resource);
+      const indexB = DEFAULT_ORDER_RESOURCES.indexOf(b as Resource);
+      return indexA - indexB;
+    }) as Resource[];
+
   const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
     const rawPP = rewardsPerHour[resourceLabel];
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";

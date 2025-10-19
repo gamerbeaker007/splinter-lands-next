@@ -29,7 +29,7 @@ import ActiveChart from "./ActiveChart";
 
 type ZoomKey = "small" | "medium" | "large";
 
-export default function TractDeedOverviewPage() {
+export default function TractAnalysisPage() {
   const [selectedRegion, setSelectedRegion] = useState<number | "">("");
   const [selectedTract, setSelectedTract] = useState<number | "">("");
   const {

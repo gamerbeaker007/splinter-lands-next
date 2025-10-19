@@ -1,3 +1,6 @@
+import { Resource } from "@/constants/resource/resource";
+import { ProductionPoints } from "./productionPoints";
+
 export type RegionSummary = {
   worksites: Record<string, number>;
   players: Record<string, number>;
@@ -13,6 +16,8 @@ export type RegionSummary = {
   totalDecInUse: number;
   totalDecStaked: number;
   deedsCount: number;
+  rewardsPerHour: Record<Resource, number>;
+  productionPoints: Record<Resource, ProductionPoints>;
   totalBasePP: number;
   totalBoostedPP: number;
 };
