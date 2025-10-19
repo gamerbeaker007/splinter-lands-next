@@ -171,12 +171,7 @@ export default function TractAnalysisPage() {
         <>
           {tractData && (
             <Box sx={{ mb: 2 }}>
-              <Box
-                display={"flex"}
-                gap={2}
-                flexDirection={{ xs: "column", sm: "row" }}
-                mb={2}
-              >
+              <Box display={"flex"} gap={2} flexWrap="wrap" mb={2}>
                 <PlayerTopTenTile players={tractData.players} />
                 <TotalActiveTile
                   totalActive={tractData.totalActive}

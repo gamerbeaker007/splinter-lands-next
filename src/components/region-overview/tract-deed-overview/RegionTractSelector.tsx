@@ -20,6 +20,7 @@ interface RegionTractSelectorProps {
   onTractChange: (tract: number) => void;
 }
 const iconSize = 40;
+const minWidth = 150;
 
 export default function RegionTractSelector({
   selectedRegion,
@@ -28,14 +29,21 @@ export default function RegionTractSelector({
   onTractChange,
 }: RegionTractSelectorProps) {
   return (
-    <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-      <Box minWidth={150} display="flex" alignItems="center" gap={1}>
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: { xs: "column", sm: "row" },
+        gap: 2,
+        mb: 2,
+      }}
+    >
+      <Box minWidth={minWidth} display="flex" alignItems="center" gap={1}>
         <Avatar
           src={land_region_icon_url}
           alt="region"
           sx={{ width: iconSize, height: iconSize }}
         />
-        <FormControl sx={{ minWidth: 150 }}>
+        <FormControl sx={{ minWidth: minWidth }}>
           <InputLabel>Select Region</InputLabel>
           <Select
             value={selectedRegion}
@@ -51,14 +59,14 @@ export default function RegionTractSelector({
         </FormControl>
       </Box>
 
-      <Box minWidth={150} display="flex" alignItems="center" gap={1}>
+      <Box minWidth={minWidth} display="flex" alignItems="center" gap={1}>
         <Avatar
           src={land_tract_icon_url}
           alt="tract"
           sx={{ width: iconSize, height: iconSize }}
         />
 
-        <FormControl sx={{ minWidth: 150 }} disabled={!selectedRegion}>
+        <FormControl sx={{ minWidth: minWidth }} disabled={!selectedRegion}>
           <InputLabel>Select Tract</InputLabel>
           <Select
             value={selectedTract}
