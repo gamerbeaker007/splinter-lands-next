@@ -15,7 +15,7 @@ export default function TotalActiveTile({ totalActive, totalInactive }: Props) {
       <Box minWidth={250}>
         <Paper elevation={3} sx={{ p: 2, pt: 1, borderRadius: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Activated %:
+            Activated %
           </Typography>
           <Typography variant="body2">
             {totalActive + totalInactive === 0

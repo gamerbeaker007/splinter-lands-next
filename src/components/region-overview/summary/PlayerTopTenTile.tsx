@@ -44,7 +44,7 @@ export default function PlayerTopTenTile({ players }: Props) {
       </Box>
       <Box minWidth={250}>
         <Paper elevation={3} sx={{ p: 2, pt: 1, borderRadius: 3 }}>
-          <Typography variant="h6">Unique Players:</Typography>
+          <Typography variant="h6">Unique Players</Typography>
           <Typography variant="body2">{uniquePlayerCount}</Typography>
         </Paper>
       </Box>

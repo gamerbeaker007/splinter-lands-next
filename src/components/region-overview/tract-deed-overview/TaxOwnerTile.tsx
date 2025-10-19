@@ -22,7 +22,7 @@ export default function TaxOwnerTile({ player, worksiteType }: Props) {
       <Box minWidth={250}>
         <Paper elevation={3} sx={{ p: 2, pt: 1, borderRadius: 3 }}>
           <Typography variant="h6" gutterBottom>
-            Tax Owner:
+            Tax Owner
           </Typography>
           <Box display="flex" alignItems="center" gap={2}>
             <Tooltip title={isCastle ? "Castle" : "Keep"} arrow>
