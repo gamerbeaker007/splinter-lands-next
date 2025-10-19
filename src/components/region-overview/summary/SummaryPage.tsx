@@ -36,7 +36,9 @@ export default function SummaryPage() {
       {summary ? (
         <>
           <Box>
-            <PlayerTopTenTile players={summary.players} />
+            <Box mb={2}>
+              <PlayerTopTenTile players={summary.players} />
+            </Box>
             <RegionSummaryStats
               deedsCount={summary.deedsCount}
               totalDecNeeded={summary.totalDecNeeded}

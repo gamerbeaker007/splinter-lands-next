@@ -14,6 +14,7 @@ import { RegionTax } from "@/types/regionTax";
 import { TAX_RATE } from "@/lib/shared/statics";
 import { getCachedTaxes } from "./playerService";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import { ProductionPoints } from "@/types/productionPoints";
 
 export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   // Initialize all count buckets
@@ -26,6 +27,9 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   const totemBoostCounts: Record<string, number> = {};
   const titleBoostCounts: Record<string, number> = {};
   const deedRarityBoostCounts: Record<string, number> = {};
+  const productionPoints: Partial<Record<Resource, ProductionPoints>> = {};
+  const rewardsPerHour: Partial<Record<Resource, number>> = {};
+
   const seenPairs = new Set<string>();
   let runiCount = 0;
   let totalDecNeeded = 0;
@@ -78,6 +82,22 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
       totalRawPP += staking.total_base_pp_after_cap ?? 0;
       totalBoostedPP += staking.total_harvest_pp ?? 0;
 
+      const resource = deed.worksiteDetail?.token_symbol as Resource;
+      if (resource) {
+        // Production points are calculated per resource
+        productionPoints[resource] = {
+          basePP:
+            (productionPoints[resource]?.basePP ?? 0) +
+            (staking.total_base_pp_after_cap ?? 0),
+          boostedPP:
+            (productionPoints[resource]?.boostedPP ?? 0) +
+            (staking.total_harvest_pp ?? 0),
+        };
+
+        // Rewards per hour accumulation
+        const rewards = deed.worksiteDetail?.rewards_per_hour ?? 0;
+        rewardsPerHour[resource] = (rewardsPerHour[resource] ?? 0) + rewards;
+      }
       //staked DEC is based on region only add it one per region-player combination
       totalDecStaked += !seenPairs.has(key)
         ? (staking.total_dec_staked ?? 0)
@@ -97,6 +117,8 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     totemBoosts: totemBoostCounts,
     titleBoosts: titleBoostCounts,
     deedRarityBoosts: deedRarityBoostCounts,
+    rewardsPerHour: rewardsPerHour as Record<Resource, number>,
+    productionPoints: productionPoints as Record<Resource, ProductionPoints>,
     totalDecNeeded: totalDecNeeded,
     totalDecInUse: totalDecInUse,
     totalDecStaked: totalDecStaked,

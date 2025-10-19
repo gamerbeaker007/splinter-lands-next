@@ -16,6 +16,7 @@ import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import AlertSection from "./alerts/AlertSection";
+import { PlayerProductionOverview } from "./PlayerProductionOverview";
 
 type Props = {
   player: string;
@@ -126,6 +127,17 @@ export default function PlayerDashboardPage({ player }: Props) {
                     balances={playerOverview.balances}
                   />
                 </Box>
+              </Box>
+
+              <Box flex={1}>
+                <PlayerProductionOverview
+                  productionPoints={
+                    playerOverview.summarizedRegionInfo.productionPoints
+                  }
+                  rewardsPerHour={
+                    playerOverview.summarizedRegionInfo.rewardsPerHour
+                  }
+                />
               </Box>
 
               <Box mt={2}>
