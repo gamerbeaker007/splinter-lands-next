@@ -1,52 +1,38 @@
 import { Resource } from "@/constants/resource/resource";
 import {
-  CONSUME_RATES,
-  CONSUMES_ONLY_GRAIN,
-  MULTIPLE_CONSUMING_RESOURCES,
-  NATURAL_RESOURCES,
+  DEFAULT_GRAIN_COST,
   PRODUCE_RATES,
+  recipeMap,
+  ResourceRecipeItem,
   TRADE_HUB_FEE,
 } from "@/lib/shared/statics";
 import { Mode } from "@/types/mode";
 import { Prices } from "@/types/price";
 import { ResourceWithDEC } from "@/types/productionInfo";
 
-type CostResult = {
-  cost_per_h_grain: number;
-  cost_per_h_wood: number;
-  cost_per_h_stone: number;
-  cost_per_h_iron: number;
-};
-
 /**
- * @deprecated Use calcConsumeCosts for new implementation
- * This return a CostResult cost_per_h_<resource> this is not easy expandable
+ * This return a record that maps resource names to their costs per hour
  *
  * New method also includes the DEC conversion directly
- * @param token_symbol
- * @param total_base_pp_after_cap
+ * @param resource
+ * @param basePP
  * @param siteEfficiency
+ * @param recipe
  */
-export function calcCosts(
-  token_symbol: string,
-  total_base_pp_after_cap: number,
+export function calcCostsV2(
+  basePP: number,
   siteEfficiency: number,
-): CostResult {
-  const costs: CostResult = {
-    cost_per_h_grain: 0,
-    cost_per_h_wood: 0,
-    cost_per_h_stone: 0,
-    cost_per_h_iron: 0,
-  };
+  recipe?: ResourceRecipeItem[],
+): Record<Resource, number> {
+  const costs: Record<string, number> = {};
 
-  if (CONSUMES_ONLY_GRAIN.has(token_symbol)) {
-    costs.cost_per_h_grain =
-      total_base_pp_after_cap * CONSUME_RATES.GRAIN * siteEfficiency;
-  } else if (MULTIPLE_CONSUMING_RESOURCES.has(token_symbol)) {
-    for (const res of NATURAL_RESOURCES) {
-      const key = `cost_per_h_${res.toLowerCase()}` as keyof CostResult;
-      costs[key] =
-        total_base_pp_after_cap * CONSUME_RATES[res] * siteEfficiency;
+  // Always include GRAIN cost
+  costs.GRAIN = basePP * DEFAULT_GRAIN_COST * siteEfficiency;
+
+  // Calculate costs for other resources based on recipe
+  if (recipe) {
+    for (const item of recipe) {
+      costs[item.symbol] = basePP * item.qty * siteEfficiency;
     }
   }
 
@@ -54,57 +40,45 @@ export function calcCosts(
 }
 
 export function calcConsumeCosts(
-  token_symbol: string,
   total_base_pp_after_cap: number,
   prices: Record<string, number>,
   siteEfficiency: number,
-  consumeDiscount?: Record<Resource, number>,
+  recipe: ResourceRecipeItem[],
+  consumeGrainDiscount?: number,
 ): ResourceWithDEC[] {
-  if (CONSUMES_ONLY_GRAIN.has(token_symbol)) {
-    const discount = consumeDiscount?.GRAIN ?? 0;
-    const amount =
-      total_base_pp_after_cap *
-      CONSUME_RATES.GRAIN *
-      siteEfficiency *
-      (1 - discount);
+  const costs: ResourceWithDEC[] = [];
 
-    return [
-      {
-        resource: "GRAIN",
-        amount: amount,
-        buyPriceDEC: calcDirectDECPrice("buy", amount, prices["grain"] ?? 0),
-        sellPriceDEC: calcDirectDECPrice("sell", amount, prices["grain"] ?? 0),
-      },
-    ];
-  } else if (MULTIPLE_CONSUMING_RESOURCES.has(token_symbol)) {
-    const retVal: ResourceWithDEC[] = [];
-    for (const res of NATURAL_RESOURCES) {
-      const discount = consumeDiscount?.[res as Resource] ?? 0;
-      const amount =
-        total_base_pp_after_cap *
-        CONSUME_RATES[res] *
-        siteEfficiency *
-        (1 - discount);
+  // Apply discount if any
+  const discount = consumeGrainDiscount ?? 0;
 
-      retVal.push({
-        resource: res as Resource,
-        amount: amount,
-        buyPriceDEC: calcDirectDECPrice(
-          "buy",
-          amount,
-          prices[res.toLowerCase()] ?? 0,
-        ),
-        sellPriceDEC: calcDirectDECPrice(
-          "sell",
-          amount,
-          prices[res.toLowerCase()] ?? 0,
-        ),
+  // Always calculate GRAIN cost
+  const grainAmount =
+    total_base_pp_after_cap *
+    DEFAULT_GRAIN_COST *
+    siteEfficiency *
+    (1 - discount);
+  costs.push({
+    resource: "GRAIN",
+    amount: grainAmount,
+    buyPriceDEC: calcDirectDECPrice("buy", grainAmount, prices["GRAIN"] ?? 0),
+    sellPriceDEC: calcDirectDECPrice("sell", grainAmount, prices["GRAIN"] ?? 0),
+  });
+
+  if (recipe) {
+    for (const item of recipe) {
+      const res = item.symbol as Resource;
+
+      // Note no discounts for non-grain resources possible at the moment
+      const amount = total_base_pp_after_cap * item.qty * siteEfficiency;
+      costs.push({
+        resource: res,
+        amount,
+        buyPriceDEC: calcDirectDECPrice("buy", amount, prices[res] ?? 0),
+        sellPriceDEC: calcDirectDECPrice("sell", amount, prices[res] ?? 0),
       });
     }
-    return retVal;
   }
-
-  return [];
+  return costs;
 }
 
 export function calcProduction(
@@ -127,16 +101,8 @@ export function calcProduction(
   return {
     resource,
     amount,
-    buyPriceDEC: calcDirectDECPrice(
-      "buy",
-      amount,
-      prices[resource.toLowerCase()] ?? 0,
-    ),
-    sellPriceDEC: calcDirectDECPrice(
-      "sell",
-      amount,
-      prices[resource.toLowerCase()] ?? 0,
-    ),
+    buyPriceDEC: calcDirectDECPrice("buy", amount, prices[resource] ?? 0),
+    sellPriceDEC: calcDirectDECPrice("sell", amount, prices[resource] ?? 0),
   };
 }
 
@@ -146,7 +112,7 @@ export function calcDECPrice(
   amount: number,
   prices: Prices,
 ): number {
-  const price = prices[resource.toLowerCase()] ?? 0;
+  const price = prices[resource] ?? 0;
   return resource === "AURA"
     ? amount * price
     : calcDirectDECPrice(mode, amount, price);
@@ -161,4 +127,8 @@ function calcDirectDECPrice(
   return mode === "buy"
     ? amount / ((1 / decPrice) * TRADE_HUB_FEE)
     : amount * (decPrice * TRADE_HUB_FEE);
+}
+
+export function determineRecipe(resource: string): ResourceRecipeItem[] {
+  return recipeMap[resource] || [];
 }

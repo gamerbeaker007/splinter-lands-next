@@ -24,11 +24,7 @@ import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
 import { LandBoost } from "@/types/planner/domain";
 import { CardBloodline } from "@/types/planner/primitives";
 import { Resource } from "@/constants/resource/resource";
-import {
-  NATURAL_RESOURCES,
-  PRODUCING_RESOURCES,
-  RESOURCE_ICON_MAP,
-} from "@/lib/shared/statics";
+import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import PercentageSlider from "@/components/ui/PercentageSlider";
 import Image from "next/image";
 
@@ -64,18 +60,8 @@ export default function LandBoostComponent({
     return [];
   });
 
-  const [consumeDiscounts, setConsumeDiscounts] = useState<ResourceBoost[]>(
-    () => {
-      if (initialBoost?.consumeDiscount) {
-        return Object.entries(initialBoost.consumeDiscount)
-          .filter(([, value]) => value > 0)
-          .map(([resource, value]) => ({
-            resource: resource as Resource,
-            value: value * 100,
-          }));
-      }
-      return [];
-    },
+  const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
+    (initialBoost?.consumeGrainDiscount ?? 0) * 100,
   );
 
   const [bloodlineBoost, setBloodlineBoost] = useState(
@@ -101,14 +87,7 @@ export default function LandBoostComponent({
             value: value * 100,
           })),
       );
-      setConsumeDiscounts(
-        Object.entries(initialBoost.consumeDiscount ?? {})
-          .filter(([, value]) => value > 0)
-          .map(([resource, value]) => ({
-            resource: resource as Resource,
-            value: value * 100,
-          })),
-      );
+      setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
       setBloodlineBoost(initialBoost.bloodlineBoost * 100);
       setDecDiscount(initialBoost.decDiscount * 100);
       setReplacePowerCore(initialBoost.replacePowerCore);
@@ -128,17 +107,9 @@ export default function LandBoostComponent({
       produceBoost[resource] = value / 100;
     });
 
-    const consumeDiscount: Record<Resource, number> = {} as Record<
-      Resource,
-      number
-    >;
-    consumeDiscounts.forEach(({ resource, value }) => {
-      consumeDiscount[resource] = value / 100;
-    });
-
     const landBoost: LandBoost = {
       produceBoost,
-      consumeDiscount,
+      consumeGrainDiscount: consumeGrainDiscount / 100,
       bloodlineBoost: bloodlineBoost / 100,
       decDiscount: decDiscount / 100,
       replacePowerCore,
@@ -175,37 +146,10 @@ export default function LandBoostComponent({
     setProduceBoosts(updated);
   };
 
-  const addConsumeDiscount = () => {
-    const availableResources = (NATURAL_RESOURCES as Resource[]).filter(
-      (resource) =>
-        !consumeDiscounts.some((discount) => discount.resource === resource),
-    );
-    if (availableResources.length > 0) {
-      setConsumeDiscounts([
-        ...consumeDiscounts,
-        { resource: availableResources[0], value: 0 },
-      ]);
-    }
-  };
-
-  const removeConsumeDiscount = (index: number) => {
-    setConsumeDiscounts(consumeDiscounts.filter((_, i) => i !== index));
-  };
-
-  const updateConsumeDiscount = (
-    index: number,
-    field: keyof ResourceBoost,
-    value: Resource | number,
-  ) => {
-    const updated = [...consumeDiscounts];
-    updated[index] = { ...updated[index], [field]: value };
-    setConsumeDiscounts(updated);
-  };
-
   const hasLandBoost = () => {
     return (
       produceBoosts.length > 0 ||
-      consumeDiscounts.length > 0 ||
+      consumeGrainDiscount > 0 ||
       bloodlineBoost > 0 ||
       decDiscount > 0 ||
       replacePowerCore ||
@@ -245,13 +189,9 @@ export default function LandBoostComponent({
           })}
         </Typography>
       )}
-      {consumeDiscounts.length > 0 && (
+      {consumeGrainDiscount > 0 && (
         <Typography fontSize={fontSizeToolTip}>
-          Consume Discount:{" "}
-          {consumeDiscounts.map((item, idx) => {
-            //Change from .forEach to .map
-            return resourceInfo(idx, item.resource, item.value); // Add return and possibly the rest of parameters
-          })}
+          Grain Consumption Discount: {consumeGrainDiscount}%
         </Typography>
       )}
       {bloodlineBoost > 0 && (
@@ -402,88 +342,16 @@ export default function LandBoostComponent({
 
             {/* Consume Discounts */}
             <Typography variant="h6" gutterBottom>
-              Consumption Discounts
-              <IconButton
-                onClick={addConsumeDiscount}
-                size="small"
-                sx={{ ml: 1 }}
-              >
-                <AddIcon />
-              </IconButton>
+              Grain Consumption Discount
             </Typography>
 
-            {consumeDiscounts.map((discount, index) => (
-              <Box
-                key={index}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  border: 1,
-                  borderColor: "grey.300",
-                  borderRadius: 1,
-                }}
-              >
-                <Grid container spacing={2} alignItems="stretch">
-                  {/* Resource Selection - Full width on mobile, 1/3 on tablet+ */}
-                  <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                    <FormControl fullWidth size="small" sx={{ minWidth: 120 }}>
-                      <InputLabel>Resource</InputLabel>
-                      <Select
-                        value={discount.resource}
-                        label="Resource"
-                        onChange={(e) =>
-                          updateConsumeDiscount(
-                            index,
-                            "resource",
-                            e.target.value,
-                          )
-                        }
-                      >
-                        {NATURAL_RESOURCES.map((resource) => (
-                          <MenuItem key={resource} value={resource}>
-                            {resource}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* Percentage Slider - Full width on mobile, grows on larger screens */}
-                  <Grid size={{ xs: 12, sm: 6, md: 8 }}>
-                    <Box sx={{ minWidth: 200 }}>
-                      <PercentageSlider
-                        value={discount.value}
-                        onChange={(value) =>
-                          updateConsumeDiscount(index, "value", value)
-                        }
-                        label={`${discount.resource} consumption discount`}
-                      />
-                    </Box>
-                  </Grid>
-
-                  {/* Delete Button - Right aligned */}
-                  <Grid
-                    size={{ xs: 12, sm: 2, md: 1 }}
-                    sx={{
-                      display: "flex",
-                      justifyContent: { xs: "center", sm: "flex-end" },
-                    }}
-                  >
-                    <IconButton
-                      onClick={() => removeConsumeDiscount(index)}
-                      size="small"
-                      color="error"
-                      sx={{
-                        minWidth: 40,
-                        height: 40,
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              </Box>
-            ))}
+            <Box sx={{ mb: 3 }}>
+              <PercentageSlider
+                value={consumeGrainDiscount}
+                onChange={setConsumeGrainDiscount}
+                label="Grain consumption discount"
+              />
+            </Box>
 
             <Divider sx={{ my: 2 }} />
 

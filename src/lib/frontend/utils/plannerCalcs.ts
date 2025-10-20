@@ -3,6 +3,7 @@ import {
   calcConsumeCosts,
   calcDECPrice,
   calcProduction,
+  determineRecipe,
 } from "@/lib/shared/costCalc";
 import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
@@ -198,15 +199,15 @@ export function calcProductionInfo(
     };
   }
 
-  const consumeDiscount: Record<Resource, number> = determineConsumeReduction(
+  const consumeGrainDiscount = determineGrainConsumeReduction(
     plotPlannerData.cardInput,
   );
   const consume = calcConsumeCosts(
-    resource,
     totalBasePP,
     prices,
     1,
-    consumeDiscount,
+    determineRecipe(resource),
+    consumeGrainDiscount,
   );
 
   const productionBoosts = determineProductionBoost(
@@ -291,32 +292,12 @@ export function determineProductionBoost(
 /**
  * Determines the total consume discount (%) for a specific resource.
  * @param cardInput The list of cards to evaluate.
- * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
+ * @returns The total consume discount for grain resource. 0.1 means 10% discount.
  */
-export function determineConsumeReduction(
-  cardInput: SlotInput[],
-): Record<Resource, number> {
-  const consumeDiscounts: Record<Resource, number> = {} as Record<
-    Resource,
-    number
-  >;
-
-  cardInput.forEach((card) => {
-    if (card.landBoosts?.consumeDiscount) {
-      Object.entries(card.landBoosts.consumeDiscount).forEach(
-        ([resource, discount]) => {
-          if (discount > 0) {
-            const resourceKey = resource as Resource;
-            if (!consumeDiscounts[resourceKey]) {
-              consumeDiscounts[resourceKey] = 0;
-            }
-            consumeDiscounts[resourceKey] += discount;
-          }
-        },
-      );
-    }
-  });
-  return consumeDiscounts;
+export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
+  return cardInput.reduce((sum, card) => {
+    return sum + (card.landBoosts?.consumeGrainDiscount || 0);
+  }, 0);
 }
 
 /**

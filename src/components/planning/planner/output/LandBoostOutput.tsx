@@ -1,4 +1,7 @@
-import { determineProductionBoost } from "@/lib/frontend/utils/plannerCalcs";
+import {
+  determineGrainConsumeReduction,
+  determineProductionBoost,
+} from "@/lib/frontend/utils/plannerCalcs";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
@@ -33,22 +36,7 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const resource = resourceWorksiteMap[worksiteType];
   const productionBoosts = determineProductionBoost(resource, cardInput);
 
-  // Calculate Consumption Discounts
-  const consumptionDiscounts = new Map<string, number>();
-  cardInput.forEach((card) => {
-    if (card.landBoosts?.consumeDiscount) {
-      Object.entries(card.landBoosts.consumeDiscount).forEach(
-        ([resource, discount]) => {
-          if (discount > 0) {
-            consumptionDiscounts.set(
-              resource,
-              (consumptionDiscounts.get(resource) || 0) + discount,
-            );
-          }
-        },
-      );
-    }
-  });
+  const totalGrainDiscount = determineGrainConsumeReduction(cardInput);
 
   // Check for Replace Power Core
   const hasReplacePowerCore = cardInput.some(
@@ -131,24 +119,22 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
 
           {/* Consumption Discounts */}
           <Stack spacing={0.5}>
-            {Array.from(consumptionDiscounts.entries()).map(
-              ([resource, discount]) => (
-                <Tooltip key={resource} title="Rationing">
-                  <Box
-                    sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}
-                  >
-                    <Image
-                      src={RESOURCE_ICON_MAP[resource]}
-                      alt={resource}
-                      width={sizeIcon}
-                      height={sizeIcon}
-                    />
-                    <Typography fontSize={fontSize} color={fontColor}>
-                      -{formatPercentage(discount)}
-                    </Typography>
-                  </Box>
-                </Tooltip>
-              ),
+            {totalGrainDiscount > 0 && (
+              <Tooltip title="Rationing">
+                <Box
+                  sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}
+                >
+                  <Image
+                    src={RESOURCE_ICON_MAP["GRAIN"]}
+                    alt={"GRAIN"}
+                    width={sizeIcon}
+                    height={sizeIcon}
+                  />
+                  <Typography fontSize={fontSize} color={fontColor}>
+                    -{formatPercentage(totalGrainDiscount)}
+                  </Typography>
+                </Box>
+              </Tooltip>
             )}
           </Stack>
         </Stack>

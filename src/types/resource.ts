@@ -1,6 +1,15 @@
+import { Resource } from "@/constants/resource/resource";
+
 export interface RegionSummary {
   region_uid: string | number;
-  [key: string]: string | number;
+  resource: Resource;
+  totalBasePP: number;
+  totalBoostedPP: number;
+  countPlots: Record<Resource, number>;
+  production: Record<Resource, number>;
+  consumption: Record<Resource, number>;
+  netResource: Record<Resource, number>;
+  netAdjustedResource: Record<Resource, number>; //resource after tax and tranfer fees
 }
 
 export interface RegionTaxSummary {
@@ -12,7 +21,14 @@ export interface RegionTaxSummary {
   resources: Record<string, string | number>[];
 }
 
+export interface RegionTotals {
+  dec: Record<Resource, number>;
+  totalDEC: number;
+  netAdjustedResource: Record<Resource, number>;
+  resourceCounts: Record<Resource, number>;
+}
+
 export type PlayerRegionDataType = {
   regionSummary: RegionSummary[];
-  totals: Record<string, number>;
+  totals: RegionTotals;
 };

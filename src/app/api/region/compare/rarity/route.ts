@@ -4,6 +4,7 @@ import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { filterDeeds } from "@/lib/filters";
 import { calcConsumeCosts } from "@/lib/shared/costCalc";
+import { ResourceRecipeItem } from "@/lib/shared/statics";
 import { FilterInput } from "@/types/filters";
 import { PlotRarity } from "@/types/planner";
 import { RarityResourceSummary } from "@/types/regionCompareProduction";
@@ -29,12 +30,15 @@ export async function POST(req: Request) {
       const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
       const totalBasePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
       const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 1;
+      const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
+        | ResourceRecipeItem[]
+        | [];
 
       const consumeCost = calcConsumeCosts(
-        resource,
         totalBasePP,
         prices,
         siteEfficiency,
+        resourceRecipe,
       );
 
       // Initialize rarity entry if not present

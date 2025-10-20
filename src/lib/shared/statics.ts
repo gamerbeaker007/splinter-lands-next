@@ -17,12 +17,6 @@ import {
 } from "@/lib/shared/statics_icon_urls";
 
 export const NATURAL_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON"];
-export const MULTIPLE_CONSUMING_RESOURCES = new Set([
-  "RESEARCH",
-  "AURA",
-  "SPS",
-]);
-export const CONSUMES_ONLY_GRAIN = new Set(NATURAL_RESOURCES);
 export const PRODUCING_RESOURCES = [
   "GRAIN",
   "WOOD",
@@ -33,11 +27,23 @@ export const PRODUCING_RESOURCES = [
   "SPS",
 ];
 
-export const CONSUME_RATES: Record<string, number> = {
-  GRAIN: 0.01,
-  WOOD: 0.005,
-  STONE: 0.002,
-  IRON: 0.0005,
+export const DEFAULT_GRAIN_COST = 0.01;
+
+export interface ResourceRecipeItem {
+  qty: number;
+  symbol: string;
+}
+
+export const DEFAULT_RECIPE: ResourceRecipeItem[] = [
+  { symbol: "WOOD", qty: 0.005 },
+  { symbol: "STONE", qty: 0.002 },
+  { symbol: "IRON", qty: 0.0005 },
+];
+
+export const recipeMap: Record<string, ResourceRecipeItem[]> = {
+  RESEARCH: DEFAULT_RECIPE,
+  AURA: DEFAULT_RECIPE,
+  SPS: DEFAULT_RECIPE,
 };
 
 export const PRODUCE_RATES: Record<string, number> = {

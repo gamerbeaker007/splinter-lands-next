@@ -2,20 +2,22 @@ import React from "react";
 import { RegionCard } from "./RegionCard";
 import Box from "@mui/material/Box";
 import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import { RegionTotals } from "@/types/resource";
+import { Resource } from "@/constants/resource/resource";
 
 type Props = {
-  data: Record<string, number>;
+  regionTotals: RegionTotals;
 };
 
-const TotalsCardList: React.FC<Props> = ({ data }) => {
+const TotalsCardList: React.FC<Props> = ({ regionTotals }) => {
   const totals = {
     title: "Totals Overview",
     totals: true,
     resources: PRODUCING_RESOURCES.map((res) => ({
       name: String(res),
-      count: Number(data[`${res.toLowerCase()}_count`]) || 0,
-      produce: Number(data[`${res.toLowerCase()}`]) || 0,
-      net: Number(data[`dec_${res.toLowerCase()}`]) || 0,
+      count: Number(regionTotals.resourceCounts[res as Resource]) || 0,
+      produce: Number(regionTotals.netAdjustedResource[res as Resource]) || 0,
+      net: Number(regionTotals.dec[res as Resource]) || 0,
     })),
   };
 

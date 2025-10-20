@@ -72,7 +72,7 @@ export default function PlayerRegionOverview({ player }: Props) {
             Refresh Data
           </Button>
 
-          <ProductionTotalsDEC data={data?.totals} />
+          <ProductionTotalsDEC totalDec={data?.totals.totalDEC || 0} />
           {taxData ? <TaxTotalsDEC taxData={taxData} /> : null}
           {data ? (
             <>
@@ -83,7 +83,7 @@ export default function PlayerRegionOverview({ player }: Props) {
               <Typography variant="h6" mt={2}>
                 🌍 Total Net (All Regions)
               </Typography>
-              <TotalsCardList data={data.totals} />
+              <TotalsCardList regionTotals={data.totals} />
             </>
           ) : null}
 

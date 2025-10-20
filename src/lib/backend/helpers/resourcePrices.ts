@@ -115,13 +115,7 @@ export async function getResourceDECPrices() {
     "SPS",
     "VOUCHER",
   ]) {
-    unitPrices[key.toLowerCase()] = getPrice(
-      landPrices,
-      prices,
-      consumablePrices,
-      key,
-      1,
-    );
+    unitPrices[key] = getPrice(landPrices, prices, consumablePrices, key, 1);
   }
 
   return unitPrices;
