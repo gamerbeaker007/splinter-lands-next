@@ -142,6 +142,7 @@ function calculateRanks(players: PlayerProductionSummaryEnriched[]) {
   assignRank(players, "total_dec_staked", "total_dec_staked_rank");
   assignRank(players, "count", "count_rank");
   assignRank(players, "total_harvest_pp", "total_harvest_pp_rank");
+  assignRank(players, "total_base_pp_after_cap", "total_base_pp_rank");
   assignRank(players, "total_land_score", "total_land_rank");
 }
 

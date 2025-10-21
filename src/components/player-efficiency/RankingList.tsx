@@ -20,6 +20,7 @@ type valueField =
   | "LPE_ratio"
   | "LPE_score"
   | "total_harvest_pp"
+  | "total_base_pp_after_cap"
   | "total_dec_staked"
   | "total_land_score";
 
@@ -31,6 +32,7 @@ type rankingField =
   | "LCE_boosted_rank"
   | "LPE_rank"
   | "total_harvest_pp_rank"
+  | "total_base_pp_rank"
   | "total_dec_staked_rank"
   | "total_land_rank";
 

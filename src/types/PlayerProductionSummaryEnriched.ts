@@ -30,6 +30,7 @@ export type PlayerProductionSummaryEnriched = {
   total_dec_staked_rank?: number;
   count_rank?: number;
   total_harvest_pp_rank?: number;
+  total_base_pp_rank?: number;
   total_land_score?: number;
   total_land_rank?: number;
 };
