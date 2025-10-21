@@ -1,6 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import PercentageSlider from "@/components/ui/PercentageSlider";
+import { Resource } from "@/constants/resource/resource";
+import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import {
+  bloodline_icon_url,
+  dec_icon_url,
+} from "@/lib/shared/statics_icon_urls";
+import { LandBoost } from "@/types/planner/domain";
+import { CardBloodline } from "@/types/planner/primitives";
+import { Add as AddIcon } from "@mui/icons-material";
 import {
   Box,
   Button,
@@ -9,24 +18,15 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
-  FormControl,
   FormControlLabel,
-  Grid,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Switch,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { Add as AddIcon, Delete as DeleteIcon } from "@mui/icons-material";
-import { LandBoost } from "@/types/planner/domain";
-import { CardBloodline } from "@/types/planner/primitives";
-import { Resource } from "@/constants/resource/resource";
-import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import PercentageSlider from "@/components/ui/PercentageSlider";
 import Image from "next/image";
+import { useState } from "react";
+import ProductionBoostSelector from "./ProductionBoostSelector";
 
 interface LandBoostProps {
   initialBloodline: CardBloodline;
@@ -40,6 +40,7 @@ interface ResourceBoost {
 }
 
 const fontSizeToolTip = "0.8rem";
+const sizeIcon = 30;
 
 export default function LandBoostComponent({
   initialBoost,
@@ -255,7 +256,7 @@ export default function LandBoostComponent({
         PaperProps={{
           sx: {
             margin: { xs: 1, sm: 2 },
-            maxWidth: "600px",
+            maxWidth: "500px",
             maxHeight: { xs: "90vh", sm: "80vh" },
           },
         }}
@@ -264,7 +265,7 @@ export default function LandBoostComponent({
         <DialogContent>
           <Box>
             {/* Produce Boosts */}
-            <Typography variant="h6" gutterBottom>
+            <Typography gutterBottom>
               Production Boosts
               <IconButton onClick={addProduceBoost} size="small" sx={{ ml: 1 }}>
                 <AddIcon />
@@ -272,78 +273,33 @@ export default function LandBoostComponent({
             </Typography>
 
             {produceBoosts.map((boost, index) => (
-              <Box
+              <ProductionBoostSelector
                 key={index}
-                sx={{
-                  mb: 2,
-                  p: 2,
-                  border: 1,
-                  borderColor: "grey.300",
-                  borderRadius: 1,
-                }}
-              >
-                <Grid container spacing={2} alignItems="stretch">
-                  {/* Resource Selection - Full width on mobile, 1/3 on tablet+ */}
-                  <Grid size={{ xs: 12, sm: 4, md: 3 }}>
-                    <FormControl fullWidth size="small" sx={{ minWidth: 120 }}>
-                      <InputLabel>Resource</InputLabel>
-                      <Select
-                        value={boost.resource}
-                        label="Resource"
-                        onChange={(e) =>
-                          updateProduceBoost(index, "resource", e.target.value)
-                        }
-                      >
-                        {PRODUCING_RESOURCES.map((resource) => (
-                          <MenuItem key={resource} value={resource}>
-                            {resource}
-                          </MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-
-                  {/* Percentage Slider - Full width on mobile, grows on larger screens */}
-                  <Grid size={{ xs: 12, sm: 6, md: 8 }}>
-                    <Box sx={{ minWidth: 200 }}>
-                      <PercentageSlider
-                        value={boost.value}
-                        onChange={(value) =>
-                          updateProduceBoost(index, "value", value)
-                        }
-                        label={`${boost.resource} production boost`}
-                      />
-                    </Box>
-                  </Grid>
-
-                  {/* Delete Button - Right aligned */}
-                  <Grid
-                    size={{ xs: 12, sm: 2, md: 1 }}
-                    sx={{
-                      display: "flex",
-                      justifyContent: { xs: "center", sm: "flex-end" },
-                    }}
-                  >
-                    <IconButton
-                      onClick={() => removeProduceBoost(index)}
-                      size="small"
-                      color="error"
-                      sx={{
-                        minWidth: 40,
-                        height: 40,
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Grid>
-                </Grid>
-              </Box>
+                boost={boost}
+                index={index}
+                onUpdate={updateProduceBoost}
+                onRemove={removeProduceBoost}
+              />
             ))}
 
+            <Divider sx={{ my: 2 }} />
+
             {/* Consume Discounts */}
-            <Typography variant="h6" gutterBottom>
-              Grain Consumption Discount
-            </Typography>
+            <Box
+              display={"flex"}
+              flexWrap={"wrap"}
+              alignItems={"center"}
+              gap={2}
+            >
+              <Image
+                src={RESOURCE_ICON_MAP["GRAIN"]}
+                alt={"Grain"}
+                width={sizeIcon}
+                height={sizeIcon}
+              />
+
+              <Typography gutterBottom>Rationing</Typography>
+            </Box>
 
             <Box sx={{ mb: 3 }}>
               <PercentageSlider
@@ -353,16 +309,22 @@ export default function LandBoostComponent({
               />
             </Box>
 
-            <Divider sx={{ my: 2 }} />
-
-            {/* Other Boosts */}
-            <Typography variant="h6" gutterBottom>
-              Other Boosts
-            </Typography>
-
             {/* Bloodline Boost */}
             <Box sx={{ mb: 3 }}>
-              <Typography gutterBottom>Bloodline Boost</Typography>
+              <Box
+                display={"flex"}
+                flexWrap={"wrap"}
+                alignItems={"center"}
+                gap={2}
+              >
+                <Image
+                  src={bloodline_icon_url}
+                  alt={"Bloodline"}
+                  width={sizeIcon}
+                  height={sizeIcon}
+                />
+                <Typography gutterBottom>Bloodline Boost</Typography>
+              </Box>
               <PercentageSlider
                 value={bloodlineBoost}
                 onChange={setBloodlineBoost}
@@ -372,7 +334,20 @@ export default function LandBoostComponent({
 
             {/* DEC Discount */}
             <Box sx={{ mb: 3 }}>
-              <Typography gutterBottom>DEC Discount</Typography>
+              <Box
+                display={"flex"}
+                flexWrap={"wrap"}
+                alignItems={"center"}
+                gap={2}
+              >
+                <Image
+                  src={dec_icon_url}
+                  alt={"Bloodline"}
+                  width={sizeIcon}
+                  height={sizeIcon}
+                />
+                <Typography gutterBottom>DEC Discount</Typography>
+              </Box>
               <PercentageSlider
                 value={decDiscount}
                 onChange={setDecDiscount}

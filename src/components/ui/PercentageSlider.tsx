@@ -1,7 +1,7 @@
 "use client";
 
+import { Box, Slider, TextField } from "@mui/material";
 import React from "react";
-import { Box, Slider, TextField, Grid } from "@mui/material";
 
 interface PercentageSliderProps {
   value: number;
@@ -31,39 +31,49 @@ export default function PercentageSlider({
   };
 
   return (
-    <Box sx={{ maxWidth: 400, width: "100%", minWidth: 200 }}>
-      <Grid container spacing={1} alignItems="center">
-        <Grid size={{ xs: 7, sm: 8 }}>
-          <Slider
-            value={value}
-            onChange={handleSliderChange}
-            min={0}
-            max={100}
-            step={1}
-            valueLabelDisplay="auto"
-            valueLabelFormat={(value) => `${value}%`}
-            disabled={disabled}
-            aria-label={label}
-            sx={{ minWidth: 120 }}
-          />
-        </Grid>
-        <Grid size={{ xs: 5, sm: 4 }}>
-          <TextField
-            type="number"
-            value={value}
-            onChange={handleTextFieldChange}
-            size="small"
-            inputProps={{ min: 0, max: 100 }}
-            InputProps={{ endAdornment: "%" }}
-            fullWidth
-            disabled={disabled}
-            aria-label={
-              label ? `${label} percentage input` : "Percentage input"
-            }
-            sx={{ minWidth: 80 }}
-          />
-        </Grid>
-      </Grid>
+    <Box
+      display={"flex"}
+      alignItems={"center"}
+      gap={2}
+      maxWidth={300}
+      width={"100%"}
+      minWidth={200}
+    >
+      <Slider
+        value={value}
+        onChange={handleSliderChange}
+        min={0}
+        max={100}
+        step={1}
+        valueLabelDisplay="auto"
+        valueLabelFormat={(value) => `${value}%`}
+        disabled={disabled}
+        aria-label={label}
+        sx={{ minWidth: 75, flex: 1 }}
+      />
+      <TextField
+        type="number"
+        value={value}
+        onChange={handleTextFieldChange}
+        size="small"
+        slotProps={{
+          htmlInput: { min: 0, max: 100 },
+          input: { endAdornment: "%" },
+        }}
+        disabled={disabled}
+        aria-label={label ? `${label} percentage input` : "Percentage input"}
+        sx={{
+          minWidth: 80,
+          width: 100,
+          "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
+            {
+              display: "none",
+            },
+          "& input[type=number]": {
+            MozAppearance: "textfield",
+          },
+        }}
+      />
     </Box>
   );
 }
