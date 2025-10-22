@@ -73,7 +73,7 @@ export default function AuraPriceBox({ prices }: AuraPriceBoxProps) {
               gap={1}
             >
               <Typography variant="body2" fontWeight="bold">
-                {prices[key]?.toFixed(3) ?? "N/A"}
+                {prices[key.toUpperCase()]?.toFixed(3) ?? "N/A"}
               </Typography>
               <Avatar
                 src={RESOURCE_ICON_MAP["DEC"]}

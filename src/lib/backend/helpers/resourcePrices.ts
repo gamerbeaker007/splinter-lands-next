@@ -116,13 +116,11 @@ function computeUnbindAuraPrice(
     },
   };
 
-  console.log(`Computing unbind price for ${token}`);
   const entry = map[token];
   if (!entry) return null;
 
   const mpUSD =
     auraPrices.find((item) => item.detailId === entry.detailId)?.minPrice ?? 0;
-  console.log(`Found min price ${mpUSD} for detailId ${entry.detailId}`);
   const preset = RESOURCE_PRESETS[entry.presetKey];
   if (mpUSD > 0 && prices.dec > 0) {
     return mpUSD / prices.dec / preset.input.AURA;
