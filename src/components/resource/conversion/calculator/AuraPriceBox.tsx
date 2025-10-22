@@ -8,15 +8,15 @@ type AuraPriceBoxProps = {
 };
 
 const AURA_SOURCES = [
-  { key: "aura", label: "Midnight Potion", icon: "MIDNIGHTPOT" },
-  { key: "aura_am", label: "Auction Mark", icon: "AM" },
-  { key: "aura_ft", label: "Fortune Ticket", icon: "FT" },
-  { key: "aura_wagonkit", label: "Wagon Repair Kit", icon: "WAGONKIT" },
-  { key: "aura_unbind_ca_c", label: "Unbinding Common", icon: "UNBIND_CA_C" },
-  { key: "aura_unbind_ca_r", label: "Unbinding Rare", icon: "UNBIND_CA_R" },
-  { key: "aura_unbind_ca_e", label: "Unbinding Epic", icon: "UNBIND_CA_E" },
+  { key: "AURA", label: "Midnight Potion", icon: "MIDNIGHTPOT" },
+  { key: "AURA_AM", label: "Auction Mark", icon: "AM" },
+  { key: "AURA_FT", label: "Fortune Ticket", icon: "FT" },
+  { key: "AURA_WAGONKIT", label: "Wagon Repair Kit", icon: "WAGONKIT" },
+  { key: "AURA_UNBIND_CA_C", label: "Unbinding Common", icon: "UNBIND_CA_C" },
+  { key: "AURA_UNBIND_CA_R", label: "Unbinding Rare", icon: "UNBIND_CA_R" },
+  { key: "AURA_UNBIND_CA_E", label: "Unbinding Epic", icon: "UNBIND_CA_E" },
   {
-    key: "aura_unbind_ca_l",
+    key: "AURA_UNBIND_CA_L",
     label: "Unbinding Legendary",
     icon: "UNBIND_CA_L",
   },
@@ -73,7 +73,7 @@ export default function AuraPriceBox({ prices }: AuraPriceBoxProps) {
               gap={1}
             >
               <Typography variant="body2" fontWeight="bold">
-                {prices[key.toUpperCase()]?.toFixed(3) ?? "N/A"}
+                {prices[key]?.toFixed(3) ?? "N/A"}
               </Typography>
               <Avatar
                 src={RESOURCE_ICON_MAP["DEC"]}
