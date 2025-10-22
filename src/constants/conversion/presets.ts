@@ -5,6 +5,10 @@ export type PresetName =
   | "auction"
   | "fortune"
   | "midnight"
+  | "unbinding common"
+  | "unbinding rare"
+  | "unbinding epic"
+  | "unbinding legendary"
   | "clear";
 
 export const RESOURCE_PRESETS: Record<
@@ -32,6 +36,22 @@ export const RESOURCE_PRESETS: Record<
   },
   midnight: {
     input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 40, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "unbinding common": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 100, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "unbinding rare": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 400, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "unbinding epic": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 2000, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "unbinding legendary": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 10000, VOUCHER: 0 },
     decExtra: 0,
   },
   clear: {

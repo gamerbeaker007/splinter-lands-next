@@ -82,12 +82,53 @@ function getPrice(
     return (totalDec - baseCost) / preset.input.AURA;
   }
 
+  const unbindPrice = computeUnbindAuraPrice(auraPrices, prices, token);
+  if (unbindPrice !== null) {
+    return unbindPrice;
+  }
+
   const matchingMetric = landResourcePrices[token] ?? null;
   if (!matchingMetric || !matchingMetric) {
     throw new Error(`Missing dec_price for token ${token}`);
   }
 
   return amount / matchingMetric;
+}
+
+function computeUnbindAuraPrice(
+  auraPrices: AuraPrices[],
+  prices: SplPriceData,
+  token: string,
+): number | null {
+  const map: Record<
+    string,
+    { detailId: string; presetKey: keyof typeof RESOURCE_PRESETS }
+  > = {
+    AURA_UNBIND_CA_C: {
+      detailId: "UNBIND_CA_C",
+      presetKey: "unbinding common",
+    },
+    AURA_UNBIND_CA_R: { detailId: "UNBIND_CA_R", presetKey: "unbinding rare" },
+    AURA_UNBIND_CA_E: { detailId: "UNBIND_CA_E", presetKey: "unbinding epic" },
+    AURA_UNBIND_CA_L: {
+      detailId: "UNBIND_CA_L",
+      presetKey: "unbinding legendary",
+    },
+  };
+
+  console.log(`Computing unbind price for ${token}`);
+  const entry = map[token];
+  if (!entry) return null;
+
+  const mpUSD =
+    auraPrices.find((item) => item.detailId === entry.detailId)?.minPrice ?? 0;
+  console.log(`Found min price ${mpUSD} for detailId ${entry.detailId}`);
+  const preset = RESOURCE_PRESETS[entry.presetKey];
+  if (mpUSD > 0 && prices.dec > 0) {
+    return mpUSD / prices.dec / preset.input.AURA;
+  } else {
+    return 0;
+  }
 }
 
 export async function getResourceDECPrices() {
@@ -112,6 +153,10 @@ export async function getResourceDECPrices() {
     "AURA_AM",
     "AURA_FT",
     "AURA_WAGONKIT",
+    "AURA_UNBIND_CA_C",
+    "AURA_UNBIND_CA_R",
+    "AURA_UNBIND_CA_E",
+    "AURA_UNBIND_CA_L",
     "SPS",
     "VOUCHER",
   ]) {

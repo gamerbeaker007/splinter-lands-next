@@ -1,5 +1,5 @@
-import { Box, Typography, Stack, Avatar, Divider } from "@mui/material";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { Avatar, Box, Divider, Stack, Typography } from "@mui/material";
 
 type Prices = Record<string, number>;
 
@@ -12,6 +12,14 @@ const AURA_SOURCES = [
   { key: "aura_am", label: "Auction Mark", icon: "AM" },
   { key: "aura_ft", label: "Fortune Ticket", icon: "FT" },
   { key: "aura_wagonkit", label: "Wagon Repair Kit", icon: "WAGONKIT" },
+  { key: "aura_unbind_ca_c", label: "Unbinding Common", icon: "UNBIND_CA_C" },
+  { key: "aura_unbind_ca_r", label: "Unbinding Rare", icon: "UNBIND_CA_R" },
+  { key: "aura_unbind_ca_e", label: "Unbinding Epic", icon: "UNBIND_CA_E" },
+  {
+    key: "aura_unbind_ca_l",
+    label: "Unbinding Legendary",
+    icon: "UNBIND_CA_L",
+  },
 ];
 
 export default function AuraPriceBox({ prices }: AuraPriceBoxProps) {
