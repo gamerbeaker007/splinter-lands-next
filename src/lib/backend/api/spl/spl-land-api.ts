@@ -1,6 +1,7 @@
 import { Deed, PlayerTradeHubPosition } from "@/generated/prisma";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
+import { Assets } from "@/types/planner/market/market";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
 import { SplMarketAsset } from "@/types/splMarketAsset";
@@ -10,7 +11,6 @@ import * as rax from "retry-axios";
 import { NotFoundError } from "../../error";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
-import { Assets } from "@/types/planner/market/market";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -189,7 +189,16 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       return [];
     }
 
-    const auraItems = ["MIDNIGHTPOT", "FT", "AM", "WAGONKIT"];
+    const auraItems = [
+      "MIDNIGHTPOT",
+      "FT",
+      "AM",
+      "WAGONKIT",
+      "UNBIND_CA_C",
+      "UNBIND_CA_R",
+      "UNBIND_CA_E",
+      "UNBIND_CA_L",
+    ];
 
     return assets
       .filter((asset) => auraItems.includes(asset.detailId))

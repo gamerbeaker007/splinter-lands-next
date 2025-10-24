@@ -2,7 +2,7 @@ import React from "react";
 import TotalsDEC from "./TotalDEC";
 
 type Props = {
-  data: Record<string, number> | undefined;
+  totalDec: number;
 };
 
 const explanation = `
@@ -15,13 +15,7 @@ Finally, all net values across all resources and regions are combined.
 Remaining positive or negative balances are converted to DEC based on the current price (cached hourly).
 `;
 
-const ProductionTotalsDEC: React.FC<Props> = ({ data }) => {
-  const totalDec = data
-    ? Object.entries(data)
-        .filter(([key]) => key.startsWith("dec"))
-        .reduce((sum, [, value]) => sum + (Number(value) || 0), 0)
-    : 0;
-
+const ProductionTotalsDEC: React.FC<Props> = ({ totalDec }) => {
   return (
     <TotalsDEC
       title={"Production Net DEC"}

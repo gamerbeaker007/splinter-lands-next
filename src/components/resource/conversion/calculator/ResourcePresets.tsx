@@ -1,17 +1,30 @@
 "use client";
 
-import { Box, IconButton, Tooltip } from "@mui/material";
-import Image from "next/image";
 import {
   resource_auction_mark_icon_url,
   resource_fortune_ticket_icon_url,
   resource_midnight_potion_icon_url,
+  resource_unbinding_common_icon_url,
+  resource_unbinding_epic_icon_url,
+  resource_unbinding_legendary_icon_url,
+  resource_unbinding_rare_icon_url,
   resource_wagon_kit_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { Clear } from "@mui/icons-material";
+import { Box, IconButton, Tooltip } from "@mui/material";
 import Typography from "@mui/material/Typography";
+import Image from "next/image";
 
-type PresetName = "wagons" | "auction" | "fortune" | "midnight" | "clear";
+type PresetName =
+  | "wagons"
+  | "auction"
+  | "fortune"
+  | "midnight"
+  | "unbinding common"
+  | "unbinding rare"
+  | "unbinding epic"
+  | "unbinding legendary"
+  | "clear";
 
 interface Preset {
   name: PresetName;
@@ -44,6 +57,26 @@ const PRESETS: Preset[] = [
     name: "midnight",
     label: "Midnight Potion",
     iconSrc: resource_midnight_potion_icon_url,
+  },
+  {
+    name: "unbinding common",
+    label: "Unbinding Common",
+    iconSrc: resource_unbinding_common_icon_url,
+  },
+  {
+    name: "unbinding rare",
+    label: "Unbinding Rare",
+    iconSrc: resource_unbinding_rare_icon_url,
+  },
+  {
+    name: "unbinding epic",
+    label: "Unbinding Epic",
+    iconSrc: resource_unbinding_epic_icon_url,
+  },
+  {
+    name: "unbinding legendary",
+    label: "Unbinding Legendary",
+    iconSrc: resource_unbinding_legendary_icon_url,
   },
   {
     name: "clear",

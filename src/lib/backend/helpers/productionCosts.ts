@@ -1,60 +1,65 @@
-import { NATURAL_RESOURCES, PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import { Resource } from "@/constants/resource/resource";
+import { calcCostsV2 } from "@/lib/shared/costCalc";
+import { PRODUCING_RESOURCES, ResourceRecipeItem } from "@/lib/shared/statics";
+import { DeedComplete } from "@/types/deed";
 import { RegionSummary } from "@/types/resource";
 
 const TAX_RATE = 0.9; // 10% tax rate reduced from production
 const TRANSFER_FEE = 1.1; // 10% transfer fee added for resources with a deficit in the region
 
-type CostKey =
-  | "cost_per_h_grain"
-  | "cost_per_h_wood"
-  | "cost_per_h_stone"
-  | "cost_per_h_iron";
-
-function isCostKey(key: string): key is CostKey {
-  return [
-    "cost_per_h_grain",
-    "cost_per_h_wood",
-    "cost_per_h_stone",
-    "cost_per_h_iron",
-  ].includes(key);
-}
-
 /**
  * Summarize per region the produce per hour and cost per hour
- * @param data
+ * @param deeds
  */
-function getRegionSummary(data: RegionSummary[]) {
+function getRegionSummary(deeds: DeedComplete[]) {
   const summaryMap: Record<string, RegionSummary> = {};
 
-  for (const row of data) {
-    const region = row.region_uid;
-    const symbol = row.token_symbol as string;
-    const symbolLower = symbol.toLowerCase();
-    const producedCol = `prod_per_h_${symbolLower}`;
+  for (const deed of deeds) {
+    const region = deed.region_uid!;
+    const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
+    const resource = (deed.worksiteDetail?.token_symbol ?? "") as Resource;
+    const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
+    const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 0;
+    const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
+      | ResourceRecipeItem[]
+      | undefined;
 
-    if (symbol != "TAX") {
+    if (resource != "TAX") {
       if (!summaryMap[region]) {
+        // Initialize the summary entry for the region
         summaryMap[region] = {
           region_uid: region,
+          resource: resource,
+          totalBasePP: 0,
+          totalBoostedPP: 0,
+          countPlots: {} as Record<Resource, number>,
+          production: {} as Record<Resource, number>,
+          consumption: {} as Record<Resource, number>,
+          netResource: {} as Record<Resource, number>,
+          netAdjustedResource: {} as Record<Resource, number>,
         };
       }
 
       // Sum the total produced rewards
-      summaryMap[region][producedCol] =
-        ((summaryMap[region][producedCol] as number) || 0) +
-        (row.rewards_per_hour as number);
+      summaryMap[region].production[resource] =
+        ((summaryMap[region].production[resource] as number) || 0) +
+        rewardsPerHour;
 
       // Count the amount of plots
-      summaryMap[region][symbolLower] =
-        ((summaryMap[region][symbolLower] as number) || 0) + 1;
+      summaryMap[region].countPlots[resource] =
+        ((summaryMap[region].countPlots[resource] as number) || 0) + 1;
 
-      // Sum the cost per natural resource
-      NATURAL_RESOURCES.forEach((res) => {
-        const costCol = `cost_per_h_${res.toLowerCase()}`;
-        const rawCost = isCostKey(costCol) ? row[costCol] : 0;
-        summaryMap[region][costCol] =
-          ((summaryMap[region][costCol] as number) || 0) +
-          ((rawCost as number) || 0);
+      const costs: Record<Resource, number> = calcCostsV2(
+        basePP,
+        siteEfficiency,
+        resourceRecipe,
+      );
+
+      Object.entries(costs).forEach(([resource, value]) => {
+        if (!summaryMap[region].consumption[resource as Resource]) {
+          summaryMap[region].consumption[resource as Resource] = 0;
+        }
+        summaryMap[region].consumption[resource as Resource] += value;
       });
     }
   }
@@ -62,7 +67,7 @@ function getRegionSummary(data: RegionSummary[]) {
 }
 
 export function prepareSummary(
-  data: RegionSummary[],
+  data: DeedComplete[],
   includeTaxes: boolean,
   includeTransferFee: boolean,
 ): RegionSummary[] {
@@ -70,38 +75,33 @@ export function prepareSummary(
 
   // Add missing resource columns and compute net + adjusted net
   const summaryArray = Object.values(summaryMap);
-
   for (const row of summaryArray) {
     for (const res of PRODUCING_RESOURCES) {
-      const resource = res.toLowerCase();
-      const producedKey = `prod_per_h_${resource}`;
-      const costKey = `cost_per_h_${resource}`;
-      const netKey = `net_${resource}`;
-      const adjNetKey = `adj_net_${resource}`;
-
+      const resource = res as Resource;
       //make sure the produce and cost column are defined before
-      row[producedKey] = row[producedKey] || 0;
-      row[costKey] = row[costKey] || 0;
-      row[resource] = row[resource] || 0;
+      row.production[resource] = row.production[resource] || 0;
+      row.consumption[resource] = row.consumption[resource] || 0;
+      row.netResource[resource] = row.netResource[resource] || 0;
+      row.netAdjustedResource[resource] =
+        row.netAdjustedResource[resource] || 0;
 
       // Apply taxes on the producing resources
       if (includeTaxes) {
-        const producedKey = `prod_per_h_${resource}`;
-        (row[producedKey] as number) *= TAX_RATE;
+        row.production[resource] *= TAX_RATE;
       }
 
       // Apply transfer fees (if applicable)
       // For research aura sps it's not possible to have a deficit also not possible to transfer between regions
       // When you have a deficit in a resource 10% to compensate for the potential transfer fee
       if (["RESEARCH", "AURA", "SPS"].includes(res)) {
-        row[netKey] = row[producedKey];
-        row[adjNetKey] = row[netKey];
+        row.netResource[resource] = row.production[resource];
+        row.netAdjustedResource[resource] = row.netResource[resource];
       } else {
-        (row[netKey] as number) =
-          (row[producedKey] as number) - (row[costKey] as number);
-        row[adjNetKey] = includeTransferFee
-          ? adjustTransferWithFee(row[netKey] as number)
-          : row[netKey];
+        row.netResource[resource] =
+          row.production[resource] - row.consumption[resource];
+        row.netAdjustedResource[resource] = includeTransferFee
+          ? adjustTransferWithFee(row.netResource[resource])
+          : row.netResource[resource];
       }
     }
   }

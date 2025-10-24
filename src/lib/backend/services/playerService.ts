@@ -1,47 +1,48 @@
-import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
-import { cache } from "../cache/cache";
+import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
 import {
-  fetchPlayerLiquidity,
-  fetchPlayerPoolInfo,
-  fetchStakedAssets,
-  fetchRegionDataPlayer,
-  getLandResourcesPools,
-  fetchTaxes,
-} from "../api/spl/spl-land-api";
+  computeNetValues,
+  computeResourceNetValue,
+} from "@/lib/backend/helpers/computeNetValues";
+import { prepareSummary } from "@/lib/backend/helpers/productionCosts";
+import {
+  calculateLCERatio,
+  calculateLDERatio,
+  calculateLPERatio,
+} from "@/lib/backend/helpers/productionUtils";
+import {
+  enrichWithProgressInfo,
+  getDeedsAlerts,
+  summarizeDeedsData,
+} from "@/lib/backend/services/regionService";
+import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
+import { filterDeeds } from "@/lib/filters";
+import { TAX_RATE } from "@/lib/shared/statics";
+import { enrichPoolData } from "@/scripts/lib/metrics/playerTradeHubPosition";
+import { DeedComplete } from "@/types/deed";
+import { PlayerOverview } from "@/types/playerOverview";
+import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
+import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import { SplPlayerDetails } from "@/types/splPlayerDetails";
+import { SplTaxes } from "@/types/splTaxes";
 import { StakedAssets } from "@/types/stakedAssets";
 import {
   fetchPlayerBalances,
   fetchPlayerCardCollection,
   fetchPlayerDetails,
 } from "../api/spl/spl-base-api";
-import { SplPlayerDetails } from "@/types/splPlayerDetails";
-import { PlayerOverview } from "@/types/playerOverview";
 import {
-  enrichWithProgressInfo,
-  getDeedsAlerts,
-  summarizeDeedsData,
-} from "@/lib/backend/services/regionService";
-import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
-import { enrichPoolData } from "@/scripts/lib/metrics/playerTradeHubPosition";
-import { DeedComplete } from "@/types/deed";
-import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
-import { calcCosts } from "@/lib/shared/costCalc";
-import { prepareSummary } from "@/lib/backend/helpers/productionCosts";
-import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
-import {
-  computeNetValues,
-  computeResourceNetValue,
-} from "@/lib/backend/helpers/computeNetValues";
-import { filterDeeds } from "@/lib/filters";
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
-import {
-  calculateLCERatio,
-  calculateLDERatio,
-  calculateLPERatio,
-} from "@/lib/backend/helpers/productionUtils";
-import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { SplTaxes } from "@/types/splTaxes";
-import { TAX_RATE } from "@/lib/shared/statics";
+  fetchPlayerLiquidity,
+  fetchPlayerPoolInfo,
+  fetchRegionDataPlayer,
+  fetchStakedAssets,
+  fetchTaxes,
+  getLandResourcesPools,
+} from "../api/spl/spl-land-api";
+import { cache } from "../cache/cache";
+import { Resource } from "@/constants/resource/resource";
+import { Prices } from "@/types/price";
 
 export async function invalidatePlayerCaches(player: string) {
   const keysToInvalidate = [
@@ -187,7 +188,7 @@ export async function getCachedPlayerOverviewData(
 
   //DEC Income
   const playerRegionInfo = await processPlayerRegionInformation(deeds);
-  const total_dec = playerRegionInfo.totals.total_dec;
+  const total_dec = playerRegionInfo.totals.totalDEC;
 
   //DEC Tax Income
   const allData = await getCachedRegionData();
@@ -234,7 +235,7 @@ export async function getCachedPlayerOverviewData(
     LCERatioBoosted: LCE_ratio_boosted,
     LDERatio: LDE_ratio,
     LPERatio: LPE_ratio,
-    totalDec: playerRegionInfo.totals.total_dec,
+    totalDec: playerRegionInfo.totals.totalDEC,
     totalTaxDec: totalTaxDEC,
   };
 
@@ -245,51 +246,36 @@ export async function getCachedPlayerOverviewData(
 export async function processPlayerRegionInformation(
   playerData: DeedComplete[],
 ): Promise<PlayerRegionDataType> {
-  const totalResourceCounts: Record<string, number> = {};
-  const playerDataInclCosts = playerData.map((deed: DeedComplete) => {
-    const regionUid = deed.region_uid ?? "";
-    const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
-    const tokenSymbol = deed.worksiteDetail?.token_symbol ?? "";
-    const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
-    const boostedPP = deed.stakingDetail?.total_harvest_pp ?? 0;
-    const countColumn = `${tokenSymbol.toLowerCase()}_count`;
-    totalResourceCounts[countColumn] =
-      (totalResourceCounts[countColumn] ?? 0) + 1;
-
-    const costs = calcCosts(
-      tokenSymbol,
-      basePP,
-      deed?.worksiteDetail?.site_efficiency ?? 0,
-    );
-
-    return {
-      region_uid: regionUid,
-      token_symbol: tokenSymbol,
-      rewards_per_hour: rewardsPerHour,
-      total_harvest_pp: basePP,
-      total_base_pp_after_cap: boostedPP,
-      ...costs,
-    };
-  });
-
-  const regionSummary = prepareSummary(playerDataInclCosts, true, true);
+  const regionSummary = prepareSummary(playerData, true, true);
 
   // add totals (dec + resources
   // dec + per resource
   const resourcePrices = await getCachedResourcePrices();
+
   const { dec_net, total_dec } = computeNetValues(
     regionSummary,
     resourcePrices,
   );
   const resource_net = computeResourceNetValue(regionSummary);
 
+  const totalResourceCounts: Record<Resource, number> = {} as Record<
+    Resource,
+    number
+  >;
+  playerData.forEach((deed: DeedComplete) => {
+    const resource = deed.worksiteDetail?.token_symbol as Resource;
+    if (resource) {
+      totalResourceCounts[resource] = (totalResourceCounts[resource] || 0) + 1;
+    }
+  });
+
   return {
     regionSummary: regionSummary,
     totals: {
-      ...resource_net,
-      total_dec,
-      ...dec_net,
-      ...totalResourceCounts,
+      netAdjustedResource: resource_net,
+      totalDEC: total_dec,
+      dec: dec_net,
+      resourceCounts: totalResourceCounts,
     },
   };
 }
@@ -297,7 +283,7 @@ export async function processPlayerRegionInformation(
 export function processPlayerTaxIncome(
   playerData: DeedComplete[],
   allData: DeedComplete[],
-  resourcePrices: Record<string, number>,
+  resourcePrices: Prices,
 ): RegionTaxSummary[] {
   const results = [];
   for (const deed of playerData) {
@@ -336,7 +322,7 @@ export function processPlayerTaxIncome(
       ([token, total_rewards_per_hour]) => {
         const total_tax = total_rewards_per_hour * TAX_RATE;
         const captured = total_tax * capture_rate;
-        const dec = resourcePrices[token.toLowerCase()] * captured;
+        const dec = resourcePrices[token] * captured;
         total_tax_dec += dec || 0;
         return { token, total_rewards_per_hour, total_tax, captured, dec };
       },

@@ -26,6 +26,10 @@ export const resource_auction_mark_icon_url = `${WEB_URL}website/icons/img_aucti
 export const resource_fortune_ticket_icon_url = `${WEB_URL}website/icons/img_fortune-ticket_400.webp`;
 export const resource_midnight_potion_icon_url = `${WEB_URL}website/icons/img_midnight-potion_400.png`;
 export const resource_wagon_kit_icon_url = `${WEB_URL}website/icons/img_wagon-kit_400.webp`;
+export const resource_unbinding_common_icon_url = `${WEB_URL}website/icons/unbind_common.webp`;
+export const resource_unbinding_rare_icon_url = `${WEB_URL}website/icons/unbind_rare.webp`;
+export const resource_unbinding_epic_icon_url = `${WEB_URL}website/icons/unbind_epic.webp`;
+export const resource_unbinding_legendary_icon_url = `${WEB_URL}website/icons/unbind_legendary.webp`;
 
 export const land_default_off_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
 export const land_default_on_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__On.svg`;

@@ -1,11 +1,8 @@
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";
-import { calcCosts } from "@/lib/shared/costCalc";
-import {
-  MULTIPLE_CONSUMING_RESOURCES,
-  NATURAL_RESOURCES,
-} from "@/lib/shared/statics";
+import { calcCostsV2, determineRecipe } from "@/lib/shared/costCalc";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 
 async function computeAndStoreResource(
   date: Date,
@@ -41,20 +38,27 @@ async function computeAndStoreResource(
       totalRewards += worksiteDetail.rewards_per_hour ?? 0;
     }
 
-    const totalEfficiency =
+    const totalBasePPAfterEfficiency =
       deeds.reduce((acc, deed) => {
         const se = deed.worksiteDetail?.site_efficiency ?? 0;
         const pp = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
         return acc + se * pp;
       }, 0) || 0;
 
-    const costs = calcCosts(resource, totalEfficiency, 1); // pass efficiency-weighted PP
+    const costs = calcCostsV2(
+      totalBasePPAfterEfficiency,
+      1,
+      determineRecipe(resource),
+    );
 
     const data = {
       total_harvest_pp: totalHarvest,
       total_base_pp_after_cap: totalBasePP,
       rewards_per_hour: totalRewards,
-      ...costs,
+      cost_per_h_grain: costs.GRAIN || 0,
+      cost_per_h_wood: costs.WOOD || 0,
+      cost_per_h_stone: costs.STONE || 0,
+      cost_per_h_iron: costs.IRON || 0,
     };
 
     await prisma.resourceTracking.upsert({
@@ -72,8 +76,8 @@ export async function computeAndStoreResourceProduction(today: Date) {
 
   try {
     await Promise.all(
-      [...NATURAL_RESOURCES, ...Array.from(MULTIPLE_CONSUMING_RESOURCES)].map(
-        (resource) => computeAndStoreResource(today, resource),
+      PRODUCING_RESOURCES.map((resource) =>
+        computeAndStoreResource(today, resource),
       ),
     );
 

@@ -47,6 +47,14 @@ export default function RankingPage({
               rankField="total_harvest_pp_rank"
               currentPlayer={currentPlayer}
             />
+
+            <RankingBarChart
+              title="Base PP"
+              data={playerSummaryData}
+              valueField="total_base_pp_after_cap"
+              rankField="total_base_pp_rank"
+              currentPlayer={currentPlayer}
+            />
           </Box>
           <RankingList
             title="DEC/hr"
@@ -69,6 +77,14 @@ export default function RankingPage({
             players={playerSummaryData}
             rankingField="total_harvest_pp_rank"
             valueField="total_harvest_pp"
+            currentPlayer={currentPlayer}
+          />
+
+          <RankingList
+            title="Base PP"
+            players={playerSummaryData}
+            rankingField="total_base_pp_rank"
+            valueField="total_base_pp_after_cap"
             currentPlayer={currentPlayer}
           />
 

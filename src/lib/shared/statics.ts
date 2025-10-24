@@ -10,6 +10,10 @@ import {
   resource_research_icon_url,
   resource_stone_icon_url,
   resource_tax_icon_url,
+  resource_unbinding_common_icon_url,
+  resource_unbinding_epic_icon_url,
+  resource_unbinding_legendary_icon_url,
+  resource_unbinding_rare_icon_url,
   resource_voucher_icon_url,
   resource_wagon_kit_icon_url,
   resource_wood_icon_url,
@@ -17,12 +21,6 @@ import {
 } from "@/lib/shared/statics_icon_urls";
 
 export const NATURAL_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON"];
-export const MULTIPLE_CONSUMING_RESOURCES = new Set([
-  "RESEARCH",
-  "AURA",
-  "SPS",
-]);
-export const CONSUMES_ONLY_GRAIN = new Set(NATURAL_RESOURCES);
 export const PRODUCING_RESOURCES = [
   "GRAIN",
   "WOOD",
@@ -33,11 +31,23 @@ export const PRODUCING_RESOURCES = [
   "SPS",
 ];
 
-export const CONSUME_RATES: Record<string, number> = {
-  GRAIN: 0.01,
-  WOOD: 0.005,
-  STONE: 0.002,
-  IRON: 0.0005,
+export const DEFAULT_GRAIN_COST = 0.01;
+
+export interface ResourceRecipeItem {
+  qty: number;
+  symbol: string;
+}
+
+export const DEFAULT_RECIPE: ResourceRecipeItem[] = [
+  { symbol: "WOOD", qty: 0.005 },
+  { symbol: "STONE", qty: 0.002 },
+  { symbol: "IRON", qty: 0.0005 },
+];
+
+export const recipeMap: Record<string, ResourceRecipeItem[]> = {
+  RESEARCH: DEFAULT_RECIPE,
+  AURA: DEFAULT_RECIPE,
+  SPS: DEFAULT_RECIPE,
 };
 
 export const PRODUCE_RATES: Record<string, number> = {
@@ -99,6 +109,10 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   AM: resource_auction_mark_icon_url,
   FT: resource_fortune_ticket_icon_url,
   MIDNIGHTPOT: resource_midnight_potion_icon_url,
+  UNBIND_CA_C: resource_unbinding_common_icon_url,
+  UNBIND_CA_R: resource_unbinding_rare_icon_url,
+  UNBIND_CA_E: resource_unbinding_epic_icon_url,
+  UNBIND_CA_L: resource_unbinding_legendary_icon_url,
   "": land_hammer_icon_url,
 };
 

@@ -191,7 +191,7 @@ export default function Planner({
       bloodline,
       landBoosts: {
         produceBoost: ({} = {} as Record<Resource, number>),
-        consumeDiscount: ({} = {} as Record<Resource, number>),
+        consumeGrainDiscount: 0,
         bloodlineBoost: 0,
         decDiscount: 0,
         replacePowerCore: false,
