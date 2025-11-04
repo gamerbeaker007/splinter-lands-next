@@ -269,7 +269,7 @@ export async function getCachedPlayerOverviewData(
       eligible: {
         common: playerLandShareInclEfficiencyPct * 100_000,
         rare: playerLandShareInclEfficiencyPct * 18_000,
-        epic: playerLandShareInclEfficiencyPct * 6_0000,
+        epic: playerLandShareInclEfficiencyPct * 6_000,
         legendary: playerLandShareInclEfficiencyPct * 1_000,
       },
     },
