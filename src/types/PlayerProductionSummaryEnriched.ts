@@ -14,6 +14,7 @@ export type PlayerProductionSummaryEnriched = {
   total_dec_stake_needed?: number;
   total_dec_stake_in_use?: number;
   total_dec_staked?: number;
+  total_land_base_pp_incl_efficiency?: number;
   LCE_ratio_base?: number;
   LCE_base_score?: number;
   LCE_base_rank?: number;

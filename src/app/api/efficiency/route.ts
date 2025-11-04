@@ -14,6 +14,7 @@ type StakeInfo = {
   totalDecStakeNeeded: number;
   totalDecStakeInUse: number;
   totalDecStaked: number;
+  totalBasePPInclEfficiency: number;
 };
 
 function aggregateStakingInfo(
@@ -29,6 +30,9 @@ function aggregateStakingInfo(
 
     const totalDecStakeNeeded = deed.stakingDetail?.total_dec_stake_needed ?? 0;
     const totalDecStakeInUse = deed.stakingDetail?.total_dec_stake_in_use ?? 0;
+    const totalBasePPInclEfficiency =
+      (deed.stakingDetail?.total_base_pp_after_cap ?? 0) *
+      (deed.stakingDetail?.efficiency ?? 0);
 
     //staked DEC is based on region only add it one per region-player combination
     const totalDecStaked = !seenPairs.has(key)
@@ -40,11 +44,14 @@ function aggregateStakingInfo(
       totalDecStakeNeeded: 0,
       totalDecStakeInUse: 0,
       totalDecStaked: 0,
+      totalBasePPInclEfficiency: 0,
     };
     stakeMap.set(player, {
       totalDecStakeNeeded: current.totalDecStakeNeeded + totalDecStakeNeeded,
       totalDecStakeInUse: current.totalDecStakeInUse + totalDecStakeInUse,
       totalDecStaked: current.totalDecStaked + totalDecStaked,
+      totalBasePPInclEfficiency:
+        current.totalBasePPInclEfficiency + totalBasePPInclEfficiency,
     });
   }
 
@@ -60,10 +67,13 @@ function applyStakingDataToPlayers(
       totalDecStakeNeeded: 0,
       totalDecStakeInUse: 0,
       totalDecStaked: 0,
+      totalBasePPInclEfficiency: 0,
     };
     player.total_dec_stake_needed = stakeData.totalDecStakeNeeded;
     player.total_dec_stake_in_use = stakeData.totalDecStakeInUse;
     player.total_dec_staked = stakeData.totalDecStaked;
+    player.total_land_base_pp_incl_efficiency =
+      stakeData.totalBasePPInclEfficiency;
   }
 }
 

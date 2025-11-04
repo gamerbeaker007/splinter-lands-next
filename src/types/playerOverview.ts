@@ -16,4 +16,18 @@ export type PlayerOverview = {
   LDERatio: number;
   totalDec: number;
   totalTaxDec: number | null;
+  landShare?: {
+    totalBasePP: number;
+    totalBasePPIncludingEfficiency: number;
+    totalPlayerBasePP: number;
+    totalPlayerBasePPIncludingEfficiency: number;
+    playerLandShare: number;
+    playerLandShareInclEfficiency: number;
+    eligible: {
+      common: number;
+      rare: number;
+      epic: number;
+      legendary: number;
+    };
+  };
 };

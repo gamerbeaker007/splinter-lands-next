@@ -225,6 +225,28 @@ export async function getCachedPlayerOverviewData(
     summarizedRegionInfo.deedsCount,
   );
 
+  let totalBasePP = 0;
+  let totalBasePPIncludingEfficiency = 0;
+  for (const deed of allData) {
+    const basePP = deed?.stakingDetail?.total_base_pp_after_cap || 0;
+    const siteEfficiency = deed?.stakingDetail?.efficiency || 0;
+    totalBasePP += basePP;
+    totalBasePPIncludingEfficiency += basePP * siteEfficiency;
+  }
+
+  let totalPlayerBasePP = 0;
+  let totalPlayerBasePPIncludingEfficiency = 0;
+  for (const deed of deeds) {
+    const basePP = deed?.stakingDetail?.total_base_pp_after_cap || 0;
+    const siteEfficiency = deed?.stakingDetail?.efficiency || 0;
+    totalPlayerBasePP += basePP;
+    totalPlayerBasePPIncludingEfficiency += basePP * siteEfficiency;
+  }
+
+  const playerLandSharePct = totalPlayerBasePP / totalBasePP;
+  const playerLandShareInclEfficiencyPct =
+    totalPlayerBasePPIncludingEfficiency / totalBasePPIncludingEfficiency;
+
   const result: PlayerOverview = {
     summarizedRegionInfo: summarizedRegionInfo,
     liquidityInfo: liquidityInfo,
@@ -237,6 +259,20 @@ export async function getCachedPlayerOverviewData(
     LPERatio: LPE_ratio,
     totalDec: playerRegionInfo.totals.totalDEC,
     totalTaxDec: totalTaxDEC,
+    landShare: {
+      totalBasePP,
+      totalBasePPIncludingEfficiency,
+      totalPlayerBasePP,
+      totalPlayerBasePPIncludingEfficiency,
+      playerLandShare: playerLandSharePct,
+      playerLandShareInclEfficiency: playerLandShareInclEfficiencyPct,
+      eligible: {
+        common: playerLandShareInclEfficiencyPct * 100_000,
+        rare: playerLandShareInclEfficiencyPct * 18_000,
+        epic: playerLandShareInclEfficiencyPct * 6_0000,
+        legendary: playerLandShareInclEfficiencyPct * 1_000,
+      },
+    },
   };
 
   cache.set(key, result);

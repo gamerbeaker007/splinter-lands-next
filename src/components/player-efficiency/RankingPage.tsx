@@ -2,6 +2,7 @@ import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummary
 import RankingList from "@/components/player-efficiency/RankingList";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import RankingBarChart from "./RankingBarChart";
+import RankingListShares from "@/components/player-efficiency/RankingListShares";
 
 type Props = {
   currentPlayer?: string;
@@ -127,6 +128,10 @@ export default function RankingPage({
             players={playerSummaryData}
             rankingField="total_land_rank"
             valueField="total_land_score"
+            currentPlayer={currentPlayer}
+          />
+          <RankingListShares
+            players={playerSummaryData}
             currentPlayer={currentPlayer}
           />
         </>
