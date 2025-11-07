@@ -29,5 +29,11 @@ export type PlayerOverview = {
       epic: number;
       legendary: number;
     };
+    eligibleAt100: {
+      common: number;
+      rare: number;
+      epic: number;
+      legendary: number;
+    };
   };
 };

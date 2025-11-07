@@ -24,6 +24,64 @@ const RARITY_ICONS = {
   legendary: card_rarity_legendary_icon_url,
 };
 
+const EligibleRow: React.FC<{
+  title: string;
+  subtitle?: string;
+  minHeight?: number;
+  eligible: { common: number; rare: number; epic: number; legendary: number };
+}> = ({ title, subtitle, minHeight = 0, eligible }) => {
+  return (
+    <Box>
+      <Box minHeight={minHeight}>
+        <Typography variant="h6" color="text.secondary">
+          {title}
+        </Typography>
+        {subtitle && (
+          <Typography variant="caption" color="text.secondary">
+            {subtitle}
+          </Typography>
+        )}
+      </Box>
+      <Box mt={1} sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Image
+            src={RARITY_ICONS.common}
+            alt="Common"
+            width={20}
+            height={20}
+          />
+          <Typography variant="body1">
+            <strong>Common:</strong> {Math.floor(eligible.common)}
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Image src={RARITY_ICONS.rare} alt="Rare" width={20} height={20} />
+          <Typography variant="body1">
+            <strong>Rare:</strong> {Math.floor(eligible.rare)}
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Image src={RARITY_ICONS.epic} alt="Epic" width={20} height={20} />
+          <Typography variant="body1">
+            <strong>Epic:</strong> {Math.floor(eligible.epic)}
+          </Typography>
+        </Box>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Image
+            src={RARITY_ICONS.legendary}
+            alt="Legendary"
+            width={20}
+            height={20}
+          />
+          <Typography variant="body1">
+            <strong>Legendary:</strong> {Math.floor(eligible.legendary)}
+          </Typography>
+        </Box>
+      </Box>
+    </Box>
+  );
+};
+
 export function LandCard({ playerOverview }: Props) {
   return (
     <Box>
@@ -89,16 +147,6 @@ export function LandCard({ playerOverview }: Props) {
             <TbPercentage40 size={20} />
             <Typography variant="body1">
               <strong>Share:</strong>{" "}
-              {((playerOverview.landShare?.playerLandShare ?? 0) * 100).toFixed(
-                3,
-              )}
-              %
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <TbPercentage40 size={20} />
-            <Typography variant="body1">
-              <strong>Share:</strong>{" "}
               {(
                 (playerOverview.landShare?.playerLandShareInclEfficiency ?? 0) *
                 100
@@ -111,50 +159,52 @@ export function LandCard({ playerOverview }: Props) {
       </Box>
 
       {/* Eligible Section */}
-      <Box>
-        <Typography variant="h6" mb={1.5} color="text.secondary">
-          Eligible
-        </Typography>
-        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Image
-              src={RARITY_ICONS.common}
-              alt="Common"
-              width={20}
-              height={20}
+      <Box display={"flex"} flexDirection="row" gap={2}>
+        {playerOverview.landShare?.eligible &&
+        playerOverview.landShare?.eligibleAt100 ? (
+          playerOverview.landShare?.totalPlayerBasePP ===
+          playerOverview.landShare?.totalPlayerBasePPIncludingEfficiency ? (
+            <EligibleRow
+              title="Eligible"
+              eligible={
+                playerOverview.landShare?.eligible ?? {
+                  common: 0,
+                  rare: 0,
+                  epic: 0,
+                  legendary: 0,
+                }
+              }
             />
-            <Typography variant="body1">
-              <strong>Common:</strong>{" "}
-              {playerOverview.landShare?.eligible.common.toFixed(0)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Image src={RARITY_ICONS.rare} alt="Rare" width={20} height={20} />
-            <Typography variant="body1">
-              <strong>Rare:</strong>{" "}
-              {playerOverview.landShare?.eligible.rare.toFixed(0)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Image src={RARITY_ICONS.epic} alt="Epic" width={20} height={20} />
-            <Typography variant="body1">
-              <strong>Epic:</strong>{" "}
-              {playerOverview.landShare?.eligible.epic.toFixed(0)}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Image
-              src={RARITY_ICONS.legendary}
-              alt="Legendary"
-              width={20}
-              height={20}
-            />
-            <Typography variant="body1">
-              <strong>Legendary:</strong>{" "}
-              {playerOverview.landShare?.eligible.legendary.toFixed(0)}
-            </Typography>
-          </Box>
-        </Box>
+          ) : (
+            <>
+              <EligibleRow
+                title="Eligible"
+                minHeight={60}
+                eligible={
+                  playerOverview.landShare?.eligible ?? {
+                    common: 0,
+                    rare: 0,
+                    epic: 0,
+                    legendary: 0,
+                  }
+                }
+              />
+              <EligibleRow
+                title="Eligible"
+                subtitle="(at 100% efficiency)"
+                minHeight={60}
+                eligible={
+                  playerOverview.landShare?.eligibleAt100 ?? {
+                    common: 0,
+                    rare: 0,
+                    epic: 0,
+                    legendary: 0,
+                  }
+                }
+              />
+            </>
+          )
+        ) : null}
       </Box>
     </Box>
   );

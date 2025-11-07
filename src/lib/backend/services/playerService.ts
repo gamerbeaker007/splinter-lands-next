@@ -246,6 +246,8 @@ export async function getCachedPlayerOverviewData(
   const playerLandSharePct = totalPlayerBasePP / totalBasePP;
   const playerLandShareInclEfficiencyPct =
     totalPlayerBasePPIncludingEfficiency / totalBasePPIncludingEfficiency;
+  const playerLandSharePctAt100 =
+    totalPlayerBasePP / totalBasePPIncludingEfficiency;
 
   const result: PlayerOverview = {
     summarizedRegionInfo: summarizedRegionInfo,
@@ -271,6 +273,12 @@ export async function getCachedPlayerOverviewData(
         rare: playerLandShareInclEfficiencyPct * 18_000,
         epic: playerLandShareInclEfficiencyPct * 6_000,
         legendary: playerLandShareInclEfficiencyPct * 1_000,
+      },
+      eligibleAt100: {
+        common: playerLandSharePctAt100 * 100_000,
+        rare: playerLandSharePctAt100 * 18_000,
+        epic: playerLandSharePctAt100 * 6_000,
+        legendary: playerLandSharePctAt100 * 1_000,
       },
     },
   };
