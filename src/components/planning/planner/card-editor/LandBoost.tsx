@@ -363,6 +363,8 @@ export default function LandBoostComponent({
               />
             </Box>
 
+            <Divider sx={{ my: 2 }} />
+
             {/* Boolean Options */}
             <Box>
               <FormControlLabel
