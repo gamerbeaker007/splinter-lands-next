@@ -1,20 +1,17 @@
 "use client";
 
+import { CardBloodLineSelector } from "@/components/planning/planner/card-editor/CardBloodLineSelector";
+import { computeSlot } from "@/lib/frontend/utils/plannerCalcs";
 import { CSSSize } from "@/types/cssSize";
 import { PlotPlannerData, SlotInput } from "@/types/planner";
 import { Box, Typography } from "@mui/material";
-import {
-  computeSlot,
-  determineBloodlineBoost,
-} from "@/lib/frontend/utils/plannerCalcs";
 import { BcxInput } from "./BcxInput";
 import { CardFoilSelector } from "./CardFoilSelector";
 import { CardPPInfo } from "./CardPPInfo";
 import { CardRaritySelector } from "./CardRaritySelector";
 import { CardElementSelector } from "./ElementSelector";
-import { SetSelector } from "./SetSelector";
 import LandBoostComponent from "./LandBoost";
-import { CardBloodLineSelector } from "@/components/planning/planner/card-editor/CardBloodLineSelector";
+import { SetSelector } from "./SetSelector";
 
 type Props = {
   index: number; // 0..4 (displayed as 1..5)
@@ -39,10 +36,6 @@ export default function SlotEditor({
       onChange({ ...value, [key]: val });
 
   const computed = computeSlot(value, plot);
-  const bloodlineBoost = determineBloodlineBoost(
-    value.bloodline,
-    plot.cardInput,
-  );
 
   const fontColor = "common.white";
   return (
@@ -100,11 +93,7 @@ export default function SlotEditor({
             onChange({ ...plot.cardInput[index], landBoosts: boost });
           }}
         />
-        <CardPPInfo
-          basePP={computed.basePP}
-          boostedPP={computed.boostedPP}
-          bloodlineBoost={bloodlineBoost}
-        />
+        <CardPPInfo basePP={computed.basePP} boostedPP={computed.boostedPP} />
       </Box>
     </Box>
   );

@@ -43,7 +43,7 @@ export interface SlotInput {
 export interface LandBoost {
   produceBoost: Record<Resource, number>;
   consumeGrainDiscount: number;
-  bloodlineBoost: number;
+  bloodlineBoost: Record<CardBloodline, number>;
   decDiscount: number;
   replacePowerCore: boolean;
   laborLuck: boolean;

@@ -1,4 +1,5 @@
 import {
+  determineBloodlineBoost,
   determineGrainConsumeReduction,
   determineProductionBoost,
 } from "@/lib/frontend/utils/plannerCalcs";
@@ -8,8 +9,12 @@ import {
   land_runi_power_core_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { PlotPlannerData, resourceWorksiteMap } from "@/types/planner";
-import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
+import {
+  CardBloodline,
+  PlotPlannerData,
+  resourceWorksiteMap,
+} from "@/types/planner";
+import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 import { PiCloverFill } from "react-icons/pi";
@@ -48,17 +53,40 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
     (card) => card.landBoosts?.laborLuck,
   ).length;
 
-  // Calculate Bloodline Boosts (grouped by bloodline)
-  const bloodlineBoosts = new Map<string, number>();
+  // Calculate total bloodline boost using the function
+  const totalBloodlineBoost = determineBloodlineBoost(cardInput);
+
+  // Get breakdown of bloodline boosts for tooltip
+  const bloodlineBoostBreakdown: Record<CardBloodline, number> = {} as Record<
+    CardBloodline,
+    number
+  >;
+
   cardInput.forEach((card) => {
-    if (card.landBoosts?.bloodlineBoost && card.landBoosts.bloodlineBoost > 0) {
-      const bloodline = card.bloodline;
-      bloodlineBoosts.set(
-        bloodline,
-        (bloodlineBoosts.get(bloodline) || 0) + card.landBoosts.bloodlineBoost,
-      );
-    }
+    const boosts = card.landBoosts?.bloodlineBoost;
+    if (!boosts) return;
+
+    Object.entries(boosts).forEach(([bloodline, value]) => {
+      if (value > 0) {
+        const currentValue =
+          bloodlineBoostBreakdown[bloodline as CardBloodline] || 0;
+        bloodlineBoostBreakdown[bloodline as CardBloodline] = Math.max(
+          currentValue,
+          value,
+        );
+      }
+    });
   });
+
+  // Check which bloodlines are present on the plot
+  const bloodlinesOnPlot = new Set<CardBloodline>(
+    cardInput.map((card) => card.bloodline),
+  );
+
+  // Filter to only show boosts for bloodlines present on plot
+  const activeBloodlineBoosts = Object.entries(bloodlineBoostBreakdown).filter(
+    ([bloodline]) => bloodlinesOnPlot.has(bloodline as CardBloodline),
+  );
 
   const formatPercentage = (value: number) => `${Math.round(value * 100)}%`;
 
@@ -170,34 +198,35 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           )}
         </Stack>
 
-        <Stack direction="row" spacing={0.5} flexWrap="wrap">
-          {/* Bloodline Boosts */}
-          {bloodlineBoosts && bloodlineBoosts.size > 0 && (
-            <>
+        {/* Bloodline Boosts - Toil and Kin */}
+        {totalBloodlineBoost > 0 && (
+          <Tooltip
+            title={
+              <Box>
+                <Typography fontSize={fontSize} fontWeight="bold" mb={0.5}>
+                  Toil and Kin
+                </Typography>
+                {activeBloodlineBoosts.map(([bloodline, boost]) => (
+                  <Typography key={bloodline} fontSize={fontSize}>
+                    {bloodline}: {formatPercentage(boost)}
+                  </Typography>
+                ))}
+              </Box>
+            }
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Image
                 src={bloodline_icon_url}
-                alt={"Bloodline"}
+                alt={"Toil and Kin"}
                 width={sizeIcon}
                 height={sizeIcon}
               />
-              {Array.from(bloodlineBoosts.entries()).map(
-                ([bloodline, boost]) => (
-                  <Tooltip
-                    key={bloodline}
-                    title={`Toil and Kin - ${bloodline}`}
-                  >
-                    <Chip
-                      label={formatPercentage(boost)}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: fontSize, color: fontColor }}
-                    />
-                  </Tooltip>
-                ),
-              )}
-            </>
-          )}
-        </Stack>
+              <Typography fontSize={fontSize} color={fontColor}>
+                +{formatPercentage(totalBloodlineBoost)}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
       </Stack>
     </Box>
   );

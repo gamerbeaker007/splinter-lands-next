@@ -50,15 +50,13 @@ export function determineDeedResourceBoost(
 export function calcBoostedPP(
   basePP: number,
   plot: PlotPlannerData,
-  bloodline: CardBloodline,
   terrainModifier: number,
 ) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
   const titlePct = titleModifiers[plot.title];
   const totemPct = totemModifiers[plot.totem];
   const runiPct = runiModifiers[plot.runi];
-
-  const bloodlineBoost = determineBloodlineBoost(bloodline, plot.cardInput);
+  const bloodlinePct = determineBloodlineBoost(plot.cardInput);
 
   const terrainBoostedPP = basePP * (1 + terrainModifier);
 
@@ -74,7 +72,7 @@ export function calcBoostedPP(
     runiPct +
     rarityPct +
     deedResourceBoost +
-    bloodlineBoost;
+    bloodlinePct;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
@@ -85,7 +83,7 @@ export function computeSlot(
   const basePP = calcBasePP(slot);
 
   const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
-  const boostedPP = calcBoostedPP(basePP, plot, slot.bloodline, terrainBoost);
+  const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
 
   return {
     basePP,
@@ -120,7 +118,7 @@ export function calcTotalPP(plotPlannerData: PlotPlannerData) {
   );
 
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
-  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, "Golem", 0);
+  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
   const totalBasePP = sumBasePP + runiBasePP;
   const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
@@ -301,21 +299,55 @@ export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
 }
 
 /**
- * Determines the total boost (%) for a specific bloodline.
- * @param bloodline The resource to check for discounts.
- * @param cardInput The list of cards to evaluate.
- * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
+ * Determines the total bloodline boost (%) from all cards with Toil and Kin abilities.
+ * Rules:
+ * - Each card can have bloodlineBoost which is a Record<CardBloodline, number>
+ * - For each bloodline boost, check if there's at least one card with that bloodline on the plot
+ * - If yes, apply the boost. Multiple cards with same bloodline boost don't stack (max once per bloodline type)
+ * - Different bloodline boosts (e.g., Elf +10% and Mundane Beast +5%) stack additively
+ *
+ * @param cardInput The list of cards on the plot
+ * @returns The total bloodline boost multiplier. 0.15 means 15% boost.
+ *
+ * @example
+ * // Example 3: Card with Elf +10% working with 2 other elfs = +10% (not +20%)
+ * // Example 5: Card with Elf +10% and Mundane Beast +5%, plus one elf and one mundane beast = +15%
  */
-export function determineBloodlineBoost(
-  bloodline: string,
-  cardInput: SlotInput[],
-): number {
-  let boost = 0;
+export function determineBloodlineBoost(cardInput: SlotInput[]): number {
+  // Collect all unique bloodline boosts from all cards
+  const bloodlineBoosts: Record<CardBloodline, number> = {} as Record<
+    CardBloodline,
+    number
+  >;
 
   cardInput.forEach((card) => {
-    if (card.bloodline === bloodline) {
-      boost += card.landBoosts?.bloodlineBoost ?? 0;
+    const boosts = card.landBoosts?.bloodlineBoost;
+    if (!boosts) return;
+
+    Object.entries(boosts).forEach(([bloodline, value]) => {
+      if (value > 0) {
+        // Store the maximum boost value for each bloodline (in case multiple cards have different values)
+        const currentValue = bloodlineBoosts[bloodline as CardBloodline] || 0;
+        bloodlineBoosts[bloodline as CardBloodline] = Math.max(
+          currentValue,
+          value,
+        );
+      }
+    });
+  });
+
+  // Check which bloodlines are present on the plot
+  const bloodlinesOnPlot = new Set<CardBloodline>(
+    cardInput.filter((card) => card.bcx > 0).map((card) => card.bloodline),
+  );
+
+  // Sum boosts for bloodlines that are present on the plot
+  let totalBoost = 0;
+  Object.entries(bloodlineBoosts).forEach(([bloodline, boost]) => {
+    if (bloodlinesOnPlot.has(bloodline as CardBloodline)) {
+      totalBoost += boost;
     }
   });
-  return boost;
+
+  return totalBoost;
 }

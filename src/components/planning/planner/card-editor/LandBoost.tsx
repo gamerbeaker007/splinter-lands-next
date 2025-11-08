@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useState } from "react";
+import BloodlineBoostSelector from "./BloodlineBoostSelector";
 import ProductionBoostSelector from "./ProductionBoostSelector";
 
 interface LandBoostProps {
@@ -38,6 +39,13 @@ interface ResourceBoost {
   resource: Resource;
   value: number;
 }
+
+const ALLOWED_BLOODLINES: CardBloodline[] = [
+  "Elf",
+  "Undead",
+  "Mundane Beast",
+  "Awakened Beast",
+];
 
 const fontSizeToolTip = "0.8rem";
 const sizeIcon = 30;
@@ -65,11 +73,32 @@ export default function LandBoostComponent({
     (initialBoost?.consumeGrainDiscount ?? 0) * 100,
   );
 
-  const [bloodlineBoost, setBloodlineBoost] = useState(
-    initialBoost?.bloodlineBoost ?? 0,
+  const [selectedBloodline, setSelectedBloodline] = useState<CardBloodline>(
+    () => {
+      if (initialBoost?.bloodlineBoost) {
+        const entry = Object.entries(initialBoost.bloodlineBoost).find(
+          ([bloodline]) =>
+            ALLOWED_BLOODLINES.includes(bloodline as CardBloodline),
+        );
+        if (entry) return entry[0] as CardBloodline;
+      }
+      return ALLOWED_BLOODLINES[0];
+    },
   );
+
+  const [bloodlineBoostValue, setBloodlineBoostValue] = useState(() => {
+    if (initialBoost?.bloodlineBoost) {
+      const entry = Object.entries(initialBoost.bloodlineBoost).find(
+        ([bloodline]) =>
+          ALLOWED_BLOODLINES.includes(bloodline as CardBloodline),
+      );
+      if (entry) return entry[1] * 100;
+    }
+    return 0;
+  });
+
   const [decDiscount, setDecDiscount] = useState(
-    initialBoost?.decDiscount ?? 0,
+    (initialBoost?.decDiscount ?? 0) * 100,
   );
   const [replacePowerCore, setReplacePowerCore] = useState(
     initialBoost?.replacePowerCore ?? false,
@@ -89,8 +118,20 @@ export default function LandBoostComponent({
           })),
       );
       setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
-      setBloodlineBoost(initialBoost.bloodlineBoost * 100);
-      setDecDiscount(initialBoost.decDiscount * 100);
+
+      const entry = Object.entries(initialBoost.bloodlineBoost ?? {}).find(
+        ([bloodline]) =>
+          ALLOWED_BLOODLINES.includes(bloodline as CardBloodline),
+      );
+      if (entry) {
+        setSelectedBloodline(entry[0] as CardBloodline);
+        setBloodlineBoostValue(entry[1] * 100);
+      } else {
+        setSelectedBloodline(ALLOWED_BLOODLINES[0]);
+        setBloodlineBoostValue(0);
+      }
+
+      setDecDiscount((initialBoost.decDiscount ?? 0) * 100);
       setReplacePowerCore(initialBoost.replacePowerCore);
       setLaborLuck(initialBoost.laborLuck);
     }
@@ -108,10 +149,19 @@ export default function LandBoostComponent({
       produceBoost[resource] = value / 100;
     });
 
+    // Create bloodlineBoost record with single entry if value > 0
+    const bloodlineBoost: Record<CardBloodline, number> = {} as Record<
+      CardBloodline,
+      number
+    >;
+    if (bloodlineBoostValue > 0) {
+      bloodlineBoost[selectedBloodline] = bloodlineBoostValue / 100;
+    }
+
     const landBoost: LandBoost = {
       produceBoost,
       consumeGrainDiscount: consumeGrainDiscount / 100,
-      bloodlineBoost: bloodlineBoost / 100,
+      bloodlineBoost,
       decDiscount: decDiscount / 100,
       replacePowerCore,
       laborLuck,
@@ -151,7 +201,7 @@ export default function LandBoostComponent({
     return (
       produceBoosts.length > 0 ||
       consumeGrainDiscount > 0 ||
-      bloodlineBoost > 0 ||
+      bloodlineBoostValue > 0 ||
       decDiscount > 0 ||
       replacePowerCore ||
       laborLuck
@@ -195,9 +245,9 @@ export default function LandBoostComponent({
           Grain Consumption Discount: {consumeGrainDiscount}%
         </Typography>
       )}
-      {bloodlineBoost > 0 && (
+      {bloodlineBoostValue > 0 && (
         <Typography fontSize={fontSizeToolTip}>
-          Bloodline Boost: {bloodlineBoost}%
+          Bloodline Boost: {selectedBloodline} {bloodlineBoostValue}%
         </Typography>
       )}
       {decDiscount > 0 && (
@@ -309,6 +359,8 @@ export default function LandBoostComponent({
               />
             </Box>
 
+            <Divider sx={{ my: 2 }} />
+
             {/* Bloodline Boost */}
             <Box sx={{ mb: 3 }}>
               <Box
@@ -325,12 +377,20 @@ export default function LandBoostComponent({
                 />
                 <Typography gutterBottom>Bloodline Boost</Typography>
               </Box>
-              <PercentageSlider
-                value={bloodlineBoost}
-                onChange={setBloodlineBoost}
-                label="Bloodline boost"
+              <BloodlineBoostSelector
+                boost={{
+                  bloodline: selectedBloodline,
+                  value: bloodlineBoostValue,
+                }}
+                allowedBloodlines={ALLOWED_BLOODLINES}
+                onChange={(bloodline, value) => {
+                  setSelectedBloodline(bloodline);
+                  setBloodlineBoostValue(value);
+                }}
               />
             </Box>
+
+            <Divider sx={{ my: 2 }} />
 
             {/* DEC Discount */}
             <Box sx={{ mb: 3 }}>
