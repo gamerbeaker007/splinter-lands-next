@@ -56,7 +56,7 @@ export function calcBoostedPP(
   const titlePct = titleModifiers[plot.title];
   const totemPct = totemModifiers[plot.totem];
   const runiPct = runiModifiers[plot.runi];
-  const bloodlinePct = determineBloodlineBoost(plot.cardInput);
+  const { totalBloodlineBoost } = determineBloodlineBoost(plot.cardInput);
 
   const terrainBoostedPP = basePP * (1 + terrainModifier);
 
@@ -72,7 +72,7 @@ export function calcBoostedPP(
     runiPct +
     rarityPct +
     deedResourceBoost +
-    bloodlinePct;
+    totalBloodlineBoost;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
@@ -313,8 +313,47 @@ export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
  * // Card A (Elf) with bloodlineBoost +10% + Card B (Undead) = 0%
  * // Card A (Elf) with bloodlineBoost +10% + Card B (Elf) with bloodlineBoost +20% + Card C (Elf) = +20% (uses max)
  */
-export function determineBloodlineBoost(cardInput: SlotInput[]): number {
-  // First, collect the maximum bloodline boost for each bloodline
+export function determineBloodlineBoost(cardInput: SlotInput[]): {
+  totalBloodlineBoost: number;
+  bloodlineBoostDetails: Array<{
+    bloodline: CardBloodline;
+    boost: number;
+  }>;
+} {
+  const maxBloodlineBoosts: Record<CardBloodline, number> =
+    getMaxBloodlineBoosts(cardInput);
+
+  // Then, determine which bloodlines are actually present with other cards
+  let totalBloodlineBoost = 0;
+  const bloodlineBoostDetails: Array<{
+    bloodline: CardBloodline;
+    boost: number;
+  }> = [];
+
+  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
+    const bloodlineType = bloodline as CardBloodline;
+
+    // Count how many cards have this bloodline (with bcx > 0)
+    const cardsWithBloodline = cardInput.filter(
+      (card) => card.bloodline === bloodlineType && card.bcx > 0,
+    );
+
+    // Apply boost only if there are at least 2 cards with this bloodline
+    if (cardsWithBloodline.length >= 2) {
+      totalBloodlineBoost += boost;
+      bloodlineBoostDetails.push({ bloodline: bloodlineType, boost });
+    }
+  });
+
+  return { totalBloodlineBoost, bloodlineBoostDetails };
+}
+
+/**
+ * Gets the maximum bloodline boost for each bloodline from the card slots
+ * @param cardInput The list of cards on the plot
+ * @returns A record mapping each bloodline to its maximum boost value
+ */
+export function getMaxBloodlineBoosts(cardInput: SlotInput[]) {
   const maxBloodlineBoosts: Record<CardBloodline, number> = {} as Record<
     CardBloodline,
     number
@@ -329,22 +368,5 @@ export function determineBloodlineBoost(cardInput: SlotInput[]): number {
     maxBloodlineBoosts[cardBloodline] = Math.max(currentMax, boost);
   });
 
-  // Then, determine which bloodlines are actually present with other cards
-  let totalBoost = 0;
-
-  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
-    const bloodlineType = bloodline as CardBloodline;
-
-    // Count how many cards have this bloodline (with bcx > 0)
-    const cardsWithBloodline = cardInput.filter(
-      (card) => card.bloodline === bloodlineType && card.bcx > 0,
-    );
-
-    // Apply boost only if there are at least 2 cards with this bloodline
-    if (cardsWithBloodline.length >= 2) {
-      totalBoost += boost;
-    }
-  });
-
-  return totalBoost;
+  return maxBloodlineBoosts;
 }

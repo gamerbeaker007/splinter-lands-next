@@ -9,11 +9,7 @@ import {
   land_runi_power_core_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import {
-  CardBloodline,
-  PlotPlannerData,
-  resourceWorksiteMap,
-} from "@/types/planner";
+import { PlotPlannerData, resourceWorksiteMap } from "@/types/planner";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
@@ -27,6 +23,10 @@ type Props = {
 const sizeIcon = 20;
 const fontSize = "0.8rem";
 const fontColor = "common.white";
+
+function formatPercentage(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
 
 export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
@@ -53,43 +53,9 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
     (card) => card.landBoosts?.laborLuck,
   ).length;
 
-  // Calculate total bloodline boost using the function
-  const totalBloodlineBoost = determineBloodlineBoost(cardInput);
-
-  // Get breakdown of bloodline boosts for tooltip
-  const bloodlineBoostDetails: Array<{
-    bloodline: CardBloodline;
-    boost: number;
-  }> = [];
-
-  // First, collect the maximum bloodline boost for each bloodline
-  const maxBloodlineBoosts: Record<string, number> = {};
-
-  cardInput.forEach((card) => {
-    const boost = card.landBoosts?.bloodlineBoost;
-    if (!boost || boost <= 0) return;
-
-    const cardBloodline = card.bloodline;
-    const currentMax = maxBloodlineBoosts[cardBloodline] || 0;
-    maxBloodlineBoosts[cardBloodline] = Math.max(currentMax, boost);
-  });
-
-  // Then, determine which bloodlines are actually present with other cards
-  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
-    const bloodlineType = bloodline as CardBloodline;
-
-    // Count how many cards have this bloodline (with bcx > 0)
-    const cardsWithBloodline = cardInput.filter(
-      (card) => card.bloodline === bloodlineType && card.bcx > 0,
-    );
-
-    // Add to details only if there are at least 2 cards with this bloodline
-    if (cardsWithBloodline.length >= 2) {
-      bloodlineBoostDetails.push({ bloodline: bloodlineType, boost });
-    }
-  });
-
-  const formatPercentage = (value: number) => `${Math.round(value * 100)}%`;
+  // Calculate total bloodline boost including details
+  const { totalBloodlineBoost, bloodlineBoostDetails } =
+    determineBloodlineBoost(cardInput);
 
   return (
     <Box
