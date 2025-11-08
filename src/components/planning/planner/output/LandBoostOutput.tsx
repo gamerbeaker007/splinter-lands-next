@@ -57,36 +57,37 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const totalBloodlineBoost = determineBloodlineBoost(cardInput);
 
   // Get breakdown of bloodline boosts for tooltip
-  const bloodlineBoostBreakdown: Record<CardBloodline, number> = {} as Record<
-    CardBloodline,
-    number
-  >;
+  const bloodlineBoostDetails: Array<{
+    bloodline: CardBloodline;
+    boost: number;
+  }> = [];
+
+  // First, collect the maximum bloodline boost for each bloodline
+  const maxBloodlineBoosts: Record<string, number> = {};
 
   cardInput.forEach((card) => {
-    const boosts = card.landBoosts?.bloodlineBoost;
-    if (!boosts) return;
+    const boost = card.landBoosts?.bloodlineBoost;
+    if (!boost || boost <= 0) return;
 
-    Object.entries(boosts).forEach(([bloodline, value]) => {
-      if (value > 0) {
-        const currentValue =
-          bloodlineBoostBreakdown[bloodline as CardBloodline] || 0;
-        bloodlineBoostBreakdown[bloodline as CardBloodline] = Math.max(
-          currentValue,
-          value,
-        );
-      }
-    });
+    const cardBloodline = card.bloodline;
+    const currentMax = maxBloodlineBoosts[cardBloodline] || 0;
+    maxBloodlineBoosts[cardBloodline] = Math.max(currentMax, boost);
   });
 
-  // Check which bloodlines are present on the plot
-  const bloodlinesOnPlot = new Set<CardBloodline>(
-    cardInput.map((card) => card.bloodline),
-  );
+  // Then, determine which bloodlines are actually present with other cards
+  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
+    const bloodlineType = bloodline as CardBloodline;
 
-  // Filter to only show boosts for bloodlines present on plot
-  const activeBloodlineBoosts = Object.entries(bloodlineBoostBreakdown).filter(
-    ([bloodline]) => bloodlinesOnPlot.has(bloodline as CardBloodline),
-  );
+    // Count how many cards have this bloodline (with bcx > 0)
+    const cardsWithBloodline = cardInput.filter(
+      (card) => card.bloodline === bloodlineType && card.bcx > 0,
+    );
+
+    // Add to details only if there are at least 2 cards with this bloodline
+    if (cardsWithBloodline.length >= 2) {
+      bloodlineBoostDetails.push({ bloodline: bloodlineType, boost });
+    }
+  });
 
   const formatPercentage = (value: number) => `${Math.round(value * 100)}%`;
 
@@ -206,9 +207,9 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
                 <Typography fontSize={fontSize} fontWeight="bold" mb={0.5}>
                   Toil and Kin
                 </Typography>
-                {activeBloodlineBoosts.map(([bloodline, boost]) => (
-                  <Typography key={bloodline} fontSize={fontSize}>
-                    {bloodline}: {formatPercentage(boost)}
+                {bloodlineBoostDetails.map((detail) => (
+                  <Typography key={detail.bloodline} fontSize={fontSize}>
+                    {detail.bloodline}: {formatPercentage(detail.boost)}
                   </Typography>
                 ))}
               </Box>

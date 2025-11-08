@@ -192,7 +192,7 @@ export default function Planner({
       landBoosts: {
         produceBoost: ({} = {} as Record<Resource, number>),
         consumeGrainDiscount: 0,
-        bloodlineBoost: { Avian: 0 } as Record<CardBloodline, number>,
+        bloodlineBoost: 0,
         decDiscount: 0,
         replacePowerCore: false,
         laborLuck: false,

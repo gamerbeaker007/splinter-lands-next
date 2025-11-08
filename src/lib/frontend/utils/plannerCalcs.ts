@@ -301,50 +301,47 @@ export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
 /**
  * Determines the total bloodline boost (%) from all cards with Toil and Kin abilities.
  * Rules:
- * - Each card can have bloodlineBoost which is a Record<CardBloodline, number>
- * - For each bloodline boost, check if there's at least one card with that bloodline on the plot
- * - If yes, apply the boost. Multiple cards with same bloodline boost don't stack (max once per bloodline type)
- * - Different bloodline boosts (e.g., Elf +10% and Mundane Beast +5%) stack additively
+ * - If bloodlineBoost (number) applies it applies to all cards
+ * - The boost only applies if there's at least one OTHER card with the same bloodline on the plot
+ * - Multiple cards with boosts for the same bloodline don't stack (max value is used)
  *
  * @param cardInput The list of cards on the plot
- * @returns The total bloodline boost multiplier. 0.15 means 15% boost.
+ * @returns The total bloodline boost multiplier. 0.10 means 10% boost.
  *
  * @example
- * // Example 3: Card with Elf +10% working with 2 other elfs = +10% (not +20%)
- * // Example 5: Card with Elf +10% and Mundane Beast +5%, plus one elf and one mundane beast = +15%
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Elf) = +10%
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Undead) = 0%
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Elf) with bloodlineBoost +20% + Card C (Elf) = +20% (uses max)
  */
 export function determineBloodlineBoost(cardInput: SlotInput[]): number {
-  // Collect all unique bloodline boosts from all cards
-  const bloodlineBoosts: Record<CardBloodline, number> = {} as Record<
+  // First, collect the maximum bloodline boost for each bloodline
+  const maxBloodlineBoosts: Record<CardBloodline, number> = {} as Record<
     CardBloodline,
     number
   >;
 
   cardInput.forEach((card) => {
-    const boosts = card.landBoosts?.bloodlineBoost;
-    if (!boosts) return;
+    const boost = card.landBoosts?.bloodlineBoost;
+    if (!boost || boost <= 0) return;
 
-    Object.entries(boosts).forEach(([bloodline, value]) => {
-      if (value > 0) {
-        // Store the maximum boost value for each bloodline (in case multiple cards have different values)
-        const currentValue = bloodlineBoosts[bloodline as CardBloodline] || 0;
-        bloodlineBoosts[bloodline as CardBloodline] = Math.max(
-          currentValue,
-          value,
-        );
-      }
-    });
+    const cardBloodline = card.bloodline;
+    const currentMax = maxBloodlineBoosts[cardBloodline] || 0;
+    maxBloodlineBoosts[cardBloodline] = Math.max(currentMax, boost);
   });
 
-  // Check which bloodlines are present on the plot
-  const bloodlinesOnPlot = new Set<CardBloodline>(
-    cardInput.filter((card) => card.bcx > 0).map((card) => card.bloodline),
-  );
-
-  // Sum boosts for bloodlines that are present on the plot
+  // Then, determine which bloodlines are actually present with other cards
   let totalBoost = 0;
-  Object.entries(bloodlineBoosts).forEach(([bloodline, boost]) => {
-    if (bloodlinesOnPlot.has(bloodline as CardBloodline)) {
+
+  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
+    const bloodlineType = bloodline as CardBloodline;
+
+    // Count how many cards have this bloodline (with bcx > 0)
+    const cardsWithBloodline = cardInput.filter(
+      (card) => card.bloodline === bloodlineType && card.bcx > 0,
+    );
+
+    // Apply boost only if there are at least 2 cards with this bloodline
+    if (cardsWithBloodline.length >= 2) {
       totalBoost += boost;
     }
   });
