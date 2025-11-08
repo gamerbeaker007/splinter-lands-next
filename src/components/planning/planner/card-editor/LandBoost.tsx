@@ -66,7 +66,7 @@ export default function LandBoostComponent({
   );
 
   // Bloodline boost is now a simple number
-  const [bloodlineBoostValue, setBloodlineBoostValue] = useState(
+  const [bloodlineBoost, setBloodlineBoost] = useState(
     (initialBoost?.bloodlineBoost ?? 0) * 100,
   );
 
@@ -91,7 +91,7 @@ export default function LandBoostComponent({
           })),
       );
       setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
-      setBloodlineBoostValue((initialBoost.bloodlineBoost ?? 0) * 100);
+      setBloodlineBoost((initialBoost.bloodlineBoost ?? 0) * 100);
       setDecDiscount((initialBoost.decDiscount ?? 0) * 100);
       setReplacePowerCore(initialBoost.replacePowerCore);
       setLaborLuck(initialBoost.laborLuck);
@@ -113,7 +113,7 @@ export default function LandBoostComponent({
     const landBoost: LandBoost = {
       produceBoost,
       consumeGrainDiscount: consumeGrainDiscount / 100,
-      bloodlineBoost: bloodlineBoostValue / 100,
+      bloodlineBoost: bloodlineBoost / 100,
       decDiscount: decDiscount / 100,
       replacePowerCore,
       laborLuck,
@@ -153,7 +153,7 @@ export default function LandBoostComponent({
     return (
       produceBoosts.length > 0 ||
       consumeGrainDiscount > 0 ||
-      bloodlineBoostValue > 0 ||
+      bloodlineBoost > 0 ||
       decDiscount > 0 ||
       replacePowerCore ||
       laborLuck
@@ -197,9 +197,9 @@ export default function LandBoostComponent({
           Grain Consumption Discount: {consumeGrainDiscount}%
         </Typography>
       )}
-      {bloodlineBoostValue > 0 && (
+      {bloodlineBoost > 0 && (
         <Typography fontSize={fontSizeToolTip}>
-          Toil and Kin: {bloodlineBoostValue}%
+          Toil and Kin: {bloodlineBoost}%
         </Typography>
       )}
       {decDiscount > 0 && (
@@ -332,9 +332,9 @@ export default function LandBoostComponent({
                 </Typography>
               </Box>
               <PercentageSlider
-                value={bloodlineBoostValue}
-                onChange={setBloodlineBoostValue}
-                label="Bloodline boost (applies to cards with same bloodline)"
+                value={bloodlineBoost}
+                onChange={setBloodlineBoost}
+                label="Bloodline boost"
               />
             </Box>
 
