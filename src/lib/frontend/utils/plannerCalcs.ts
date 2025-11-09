@@ -262,16 +262,16 @@ export function calcTotemChancePerHour(
 }
 
 /**
- * Determines the total production boost (%) for a specific resource.
+ * Determines the maximum production boost (%) for a specific resource from all cards.
  * @param resource The resource to check for boosts.
  * @param cardInput The list of cards to evaluate.
- * @returns The total production boost for the specified resource. 0.1 means 10% boost.
+ * @returns The maximum production boost for the specified resource. 0.1 means 10% boost.
  */
 export function determineProductionBoost(
   resource: Resource,
   cardInput: SlotInput[],
 ): number {
-  let totalBoost = 0;
+  let maxBoost = 0;
 
   if (resource) {
     cardInput.forEach((card) => {
@@ -279,24 +279,25 @@ export function determineProductionBoost(
         Object.entries(card.landBoosts.produceBoost).forEach(
           ([produceBoostResource, boost]) => {
             if (resource === produceBoostResource && boost > 0) {
-              totalBoost += boost;
+              maxBoost = Math.max(maxBoost, boost);
             }
           },
         );
       }
     });
   }
-  return totalBoost;
+  return maxBoost;
 }
 
 /**
- * Determines the total consume discount (%) for a specific resource.
+ * Determines the maximum consume discount (%) for grain from all cards.
  * @param cardInput The list of cards to evaluate.
- * @returns The total consume discount for grain resource. 0.1 means 10% discount.
+ * @returns The maximum consume discount for grain resource. 0.1 means 10% discount.
  */
 export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
-  return cardInput.reduce((sum, card) => {
-    return sum + (card.landBoosts?.consumeGrainDiscount || 0);
+  return cardInput.reduce((max, card) => {
+    const discount = card.landBoosts?.consumeGrainDiscount || 0;
+    return Math.max(max, discount);
   }, 0);
 }
 
