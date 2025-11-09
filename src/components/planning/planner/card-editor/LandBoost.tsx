@@ -65,11 +65,13 @@ export default function LandBoostComponent({
     (initialBoost?.consumeGrainDiscount ?? 0) * 100,
   );
 
+  // Bloodline boost is now a simple number
   const [bloodlineBoost, setBloodlineBoost] = useState(
-    initialBoost?.bloodlineBoost ?? 0,
+    (initialBoost?.bloodlineBoost ?? 0) * 100,
   );
+
   const [decDiscount, setDecDiscount] = useState(
-    initialBoost?.decDiscount ?? 0,
+    (initialBoost?.decDiscount ?? 0) * 100,
   );
   const [replacePowerCore, setReplacePowerCore] = useState(
     initialBoost?.replacePowerCore ?? false,
@@ -89,8 +91,8 @@ export default function LandBoostComponent({
           })),
       );
       setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
-      setBloodlineBoost(initialBoost.bloodlineBoost * 100);
-      setDecDiscount(initialBoost.decDiscount * 100);
+      setBloodlineBoost((initialBoost.bloodlineBoost ?? 0) * 100);
+      setDecDiscount((initialBoost.decDiscount ?? 0) * 100);
       setReplacePowerCore(initialBoost.replacePowerCore);
       setLaborLuck(initialBoost.laborLuck);
     }
@@ -197,7 +199,7 @@ export default function LandBoostComponent({
       )}
       {bloodlineBoost > 0 && (
         <Typography fontSize={fontSizeToolTip}>
-          Bloodline Boost: {bloodlineBoost}%
+          Toil and Kin: {bloodlineBoost}%
         </Typography>
       )}
       {decDiscount > 0 && (
@@ -309,7 +311,9 @@ export default function LandBoostComponent({
               />
             </Box>
 
-            {/* Bloodline Boost */}
+            <Divider sx={{ my: 2 }} />
+
+            {/* Bloodline Boost - Toil and Kin */}
             <Box sx={{ mb: 3 }}>
               <Box
                 display={"flex"}
@@ -323,7 +327,9 @@ export default function LandBoostComponent({
                   width={sizeIcon}
                   height={sizeIcon}
                 />
-                <Typography gutterBottom>Bloodline Boost</Typography>
+                <Typography gutterBottom>
+                  Toil and Kin (Bloodline Boost)
+                </Typography>
               </Box>
               <PercentageSlider
                 value={bloodlineBoost}
@@ -331,6 +337,8 @@ export default function LandBoostComponent({
                 label="Bloodline boost"
               />
             </Box>
+
+            <Divider sx={{ my: 2 }} />
 
             {/* DEC Discount */}
             <Box sx={{ mb: 3 }}>
@@ -354,6 +362,8 @@ export default function LandBoostComponent({
                 label="DEC discount"
               />
             </Box>
+
+            <Divider sx={{ my: 2 }} />
 
             {/* Boolean Options */}
             <Box>

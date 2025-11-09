@@ -1,9 +1,4 @@
-import { Box, Typography } from "@mui/material";
-import React from "react";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { PlayerOverview } from "@/types/playerOverview";
-import Image from "next/image";
-import { TbPercentage40 } from "react-icons/tb";
 import {
   card_rarity_common_icon_url,
   card_rarity_epic_icon_url,
@@ -11,6 +6,11 @@ import {
   card_rarity_rare_icon_url,
   land_hammer_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { PlayerOverview } from "@/types/playerOverview";
+import { Box, Typography } from "@mui/material";
+import Image from "next/image";
+import React from "react";
+import { TbPercentage40 } from "react-icons/tb";
 
 type Props = {
   playerOverview: PlayerOverview;
@@ -166,41 +166,36 @@ export function LandCard({ playerOverview }: Props) {
           playerOverview.landShare?.totalPlayerBasePPIncludingEfficiency ? (
             <EligibleRow
               title="Eligible"
-              eligible={
-                playerOverview.landShare?.eligible ?? {
-                  common: 0,
-                  rare: 0,
-                  epic: 0,
-                  legendary: 0,
-                }
-              }
+              eligible={{
+                common: playerOverview.landShare?.eligible.common ?? 0,
+                rare: playerOverview.landShare?.eligible.rare ?? 0,
+                epic: playerOverview.landShare?.eligible.epic ?? 0,
+                legendary: playerOverview.landShare?.eligible.legendary ?? 0,
+              }}
             />
           ) : (
             <>
               <EligibleRow
                 title="Eligible"
                 minHeight={60}
-                eligible={
-                  playerOverview.landShare?.eligible ?? {
-                    common: 0,
-                    rare: 0,
-                    epic: 0,
-                    legendary: 0,
-                  }
-                }
+                eligible={{
+                  common: playerOverview.landShare?.eligible.common ?? 0,
+                  rare: playerOverview.landShare?.eligible.rare ?? 0,
+                  epic: playerOverview.landShare?.eligible.epic ?? 0,
+                  legendary: playerOverview.landShare?.eligible.legendary ?? 0,
+                }}
               />
               <EligibleRow
                 title="Eligible"
                 subtitle="(at 100% efficiency)"
                 minHeight={60}
-                eligible={
-                  playerOverview.landShare?.eligibleAt100 ?? {
-                    common: 0,
-                    rare: 0,
-                    epic: 0,
-                    legendary: 0,
-                  }
-                }
+                eligible={{
+                  common: playerOverview.landShare?.eligibleAt100.common ?? 0,
+                  rare: playerOverview.landShare?.eligibleAt100.rare ?? 0,
+                  epic: playerOverview.landShare?.eligibleAt100.epic ?? 0,
+                  legendary:
+                    playerOverview.landShare?.eligibleAt100.legendary ?? 0,
+                }}
               />
             </>
           )

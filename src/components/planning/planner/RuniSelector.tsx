@@ -37,7 +37,7 @@ const fontColor = "common.white";
 
 const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
   const basePP = RUNI_FLAT_ADD[value];
-  const boostedPP = calcBoostedPP(basePP, plot, "Golem", 0);
+  const boostedPP = calcBoostedPP(basePP, plot, 0);
   return (
     <Box display={"flex"}>
       <Box display={"flex"} gap={1} ml={1} mt={1}>
