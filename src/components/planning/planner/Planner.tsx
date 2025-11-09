@@ -1,4 +1,5 @@
 "use client";
+import { Resource } from "@/constants/resource/resource";
 import { determineBcxCap } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
@@ -45,7 +46,6 @@ import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";
 import { WorksiteSelector } from "./WorksiteSelector";
-import { Resource } from "@/constants/resource/resource";
 
 const DEFAULTS = {
   set: "chaos" as SlotInput["set"],

@@ -1,4 +1,5 @@
 import {
+  determineBloodlineBoost,
   determineGrainConsumeReduction,
   determineProductionBoost,
 } from "@/lib/frontend/utils/plannerCalcs";
@@ -9,7 +10,7 @@ import {
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
 import { PlotPlannerData, resourceWorksiteMap } from "@/types/planner";
-import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 import { PiCloverFill } from "react-icons/pi";
@@ -22,6 +23,10 @@ type Props = {
 const sizeIcon = 20;
 const fontSize = "0.8rem";
 const fontColor = "common.white";
+
+function formatPercentage(value: number) {
+  return `${Math.round(value * 100)}%`;
+}
 
 export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
@@ -48,19 +53,9 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
     (card) => card.landBoosts?.laborLuck,
   ).length;
 
-  // Calculate Bloodline Boosts (grouped by bloodline)
-  const bloodlineBoosts = new Map<string, number>();
-  cardInput.forEach((card) => {
-    if (card.landBoosts?.bloodlineBoost && card.landBoosts.bloodlineBoost > 0) {
-      const bloodline = card.bloodline;
-      bloodlineBoosts.set(
-        bloodline,
-        (bloodlineBoosts.get(bloodline) || 0) + card.landBoosts.bloodlineBoost,
-      );
-    }
-  });
-
-  const formatPercentage = (value: number) => `${Math.round(value * 100)}%`;
+  // Calculate total bloodline boost including details
+  const { totalBloodlineBoost, bloodlineBoostDetails } =
+    determineBloodlineBoost(cardInput);
 
   return (
     <Box
@@ -170,34 +165,35 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           )}
         </Stack>
 
-        <Stack direction="row" spacing={0.5} flexWrap="wrap">
-          {/* Bloodline Boosts */}
-          {bloodlineBoosts && bloodlineBoosts.size > 0 && (
-            <>
+        {/* Bloodline Boosts - Toil and Kin */}
+        {totalBloodlineBoost > 0 && (
+          <Tooltip
+            title={
+              <Box>
+                <Typography fontSize={fontSize} fontWeight="bold" mb={0.5}>
+                  Toil and Kin
+                </Typography>
+                {bloodlineBoostDetails.map((detail) => (
+                  <Typography key={detail.bloodline} fontSize={fontSize}>
+                    {detail.bloodline}: {formatPercentage(detail.boost)}
+                  </Typography>
+                ))}
+              </Box>
+            }
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
               <Image
                 src={bloodline_icon_url}
-                alt={"Bloodline"}
+                alt={"Toil and Kin"}
                 width={sizeIcon}
                 height={sizeIcon}
               />
-              {Array.from(bloodlineBoosts.entries()).map(
-                ([bloodline, boost]) => (
-                  <Tooltip
-                    key={bloodline}
-                    title={`Toil and Kin - ${bloodline}`}
-                  >
-                    <Chip
-                      label={formatPercentage(boost)}
-                      size="small"
-                      variant="outlined"
-                      sx={{ fontSize: fontSize, color: fontColor }}
-                    />
-                  </Tooltip>
-                ),
-              )}
-            </>
-          )}
-        </Stack>
+              <Typography fontSize={fontSize} color={fontColor}>
+                +{formatPercentage(totalBloodlineBoost)}
+              </Typography>
+            </Box>
+          </Tooltip>
+        )}
       </Stack>
     </Box>
   );

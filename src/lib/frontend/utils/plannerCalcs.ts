@@ -50,15 +50,13 @@ export function determineDeedResourceBoost(
 export function calcBoostedPP(
   basePP: number,
   plot: PlotPlannerData,
-  bloodline: CardBloodline,
   terrainModifier: number,
 ) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
   const titlePct = titleModifiers[plot.title];
   const totemPct = totemModifiers[plot.totem];
   const runiPct = runiModifiers[plot.runi];
-
-  const bloodlineBoost = determineBloodlineBoost(bloodline, plot.cardInput);
+  const { totalBloodlineBoost } = determineBloodlineBoost(plot.cardInput);
 
   const terrainBoostedPP = basePP * (1 + terrainModifier);
 
@@ -74,7 +72,7 @@ export function calcBoostedPP(
     runiPct +
     rarityPct +
     deedResourceBoost +
-    bloodlineBoost;
+    totalBloodlineBoost;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
@@ -85,7 +83,7 @@ export function computeSlot(
   const basePP = calcBasePP(slot);
 
   const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
-  const boostedPP = calcBoostedPP(basePP, plot, slot.bloodline, terrainBoost);
+  const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
 
   return {
     basePP,
@@ -120,7 +118,7 @@ export function calcTotalPP(plotPlannerData: PlotPlannerData) {
   );
 
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
-  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, "Golem", 0);
+  const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
   const totalBasePP = sumBasePP + runiBasePP;
   const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
@@ -302,21 +300,74 @@ export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
 }
 
 /**
- * Determines the total boost (%) for a specific bloodline.
- * @param bloodline The resource to check for discounts.
- * @param cardInput The list of cards to evaluate.
- * @returns The total consume discount for the specified resource. 0.1 means 10% discount.
+ * Determines the total bloodline boost (%) from all cards with Toil and Kin abilities.
+ * Rules:
+ * - If bloodlineBoost (number) applies it applies to all cards
+ * - The boost only applies if there's at least one OTHER card with the same bloodline on the plot
+ * - Multiple cards with boosts for the same bloodline don't stack (max value is used)
+ *
+ * @param cardInput The list of cards on the plot
+ * @returns The total bloodline boost multiplier. 0.10 means 10% boost.
+ *
+ * @example
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Elf) = +10%
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Undead) = 0%
+ * // Card A (Elf) with bloodlineBoost +10% + Card B (Elf) with bloodlineBoost +20% + Card C (Elf) = +20% (uses max)
  */
-export function determineBloodlineBoost(
-  bloodline: string,
-  cardInput: SlotInput[],
-): number {
-  let boost = 0;
+export function determineBloodlineBoost(cardInput: SlotInput[]): {
+  totalBloodlineBoost: number;
+  bloodlineBoostDetails: Array<{
+    bloodline: CardBloodline;
+    boost: number;
+  }>;
+} {
+  const maxBloodlineBoosts: Record<CardBloodline, number> =
+    getMaxBloodlineBoosts(cardInput);
 
-  cardInput.forEach((card) => {
-    if (card.bloodline === bloodline) {
-      boost += card.landBoosts?.bloodlineBoost ?? 0;
+  // Then, determine which bloodlines are actually present with other cards
+  let totalBloodlineBoost = 0;
+  const bloodlineBoostDetails: Array<{
+    bloodline: CardBloodline;
+    boost: number;
+  }> = [];
+
+  Object.entries(maxBloodlineBoosts).forEach(([bloodline, boost]) => {
+    const bloodlineType = bloodline as CardBloodline;
+
+    // Count how many cards have this bloodline (with bcx > 0)
+    const cardsWithBloodline = cardInput.filter(
+      (card) => card.bloodline === bloodlineType && card.bcx > 0,
+    );
+
+    // Apply boost only if there are at least 2 cards with this bloodline
+    if (cardsWithBloodline.length >= 2) {
+      totalBloodlineBoost += boost;
+      bloodlineBoostDetails.push({ bloodline: bloodlineType, boost });
     }
   });
-  return boost;
+
+  return { totalBloodlineBoost, bloodlineBoostDetails };
+}
+
+/**
+ * Gets the maximum bloodline boost for each bloodline from the card slots
+ * @param cardInput The list of cards on the plot
+ * @returns A record mapping each bloodline to its maximum boost value
+ */
+export function getMaxBloodlineBoosts(cardInput: SlotInput[]) {
+  const maxBloodlineBoosts: Record<CardBloodline, number> = {} as Record<
+    CardBloodline,
+    number
+  >;
+
+  cardInput.forEach((card) => {
+    const boost = card.landBoosts?.bloodlineBoost;
+    if (!boost || boost <= 0) return;
+
+    const cardBloodline = card.bloodline;
+    const currentMax = maxBloodlineBoosts[cardBloodline] || 0;
+    maxBloodlineBoosts[cardBloodline] = Math.max(currentMax, boost);
+  });
+
+  return maxBloodlineBoosts;
 }
