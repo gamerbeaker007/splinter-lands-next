@@ -65,6 +65,11 @@ export function calcBoostedPP(
     plot.worksiteType,
   );
 
+  const productionBoosts = determineProductionBoost(
+    resourceWorksiteMap[plot.worksiteType],
+    plot.cardInput,
+  );
+
   const totalBoostedMultiplier =
     1 +
     totemPct +
@@ -72,7 +77,8 @@ export function calcBoostedPP(
     runiPct +
     rarityPct +
     deedResourceBoost +
-    totalBloodlineBoost;
+    totalBloodlineBoost +
+    productionBoosts;
   return terrainBoostedPP * totalBoostedMultiplier;
 }
 
@@ -208,19 +214,7 @@ export function calcProductionInfo(
     consumeGrainDiscount,
   );
 
-  const productionBoosts = determineProductionBoost(
-    resource,
-    plotPlannerData.cardInput,
-  );
-
-  const produce = calcProduction(
-    resource,
-    totalBoostedPP,
-    productionBoosts,
-    prices,
-    1,
-    spsRatio,
-  );
+  const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
 
   const totalDECConsume = consume.reduce(
     (sum, row) => sum + Number(row.sellPriceDEC || 0),
