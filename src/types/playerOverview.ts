@@ -1,8 +1,9 @@
-import { RegionSummary } from "@/types/regionSummary";
-import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
 import { PlayerTradeHubPosition } from "@/generated/prisma";
 import { Balance } from "@/types/balance";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
+import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
+import { RegionSummary } from "@/types/regionSummary";
+import { CardRarity } from "./planner";
 
 export type PlayerOverview = {
   summarizedRegionInfo: RegionSummary;
@@ -23,17 +24,7 @@ export type PlayerOverview = {
     totalPlayerBasePPIncludingEfficiency: number;
     playerLandShare: number;
     playerLandShareInclEfficiency: number;
-    eligible: {
-      common: number;
-      rare: number;
-      epic: number;
-      legendary: number;
-    };
-    eligibleAt100: {
-      common: number;
-      rare: number;
-      epic: number;
-      legendary: number;
-    };
+    eligible: { [key in CardRarity]: number };
+    eligibleAt100: { [key in CardRarity]: number };
   };
 };
