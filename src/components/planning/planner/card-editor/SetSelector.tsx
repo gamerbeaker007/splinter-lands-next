@@ -53,11 +53,14 @@ export function SetSelector({ value, onChange }: Props) {
           displayEmpty
           renderValue={(val) => {
             const v = (val as CardSetName) ?? value;
+            const cardModifier = cardSetModifiers[v] ?? undefined;
+            const multiplierText = cardModifier ? `(${cardModifier}x)` : "";
+
             return (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 {renderIcon(v)}
                 <Typography fontSize={14} fontWeight={600}>
-                  {cardSetModifiers[v]}x
+                  {multiplierText}
                 </Typography>
               </Box>
             );
@@ -69,25 +72,29 @@ export function SetSelector({ value, onChange }: Props) {
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >
-          {cardSetOptions.map((setName) => (
-            <MenuItem key={setName} value={setName}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(setName, 18)}
-              </ListItemIcon>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {`${capitalize(setName)} (${cardSetModifiers[setName]}x)`}
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
+          {cardSetOptions.map((setName) => {
+            const cardModifier = cardSetModifiers[setName] ?? undefined;
+            const multiplierText = cardModifier ? `(${cardModifier}x)` : "";
+            return (
+              <MenuItem key={setName} value={setName}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {renderIcon(setName, 18)}
+                </ListItemIcon>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                    {`${capitalize(setName)} ${multiplierText}`}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
     </Box>

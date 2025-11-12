@@ -70,7 +70,11 @@ export default function SlotEditor({
           value={value.rarity}
           onChange={onSelect("rarity")}
         />
-        <CardFoilSelector value={value.foil} onChange={onSelect("foil")} />
+        <CardFoilSelector
+          value={value.foil}
+          set={value.set}
+          onChange={onSelect("foil")}
+        />
         <CardElementSelector
           value={value.element}
           deedType={plot.deedType}

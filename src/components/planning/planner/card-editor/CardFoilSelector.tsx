@@ -1,5 +1,10 @@
 "use client";
-import { CardFoil, cardFoilModifiers, cardFoilOptions } from "@/types/planner";
+import {
+  CardFoil,
+  cardFoilModifiers,
+  cardFoilOptions,
+  CardSetName,
+} from "@/types/planner";
 import { TbCardsFilled } from "react-icons/tb";
 
 import {
@@ -27,10 +32,11 @@ const foilStyle: Record<
 
 export type Props = {
   value: CardFoil;
+  set: CardSetName;
   onChange: (tier: CardFoil) => void;
 };
 
-export function CardFoilSelector({ value, onChange }: Props) {
+export function CardFoilSelector({ value, set, onChange }: Props) {
   const handleChange = (e: SelectChangeEvent<CardFoil>) => {
     onChange(e.target.value as CardFoil);
   };
@@ -86,6 +92,7 @@ export function CardFoilSelector({ value, onChange }: Props) {
     );
   }
 
+  const isLandSet = set === "land";
   const hasMultiplier = value != "regular" && value != "gold";
   const multiplier = cardFoilModifiers[value];
 
@@ -108,7 +115,7 @@ export function CardFoilSelector({ value, onChange }: Props) {
               >
                 {renderIcon(v)}{" "}
                 <Typography fontSize={14} fontWeight={600}>
-                  {hasMultiplier && `${multiplier}x`}
+                  {hasMultiplier && !isLandSet && `${multiplier}x`}
                 </Typography>
               </Box>
             );
@@ -120,25 +127,30 @@ export function CardFoilSelector({ value, onChange }: Props) {
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >
-          {cardFoilOptions.map((foil) => (
-            <MenuItem key={foil} value={foil}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(foil, 18)}
-              </ListItemIcon>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {capitalize(foil)} ({cardFoilModifiers[foil]}x)
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
+          {cardFoilOptions.map((foil) => {
+            const multiplierText = !isLandSet
+              ? `(${cardFoilModifiers[foil]}x)`
+              : "";
+            return (
+              <MenuItem key={foil} value={foil}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {renderIcon(foil, 18)}
+                </ListItemIcon>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                    {capitalize(foil)} {multiplierText}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
     </Box>
