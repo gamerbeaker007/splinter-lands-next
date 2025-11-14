@@ -8,11 +8,11 @@ import {
 import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
-  basePPLandCardMax,
   basePPMax,
   CardBloodline,
   CardElement,
   cardFoilModifiers,
+  cardFoilModifiersLandCard,
   cardSetModifiers,
   deedResourceBoostRules,
   DeedType,
@@ -103,17 +103,17 @@ function calcBasePP(slot: SlotInput) {
   const maxBasePP =
     basePPMax[slot.rarity][slot.foil === "regular" ? "regular" : "gold"];
   const maxBCX = determineCardMaxBCX(slot.set, slot.rarity, foilId);
+  const ppPerBcx = maxBasePP / maxBCX;
 
   const isLandCard = slot.set === "land";
-
-  if (isLandCard) {
-    const landCardMax = basePPLandCardMax[slot.rarity][slot.foil];
-    const ppPerBcx = landCardMax / maxBCX;
-    return ppPerBcx * slot.bcx;
-  }
-  const ppPerBcx = maxBasePP / maxBCX;
   const setModifier = cardSetModifiers[slot.set] ?? 1;
-  const foilModifier = cardFoilModifiers[slot.foil] ?? 1;
+
+  let foilModifier: number;
+  if (isLandCard) {
+    foilModifier = cardFoilModifiersLandCard[slot.foil] ?? 1;
+  } else {
+    foilModifier = cardFoilModifiers[slot.foil] ?? 1;
+  }
   return ppPerBcx * slot.bcx * setModifier * foilModifier;
 }
 

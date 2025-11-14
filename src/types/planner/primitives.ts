@@ -215,6 +215,7 @@ export const cardSetModifiers: Record<CardSetName, number> = {
   chaos: 1,
   rebellion: 0.5,
   conclave: 0.5,
+  land: 1,
 };
 export type CardSetName = (typeof cardRarityOptions)[number];
 
@@ -245,6 +246,14 @@ export const cardFoilModifiers: Record<CardFoil, number> = {
   "black arcane": 5,
 };
 
+export const cardFoilModifiersLandCard: Record<CardFoil, number> = {
+  regular: 2,
+  gold: 1.25,
+  "gold arcane": 1.25,
+  black: 2.5,
+  "black arcane": 2.5,
+};
+
 export const cardFoilSuffixMap: Record<CardFoil, string> = {
   regular: "",
   gold: "_gold",
@@ -258,37 +267,6 @@ export const basePPMax: Record<CardRarity, Record<CardFoil, number>> = {
   rare: { regular: 1100, gold: 4000 },
   epic: { regular: 1250, gold: 6000 },
   legendary: { regular: 1500, gold: 10000 },
-};
-
-export const basePPLandCardMax: Record<CardRarity, Record<CardFoil, number>> = {
-  common: {
-    regular: 2_000,
-    gold: 2_500,
-    black: 5_000,
-    "gold arcane": 2_500,
-    "black arcane": 5_000,
-  },
-  rare: {
-    regular: 2_200,
-    gold: 5_000,
-    black: 10_000,
-    "gold arcane": 5_000,
-    "black arcane": 10_000,
-  },
-  epic: {
-    regular: 2_500,
-    gold: 7_500,
-    black: 15_000,
-    "gold arcane": 7_500,
-    "black arcane": 15_000,
-  },
-  legendary: {
-    regular: 3_000,
-    gold: 12_500,
-    black: 25_000,
-    "gold arcane": 12_500,
-    "black arcane": 25_000,
-  },
 };
 
 export const TERRAIN_BONUS: Record<

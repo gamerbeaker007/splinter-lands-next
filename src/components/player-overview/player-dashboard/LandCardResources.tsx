@@ -60,14 +60,7 @@ export function LandCardResources({ playerOverview }: Props) {
 
     // Sum from liquidityInfo (only for grain, wood, stone, iron, aura)
     const liquidityTotal = playerOverview.liquidityInfo.reduce((sum, info) => {
-      console.log(info);
       const value = info[resource.toLowerCase() as keyof typeof info];
-      console.log(
-        "find resource",
-        resource.toLowerCase(),
-        " Value found: ",
-        value,
-      );
       return sum + (typeof value === "number" ? value : 0);
     }, 0);
 

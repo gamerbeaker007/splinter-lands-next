@@ -38,7 +38,7 @@ export function CardRaritySelector({ value, onChange }: Props) {
   const fontColor = "common.white";
 
   return (
-    <Box borderRadius={1} minWidth={70}>
+    <Box borderRadius={1} minWidth={65}>
       <FormControl size="small" variant="outlined" fullWidth>
         <InputLabel sx={{ color: fontColor }}>Rarity:</InputLabel>
         <Select<CardRarity>

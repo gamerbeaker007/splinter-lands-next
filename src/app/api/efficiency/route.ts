@@ -1,14 +1,14 @@
-import { logError } from "@/lib/backend/log/logUtils";
-import { NextResponse } from "next/server";
-import { getPlayerProductionData } from "@/lib/backend/api/internal/player-production-data";
 import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
-import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
-import { DeedComplete } from "@/types/deed";
+import { getPlayerProductionData } from "@/lib/backend/api/internal/player-production-data";
 import {
   calculateLCERatio,
   calculateLDERatio,
   calculateLPERatio,
 } from "@/lib/backend/helpers/productionUtils";
+import { logError } from "@/lib/backend/log/logUtils";
+import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
+import { DeedComplete } from "@/types/deed";
+import { NextResponse } from "next/server";
 
 type StakeInfo = {
   totalDecStakeNeeded: number;
@@ -32,7 +32,7 @@ function aggregateStakingInfo(
     const totalDecStakeInUse = deed.stakingDetail?.total_dec_stake_in_use ?? 0;
     const totalBasePPInclEfficiency =
       (deed.stakingDetail?.total_base_pp_after_cap ?? 0) *
-      (deed.stakingDetail?.efficiency ?? 0);
+      (deed.worksiteDetail?.site_efficiency ?? 0);
 
     //staked DEC is based on region only add it one per region-player combination
     const totalDecStaked = !seenPairs.has(key)
