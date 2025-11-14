@@ -1,8 +1,8 @@
-import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import RankingList from "@/components/player-efficiency/RankingList";
+import RankingListShares from "@/components/player-efficiency/RankingListShares";
+import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import RankingBarChart from "./RankingBarChart";
-import RankingListShares from "@/components/player-efficiency/RankingListShares";
 
 type Props = {
   currentPlayer?: string;
@@ -28,7 +28,7 @@ export default function RankingPage({
             width={"100%"}
           >
             <RankingBarChart
-              title="Plots active"
+              title="Plots Count"
               data={playerSummaryData}
               valueField="count"
               rankField="count_rank"

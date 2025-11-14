@@ -26,7 +26,7 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
 
   const fontColor = "common.white";
   return (
-    <Box minWidth={60}>
+    <Box minWidth={55}>
       <TextField
         type="number"
         label="BCX"
@@ -57,8 +57,7 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
           },
         }}
         sx={{
-          minWidth: 60,
-          maxWidth: 60,
+          width: 55,
           // Hide arrows in Chrome, Safari, Edge, Opera
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
             {

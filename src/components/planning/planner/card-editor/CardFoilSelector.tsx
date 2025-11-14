@@ -2,6 +2,7 @@
 import {
   CardFoil,
   cardFoilModifiers,
+  cardFoilModifiersLandCard,
   cardFoilOptions,
   CardSetName,
 } from "@/types/planner";
@@ -93,13 +94,14 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
   }
 
   const isLandSet = set === "land";
-  const hasMultiplier = value != "regular" && value != "gold";
-  const multiplier = cardFoilModifiers[value];
+  const multiplier = isLandSet
+    ? cardFoilModifiersLandCard[value]
+    : cardFoilModifiers[value];
 
   const fontColor = "common.white";
 
   return (
-    <Box borderRadius={1} minWidth={85}>
+    <Box borderRadius={1} minWidth={100}>
       <FormControl size="small" variant="outlined" fullWidth>
         <InputLabel sx={{ color: fontColor }}>Foil:</InputLabel>
         <Select<CardFoil>
@@ -108,15 +110,15 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
           displayEmpty
           renderValue={(val) => {
             const v = (val as CardFoil) ?? value;
+            const multiplierText = multiplier > 1 ? `${multiplier}x` : "";
             return (
               <Box
                 sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
                 minWidth={45}
               >
                 {renderIcon(v)}{" "}
-                <Typography fontSize={14} fontWeight={600}>
-                  {hasMultiplier && !isLandSet && `${multiplier}x`}
-                </Typography>
+                <Box display={"flex"} flexDirection={"column"} />
+                <Typography variant="caption">{`${multiplierText}`}</Typography>
               </Box>
             );
           }}
@@ -128,9 +130,9 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
           }}
         >
           {cardFoilOptions.map((foil) => {
-            const multiplierText = !isLandSet
-              ? `(${cardFoilModifiers[foil]}x)`
-              : "";
+            const multiplier = isLandSet
+              ? cardFoilModifiersLandCard[foil]
+              : cardFoilModifiers[foil];
             return (
               <MenuItem key={foil} value={foil}>
                 <ListItemIcon sx={{ minWidth: 32 }}>
@@ -145,7 +147,7 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
                   }}
                 >
                   <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                    {capitalize(foil)} {multiplierText}
+                    {capitalize(foil)} ({multiplier}x)
                   </Typography>
                 </Box>
               </MenuItem>

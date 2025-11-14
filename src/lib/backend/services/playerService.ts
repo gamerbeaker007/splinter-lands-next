@@ -1,3 +1,4 @@
+import { Resource } from "@/constants/resource/resource";
 import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
 import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
 import {
@@ -21,6 +22,7 @@ import { TAX_RATE } from "@/lib/shared/statics";
 import { enrichPoolData } from "@/scripts/lib/metrics/playerTradeHubPosition";
 import { DeedComplete } from "@/types/deed";
 import { PlayerOverview } from "@/types/playerOverview";
+import { Prices } from "@/types/price";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
@@ -41,8 +43,6 @@ import {
   getLandResourcesPools,
 } from "../api/spl/spl-land-api";
 import { cache } from "../cache/cache";
-import { Resource } from "@/constants/resource/resource";
-import { Prices } from "@/types/price";
 
 export async function invalidatePlayerCaches(player: string) {
   const keysToInvalidate = [
@@ -229,7 +229,7 @@ export async function getCachedPlayerOverviewData(
   let totalBasePPIncludingEfficiency = 0;
   for (const deed of allData) {
     const basePP = deed?.stakingDetail?.total_base_pp_after_cap || 0;
-    const siteEfficiency = deed?.stakingDetail?.efficiency || 0;
+    const siteEfficiency = deed?.worksiteDetail?.site_efficiency || 0;
     totalBasePP += basePP;
     totalBasePPIncludingEfficiency += basePP * siteEfficiency;
   }
@@ -238,7 +238,7 @@ export async function getCachedPlayerOverviewData(
   let totalPlayerBasePPIncludingEfficiency = 0;
   for (const deed of deeds) {
     const basePP = deed?.stakingDetail?.total_base_pp_after_cap || 0;
-    const siteEfficiency = deed?.stakingDetail?.efficiency || 0;
+    const siteEfficiency = deed?.worksiteDetail?.site_efficiency || 0;
     totalPlayerBasePP += basePP;
     totalPlayerBasePPIncludingEfficiency += basePP * siteEfficiency;
   }
