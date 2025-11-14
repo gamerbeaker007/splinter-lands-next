@@ -28,7 +28,7 @@ export default function RankingPage({
             width={"100%"}
           >
             <RankingBarChart
-              title="Plots Count"
+              title="Plot Count"
               data={playerSummaryData}
               valueField="count"
               rankField="count_rank"
