@@ -114,7 +114,6 @@ function calcBasePP(slot: SlotInput) {
   } else {
     foilModifier = cardFoilModifiers[slot.foil] ?? 1;
   }
-  console.log({ ppPerBcx, slotBCX: slot.bcx, setModifier, foilModifier });
   return ppPerBcx * slot.bcx * setModifier * foilModifier;
 }
 

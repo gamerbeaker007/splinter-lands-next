@@ -1,27 +1,27 @@
-import React, { useState } from "react";
 import { usePlayerCardAlerts } from "@/hooks/usePlayerCardAlerts";
+import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  Button,
+  AssignmentInd,
+  Block,
+  Landscape,
+  RemoveCircleOutline,
+  Store,
+  Warning,
+} from "@mui/icons-material";
+import {
   Box,
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Stack,
   Typography,
 } from "@mui/material";
-import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
-import { NoWorkersAlerts } from "./NoWorkersAlerts";
+import React, { useState } from "react";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
 import { DeedAlertSection } from "./DeedAlertSection";
+import { NoWorkersAlerts } from "./NoWorkersAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
-import {
-  AssignmentInd,
-  Warning,
-  Store,
-  Landscape,
-  RemoveCircleOutline,
-  Block,
-} from "@mui/icons-material";
 
 type Props = {
   alerts: DeedAlertsInfo[];
@@ -51,7 +51,7 @@ const AlertSection: React.FC<Props> = ({ alerts, player, force }) => {
     },
     {
       key: "AssignedWorkersAlert",
-      label: "Assigned Workers",
+      label: "Missing Workers",
       short: `(${cardAlerts?.assignedWorkersAlerts?.length ?? 0})`,
       icon: <AssignmentInd fontSize="large" />,
       dialogTitle: "Assigned Workers Alert",
@@ -97,7 +97,7 @@ const AlertSection: React.FC<Props> = ({ alerts, player, force }) => {
     },
     {
       key: "ZeroNeutralTerrainBoost",
-      label: "Zero Neutral",
+      label: "Zero Boost (Neutral)",
       short: `(${cardAlerts?.terrainBoostAlerts.zeroNeutral?.length ?? 0})`,
       icon: <Block fontSize="large" />,
       dialogTitle: "Zero terrain boost (neutral)",
@@ -135,10 +135,10 @@ const AlertSection: React.FC<Props> = ({ alerts, player, force }) => {
             }}
           >
             {btn.icon}
-            <Box mt={1} fontWeight="bold">
+            <Box mt={1} fontSize={10} fontWeight="bold">
               {btn.label}
             </Box>
-            <Box fontSize="small" color="text.secondary">
+            <Box fontSize={10} color="text.secondary">
               {btn.short}
             </Box>
           </Button>
