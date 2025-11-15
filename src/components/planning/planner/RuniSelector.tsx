@@ -175,25 +175,31 @@ export function RuniSelector({
             },
           }}
         >
-          {runiOptions.map((v) => (
-            <MenuItem key={v} value={v}>
-              <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(v, null, 18)}
-              </ListItemIcon>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                  gap: 1,
-                }}
-              >
-                <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {capitalize(v)} ({runiModifiers[v] * 100}%)
-                </Typography>
-              </Box>
-            </MenuItem>
-          ))}
+          {runiOptions.map((v) => {
+            const text =
+              v === "none"
+                ? "Power Core (0%)"
+                : `${capitalize(v)} (${runiModifiers[v] * 100}%)`;
+            return (
+              <MenuItem key={v} value={v}>
+                <ListItemIcon sx={{ minWidth: 32 }}>
+                  {renderIcon(v, null, 18)}
+                </ListItemIcon>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                    gap: 1,
+                  }}
+                >
+                  <Typography variant="body2" sx={{ flexGrow: 1 }}>
+                    {text}
+                  </Typography>
+                </Box>
+              </MenuItem>
+            );
+          })}
         </Select>
       </FormControl>
       {value !== "none" && renderBoost(value, plotPlannerData)}

@@ -2,7 +2,7 @@
 
 import PercentageSlider from "@/components/ui/PercentageSlider";
 import { Resource } from "@/constants/resource/resource";
-import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
   dec_icon_url,
@@ -28,15 +28,15 @@ import Image from "next/image";
 import { useState } from "react";
 import ProductionBoostSelector from "./ProductionBoostSelector";
 
+interface ResourceBoost {
+  resource: Resource;
+  value: number;
+}
+
 interface LandBoostProps {
   initialBloodline: CardBloodline;
   initialBoost?: LandBoost;
   onSave: (boost: LandBoost) => void;
-}
-
-interface ResourceBoost {
-  resource: Resource;
-  value: number;
 }
 
 const fontSizeToolTip = "0.8rem";
@@ -48,17 +48,22 @@ export default function LandBoostComponent({
 }: LandBoostProps) {
   const [open, setOpen] = useState(false);
 
-  // Convert Record<Resource, number> to ResourceBoost arrays for easier editing
+  // Production boosts array - default to two items (GRAIN and WOOD)
   const [produceBoosts, setProduceBoosts] = useState<ResourceBoost[]>(() => {
     if (initialBoost?.produceBoost) {
-      return Object.entries(initialBoost.produceBoost)
-        .filter(([, value]) => value > 0)
-        .map(([resource, value]) => ({
+      const entries = Object.entries(initialBoost.produceBoost);
+      if (entries.length > 0) {
+        return entries.map(([resource, value]) => ({
           resource: resource as Resource,
           value: value * 100,
         }));
+      }
     }
-    return [];
+    // Default: two rows with GRAIN and WOOD, both at 0%
+    return [
+      { resource: "GRAIN" as Resource, value: 0 },
+      { resource: "WOOD" as Resource, value: 0 },
+    ];
   });
 
   const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
@@ -82,14 +87,22 @@ export default function LandBoostComponent({
     setOpen(true);
     // Reset to initial values when opening
     if (initialBoost) {
-      setProduceBoosts(
-        Object.entries(initialBoost.produceBoost ?? {})
-          .filter(([, value]) => value > 0)
-          .map(([resource, value]) => ({
+      const entries = Object.entries(initialBoost.produceBoost ?? {});
+      if (entries.length > 0) {
+        setProduceBoosts(
+          entries.map(([resource, value]) => ({
             resource: resource as Resource,
             value: value * 100,
           })),
-      );
+        );
+      } else {
+        // Default: two rows with GRAIN and WOOD
+        setProduceBoosts([
+          { resource: "GRAIN" as Resource, value: 0 },
+          { resource: "WOOD" as Resource, value: 0 },
+        ]);
+      }
+
       setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
       setBloodlineBoost((initialBoost.bloodlineBoost ?? 0) * 100);
       setDecDiscount((initialBoost.decDiscount ?? 0) * 100);
@@ -101,7 +114,7 @@ export default function LandBoostComponent({
   const handleClose = () => setOpen(false);
 
   const handleSave = () => {
-    // Convert ResourceBoost arrays back to Record<Resource, number>
+    // Convert ResourceBoost array back to Record<Resource, number>
     const produceBoost: Record<Resource, number> = {} as Record<
       Resource,
       number
@@ -123,22 +136,6 @@ export default function LandBoostComponent({
     setOpen(false);
   };
 
-  const addProduceBoost = () => {
-    const availableResources = PRODUCING_RESOURCES.filter(
-      (resource) => !produceBoosts.some((boost) => boost.resource === resource),
-    );
-    if (availableResources.length > 0) {
-      setProduceBoosts([
-        ...produceBoosts,
-        { resource: availableResources[0] as Resource, value: 0 },
-      ]);
-    }
-  };
-
-  const removeProduceBoost = (index: number) => {
-    setProduceBoosts(produceBoosts.filter((_, i) => i !== index));
-  };
-
   const updateProduceBoost = (
     index: number,
     field: keyof ResourceBoost,
@@ -151,7 +148,7 @@ export default function LandBoostComponent({
 
   const hasLandBoost = () => {
     return (
-      produceBoosts.length > 0 ||
+      produceBoosts.some((boost) => boost.value > 0) ||
       consumeGrainDiscount > 0 ||
       bloodlineBoost > 0 ||
       decDiscount > 0 ||
@@ -183,12 +180,14 @@ export default function LandBoostComponent({
 
   const title = (
     <Box>
-      {produceBoosts.length > 0 && (
+      {produceBoosts.some((boost) => boost.value > 0) && (
         <Typography fontSize={fontSizeToolTip}>
           Produce Boost:{" "}
           {produceBoosts.map((item, idx) => {
-            //Change from .forEach to .map
-            return resourceInfo(idx, item.resource, item.value); // Add return and possibly the rest of parameters
+            if (item.value > 0) {
+              return resourceInfo(idx, item.resource, item.value);
+            }
+            return null;
           })}
         </Typography>
       )}
@@ -267,22 +266,12 @@ export default function LandBoostComponent({
         <DialogContent>
           <Box>
             {/* Produce Boosts */}
-            <Typography gutterBottom>
-              Production Boosts
-              <IconButton onClick={addProduceBoost} size="small" sx={{ ml: 1 }}>
-                <AddIcon />
-              </IconButton>
-            </Typography>
+            <Typography gutterBottom>Production Boosts</Typography>
 
-            {produceBoosts.map((boost, index) => (
-              <ProductionBoostSelector
-                key={index}
-                boost={boost}
-                index={index}
-                onUpdate={updateProduceBoost}
-                onRemove={removeProduceBoost}
-              />
-            ))}
+            <ProductionBoostSelector
+              boosts={produceBoosts}
+              onUpdate={updateProduceBoost}
+            />
 
             <Divider sx={{ my: 2 }} />
 

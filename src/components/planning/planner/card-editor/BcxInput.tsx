@@ -29,13 +29,12 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
     <Box minWidth={55}>
       <TextField
         type="number"
-        label="BCX"
+        label="CC"
         size="small"
         value={slot.bcx === 0 ? "" : slot.bcx}
         onChange={(e) => {
           const raw = e.target.value;
           if (raw === "") {
-            // Render empty but keep state valid as 0
             onChange(0);
             return;
           }
@@ -47,7 +46,6 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
         }}
         slotProps={{
           input: {
-            // Props for the underlying <input>
             inputProps: {
               min: 0,
               max: maxBCX,
@@ -58,12 +56,10 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
         }}
         sx={{
           width: 55,
-          // Hide arrows in Chrome, Safari, Edge, Opera
           "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button":
             {
               display: "none",
             },
-          // Hide arrows in Firefox
           "& input[type=number]": {
             MozAppearance: "textfield",
           },
