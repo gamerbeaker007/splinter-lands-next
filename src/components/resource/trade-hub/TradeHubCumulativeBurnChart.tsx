@@ -1,5 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma";
+import { paddedSMA, paddedEMA } from "@/lib/utils/movingAverages";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
@@ -35,6 +36,9 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
     cumulativeBurns.push(cumulative);
   });
 
+  const sma = paddedSMA(dailyBurns, 20);
+  const ema = paddedEMA(dailyBurns, 20);
+
   const traces: Partial<ScatterData>[] = [
     {
       x: dateList,
@@ -51,6 +55,22 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
       yaxis: "y2",
       mode: "lines",
       line: { dash: "dot", color: "lightgray" },
+    },
+    {
+      x: dateList,
+      y: sma,
+      type: "scatter",
+      name: "SMA (20days)",
+      mode: "lines",
+      line: { color: "blue" },
+    },
+    {
+      x: dateList,
+      y: ema,
+      type: "scatter",
+      name: "EMA (20days)",
+      mode: "lines",
+      line: { color: "red" },
     },
   ];
 
