@@ -1,12 +1,12 @@
 // hooks/useResourceConversion.ts
-import { Mode } from "@/types/mode";
 import {
   CALCULATOR_RESOURCES,
   CalculatorResource,
 } from "@/constants/resource/resource";
+import { calcDECPrice } from "@/lib/shared/costCalc";
+import { Mode } from "@/types/mode";
 import { Prices } from "@/types/price";
 import { useMemo } from "react";
-import { calcDECPrice } from "@/lib/shared/costCalc";
 
 export function useResourceConversion(
   mode: Mode,
@@ -24,7 +24,7 @@ export function useResourceConversion(
 
   const sps_amount = useMemo(() => {
     if (!prices) return 0;
-    return (dec_total + decExtra) / prices.sps;
+    return (dec_total + decExtra) / prices.SPS;
   }, [dec_total, decExtra, prices]);
 
   return { dec_total, sps_amount };

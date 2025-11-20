@@ -1,7 +1,6 @@
 "use client";
 
 import { InfoCreatableItem } from "@/components/player-overview/player-dashboard/InfoItemWithCraftable";
-import { LandCard } from "@/components/player-overview/player-dashboard/LandCard";
 import { PlayerCraftingOverview } from "@/components/player-overview/player-dashboard/PlayerCraftingOverview";
 import { ResourceOverviewCard } from "@/components/player-overview/player-dashboard/ResourceOverviewCard";
 import BoostTile from "@/components/region-overview/summary/BoostTile";
@@ -100,7 +99,6 @@ export default function PlayerDashboardPage({ player }: Props) {
                     </>
                   )}
                 </Box>
-                <LandCard playerOverview={playerOverview} />
                 <Box maxWidth={450} flex={1}>
                   <Typography variant={"h5"} ml={2} mb={2}>
                     Staked DEC Information
