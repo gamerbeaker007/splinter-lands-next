@@ -132,7 +132,7 @@ export function LandCardResources({ playerOverview }: Props) {
   const calculateResourcePercentage = (
     rarity: CardRarity,
     resource: Resource,
-    eligible: number,
+    amount: number,
   ): {
     percentage: number;
     available: number;
@@ -149,7 +149,7 @@ export function LandCardResources({ playerOverview }: Props) {
       };
     }
 
-    const totalNeeded = neededPerItem * eligible;
+    const totalNeeded = neededPerItem * amount;
     const available = getAvailableResource(resource);
     const percentage = totalNeeded > 0 ? (available / totalNeeded) * 100 : 0;
 
@@ -226,7 +226,7 @@ export function LandCardResources({ playerOverview }: Props) {
           </TableHead>
           <TableBody>
             {cardRarityOptions.map((rarity) => {
-              const eligible = getAmount(rarity);
+              const amount = getAmount(rarity);
               return (
                 <TableRow key={rarity}>
                   <TableCell component="th" scope="row">
@@ -252,7 +252,7 @@ export function LandCardResources({ playerOverview }: Props) {
                     const data = calculateResourcePercentage(
                       rarity,
                       resource,
-                      eligible,
+                      amount,
                     );
 
                     // Show "-" if not needed for this rarity
@@ -264,8 +264,8 @@ export function LandCardResources({ playerOverview }: Props) {
                       );
                     }
 
-                    // Show "-" if no eligible cards
-                    if (eligible === 0) {
+                    // Show "-" if no cards
+                    if (amount === 0) {
                       return (
                         <TableCell key={resource} align="center">
                           -
@@ -276,7 +276,7 @@ export function LandCardResources({ playerOverview }: Props) {
                     const tooltipContent = buildTooltip(
                       rarity,
                       resource,
-                      eligible,
+                      amount,
                       data,
                     );
 
@@ -360,11 +360,11 @@ export function LandCardResources({ playerOverview }: Props) {
               </TableCell>
               {RESOURCE_ORDER.map((resource) => {
                 const totalNeeded = cardRarityOptions.reduce((sum, rarity) => {
-                  const eligible = getAmount(rarity);
+                  const amount = getAmount(rarity);
                   const data = calculateResourcePercentage(
                     rarity,
                     resource,
-                    eligible,
+                    amount,
                   );
                   return sum + data.totalNeeded;
                 }, 0);
@@ -441,7 +441,7 @@ export function LandCardResources({ playerOverview }: Props) {
                   0,
                 );
 
-                const tooltipContent = `Total Eligible: ${totalAmount}\nTotal Needed: ${totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${totalAvailable.toLocaleString()}\nPercentage: ${percentage.toFixed(1)}%`;
+                const tooltipContent = `Total Amount: ${totalAmount}\nTotal Needed: ${totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${totalAvailable.toLocaleString()}\nPercentage: ${percentage.toFixed(1)}%`;
 
                 return (
                   <Tooltip
