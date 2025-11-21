@@ -13,8 +13,10 @@ export type FilterInput = {
   filter_players?: string[];
   filter_developed?: boolean;
   filter_under_construction?: boolean;
-  filter_pp_min?: number | null;
-  filter_pp_max?: number | null;
+  filter_base_pp_min?: number | null;
+  filter_base_pp_max?: number | null;
+  filter_boosted_pp_min?: number | null;
+  filter_boosted_pp_max?: number | null;
   sorting?: SortSelection;
 };
 

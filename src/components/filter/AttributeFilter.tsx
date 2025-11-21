@@ -36,11 +36,19 @@ export default function AttributeFilter({ options }: Props) {
     });
   };
 
-  const updatePP = (min?: number | null, max?: number | null) => {
+  const updateBasePP = (min?: number | null, max?: number | null) => {
     setFilters((prev) => ({
       ...prev,
-      filter_pp_min: min ?? null,
-      filter_pp_max: max ?? null,
+      filter_base_pp_min: min ?? null,
+      filter_base_pp_max: max ?? null,
+    }));
+  };
+
+  const updateBoostedPP = (min?: number | null, max?: number | null) => {
+    setFilters((prev) => ({
+      ...prev,
+      filter_boosted_pp_min: min ?? null,
+      filter_boosted_pp_max: max ?? null,
     }));
   };
 
@@ -60,9 +68,17 @@ export default function AttributeFilter({ options }: Props) {
         Base PP
       </Typography>
       <PPRangeFilter
-        min={filters.filter_pp_min ?? null}
-        max={filters.filter_pp_max ?? null}
-        onChange={updatePP}
+        min={filters.filter_base_pp_min ?? null}
+        max={filters.filter_base_pp_max ?? null}
+        onChange={updateBasePP}
+      />
+      <Typography variant="subtitle2" sx={{ mt: 2 }}>
+        Boosted PP
+      </Typography>
+      <PPRangeFilter
+        min={filters.filter_boosted_pp_min ?? null}
+        max={filters.filter_boosted_pp_max ?? null}
+        onChange={updateBoostedPP}
       />
 
       <FormGroup sx={{ mt: 2 }}>

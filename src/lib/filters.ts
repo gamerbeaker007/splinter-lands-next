@@ -60,9 +60,24 @@ export function filterDeeds(
         return false;
     }
 
-    const pp = deed.stakingDetail?.total_harvest_pp;
+    const basePP = deed.stakingDetail?.total_base_pp_after_cap;
     if (
-      !inRange(pp, filters.filter_pp_min ?? null, filters.filter_pp_max ?? null)
+      !inRange(
+        basePP,
+        filters.filter_base_pp_min ?? null,
+        filters.filter_base_pp_max ?? null,
+      )
+    ) {
+      return false;
+    }
+
+    const boostedPP = deed.stakingDetail?.total_harvest_pp;
+    if (
+      !inRange(
+        boostedPP,
+        filters.filter_boosted_pp_min ?? null,
+        filters.filter_boosted_pp_max ?? null,
+      )
     ) {
       return false;
     }
