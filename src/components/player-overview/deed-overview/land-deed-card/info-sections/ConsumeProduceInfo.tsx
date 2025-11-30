@@ -35,6 +35,12 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
     (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
   );
 
+  const grainConsumed =
+    consume?.reduce(
+      (acc, r) => (r.resource === "GRAIN" ? acc + r.amount : acc),
+      0,
+    ) ?? 0;
+
   return (
     <Box
       sx={{
@@ -98,9 +104,21 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
                         width={iconSize}
                         height={iconSize}
                       />
-                      <Typography fontSize={fontSize} color="white">
-                        {row.amount.toFixed(1)} {suffix}
-                      </Typography>
+                      <Box display="flex" flexDirection="column">
+                        <Typography fontSize={fontSize} color="white">
+                          {row.amount.toFixed(1)} {suffix}
+                        </Typography>
+                        {row.resource === "GRAIN" && (
+                          <Typography
+                            variant="caption"
+                            fontSize={10}
+                            color="white"
+                          >
+                            {`net: ${(row.amount - grainConsumed).toFixed(1)}`}{" "}
+                            {suffix}
+                          </Typography>
+                        )}
+                      </Box>
                     </Box>
                   );
                 })}
