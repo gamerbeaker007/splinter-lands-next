@@ -99,15 +99,15 @@ model PlayerProductionSummary {
 
 model Deed {
   deed_uid                 String    @id
-  map_name                 String?
-  region_id                Int?
-  tract_id                 Int?
-  plot_id                  Int?
-  region_number            Int?
-  tract_number             Int?
-  plot_number              Int?
-  territory                String?
-  region_uid               String?
+  map_name                 String
+  region_id                Int
+  tract_id                 Int
+  plot_id                  Int
+  region_number            Int
+  tract_number             Int
+  plot_number              Int
+  territory                String
+  region_uid               String
   resource_id              Int?
   resource_symbol          String?
   magic_type               String?
@@ -217,12 +217,18 @@ model StakingDetail {
   is_powered                         Boolean?
   is_runi_staked                     Boolean?
   is_power_core_staked               Boolean?
+  is_energized                       Boolean?
+  has_labors_luck                    Boolean?
   max_workers_allowed                Int?
   runi_boost                         Float?
   title_boost                        Float?
   totem_boost                        Float?
   deed_status_token_boost            Float?
   deed_rarity_boost                  Float?
+  card_abilities_boost               Float?
+  card_bloodlines_boost              Float?
+  grain_food_discount                Float?
+  dec_stake_needed_discount          Float?
   total_boost                        Float?
   total_base_pp_cap                  Float?
   total_base_pp                      Float?
@@ -244,6 +250,8 @@ model StakingDetail {
   total_title_boost_pp               Float?
   total_totem_boost                  Float?
   total_totem_boost_pp               Float?
+  total_card_abilities_boost_pp      Float?
+  total_card_bloodlines_boost_pp     Float?
   total_boost_pp                     Float?
   total_harvest_pp                   Float?
   total_work_per_hour                Float?

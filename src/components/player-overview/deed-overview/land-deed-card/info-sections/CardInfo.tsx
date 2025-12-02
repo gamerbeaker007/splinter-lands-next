@@ -41,7 +41,7 @@ export const CardInfo: React.FC<Props> = ({
 
           return (
             <CardTile
-              key={card.name}
+              key={card.uid}
               name={name}
               rarity={rarity}
               edition={card.edition}
