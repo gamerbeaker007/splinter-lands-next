@@ -9,10 +9,13 @@ import { cacheLife } from "next/cache";
  * Uses daily cache (1 day + 1 hour TTL) since pool data doesn't change frequently.
  */
 
-export async function getLandLiquidityPools(): Promise<SplLandPool[]> {
+export async function getLandLiquidityPools(): Promise<{
+  data: SplLandPool[];
+  timeStamp: string;
+}> {
   "use cache";
   cacheLife("seconds");
 
   const data = await fetchLandResourcesPools();
-  return data;
+  return { data, timeStamp: Date.now().toString() };
 }

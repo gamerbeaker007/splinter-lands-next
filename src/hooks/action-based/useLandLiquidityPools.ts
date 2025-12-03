@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 
 interface useLiquidityPoolsReturn {
   landPoolData: SplLandPool[];
+  timeStamp: string | null;
   loading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
@@ -19,6 +20,7 @@ export function useLandLiquidityPools(
 ): useLiquidityPoolsReturn {
   const { autoFetch = true } = options;
   const [landPoolData, setLandPoolData] = useState<SplLandPool[]>([]);
+  const [timeStamp, setTimeStamp] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +30,8 @@ export function useLandLiquidityPools(
 
     try {
       const landPoolResult = await getLandLiquidityPools();
-      setLandPoolData(landPoolResult);
+      setLandPoolData(landPoolResult.data);
+      setTimeStamp(landPoolResult.timeStamp);
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch data";
@@ -47,6 +50,7 @@ export function useLandLiquidityPools(
 
   return {
     landPoolData,
+    timeStamp: timeStamp,
     loading,
     error,
     refetch: fetchData,

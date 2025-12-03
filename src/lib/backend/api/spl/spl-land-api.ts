@@ -120,6 +120,7 @@ export async function fetchDeedUid(plotId: number) {
 
 export async function fetchLandResourcesPools(): Promise<SplLandPool[]> {
   const url = `/land/liquidity/landpools`;
+  console.info(`SPL API - fetch land resources pools`);
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;

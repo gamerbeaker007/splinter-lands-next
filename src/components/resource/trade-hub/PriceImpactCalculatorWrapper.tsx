@@ -3,7 +3,7 @@ import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 import { PriceImpactCalculator } from "./PriceImpactCalculator";
 
 export function PriceImpactCalculatorWrapper() {
-  const { landPoolData, error, loading } = useLandLiquidityPools();
+  const { landPoolData, timeStamp, error, loading } = useLandLiquidityPools();
 
   if (loading) {
     return <CircularProgress />;
@@ -21,5 +21,5 @@ export function PriceImpactCalculatorWrapper() {
     );
   }
 
-  return <PriceImpactCalculator data={landPoolData} />;
+  return <PriceImpactCalculator data={landPoolData} timeStamp={timeStamp} />;
 }

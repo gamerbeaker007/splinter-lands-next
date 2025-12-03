@@ -21,32 +21,27 @@ import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   data: SplLandPool[];
+  timeStamp: string | null;
 }
 
 interface PriceImpactResult {
   amountReceived: number;
-  effectivePrice: number;
-  marketPrice: number;
   priceImpact: number;
-  newDecQuantity: number;
-  newResourceQuantity: number;
 }
 
 const emptyPriceImpactResult: PriceImpactResult = {
   amountReceived: 0,
-  effectivePrice: 0,
-  marketPrice: 0,
   priceImpact: 0,
-  newDecQuantity: 0,
-  newResourceQuantity: 0,
 };
 
 const TAX_RATE = 0.9; // 10% tax on resource swaps
 
-export function PriceImpactCalculator({ data }: Props) {
+export function PriceImpactCalculator({ data, timeStamp }: Props) {
   const [selectedResource, setSelectedResource] = useState<string>("");
   const [decAmount, setDecAmount] = useState<string>("");
   const [resourceAmount, setResourceAmount] = useState<string>("");
+  const [tokenSymbol, setTokenSymbol] = useState<string>("");
+  const [amountReceived, setAmountReceived] = useState<number>(0);
 
   // Select first resource on load
   useEffect(() => {
@@ -88,11 +83,7 @@ export function PriceImpactCalculator({ data }: Props) {
 
       return {
         amountReceived: amountReceived * TAX_RATE, // Apply 10% fee
-        effectivePrice,
-        marketPrice,
         priceImpact,
-        newDecQuantity,
-        newResourceQuantity,
       };
     }
 
@@ -117,11 +108,7 @@ export function PriceImpactCalculator({ data }: Props) {
 
       return {
         amountReceived: amountReceived * TAX_RATE, // Apply 10% fee
-        effectivePrice,
-        marketPrice,
         priceImpact,
-        newDecQuantity,
-        newResourceQuantity,
       };
     }
 
@@ -150,6 +137,8 @@ export function PriceImpactCalculator({ data }: Props) {
         (resourceQuantity - newResourceQuantity) * TAX_RATE;
       if (amountReceived > 0) {
         setResourceAmount(amountReceived.toFixed(3));
+        setTokenSymbol(selectedResourceData.token_symbol);
+        setAmountReceived(amountReceived);
       }
     } else {
       setResourceAmount("");
@@ -177,6 +166,8 @@ export function PriceImpactCalculator({ data }: Props) {
       const amountReceived = (decQuantity - newDecQuantity) * TAX_RATE;
       if (amountReceived > 0) {
         setDecAmount(amountReceived.toFixed(3));
+        setTokenSymbol("DEC");
+        setAmountReceived(amountReceived);
       }
     } else {
       setDecAmount("");
@@ -249,7 +240,7 @@ export function PriceImpactCalculator({ data }: Props) {
                 <Typography variant="body2">
                   <strong>Last Updated:</strong>{" "}
                   {new Date(
-                    selectedResourceData.last_updated_date
+                    timeStamp ? parseInt(timeStamp) : 0
                   ).toLocaleString()}
                 </Typography>
                 <Typography variant="body2">
@@ -346,20 +337,7 @@ export function PriceImpactCalculator({ data }: Props) {
               <Box display="flex" flexDirection="column" gap={1}>
                 <Typography variant="body2">
                   <strong>You will receive:</strong>{" "}
-                  {formatNumber(priceImpactResult.amountReceived)}{" "}
-                  {decAmount ? selectedResourceData?.token_symbol : "DEC"}
-                </Typography>
-
-                <Typography variant="body2">
-                  <strong>Effective Price:</strong>{" "}
-                  {formatNumber(priceImpactResult.effectivePrice, 4)} DEC per{" "}
-                  {selectedResourceData?.token_symbol}
-                </Typography>
-
-                <Typography variant="body2">
-                  <strong>Market Price:</strong>{" "}
-                  {formatNumber(priceImpactResult.marketPrice, 4)} DEC per{" "}
-                  {selectedResourceData?.token_symbol}
+                  {formatNumber(amountReceived)} {tokenSymbol}
                 </Typography>
 
                 <Typography
@@ -376,19 +354,6 @@ export function PriceImpactCalculator({ data }: Props) {
                 >
                   <strong>Price Impact:</strong>{" "}
                   {formatNumber(priceImpactResult.priceImpact, 2)}%
-                </Typography>
-              </Box>
-
-              <Box mt={2}>
-                <Typography variant="caption" color="text.secondary">
-                  After this swap, the pool will have:
-                </Typography>
-                <Typography variant="caption" display="block">
-                  DEC: {formatNumber(priceImpactResult.newDecQuantity)}
-                </Typography>
-                <Typography variant="caption" display="block">
-                  {selectedResourceData?.token_symbol}:{" "}
-                  {formatNumber(priceImpactResult.newResourceQuantity)}
                 </Typography>
               </Box>
             </Box>
