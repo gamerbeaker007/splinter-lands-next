@@ -2,7 +2,7 @@ import { PRICE_KEYS, SplPriceData } from "@/types/price";
 import axios from "axios";
 import * as rax from "retry-axios";
 import logger from "../../log/logger.server";
-import { DEFAULT_RAX_CONFIG as DEFAULT_RETRY_CONFIG } from "./spl-base-api";
+import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
 const splPricesClient = axios.create({
   baseURL: "https://prices.splinterlands.com/",

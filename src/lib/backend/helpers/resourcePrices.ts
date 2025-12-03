@@ -1,7 +1,7 @@
 import { RESOURCE_PRESETS } from "@/constants/conversion/presets";
 import {
+  fetchLandResourcesPools,
   getAURAPrices,
-  getLandResourcesPools,
 } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import { AuraPrices, Prices, SplPriceData } from "@/types/price";
@@ -11,7 +11,7 @@ function getPrice(
   prices: SplPriceData,
   auraPrices: AuraPrices[],
   token: string,
-  amount: number,
+  amount: number
 ): number {
   if (token === "RESEARCH") {
     return 0;
@@ -98,7 +98,7 @@ function getPrice(
 function computeUnbindAuraPrice(
   auraPrices: AuraPrices[],
   prices: SplPriceData,
-  token: string,
+  token: string
 ): number | null {
   const map: Record<
     string,
@@ -131,12 +131,12 @@ function computeUnbindAuraPrice(
 
 export async function getResourceDECPrices() {
   const prices = await getPrices();
-  const metrics = await getLandResourcesPools();
+  const metrics = await fetchLandResourcesPools();
   const landPrices: Prices = Object.fromEntries(
     metrics.map((item: { token_symbol: string; dec_price: number }) => [
       item.token_symbol,
       item.dec_price,
-    ]),
+    ])
   );
   const consumablePrices = await getAURAPrices();
 

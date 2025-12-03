@@ -9,21 +9,8 @@ import { cookies } from "next/headers";
 import * as rax from "retry-axios";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
-import { RetryConfig } from "retry-axios";
+import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
-export const DEFAULT_RAX_CONFIG: RetryConfig = {
-  retry: 10,
-  retryDelay: 1000,
-  backoffType: "exponential",
-  statusCodesToRetry: [
-    [429, 429],
-    [500, 599],
-  ],
-  onRetryAttempt: async (err) => {
-    const cfg = rax.getConfig(err);
-    logger.warn(`Retry attempt #${cfg?.currentRetryAttempt}`);
-  },
-};
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -35,7 +22,7 @@ const splBaseClient = axios.create({
 });
 
 rax.attach(splBaseClient);
-splBaseClient.defaults.raxConfig = DEFAULT_RAX_CONFIG;
+splBaseClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
 
 /**
  * Helper function to get the JWT token from cookies in server-side contexts

@@ -1,10 +1,11 @@
-import { PlayerTradeHubPosition, ResourceHubMetrics } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma";
 import {
+  fetchLandResourcesPools,
   fetchPlayerPoolInfo,
-  getLandResourcesPools,
 } from "@/lib/backend/api/spl/spl-land-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
+import { SplLandPool } from "@/types/spl/landPools";
 import pLimit from "p-limit";
 
 const limit = pLimit(5);
@@ -22,19 +23,19 @@ export async function computeAndStorePlayerHubPosition(today: Date) {
     .map((p) => p.player as string);
   // .slice(0, 10); // enable for debug purposes
 
-  const metrics = await getLandResourcesPools();
+  const metrics = await fetchLandResourcesPools();
 
   const playersTradeHubPosition = await throttledFetchAllAssets(
     today,
     playerNames,
-    metrics,
+    metrics
   );
 
   logger.info(`🧹 playerTradeHubPosition - Clearing existing data...`);
   await prisma.playerTradeHubPosition.deleteMany();
 
   logger.info(
-    `📦 Injecting ${playersTradeHubPosition.length} playerTradeHubPosition...`,
+    `📦 Injecting ${playersTradeHubPosition.length} playerTradeHubPosition...`
   );
 
   await prisma.playerTradeHubPosition.createMany({
@@ -54,7 +55,7 @@ async function throttleRate(minIntervalMs: number) {
 export async function throttledFetchAllAssets(
   today: Date,
   players: string[],
-  metrics: ResourceHubMetrics[],
+  metrics: SplLandPool[]
 ): Promise<PlayerTradeHubPosition[]> {
   const results: PlayerTradeHubPosition[] = [];
   let current = 0;
@@ -71,7 +72,7 @@ export async function throttledFetchAllAssets(
 
         if (++current % 10 === 0) {
           logger.info(
-            `playerTradeHubPosition - Fetched ${current} out of ${players.length}`,
+            `playerTradeHubPosition - Fetched ${current} out of ${players.length}`
           );
         }
 
@@ -80,7 +81,7 @@ export async function throttledFetchAllAssets(
         console.error(`Failed to fetch pool info for ${player}:`, err);
         return null;
       }
-    }),
+    })
   );
 
   await Promise.all(tasks);
@@ -90,7 +91,7 @@ export async function throttledFetchAllAssets(
 export function enrichPoolData(
   playerTradeHubPosition: PlayerTradeHubPosition,
   today: Date,
-  metrics: ResourceHubMetrics[],
+  metrics: SplLandPool[]
 ) {
   playerTradeHubPosition.date = today;
   const resource = playerTradeHubPosition.token.split("-")[1];

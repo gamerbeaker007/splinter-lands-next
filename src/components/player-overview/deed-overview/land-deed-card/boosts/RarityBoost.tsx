@@ -14,7 +14,6 @@ export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
 
   const boostPercent = boost * 100;
   const imgUrl = `${SPL_WEB_URL}assets/lands/sideMenu/${rarity.toLowerCase()}Off.svg`;
-  console.log("RarityBoost render", { rarity, boost, imgUrl });
 
   return (
     <Tooltip title={"Rarity Boost"}>

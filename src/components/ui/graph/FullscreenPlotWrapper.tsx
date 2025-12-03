@@ -1,9 +1,9 @@
 "use client";
+import theme from "@/lib/frontend/themes/themes";
 import CloseIcon from "@mui/icons-material/Close";
 import { Box, Dialog, IconButton, useColorScheme } from "@mui/material";
-import React, { useState } from "react";
 import dynamic from "next/dynamic";
-import theme from "@/lib/frontend/themes/themes";
+import React, { useState } from "react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
@@ -23,7 +23,8 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   noBoxWrapper = false,
 }) => {
   const { mode } = useColorScheme();
-  const effectiveMode = mode === "dark" ? "dark" : "light";
+  // Default to dark when mode is undefined (first load)
+  const effectiveMode = mode === "light" ? "light" : "dark";
 
   const activePalette =
     theme.colorSchemes?.[effectiveMode]?.palette ?? theme.palette;

@@ -4,6 +4,7 @@ import { DeedComplete } from "@/types/deed";
 import { Assets } from "@/types/planner/market/market";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
+import { SplLandPool } from "@/types/spl/landPools";
 import { SplMarketAsset } from "@/types/splMarketAsset";
 import { SplTaxes } from "@/types/splTaxes";
 import axios from "axios";
@@ -11,7 +12,7 @@ import * as rax from "retry-axios";
 import { NotFoundError } from "../../error";
 import { logError } from "../../log/logUtils";
 import logger from "../../log/logger.server";
-import { DEFAULT_RAX_CONFIG } from "./spl-base-api";
+import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
 const splLandClient = axios.create({
   baseURL: "https://vapi.splinterlands.com",
@@ -23,7 +24,7 @@ const splLandClient = axios.create({
 });
 
 rax.attach(splLandClient);
-splLandClient.defaults.raxConfig = DEFAULT_RAX_CONFIG;
+splLandClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
 
 export async function fetchRegionData(region: number) {
   const url = "/land/deeds";
@@ -43,7 +44,7 @@ export async function fetchRegionData(region: number) {
 }
 
 export async function fetchRegionDataPlayer(
-  player: string,
+  player: string
 ): Promise<RawRegionDataResponse> {
   const url = "/land/deeds";
   const res = await splLandClient.get(url, {
@@ -83,7 +84,7 @@ export async function fetchStakedAssets(deed_uid: string) {
 }
 
 export async function fetchPlayerPoolInfo(
-  player: string,
+  player: string
 ): Promise<PlayerTradeHubPosition[]> {
   const url = `land/liquidity/pools/${player}/all-no-vesting`;
   const res = await splLandClient.get(url);
@@ -117,13 +118,13 @@ export async function fetchDeedUid(plotId: number) {
   return data as DeedComplete;
 }
 
-export async function getLandResourcesPools() {
+export async function fetchLandResourcesPools(): Promise<SplLandPool[]> {
   const url = `/land/liquidity/landpools`;
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;
   if (!data) throw new Error("Invalid response from Splinterlands API");
-  return data || [];
+  return (data as SplLandPool[]) || [];
 }
 
 export async function fetchResourceSupply(resource: string) {
@@ -145,7 +146,7 @@ export async function fetchResourceSupply(resource: string) {
 }
 
 export async function fetchAssetsPrices(
-  filter?: Assets[],
+  filter?: Assets[]
 ): Promise<SplMarketAsset[]> {
   try {
     const url = "/market/landing";

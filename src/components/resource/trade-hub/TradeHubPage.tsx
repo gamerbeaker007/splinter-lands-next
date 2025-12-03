@@ -1,6 +1,7 @@
 "use client";
 
 import { ResourceHubMetrics } from "@/generated/prisma";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
   AlertTitle,
@@ -10,9 +11,9 @@ import {
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import { PriceImpactCalculatorWrapper } from "./PriceImpactCalculatorWrapper";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 export function TradeHubPage() {
   const [historicalTradeHubMetrics, setHistoricalTradeHubMetrics] = useState<
@@ -100,6 +101,9 @@ export function TradeHubPage() {
           </Box>
         </>
       )}
+
+      {/* Price Impact Calculator - Separate data source */}
+      <PriceImpactCalculatorWrapper />
     </>
   );
 }

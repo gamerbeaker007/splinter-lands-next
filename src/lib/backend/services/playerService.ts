@@ -35,12 +35,12 @@ import {
   fetchPlayerDetails,
 } from "../api/spl/spl-base-api";
 import {
+  fetchLandResourcesPools,
   fetchPlayerLiquidity,
   fetchPlayerPoolInfo,
   fetchRegionDataPlayer,
   fetchStakedAssets,
   fetchTaxes,
-  getLandResourcesPools,
 } from "../api/spl/spl-land-api";
 import { cache } from "../cache/cache";
 
@@ -55,7 +55,7 @@ export async function invalidatePlayerCaches(player: string) {
 
 export async function getCachedPlayerData(
   player: string,
-  force = false,
+  force = false
 ): Promise<RawRegionDataResponse> {
   const key = `region-data:${player}`;
   if (!force) {
@@ -70,7 +70,7 @@ export async function getCachedPlayerData(
 
 export async function getCachedStakedAssets(
   deedUid: string,
-  force = false,
+  force = false
 ): Promise<StakedAssets> {
   const key = `staked-assets:${deedUid}`;
   if (!force) {
@@ -90,7 +90,7 @@ export async function getCachedStakedAssets(
 
 export async function getCachedPlayerDetails(
   player: string,
-  force = false,
+  force = false
 ): Promise<SplPlayerDetails> {
   const key = `player-details:${player}`;
   if (!force) {
@@ -104,14 +104,14 @@ export async function getCachedPlayerDetails(
     return res;
   } catch (err) {
     throw new Error(
-      `Failed to fetch player details: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to fetch player details: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
 
 export async function getCachedPlayerCardCollection(
   player: string,
-  force = false,
+  force = false
 ): Promise<SplPlayerCardCollection[]> {
   const key = `player-card-collection:${player}`;
   if (!force) {
@@ -125,14 +125,14 @@ export async function getCachedPlayerCardCollection(
     return res;
   } catch (err) {
     throw new Error(
-      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
 
 export async function getCachedTaxes(
   deedUid: string,
-  force = false,
+  force = false
 ): Promise<SplTaxes> {
   const key = `taxes:${deedUid}`;
   if (!force) {
@@ -146,14 +146,14 @@ export async function getCachedTaxes(
     return res;
   } catch (err) {
     throw new Error(
-      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`,
+      `Failed to fetch player collection: ${err instanceof Error ? err.message : String(err)}`
     );
   }
 }
 
 export async function getCachedPlayerOverviewData(
   player: string,
-  force = false,
+  force = false
 ): Promise<PlayerOverview> {
   const key = `player-overview-data:${player}`;
   if (!force) {
@@ -162,7 +162,7 @@ export async function getCachedPlayerOverviewData(
   }
 
   const deeds = mapRegionDataToDeedComplete(
-    await fetchRegionDataPlayer(player),
+    await fetchRegionDataPlayer(player)
   );
   const enrichedDeeds = await enrichWithProgressInfo(deeds);
   const summarizedRegionInfo = summarizeDeedsData(enrichedDeeds);
@@ -171,7 +171,7 @@ export async function getCachedPlayerOverviewData(
   const liquidityInfo = await fetchPlayerLiquidity(player);
 
   const poolInfo = await fetchPlayerPoolInfo(player);
-  const metrics = await getLandResourcesPools();
+  const metrics = await fetchLandResourcesPools();
   const today = new Date();
   poolInfo.map((row) => enrichPoolData(row, today, metrics));
   const liquidityPoolInfo = poolInfo;
@@ -208,25 +208,25 @@ export async function getCachedPlayerOverviewData(
   const totalTaxDEC = regionTaxSummary
     ? Object.entries(regionTaxSummary).reduce(
         (sum, [, region]) => sum + (Number(region.total_tax_dec) || 0),
-        0,
+        0
       )
     : null;
 
   const LDE_ratio = calculateLDERatio(
     total_dec,
-    summarizedRegionInfo.totalDecInUse,
+    summarizedRegionInfo.totalDecInUse
   );
   const LCE_ratio_base = calculateLCERatio(
     total_dec,
-    summarizedRegionInfo.totalBasePP,
+    summarizedRegionInfo.totalBasePP
   );
   const LCE_ratio_boosted = calculateLCERatio(
     total_dec,
-    summarizedRegionInfo.totalBoostedPP,
+    summarizedRegionInfo.totalBoostedPP
   );
   const LPE_ratio = calculateLPERatio(
     total_dec,
-    summarizedRegionInfo.deedsCount,
+    summarizedRegionInfo.deedsCount
   );
 
   const result: PlayerOverview = {
@@ -248,7 +248,7 @@ export async function getCachedPlayerOverviewData(
 }
 
 export async function processPlayerRegionInformation(
-  playerData: DeedComplete[],
+  playerData: DeedComplete[]
 ): Promise<PlayerRegionDataType> {
   const regionSummary = prepareSummary(playerData, true, true);
 
@@ -258,7 +258,7 @@ export async function processPlayerRegionInformation(
 
   const { dec_net, total_dec } = computeNetValues(
     regionSummary,
-    resourcePrices,
+    resourcePrices
   );
   const resource_net = computeResourceNetValue(regionSummary);
 
@@ -287,7 +287,7 @@ export async function processPlayerRegionInformation(
 export function processPlayerTaxIncome(
   playerData: DeedComplete[],
   allData: DeedComplete[],
-  resourcePrices: Prices,
+  resourcePrices: Prices
 ): RegionTaxSummary[] {
   const results = [];
   for (const deed of playerData) {
@@ -329,7 +329,7 @@ export function processPlayerTaxIncome(
         const dec = resourcePrices[token] * captured;
         total_tax_dec += dec || 0;
         return { token, total_rewards_per_hour, total_tax, captured, dec };
-      },
+      }
     );
 
     results.push({
