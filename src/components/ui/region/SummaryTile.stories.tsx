@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import SummaryTile from "./SummaryTile";
 import {
   land_aura_lab_icon_url,

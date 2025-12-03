@@ -15,8 +15,10 @@ export default function CardFilterDrawer() {
   const [drawerOpen, setDrawerOpen] = useState(true);
 
   useEffect(() => {
-    const isLarge = window.innerWidth >= 1024;
-    setDrawerOpen(isLarge);
+    (async () => {
+      const isLarge = window.innerWidth >= 1024;
+      setDrawerOpen(isLarge);
+    })();
   }, []);
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);

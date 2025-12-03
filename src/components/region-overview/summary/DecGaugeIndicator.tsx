@@ -1,6 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { Box, useMediaQuery } from "@mui/material";
 import React from "react";
 
 type Props = {
@@ -18,10 +18,9 @@ const DecGaugeIndicator: React.FC<Props> = ({
   totalDecNeeded,
   runiStakedDEC = 0,
 }) => {
-  const theme = useTheme();
-  const textColor = theme.palette.text.primary;
-  const backgroundColor = theme.palette.background.default;
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
+  const textColor = "var(--mui-palette-text-primary)";
+  const backgroundColor = "var(--mui-palette-background-default)";
+  const isSmallScreen = useMediaQuery("(max-width:960px)");
 
   const yellowStart = totalDecStaked;
   const yellowEnd = totalDecStaked + runiStakedDEC;

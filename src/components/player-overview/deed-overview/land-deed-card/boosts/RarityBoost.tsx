@@ -1,6 +1,6 @@
-import React from "react";
-import { Box, Typography, Avatar, Tooltip } from "@mui/material";
 import { SPL_WEB_URL } from "@/lib/shared/statics_icon_urls";
+import { Avatar, Box, Tooltip, Typography } from "@mui/material";
+import React from "react";
 
 export type RarityBoostProps = {
   rarity: string;
@@ -14,6 +14,7 @@ export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
 
   const boostPercent = boost * 100;
   const imgUrl = `${SPL_WEB_URL}assets/lands/sideMenu/${rarity.toLowerCase()}Off.svg`;
+  console.log("RarityBoost render", { rarity, boost, imgUrl });
 
   return (
     <Tooltip title={"Rarity Boost"}>

@@ -68,11 +68,13 @@ export function ImportDeedDialog({ open, onClose, onImported }: Props) {
   const { loading, error: fetchError, fetchPlot, reset } = useFetchPlot();
 
   useEffect(() => {
-    if (!open) {
-      setPlotId("");
-      setLocalError(null);
-      reset();
-    }
+    (async () => {
+      if (!open) {
+        setPlotId("");
+        setLocalError(null);
+        reset();
+      }
+    })();
   }, [open, reset]);
 
   const handleImport = async () => {

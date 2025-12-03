@@ -1,6 +1,6 @@
 import CardTile from "@/components/player-overview/deed-overview/land-deed-card/card/CardTile";
 import { Box } from "@mui/material";
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 const meta: Meta<typeof CardTile> = {
   title: "Components/PlayerOverview/Card",
@@ -29,7 +29,7 @@ export const Default: Story = {
           name={"Fenmoor Wood Troll"}
           foil={0}
           edition={14}
-          rarity={"Common"}
+          rarity={"common"}
           actual_bcx={20}
           max_bcx={400}
           base_pp={50}
@@ -41,7 +41,7 @@ export const Default: Story = {
           name={"Fenmoor Wood Troll"}
           foil={3}
           edition={14}
-          rarity={"Rare"}
+          rarity={"rare"}
           actual_bcx={400}
           max_bcx={400}
           base_pp={20000}

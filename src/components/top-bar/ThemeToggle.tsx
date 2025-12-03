@@ -1,27 +1,29 @@
 "use client";
 
-import { useThemeContext } from "@/lib/frontend/context/ThemeContext";
-import { LuMoon, LuSun } from "react-icons/lu";
-import IconButton from "@mui/material/IconButton";
+import { useMediaQuery } from "@mui/material";
 import Box from "@mui/material/Box";
-import { useEffect, useState } from "react";
+import IconButton from "@mui/material/IconButton";
+import { useColorScheme } from "@mui/material/styles";
+import { LuMoon, LuSun } from "react-icons/lu";
 
 export default function ThemeToggle() {
-  const { mode, toggleTheme } = useThemeContext();
-  const [mounted, setMounted] = useState(false);
+  const { mode, setMode } = useColorScheme();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // detect OS preference
+  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
 
-  if (!mounted) return null;
+  // resolve actual mode
+  const resolvedMode =
+    mode === "system" ? (prefersDark ? "dark" : "light") : mode;
 
-  const isDark = mode === "dark";
+  if (!mode) return null; // required for MUI hydration safety
+
+  const isDark = resolvedMode === "dark";
 
   return (
     <IconButton
       aria-label="Toggle theme"
-      onClick={toggleTheme}
+      onClick={() => setMode(isDark ? "light" : ("dark" as typeof mode))}
       sx={{
         width: 50,
         height: 24,

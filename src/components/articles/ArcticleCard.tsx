@@ -1,4 +1,4 @@
-import { Box, Paper, Typography, useTheme } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -17,8 +17,6 @@ type Props = {
 };
 
 export default function ArticleCard({ article }: Props) {
-  const theme = useTheme();
-
   return (
     <Link
       href={article.linkUrl}
@@ -34,7 +32,6 @@ export default function ArticleCard({ article }: Props) {
           height: "100%",
           maxHeight: 700,
           mx: "auto",
-          bgcolor: theme.palette.background.paper,
           borderRadius: 2,
           overflow: "hidden",
           display: "flex",

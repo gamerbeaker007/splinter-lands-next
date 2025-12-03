@@ -15,12 +15,7 @@ export default function TopBar() {
   const { title } = usePageTitle();
 
   return (
-    <AppBar
-      position="static"
-      color="default"
-      elevation={0}
-      sx={{ borderBottom: 1, borderColor: "divider" }}
-    >
+    <AppBar position="static" color="default" elevation={0}>
       <Toolbar
         variant="dense"
         sx={{

@@ -1,15 +1,17 @@
 "use client";
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Dialog, IconButton, useTheme } from "@mui/material";
+import { Box, Dialog, IconButton, useColorScheme } from "@mui/material";
 import React, { useState } from "react";
-import Plot from "react-plotly.js";
+import dynamic from "next/dynamic";
+import theme from "@/lib/frontend/themes/themes";
+
+const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
 
 interface FullscreenPlotWrapperProps {
   data: Partial<Plotly.PlotData>[] | Partial<Plotly.PieData>[];
   layout?: Partial<Plotly.Layout>;
   config?: Partial<Plotly.Config>;
   style?: React.CSSProperties;
-  className?: string;
   noBoxWrapper?: boolean;
 }
 
@@ -18,13 +20,17 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   layout,
   config,
   style,
-  className,
   noBoxWrapper = false,
 }) => {
-  const theme = useTheme();
-  const backgroundColor = theme.palette.background.default;
-  const textColor = theme.palette.text.primary;
-  const gridLineColor = theme.palette.divider;
+  const { mode } = useColorScheme();
+  const effectiveMode = mode === "dark" ? "dark" : "light";
+
+  const activePalette =
+    theme.colorSchemes?.[effectiveMode]?.palette ?? theme.palette;
+
+  const backgroundColor = activePalette.background?.default;
+  const textColor = activePalette.text?.primary;
+  const gridLineColor = activePalette.divider;
 
   const [open, setOpen] = useState(false);
 
@@ -93,7 +99,6 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
       config={baseConfig}
       useResizeHandler
       style={style || { width: "100%", height: "100%" }}
-      className={className}
     />
   );
 

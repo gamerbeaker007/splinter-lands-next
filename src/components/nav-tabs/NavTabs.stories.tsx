@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import NavTabs from "./NavTabs";
 import { Page } from "@/types/Page";
 import { useState } from "react";
@@ -35,19 +35,21 @@ const pages: Page[] = [
   { key: "tst19", label: "Test 19", component: <div>Test 19</div> },
 ];
 
-export const Default: Story = {
-  render: () => {
-    const [activeTab, setActiveTab] = useState<number>(0);
+const DefaultStory = () => {
+  const [activeTab, setActiveTab] = useState<number>(0);
 
-    return (
-      <>
-        <NavTabs
-          pages={pages}
-          value={activeTab}
-          onChange={(_, newValue) => setActiveTab(newValue)}
-        />
-        <Box mt={4}>{pages[activeTab].component}</Box>
-      </>
-    );
-  },
+  return (
+    <>
+      <NavTabs
+        pages={pages}
+        value={activeTab}
+        onChange={(_, newValue) => setActiveTab(newValue)}
+      />
+      <Box mt={4}>{pages[activeTab].component}</Box>
+    </>
+  );
+};
+
+export const Default: Story = {
+  render: () => <DefaultStory />,
 };

@@ -16,20 +16,22 @@ export default function CacheStatusDot() {
   } | null>(null);
 
   useEffect(() => {
-    setStatus("loading");
-    fetch("/api/cache")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to refresh cache");
-        return res.json();
-      })
-      .then((json) => {
-        setInfo({
-          lastUpdate: json.lastUpdate,
-          uniquePlayers: json.uniquePlayers,
-        });
-        setStatus("success");
-      })
-      .catch(() => setStatus("error"));
+    (async () => {
+      setStatus("loading");
+      fetch("/api/cache")
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to refresh cache");
+          return res.json();
+        })
+        .then((json) => {
+          setInfo({
+            lastUpdate: json.lastUpdate,
+            uniquePlayers: json.uniquePlayers,
+          });
+          setStatus("success");
+        })
+        .catch(() => setStatus("error"));
+    })();
   }, []);
 
   const colorMap: Record<Status, string> = {

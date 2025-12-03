@@ -13,6 +13,7 @@ const StyledTab = styled(Tab, {
 })<GlowingTabProps>(({ theme, compact = false }) => ({
   position: "relative",
   transition: "all 0.2s ease-in-out",
+  backgroundColor: "var(--mui-palette-background-default)",
 
   // Base (desktop/normal)
   fontSize: 13,
@@ -48,8 +49,8 @@ const StyledTab = styled(Tab, {
     transform: "translateX(-50%) rotate(45deg)",
     width: 8,
     height: 8,
-    backgroundColor: theme.palette.primary.main,
     zIndex: 1,
+    backgroundColor: theme.palette.primary.main,
   },
 
   // Compact overrides (mobile landscape / short screens)

@@ -1,3 +1,5 @@
+"use client";
+
 import PlayerDashboardPage from "@/components/player-overview/player-dashboard/PlayerDashboardPage";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
@@ -6,7 +8,7 @@ import { Page } from "@/types/Page";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import { Alert, Box, Container } from "@mui/material";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import FilterDrawer from "../filter/FilterDrawer";
 import NavTabs from "../nav-tabs/NavTabs";
 import DeedOverview from "./deed-overview/DeedOverview";
@@ -33,7 +35,7 @@ const defaultWithSortingFilterConfig: EnableFilterOptions = {
   sorting: true,
 };
 
-export default function PlayerPageInner() {
+function PlayerPageContent() {
   const { setTitle } = usePageTitle();
   const { resetFilters } = useFilters();
   const [selectedPlayer, setSelectedPlayer] = useState<string>("");
@@ -97,25 +99,29 @@ export default function PlayerPageInner() {
   }, [selectedPlayer, resetFilters]);
 
   useEffect(() => {
-    if (!selectedPlayer || selectedPlayer.trim() === "") {
-      setPlayerData(null);
-      setError(null);
-      return;
-    }
-
-    fetch(`/api/player/details?player=${encodeURIComponent(selectedPlayer)}`)
-      .then(async (res) => {
-        const json = await res.json();
-        if (!res.ok || json?.error) {
-          throw new Error(json?.error || "Unknown error");
-        }
-        setPlayerData(json);
-        setError(null);
-      })
-      .catch(() => {
+    (async () => {
+      if (!selectedPlayer || selectedPlayer.trim() === "") {
         setPlayerData(null);
-        setError(`Unable to find player: ${selectedPlayer}`);
-      });
+        setError(null);
+        return;
+      }
+
+      void fetch(
+        `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`,
+      )
+        .then(async (res) => {
+          const json = await res.json();
+          if (!res.ok || json?.error) {
+            throw new Error(json?.error || "Unknown error");
+          }
+          setPlayerData(json);
+          setError(null);
+        })
+        .catch(() => {
+          setPlayerData(null);
+          setError(`Unable to find player: ${selectedPlayer}`);
+        });
+    })();
   }, [selectedPlayer]);
 
   const handleTabChange = (_: unknown, newValue: number) => {
@@ -162,5 +168,13 @@ export default function PlayerPageInner() {
         )}
       </Container>
     </>
+  );
+}
+
+export default function PlayerPageInner() {
+  return (
+    <Suspense fallback={<Box sx={{ p: 4 }}>Loading...</Box>}>
+      <PlayerPageContent />
+    </Suspense>
   );
 }

@@ -24,9 +24,11 @@ export default function TopRegionsByResourceChart({ data }: Props) {
 
   //Auto-reset when data/resourceTypes change
   useEffect(() => {
-    if (!selectedResource || !resourceTypes.includes(selectedResource)) {
-      setSelectedResource(resourceTypes[0] ?? null);
-    }
+    (async () => {
+      if (!selectedResource || !resourceTypes.includes(selectedResource)) {
+        setSelectedResource(resourceTypes[0] ?? null);
+      }
+    })();
   }, [resourceTypes, selectedResource]);
 
   let topRegions: string[] = [];

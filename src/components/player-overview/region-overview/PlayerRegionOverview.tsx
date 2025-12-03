@@ -44,15 +44,17 @@ export default function PlayerRegionOverview({ player }: Props) {
   );
 
   useEffect(() => {
-    if (!filters) return;
-    if (!player || player === "") {
-      setData(null);
-      setLoadingText(null);
-      setTaxData(null);
-      return;
-    }
+    (async () => {
+      if (!filters) return;
+      if (!player || player === "") {
+        setData(null);
+        setLoadingText(null);
+        setTaxData(null);
+        return;
+      }
 
-    fetchPlayerData(false);
+      await fetchPlayerData(false);
+    })();
   }, [filters, player, fetchPlayerData]);
 
   return (

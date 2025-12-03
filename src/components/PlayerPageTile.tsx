@@ -1,6 +1,6 @@
 "use client";
 
-import { alpha, useTheme } from "@mui/material";
+import { alpha } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
@@ -12,8 +12,6 @@ import { useState } from "react";
 export default function PlayerPageTile() {
   const [player, setPlayer] = useState("");
   const router = useRouter();
-  const theme = useTheme();
-  const paperColor = theme.palette.background.paper;
 
   const gotoOverview = () => {
     const trimmed = player.trim();
@@ -72,13 +70,15 @@ export default function PlayerPageTile() {
         <TextField
           fullWidth
           variant="outlined"
+          size="small"
           placeholder="Enter player name (optional)"
           value={player}
           onChange={(e) => setPlayer(e.target.value.toLowerCase())}
           onKeyDown={(e) => e.key === "Enter" && gotoOverview()}
           sx={{
-            mb: 2,
-            backgroundColor: alpha(paperColor, 0.5),
+            mt: 2,
+            mb: 4,
+            backgroundColor: alpha("#696666a7", 0.8),
             borderRadius: 1,
           }}
         />
