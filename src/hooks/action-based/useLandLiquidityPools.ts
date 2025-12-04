@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function useLandLiquidityPools(
-  options: Props = {}
+  options: Props = {},
 ): useLiquidityPoolsReturn {
   const { autoFetch = true } = options;
   const [landPoolData, setLandPoolData] = useState<SplLandPool[]>([]);

@@ -1,6 +1,15 @@
 "use client";
 
+import AuraPriceBox from "@/components/resource/conversion/calculator/AuraPriceBox";
 import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
+import { useResourceConversion } from "@/components/resource/conversion/calculator/userResourceConversion";
+import { PresetName, RESOURCE_PRESETS } from "@/constants/conversion/presets";
+import {
+  CALCULATOR_RESOURCES,
+  CalculatorResource,
+} from "@/constants/resource/resource";
+import { usePrices } from "@/hooks/usePrices";
+import { Mode } from "@/types/mode";
 import { Refresh, Sell, ShoppingCart } from "@mui/icons-material";
 import {
   Alert,
@@ -14,17 +23,9 @@ import {
 } from "@mui/material";
 import { useState } from "react";
 import { FaInfoCircle } from "react-icons/fa";
+import { PriceImpactCalculatorWrapper } from "../swap/PriceImpactCalculatorWrapper";
 import { ResourceInput } from "./ResourceInput";
 import { ResourceOutput } from "./resourceOutput";
-import { Mode } from "@/types/mode";
-import { PresetName, RESOURCE_PRESETS } from "@/constants/conversion/presets";
-import {
-  CALCULATOR_RESOURCES,
-  CalculatorResource,
-} from "@/constants/resource/resource";
-import { usePrices } from "@/hooks/usePrices";
-import { useResourceConversion } from "@/components/resource/conversion/calculator/userResourceConversion";
-import AuraPriceBox from "@/components/resource/conversion/calculator/AuraPriceBox";
 
 export const EMPTY_RESOURCE_INPUT: Record<CalculatorResource, number> =
   Object.fromEntries(CALCULATOR_RESOURCES.map((r) => [r, 0])) as Record<
@@ -168,7 +169,11 @@ export function ResourceCalculator() {
           Potion.
         </Alert>
       </Box>
-      {prices && <AuraPriceBox prices={prices} />}
+      <Box display="flex" flexDirection="row" flexWrap={"wrap"} gap={2}>
+        {prices && <AuraPriceBox prices={prices} />}
+        {/* Price Impact Calculator - Separate data source */}
+        <PriceImpactCalculatorWrapper />
+      </Box>
     </Box>
   );
 }

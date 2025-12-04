@@ -11,7 +11,6 @@ import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
-
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
   timeout: 60000,

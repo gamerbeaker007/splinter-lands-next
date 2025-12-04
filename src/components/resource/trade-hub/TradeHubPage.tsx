@@ -11,7 +11,6 @@ import {
   useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import { PriceImpactCalculatorWrapper } from "./PriceImpactCalculatorWrapper";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
 
@@ -101,9 +100,6 @@ export function TradeHubPage() {
           </Box>
         </>
       )}
-
-      {/* Price Impact Calculator - Separate data source */}
-      <PriceImpactCalculatorWrapper />
     </>
   );
 }

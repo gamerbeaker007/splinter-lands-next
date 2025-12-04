@@ -1,12 +1,13 @@
 "use client";
 
+import { clearCache } from "@/lib/backend/admin/adminActions";
+import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
-  Alert,
   Box,
   Button,
   Card,
   CardContent,
-  CircularProgress,
   Divider,
   IconButton,
   List,
@@ -17,10 +18,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Data = {
   cacheKeys: number;
@@ -41,52 +40,24 @@ function SectionLabel({ label, tooltip }: { label: string; tooltip: string }) {
   );
 }
 
-export default function CacheSection() {
-  const [data, setData] = useState<Data | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
+export default function CacheSectionClient({
+  initialData,
+}: {
+  initialData: Data;
+}) {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
-  useEffect(() => {
-    fetch("/api/admin/cache")
-      .then((res) => {
-        if (res.status === 401) {
-          setUnauthorized(true);
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        setData(json);
-        setLoading(false);
-      });
-  }, []);
-
-  if (unauthorized)
-    return <Alert severity="error">Unauthorized. Please log in.</Alert>;
-
-  if (loading || !data) return <CircularProgress />;
-
-  function onClear(): void {
-    fetch("/api/admin/cache", { method: "DELETE" })
-      .then((res) => {
-        if (res.status === 401) {
-          setUnauthorized(true);
-        } else {
-          return res.json();
-        }
-      })
-      .then((res) => {
-        if (res?.success) {
-          // re-fetch data
-          setLoading(true);
-          fetch("/api/admin/cache")
-            .then((res) => res.json())
-            .then((json) => {
-              setData(json);
-              setLoading(false);
-            });
-        }
-      });
+  async function onClear() {
+    setLoading(true);
+    try {
+      await clearCache();
+      router.refresh();
+    } catch (error) {
+      console.error("Failed to clear cache:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -101,7 +72,7 @@ export default function CacheSection() {
             label="Cached Keys"
             tooltip="Total keys currently stored in the in-memory cache."
           />
-          <Typography variant="body2">{data.cacheKeys}</Typography>
+          <Typography variant="body2">{initialData.cacheKeys}</Typography>
         </Box>
 
         <Box mb={2}>
@@ -109,16 +80,17 @@ export default function CacheSection() {
             label="Daily Cached Keys"
             tooltip="Number of keys stored for daily metrics or snapshots."
           />
-          <Typography variant="body2">{data.dailyCacheKeys}</Typography>
+          <Typography variant="body2">{initialData.dailyCacheKeys}</Typography>
         </Box>
 
         <Button
           variant="outlined"
           color="error"
           onClick={onClear}
+          disabled={loading}
           sx={{ mb: 2 }}
         >
-          Clear Cache
+          {loading ? "Clearing..." : "Clear Cache"}
         </Button>
 
         <Divider sx={{ my: 2 }} />
@@ -129,7 +101,7 @@ export default function CacheSection() {
         />
 
         <List dense>
-          {data.users.map((user: string) => (
+          {initialData.users.map((user: string) => (
             <ListItem key={user} disableGutters sx={{ py: 0.25 }}>
               <ListItemIcon sx={{ minWidth: 24 }}>
                 <FiberManualRecordIcon

@@ -1,10 +1,10 @@
 // app/admin/page.tsx
-import CacheSection from "@/components/admin/CacheSection";
-import LogSection from "@/components/admin/LogSections";
-import MemorySection from "@/components/admin/MemorySection";
+import CacheSectionServer from "@/components/admin/CacheSectionServer";
+import LogSectionServer from "@/components/admin/LogSectionServer";
+import MemorySectionServer from "@/components/admin/MemorySectionServer";
 import SignOutButton from "@/components/admin/SingOutButton";
 import { authOptions } from "@/lib/backend/auth/authOptions";
-import { Container, Typography } from "@mui/material";
+import { CircularProgress, Container, Typography } from "@mui/material";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -21,9 +21,12 @@ async function AdminContent() {
       <Typography variant="h2">Admin Dashboard</Typography>
       <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
       <SignOutButton />
-      <CacheSection />
-      <MemorySection />
-      <LogSection />
+
+      <Suspense fallback={<CircularProgress />}>
+        <CacheSectionServer />
+        <MemorySectionServer />
+        <LogSectionServer />
+      </Suspense>
     </>
   );
 }
@@ -31,7 +34,7 @@ async function AdminContent() {
 export default function AdminPage() {
   return (
     <Container maxWidth="xl" sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-      <Suspense fallback={<Typography>Loading...</Typography>}>
+      <Suspense fallback={<CircularProgress />}>
         <AdminContent />
       </Suspense>
     </Container>

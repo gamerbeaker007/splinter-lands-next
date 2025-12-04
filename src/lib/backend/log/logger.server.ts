@@ -8,8 +8,8 @@ const logger = createLogger({
   format: format.combine(
     format.timestamp(),
     format.printf(
-      ({ level, message, timestamp }) => `${timestamp} [${level}] ${message}`
-    )
+      ({ level, message, timestamp }) => `${timestamp} [${level}] ${message}`,
+    ),
   ),
   transports: [
     new transports.File({
@@ -24,8 +24,8 @@ const logger = createLogger({
               format.colorize(),
               format.printf(
                 ({ level, message, timestamp }) =>
-                  `${timestamp} [${level}] ${message}`
-              )
+                  `${timestamp} [${level}] ${message}`,
+              ),
             ),
           }),
         ]

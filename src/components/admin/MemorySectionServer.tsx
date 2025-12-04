@@ -1,27 +1,15 @@
-"use client";
-
+import { getMemoryUsage } from "@/lib/backend/admin/adminActions";
+import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
-  Alert,
   Box,
   Card,
   CardContent,
-  CircularProgress,
   IconButton,
   LinearProgress,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
-
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-
-type Data = {
-  heapUsed: number;
-  heapTotal: number;
-  rss: number;
-  external: number;
-};
 
 function formatMB(bytes: number) {
   return (bytes / 1024 / 1024).toFixed(2) + " MB";
@@ -40,31 +28,8 @@ function SectionLabel({ label, tooltip }: { label: string; tooltip: string }) {
   );
 }
 
-export default function MemorySection() {
-  const [data, setData] = useState<Data | undefined>();
-  const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/admin/memory")
-      .then((res) => {
-        if (res.status === 401) {
-          setUnauthorized(true);
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        setData(json);
-        setLoading(false);
-      });
-  }, []);
-
-  if (unauthorized)
-    return <Alert severity="error">Unauthorized. Please log in.</Alert>;
-
-  if (loading || !data) return <CircularProgress />;
-
+export default async function MemorySectionServer() {
+  const data = await getMemoryUsage();
   const { heapUsed, heapTotal, rss, external } = data;
 
   const heapUsagePct = (heapUsed / heapTotal) * 100;

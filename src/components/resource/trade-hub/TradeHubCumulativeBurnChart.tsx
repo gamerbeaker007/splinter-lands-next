@@ -1,6 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma";
-import { paddedSMA, paddedEMA } from "@/lib/utils/movingAverages";
+import { paddedSMA, paddedEMA } from "@/lib/shared/priceUtils";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";

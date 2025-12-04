@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  PriceImpactResult,
+  calculatePriceImpact,
+} from "@/lib/shared/priceUtils";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { SplLandPool } from "@/types/spl/landPools";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
@@ -12,7 +16,6 @@ import {
   InputLabel,
   MenuItem,
   Select,
-  Stack,
   TextField,
   Typography,
 } from "@mui/material";
@@ -24,17 +27,10 @@ interface Props {
   timeStamp: string | null;
 }
 
-interface PriceImpactResult {
-  amountReceived: number;
-  priceImpact: number;
-}
-
 const emptyPriceImpactResult: PriceImpactResult = {
   amountReceived: 0,
   priceImpact: 0,
 };
-
-const TAX_RATE = 0.9; // 10% tax on resource swaps
 
 export function PriceImpactCalculator({ data, timeStamp }: Props) {
   const [selectedResource, setSelectedResource] = useState<string>("");
@@ -63,53 +59,27 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
 
     const decQuantity = parseFloat(selectedResourceData.dec_quantity);
     const resourceQuantity = parseFloat(selectedResourceData.resource_quantity);
-    const constantProduct = decQuantity * resourceQuantity;
-    const marketPrice = decQuantity / resourceQuantity;
 
-    // If DEC amount is filled
     const parsedDecAmount = parseFloat(decAmount);
     if (decAmount && !isNaN(parsedDecAmount) && parsedDecAmount > 0) {
-      const swapAmountNum = parsedDecAmount;
-
-      // After swap: DEC pool increases, Resource pool decreases
-      const newDecQuantity = decQuantity + swapAmountNum;
-      const newResourceQuantity = constantProduct / newDecQuantity;
-      const amountReceived = resourceQuantity - newResourceQuantity;
-
-      if (amountReceived <= 0) return emptyPriceImpactResult;
-
-      const effectivePrice = swapAmountNum / amountReceived;
-      const priceImpact = ((effectivePrice - marketPrice) / marketPrice) * 100;
-
-      return {
-        amountReceived: amountReceived * TAX_RATE, // Apply 10% fee
-        priceImpact,
-      };
+      return calculatePriceImpact(
+        parsedDecAmount,
+        decQuantity,
+        resourceQuantity
+      );
     }
 
-    // If Resource amount is filled
     const parsedResourceAmount = parseFloat(resourceAmount);
     if (
       resourceAmount &&
       !isNaN(parsedResourceAmount) &&
       parsedResourceAmount > 0
     ) {
-      const swapAmountNum = parsedResourceAmount;
-
-      // After swap: Resource pool increases, DEC pool decreases
-      const newResourceQuantity = resourceQuantity + swapAmountNum;
-      const newDecQuantity = constantProduct / newResourceQuantity;
-      const amountReceived = decQuantity - newDecQuantity;
-
-      if (amountReceived <= 0) return emptyPriceImpactResult;
-
-      const effectivePrice = amountReceived / swapAmountNum;
-      const priceImpact = ((marketPrice - effectivePrice) / marketPrice) * 100;
-
-      return {
-        amountReceived: amountReceived * TAX_RATE, // Apply 10% fee
-        priceImpact,
-      };
+      return calculatePriceImpact(
+        parsedResourceAmount,
+        resourceQuantity,
+        decQuantity
+      );
     }
 
     return emptyPriceImpactResult;
@@ -119,6 +89,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
   const handleDecAmountChange = (value: string) => {
     setDecAmount(value);
     const parsedValue = parseFloat(value);
+
     if (
       value &&
       !isNaN(parsedValue) &&
@@ -129,16 +100,15 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
       const resourceQuantity = parseFloat(
         selectedResourceData.resource_quantity
       );
-      const constantProduct = decQuantity * resourceQuantity;
-      const swapAmountNum = parsedValue;
-      const newDecQuantity = decQuantity + swapAmountNum;
-      const newResourceQuantity = constantProduct / newDecQuantity;
-      const amountReceived =
-        (resourceQuantity - newResourceQuantity) * TAX_RATE;
-      if (amountReceived > 0) {
-        setResourceAmount(amountReceived.toFixed(3));
+      const result = calculatePriceImpact(
+        parsedValue,
+        decQuantity,
+        resourceQuantity
+      );
+      if (result.amountReceived > 0) {
+        setResourceAmount(result.amountReceived.toFixed(3));
         setTokenSymbol(selectedResourceData.token_symbol);
-        setAmountReceived(amountReceived);
+        setAmountReceived(result.amountReceived);
       }
     } else {
       setResourceAmount("");
@@ -149,6 +119,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
   const handleResourceAmountChange = (value: string) => {
     setResourceAmount(value);
     const parsedValue = parseFloat(value);
+
     if (
       value &&
       !isNaN(parsedValue) &&
@@ -159,15 +130,15 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
       const resourceQuantity = parseFloat(
         selectedResourceData.resource_quantity
       );
-      const constantProduct = decQuantity * resourceQuantity;
-      const swapAmountNum = parsedValue;
-      const newResourceQuantity = resourceQuantity + swapAmountNum;
-      const newDecQuantity = constantProduct / newResourceQuantity;
-      const amountReceived = (decQuantity - newDecQuantity) * TAX_RATE;
-      if (amountReceived > 0) {
-        setDecAmount(amountReceived.toFixed(3));
+      const result = calculatePriceImpact(
+        parsedValue,
+        resourceQuantity,
+        decQuantity
+      );
+      if (result.amountReceived > 0) {
+        setDecAmount(result.amountReceived.toFixed(3));
         setTokenSymbol("DEC");
-        setAmountReceived(amountReceived);
+        setAmountReceived(result.amountReceived);
       }
     } else {
       setDecAmount("");
@@ -182,7 +153,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
   };
 
   return (
-    <Box mt={3}>
+    <Box mt={3} minWidth={200} maxWidth={500}>
       <Typography variant="h5" gutterBottom>
         Liquidity Pool Price Impact Calculator
       </Typography>
@@ -268,20 +239,25 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
 
             {/* Swap Amount Inputs */}
             {selectedResourceData && (
-              <Box display="flex" flexDirection="row" gap={2}>
-                <Stack>
+              <Box display="flex" flexDirection="row" flexWrap={"wrap"} gap={2}>
+                <Box
+                  display={"flex"}
+                  flexDirection={"column"}
+                  alignItems="center"
+                  justifyContent="center"
+                  maxWidth={190}
+                >
                   <Image
                     src={RESOURCE_ICON_MAP["DEC"]}
                     alt="DEC"
-                    width={100}
-                    height={100}
+                    width={80}
+                    height={80}
                   />
                   <TextField
                     label="DEC Amount"
                     type="text"
                     value={decAmount}
                     onChange={(e) => handleDecAmountChange(e.target.value)}
-                    fullWidth
                     slotProps={{
                       input: {
                         inputProps: {
@@ -290,16 +266,23 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
                       },
                     }}
                   />
-                </Stack>
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <SwapHorizIcon sx={{ width: 100, height: 100 }} />
                 </Box>
-                <Stack>
+                <Box display="flex" alignItems="center" justifyContent="center">
+                  <SwapHorizIcon sx={{ width: 50, height: 50 }} />
+                </Box>
+                <Box
+                  display={"flex"}
+                  flexDirection={"column"}
+                  alignItems="center"
+                  justifyContent="center"
+                  maxWidth={190}
+                >
+                  {" "}
                   <Image
                     src={RESOURCE_ICON_MAP[selectedResourceData.token_symbol]}
                     alt={selectedResourceData.token_symbol}
-                    width={100}
-                    height={100}
+                    width={80}
+                    height={80}
                   />
                   <TextField
                     label={`${selectedResourceData.token_symbol} Amount`}
@@ -315,7 +298,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
                       },
                     }}
                   />
-                </Stack>
+                </Box>
               </Box>
             )}
 
@@ -335,10 +318,15 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
               </Typography>
 
               <Box display="flex" flexDirection="column" gap={1}>
-                <Typography variant="body2">
-                  <strong>You will receive:</strong>{" "}
-                  {formatNumber(amountReceived)} {tokenSymbol}
-                </Typography>
+                <Box mb={1} display={"flex"} flexDirection={"row"} gap={1}>
+                  <Typography variant="body2">
+                    <strong>You will receive:</strong>{" "}
+                    {formatNumber(amountReceived)} {tokenSymbol}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (incl fee 10%)
+                  </Typography>
+                </Box>
 
                 <Typography
                   variant="body1"
