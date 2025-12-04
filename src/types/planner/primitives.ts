@@ -181,6 +181,8 @@ export const editionIdByName = {
   foundations: 15,
   foundations_sb: 16,
   extra: 17,
+  conclave_reward: 18,
+  land: 19,
 };
 export type EditionName = keyof typeof editionIdByName;
 
