@@ -35,12 +35,12 @@ import {
   fetchPlayerDetails,
 } from "../api/spl/spl-base-api";
 import {
+  fetchLandResourcesPools,
   fetchPlayerLiquidity,
   fetchPlayerPoolInfo,
   fetchRegionDataPlayer,
   fetchStakedAssets,
   fetchTaxes,
-  getLandResourcesPools,
 } from "../api/spl/spl-land-api";
 import { cache } from "../cache/cache";
 
@@ -171,7 +171,7 @@ export async function getCachedPlayerOverviewData(
   const liquidityInfo = await fetchPlayerLiquidity(player);
 
   const poolInfo = await fetchPlayerPoolInfo(player);
-  const metrics = await getLandResourcesPools();
+  const metrics = await fetchLandResourcesPools();
   const today = new Date();
   poolInfo.map((row) => enrichPoolData(row, today, metrics));
   const liquidityPoolInfo = poolInfo;

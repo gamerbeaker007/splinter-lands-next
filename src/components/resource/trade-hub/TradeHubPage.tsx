@@ -1,6 +1,7 @@
 "use client";
 
 import { ResourceHubMetrics } from "@/generated/prisma";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
   AlertTitle,
@@ -12,7 +13,6 @@ import {
 import { useEffect, useState } from "react";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 export function TradeHubPage() {
   const [historicalTradeHubMetrics, setHistoricalTradeHubMetrics] = useState<

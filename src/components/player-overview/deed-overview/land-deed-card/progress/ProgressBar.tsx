@@ -1,4 +1,4 @@
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 type ProgressBarProps = {
   percentage: number;
@@ -7,8 +7,6 @@ type ProgressBarProps = {
 };
 
 export const ProgressBar = ({ percentage, label, icon }: ProgressBarProps) => {
-  const theme = useTheme();
-
   // sizing knobs
   const ICON = 40; // circle diameter
   const ICON_IMG = 30; // inner image size
@@ -17,12 +15,12 @@ export const ProgressBar = ({ percentage, label, icon }: ProgressBarProps) => {
 
   const color =
     percentage >= 75
-      ? theme.palette.error.main
+      ? "error.main"
       : percentage >= 40
-        ? theme.palette.warning.main
-        : theme.palette.success.main;
+        ? "warning.main"
+        : "success.main";
 
-  const trackBg = theme.palette.grey[800];
+  const trackBg = "grey.800";
 
   // keep a tiny visible fill when >0 so the rounded cap is noticeable
   const safeWidth =
@@ -42,7 +40,7 @@ export const ProgressBar = ({ percentage, label, icon }: ProgressBarProps) => {
           alignItems: "center",
           justifyContent: "center",
           border: `1px solid white`,
-          bgcolor: theme.palette.background.paper,
+          bgcolor: trackBg,
           // Important: overlap the bar
           mr: `-${OVERLAP}px`,
           zIndex: 2,

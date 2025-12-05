@@ -11,6 +11,7 @@ import BoostTile from "./BoostTile";
 import DeedRarityTile from "./DeedRarityTile";
 import DeedStatusTile from "./DeedStatusTile";
 import DeedTypeTile from "./DeedTypeTile";
+import LandCardTile from "./LandCardTile";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState<RegionSummary | null>(null);
@@ -58,6 +59,8 @@ export default function SummaryPage() {
               runiBoosts={summary.runiBoosts ?? {}}
               rarityBoosts={summary.deedRarityBoosts ?? {}}
             />
+
+            <LandCardTile summary={summary} />
           </Stack>
         </>
       ) : (

@@ -8,7 +8,6 @@ import {
   SelectChangeEvent,
   Tabs,
   useMediaQuery,
-  useTheme,
 } from "@mui/material";
 import GlowingTab from "../ui/GlowingTab";
 
@@ -22,8 +21,7 @@ type NavTabsProps = {
 };
 
 export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery("(max-width:600px)");
   const isShort = useMediaQuery("(max-height: 420px)");
   const compact = isMobile || isShort;
 
@@ -45,13 +43,17 @@ export default function NavTabs({ pages, value, onChange }: NavTabsProps) {
         justifyContent: "center",
         position: "sticky",
         top: 0,
-        zIndex: theme.zIndex.appBar, // Or use a higher number like 1100
-        backgroundColor: theme.palette.background.default,
-        borderBottom: `1px solid ${theme.palette.divider}`, // Optional: visual separation
+        zIndex: 1100,
+        borderBottom: `1px solid var(--mui-palette-divider)`,
+        backgroundColor: "var(--mui-palette-background-default)",
       }}
     >
       {isMobile ? (
-        <Box width={"100%"} m={1}>
+        <Box
+          width={"100%"}
+          m={1}
+          sx={{ backgroundColor: "var(--mui-palette-background-default)" }}
+        >
           <Select
             value={pages[value].label}
             onChange={handleSelectChange}

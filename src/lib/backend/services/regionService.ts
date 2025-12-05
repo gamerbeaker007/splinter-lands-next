@@ -1,20 +1,20 @@
-import { FilterInput } from "@/types/filters";
-import { RegionSummary } from "@/types/regionSummary";
-import { getCachedRegionData } from "../api/internal/deed-data";
-import { filterDeeds } from "../../filters";
-import { DeedComplete } from "@/types/deed";
-import { ProgressInfo } from "@/types/progressInfo";
-import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
-import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
-import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
-import { calcConsumeCosts, calcDECPrice } from "@/lib/shared/costCalc";
 import { Resource } from "@/constants/resource/resource";
-import { Prices } from "@/types/price";
-import { RegionTax } from "@/types/regionTax";
-import { ResourceRecipeItem, TAX_RATE } from "@/lib/shared/statics";
-import { getCachedTaxes } from "./playerService";
+import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import { calcConsumeCosts, calcDECPrice } from "@/lib/shared/costCalc";
+import { ResourceRecipeItem, TAX_RATE } from "@/lib/shared/statics";
+import { DeedComplete } from "@/types/deed";
+import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
+import { FilterInput } from "@/types/filters";
+import { Prices } from "@/types/price";
+import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { ProductionPoints } from "@/types/productionPoints";
+import { ProgressInfo } from "@/types/progressInfo";
+import { RegionSummary } from "@/types/regionSummary";
+import { RegionTax } from "@/types/regionTax";
+import { filterDeeds } from "../../filters";
+import { getCachedRegionData } from "../api/internal/deed-data";
+import { getCachedTaxes } from "./playerService";
 
 export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   // Initialize all count buckets
@@ -38,6 +38,14 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalDeeds = 0;
   let totalRawPP = 0;
   let totalBoostedPP = 0;
+  let countEnergized = 0;
+  let countLaborsLuck = 0;
+  let countAbilityBoost = 0;
+  let countBloodlinesBoost = 0;
+  let countFoodDiscount = 0;
+  let countDecStakeDiscount = 0;
+  let totalAbilityBoostPP = 0;
+  let totalBloodlinesBoostPP = 0;
 
   for (const deed of deeds) {
     const player = deed.player!;
@@ -82,6 +90,17 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
       totalRawPP += staking.total_base_pp_after_cap ?? 0;
       totalBoostedPP += staking.total_harvest_pp ?? 0;
 
+      countEnergized += staking.is_energized ? 1 : 0;
+      countLaborsLuck += staking.has_labors_luck ? 1 : 0;
+      countAbilityBoost += (staking.card_abilities_boost ?? 0 > 0) ? 1 : 0;
+      countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0 > 0) ? 1 : 0;
+      countFoodDiscount += (staking.grain_food_discount ?? 0 > 0) ? 1 : 0;
+      countDecStakeDiscount +=
+        (staking.dec_stake_needed_discount ?? 0 > 0) ? 1 : 0;
+
+      totalAbilityBoostPP += staking.total_card_abilities_boost_pp ?? 0;
+      totalBloodlinesBoostPP += staking.total_card_bloodlines_boost_pp ?? 0;
+
       const resource = deed.worksiteDetail?.token_symbol as Resource;
       if (resource) {
         // Production points are calculated per resource
@@ -125,6 +144,14 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     deedsCount: totalDeeds,
     totalBasePP: totalRawPP,
     totalBoostedPP: totalBoostedPP,
+    countEnergized: countEnergized,
+    countLaborsLuck: countLaborsLuck,
+    countAbilityBoost: countAbilityBoost,
+    countBloodlinesBoost: countBloodlinesBoost,
+    countFoodDiscount: countFoodDiscount,
+    countDecStakeDiscount: countDecStakeDiscount,
+    totalAbilityBoostPP: totalAbilityBoostPP,
+    totalBloodlinesBoostPP: totalBloodlinesBoostPP,
   };
 }
 
@@ -239,7 +266,7 @@ async function getTaxInfo(deedUid: string) {
     const percentageDone = (totalBalance / totalCapacity) * 100;
     const infoStr = `${percentageDone.toFixed(2)}% Capacity`;
     const progressTooltip = `The current balance of your tax vaults.
-     Once the total balance reaches the total capacity, 
+     Once the total balance reaches the total capacity,
      no more taxes will be collected until you withdraw some DEC. total balance: ${formatNumberWithSuffix(totalCapacity)}`;
     return {
       percentageDone,

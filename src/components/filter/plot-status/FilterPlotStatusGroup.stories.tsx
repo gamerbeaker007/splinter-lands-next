@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import FilterPlotStatusGroup from "./FilterPlotStatusGroup";
 

@@ -1,7 +1,7 @@
 import { RESOURCE_PRESETS } from "@/constants/conversion/presets";
 import {
+  fetchLandResourcesPools,
   getAURAPrices,
-  getLandResourcesPools,
 } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import { AuraPrices, Prices, SplPriceData } from "@/types/price";
@@ -131,7 +131,7 @@ function computeUnbindAuraPrice(
 
 export async function getResourceDECPrices() {
   const prices = await getPrices();
-  const metrics = await getLandResourcesPools();
+  const metrics = await fetchLandResourcesPools();
   const landPrices: Prices = Object.fromEntries(
     metrics.map((item: { token_symbol: string; dec_price: number }) => [
       item.token_symbol,

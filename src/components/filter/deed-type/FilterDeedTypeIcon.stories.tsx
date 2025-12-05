@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/nextjs";
+import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Box } from "@mui/material";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import FilterDeedTypeIcon from "./FilterDeedTypeIcon";

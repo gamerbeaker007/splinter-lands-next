@@ -30,7 +30,9 @@ export function useMarketData() {
   }, []);
 
   useEffect(() => {
-    fetchMarketData(false);
+    (async () => {
+      await fetchMarketData(false);
+    })();
   }, [fetchMarketData]);
 
   return { marketData, loadingText, fetchMarketData };

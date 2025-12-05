@@ -12,11 +12,11 @@ import {
   Toolbar,
   Typography,
 } from "@mui/material";
-import Link from "next/link";
 import { useState } from "react";
 import { FiDatabase, FiHome, FiMap, FiMenu, FiUsers } from "react-icons/fi";
 import { GrPlan } from "react-icons/gr";
 import { MdOutlineLeaderboard } from "react-icons/md";
+import Link from "../ui/LinkWrapper";
 
 const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
@@ -79,7 +79,7 @@ export default function SideBar() {
         </IconButton>
       </Toolbar>
       <Divider />
-      <List>
+      <List suppressHydrationWarning>
         {links.map(({ href, label, icon }) => (
           <ListItem key={href} disablePadding sx={{ display: "block" }}>
             <ListItemButton

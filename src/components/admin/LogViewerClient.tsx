@@ -1,39 +1,17 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import {
-  Box,
-  Typography,
-  Paper,
-  CircularProgress,
-  Alert,
-  TextField,
-  Divider,
-} from "@mui/material";
+import { Box, Divider, Paper, TextField, Typography } from "@mui/material";
+import { useMemo, useState } from "react";
 
-export default function LogViewer() {
-  const [logs, setLogs] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
+export default function LogViewerClient({
+  initialLogs,
+}: {
+  initialLogs: string;
+}) {
   const [search, setSearch] = useState("");
 
-  useEffect(() => {
-    fetch("/api/admin/logs")
-      .then((res) => {
-        if (res.status === 401) {
-          setUnauthorized(true);
-          return null;
-        }
-        return res.json();
-      })
-      .then((json) => {
-        if (json?.logs) setLogs(json.logs);
-        setLoading(false);
-      });
-  }, []);
-
   const coloredLines = useMemo(() => {
-    const lines = logs.split("\n");
+    const lines = initialLogs.split("\n");
 
     return lines
       .filter((line) => line.toLowerCase().includes(search.toLowerCase()))
@@ -62,10 +40,7 @@ export default function LogViewer() {
           />
         );
       });
-  }, [logs, search]);
-
-  if (unauthorized) return <Alert severity="error">Unauthorized</Alert>;
-  if (loading) return <CircularProgress />;
+  }, [initialLogs, search]);
 
   return (
     <Paper sx={{ mt: 4, p: 2 }}>

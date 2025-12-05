@@ -1,6 +1,6 @@
-import React from "react";
-import { Box, Typography, Avatar, Tooltip } from "@mui/material";
 import { SPL_WEB_URL } from "@/lib/shared/statics_icon_urls";
+import { Avatar, Box, Tooltip, Typography } from "@mui/material";
+import React from "react";
 
 export type RarityBoostProps = {
   rarity: string;

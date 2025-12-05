@@ -30,8 +30,10 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
   }, [query]);
 
   useEffect(() => {
-    const isLarge = window.innerWidth >= 1024;
-    setDrawerOpen(isLarge);
+    (async () => {
+      const isLarge = window.innerWidth >= 1024;
+      setDrawerOpen(isLarge);
+    })();
   }, []);
 
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);

@@ -9,7 +9,7 @@ export const RESOURCES = [
   "VOUCHER",
   "SPS",
   "DEC",
-  "CINDER"
+  "CINDER",
 ] as const;
 export type Resource = (typeof RESOURCES)[number];
 

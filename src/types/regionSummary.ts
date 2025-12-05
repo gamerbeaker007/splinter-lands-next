@@ -20,4 +20,12 @@ export type RegionSummary = {
   productionPoints: Record<Resource, ProductionPoints>;
   totalBasePP: number;
   totalBoostedPP: number;
+  countEnergized: number;
+  countLaborsLuck: number;
+  countAbilityBoost: number;
+  countBloodlinesBoost: number;
+  countFoodDiscount: number;
+  countDecStakeDiscount: number;
+  totalAbilityBoostPP: number;
+  totalBloodlinesBoostPP: number;
 };

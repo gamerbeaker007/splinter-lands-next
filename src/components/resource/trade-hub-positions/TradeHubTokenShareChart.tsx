@@ -23,6 +23,18 @@ export function TradeHubTokenShareChart({
 
   const undefinedData = 100 - totalShare;
 
+  // Calculate total resource and DEC based on 100% share
+  const totalResource =
+    playerTradeHubPositions.reduce(
+      (sum, p) => sum + (p.resource_quantity ?? 0),
+      0,
+    ) /
+    (totalShare / 100);
+
+  const totalDEC =
+    playerTradeHubPositions.reduce((sum, p) => sum + (p.dec_quantity ?? 0), 0) /
+    (totalShare / 100);
+
   const sorted = [...playerTradeHubPositions].sort(
     (a, b) => (b.share_percentage ?? 0) - (a.share_percentage ?? 0),
   );
@@ -79,6 +91,16 @@ export function TradeHubTokenShareChart({
           title={"Total Shares:"}
           text={`${totalShare.toFixed(2)}%`}
           fontSize={18}
+        />
+        <InfoItem
+          title={`Total ${playerTradeHubPositions[0]?.token.split("-")[1]}:`}
+          text={formatNumberWithSuffix(totalResource)}
+          fontSize={10}
+        />
+        <InfoItem
+          title={"Total DEC:"}
+          text={formatNumberWithSuffix(totalDEC)}
+          fontSize={10}
         />
 
         {currentPlayerData && (

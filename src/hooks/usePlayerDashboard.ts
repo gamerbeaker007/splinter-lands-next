@@ -38,12 +38,14 @@ export function usePlayerDashboard(player: string) {
   );
 
   useEffect(() => {
-    if (!player || player === "") {
-      setLoadingText(null);
-      return;
-    }
+    (async () => {
+      if (!player || player === "") {
+        setLoadingText(null);
+        return;
+      }
 
-    fetchPlayerData(false);
+      await fetchPlayerData(false);
+    })();
   }, [player, fetchPlayerData]);
 
   return { playerOverview, loadingText, fetchPlayerData };

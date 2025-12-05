@@ -1,23 +1,25 @@
 import SearchIcon from "@mui/icons-material/Search";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
 import { useRouter, useSearchParams } from "next/navigation";
-import { startTransition, useEffect, useState } from "react";
+import { Suspense, startTransition, useEffect, useState } from "react";
 
 type Props = {
   onPlayerChange: (player: string) => void;
 };
 
-export default function PlayerInput({ onPlayerChange }: Props) {
+function PlayerInputContent({ onPlayerChange }: Props) {
   const searchParams = useSearchParams();
   const [selectedPlayer, setSelectedPlayer] = useState("");
   const router = useRouter();
 
   useEffect(() => {
-    const player = searchParams.get("player");
-    if (player) {
-      setSelectedPlayer(player);
-      onPlayerChange(player);
-    }
+    (async () => {
+      const player = searchParams.get("player");
+      if (player) {
+        setSelectedPlayer(player);
+        onPlayerChange(player);
+      }
+    })();
   }, [searchParams, onPlayerChange]);
 
   const handleLoad = () => {
@@ -66,5 +68,13 @@ export default function PlayerInput({ onPlayerChange }: Props) {
         },
       }}
     />
+  );
+}
+
+export default function PlayerInput({ onPlayerChange }: Props) {
+  return (
+    <Suspense fallback={<TextField label="Enter Player" disabled />}>
+      <PlayerInputContent onPlayerChange={onPlayerChange} />
+    </Suspense>
   );
 }
