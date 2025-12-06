@@ -13,6 +13,7 @@ import BoostInfo from "./info-sections/BoostsInfo";
 import { CardInfo } from "./info-sections/CardInfo";
 import { ConsumeProduceInfo } from "./info-sections/ConsumeProduceInfo";
 import { DECInfo } from "./info-sections/DECInfo";
+import { LandBoosts } from "./info-sections/LandBoosts";
 import { OwnerInfo } from "./info-sections/OwnerInfo";
 import { PlotInfo } from "./info-sections/PlotInfo";
 import { PPInfo } from "./info-sections/PPInfo";
@@ -107,7 +108,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
       {showOwnershipInfo && (
         <OwnerInfo
           owner={deed.player}
-          pos={{ x: "40px", y: "15px", w: "300px" }}
+          pos={{ x: "20px", y: "15px", w: "300px" }}
         />
       )}
 
@@ -123,7 +124,18 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
 
       <WorksiteInfo
         worksiteType={deed.worksiteDetail?.worksite_type ?? "Undeveloped"}
-        pos={{ x: "40px", y: "45px", w: "420px" }}
+        pos={{ x: "20px", y: "45px", w: "400px" }}
+      />
+
+      <LandBoosts
+        resource={resource as Resource}
+        bloodlineBoost={deed.stakingDetail?.card_bloodlines_boost ?? 0}
+        decDiscount={deed.stakingDetail?.dec_stake_needed_discount ?? 0}
+        grainConsumeReduction={deed.stakingDetail?.grain_food_discount ?? 0}
+        productionBoost={deed.stakingDetail?.card_abilities_boost ?? 0}
+        replacePowerCore={deed.stakingDetail?.is_energized ?? false}
+        laborLuck={deed.stakingDetail?.has_labors_luck ?? false}
+        pos={{ x: "430px", y: "45px", w: "120px" }}
       />
 
       <StoreInfo
@@ -131,18 +143,18 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         toolTip={deed.progressInfo?.progressTooltip ?? ""}
         label={deed.progressInfo?.infoStr ?? ""}
         percentage={deed.progressInfo?.percentageDone ?? 0}
-        pos={{ x: "150px", y: "50px", w: "300px" }}
+        pos={{ x: "130px", y: "50px", w: "300px" }}
       />
 
       <TotalBoostInfo
         totalBoost={deed.stakingDetail?.total_boost ?? 0}
-        pos={{ x: "157px", y: "95px", w: "300px" }}
+        pos={{ x: "137px", y: "95px", w: "300px" }}
       />
 
       <PPInfo
         basePP={deed.stakingDetail?.total_base_pp_after_cap ?? 0}
         boostedPP={deed.stakingDetail?.total_harvest_pp ?? 0}
-        pos={{ x: "157px", y: "125px", w: "300px" }}
+        pos={{ x: "137px", y: "125px", w: "300px" }}
       />
 
       {(resource === "TAX" || resource === "RESEARCH") && (
@@ -173,13 +185,13 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         goldBiomeBoost={deed.stakingDetail?.gold_biome_modifier ?? 0}
         stakedAssets={deed.stakedAssets ?? null}
         cardDetails={cardDetails}
-        pos={{ x: "40px", y: "170px", w: "auto" }}
+        pos={{ x: "20px", y: "170px", w: "auto" }}
       />
 
       <CardInfo
         stakedAssets={deed.stakedAssets!}
         cardDetails={cardDetails}
-        pos={{ x: "40px", y: "290px", w: "465px" }}
+        pos={{ x: "20px", y: "290px", w: "465px" }}
       />
 
       <ConsumeProduceInfo
