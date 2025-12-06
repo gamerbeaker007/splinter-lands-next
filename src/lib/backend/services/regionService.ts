@@ -40,11 +40,11 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalBoostedPP = 0;
   let countEnergized = 0;
   let countLaborsLuck = 0;
-  let countAbilityBoost = 0;
+  const countAbilityBoost: Partial<Record<Resource, number>> = {};
   let countBloodlinesBoost = 0;
   let countFoodDiscount = 0;
   let countDecStakeDiscount = 0;
-  let totalAbilityBoostPP = 0;
+  const totalAbilityBoostPP: Partial<Record<Resource, number>> = {};
   let totalBloodlinesBoostPP = 0;
 
   for (const deed of deeds) {
@@ -92,13 +92,23 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 
       countEnergized += staking.is_energized ? 1 : 0;
       countLaborsLuck += staking.has_labors_luck ? 1 : 0;
-      countAbilityBoost += (staking.card_abilities_boost ?? 0 > 0) ? 1 : 0;
+      if (staking.card_abilities_boost != null) {
+        countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] =
+          (countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] ??
+            0) + (staking.card_abilities_boost > 0 ? 1 : 0);
+      }
       countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0 > 0) ? 1 : 0;
       countFoodDiscount += (staking.grain_food_discount ?? 0 > 0) ? 1 : 0;
       countDecStakeDiscount +=
         (staking.dec_stake_needed_discount ?? 0 > 0) ? 1 : 0;
 
-      totalAbilityBoostPP += staking.total_card_abilities_boost_pp ?? 0;
+      const abilityBoost = staking.total_card_abilities_boost_pp ?? 0;
+      if (abilityBoost > 0) {
+        const resource = deed.worksiteDetail?.token_symbol as Resource;
+        totalAbilityBoostPP[resource] =
+          (totalAbilityBoostPP[resource] ?? 0) + abilityBoost;
+      }
+
       totalBloodlinesBoostPP += staking.total_card_bloodlines_boost_pp ?? 0;
 
       const resource = deed.worksiteDetail?.token_symbol as Resource;

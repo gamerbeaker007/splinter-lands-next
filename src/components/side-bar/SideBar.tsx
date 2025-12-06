@@ -83,6 +83,7 @@ export default function SideBar() {
         {links.map(({ href, label, icon }) => (
           <ListItem key={href} disablePadding sx={{ display: "block" }}>
             <ListItemButton
+              suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
               component={Link}
               href={href}
               sx={{

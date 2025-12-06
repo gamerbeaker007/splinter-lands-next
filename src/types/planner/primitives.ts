@@ -1,5 +1,10 @@
 import { Resource } from "@/constants/resource/resource";
 import {
+  bountiful_aura_icon_url,
+  bountiful_grain_icon_url,
+  bountiful_iron_icon_url,
+  bountiful_stone_icon_url,
+  bountiful_wood_icon_url,
   card_rarity_common_icon_url,
   card_rarity_epic_icon_url,
   card_rarity_legendary_icon_url,
@@ -419,3 +424,11 @@ export const CARD_BLOODLINES = [
 
 export type CardBloodline = (typeof CARD_BLOODLINES)[number];
 export const cardBloodlineOptions = [...CARD_BLOODLINES];
+
+export const bountifulResourceIconMap: Partial<Record<Resource, string>> = {
+  GRAIN: bountiful_grain_icon_url,
+  WOOD: bountiful_wood_icon_url,
+  IRON: bountiful_iron_icon_url,
+  STONE: bountiful_stone_icon_url,
+  AURA: bountiful_aura_icon_url,
+};

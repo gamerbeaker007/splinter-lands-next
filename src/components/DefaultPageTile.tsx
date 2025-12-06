@@ -15,6 +15,7 @@ export default function DefaultPageTile({ title, href, image }: Props) {
   return (
     <Card
       component={Link}
+      suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
       href={href}
       elevation={4}
       sx={{
