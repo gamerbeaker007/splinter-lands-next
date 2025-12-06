@@ -142,6 +142,7 @@ export function findLowestCardPrice(
           rarity: match.rarity,
           element: match.element,
           foil: match.foil,
+          edition: match.edition,
           set: match.set,
           name: match.name,
         },

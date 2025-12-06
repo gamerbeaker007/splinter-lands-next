@@ -3,6 +3,7 @@ import { Resource } from "@/constants/resource/resource";
 import { determineBcxCap } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   CardBloodline,
   cardElementColorMap,
@@ -183,7 +184,7 @@ export default function Planner({
 
     return {
       id: idx,
-      set: setName,
+      set: setName as CardSetNameLandValid,
       rarity,
       bcx,
       foil: cardFoilOptions[foil],

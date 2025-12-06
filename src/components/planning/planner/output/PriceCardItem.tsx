@@ -1,10 +1,6 @@
-import { findCardEditionNameByName, getCardImgV2 } from "@/lib/utils/cardUtil";
-import {
-  CardElement,
-  CardFoil,
-  CardRarity,
-  CardSetName,
-} from "@/types/planner";
+import { getCardImgV2 } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid } from "@/types/editions";
+import { CardElement, CardFoil, CardRarity } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
@@ -20,29 +16,23 @@ type Props = {
     rarity: CardRarity;
     element: CardElement;
     foil: CardFoil;
-    set: CardSetName;
+    edition: number;
+    set: CardSetNameLandValid;
     name: string;
   } | null;
   warning: string | null;
 };
 
 export default function PriceCardItem({
-  cardDetails,
   slotId,
   price,
   currency,
   cardInfo,
   warning,
 }: Props) {
-  const editionName = findCardEditionNameByName(
-    cardDetails,
-    cardInfo?.name || "Unknown",
-    cardInfo?.set || "chaos"
-  );
-
   const image = getCardImgV2(
     cardInfo?.name || "Unknown",
-    editionName,
+    cardInfo?.edition || 0,
     cardInfo?.foil as CardFoil
   );
 

@@ -9,10 +9,11 @@ import {
   card_rarity_epic_icon_url,
   card_rarity_legendary_icon_url,
   card_rarity_rare_icon_url,
-  edition_apha_icon_url,
+  edition_alpha_icon_url,
   edition_beta_icon_url,
   edition_chaos_icon_url,
-  edition_conclave_icon_url,
+  edition_conclave_arcana_icon_url,
+  edition_land_card_icon_url,
   edition_rebellion_icon_url,
   edition_untamed_icon_url,
   land_aura_lab_icon_url,
@@ -24,8 +25,8 @@ import {
   land_quarry_icon_url,
   land_research_hut_icon_url,
   land_shard_mine_icon_url,
-  land_unsurveyd_deed_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { CardSetNameLandValid } from "../editions";
 import { PlotPlannerData } from "./domain";
 
 export const plotRarityOptions = [
@@ -168,51 +169,7 @@ export const RUNI_FLAT_ADD: Record<PlotPlannerData["runi"], number> = {
   gold: 10000, // +10k base PP
 };
 
-export const editionIdByName = {
-  alpha: 0,
-  beta: 1,
-  promo: 2,
-  reward: 3,
-  untamed: 4,
-  dice: 5,
-  gladius: 6,
-  chaos: 7,
-  rift: 8,
-  soulkeep: 9, //mostly ignore in the application
-  soulbound: 10,
-  rebellion: 12,
-  soulboundrb: 13,
-  conclave: 14,
-  foundations: 15,
-  foundations_sb: 16,
-  extra: 17,
-  conclave_reward: 18,
-  land: 19,
-};
-export type EditionName = keyof typeof editionIdByName;
-
-export const editionOptions = Object.keys(editionIdByName) as EditionName[];
-
-export const editionNameById = Object.fromEntries(
-  Object.entries(editionIdByName).map(([name, id]) => [id, name as EditionName])
-) as Record<number, EditionName>;
-
-export const editionAliasById: Partial<Record<number, EditionName>> = {
-  [editionIdByName.foundations_sb]: "foundations",
-};
-
-export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);
-
-export const cardSetOptions = [
-  "alpha",
-  "beta",
-  "untamed",
-  "chaos",
-  "rebellion",
-  "conclave",
-  "land",
-];
-export const cardSetModifiers: Record<CardSetName, number> = {
+export const cardSetModifiers: Record<CardSetNameLandValid, number> = {
   alpha: 10,
   beta: 5,
   untamed: 2,
@@ -221,16 +178,15 @@ export const cardSetModifiers: Record<CardSetName, number> = {
   conclave: 0.5,
   land: 1,
 };
-export type CardSetName = (typeof cardRarityOptions)[number];
 
-export const cardSetIconMap: Record<CardSetName, string> = {
-  alpha: edition_apha_icon_url,
+export const cardSetIconMap: Record<CardSetNameLandValid, string> = {
+  alpha: edition_alpha_icon_url,
   beta: edition_beta_icon_url,
   untamed: edition_untamed_icon_url,
   chaos: edition_chaos_icon_url,
   rebellion: edition_rebellion_icon_url,
-  conclave: edition_conclave_icon_url,
-  land: land_unsurveyd_deed_icon_url,
+  conclave: edition_conclave_arcana_icon_url,
+  land: edition_land_card_icon_url,
 };
 
 export const cardFoilOptions = [

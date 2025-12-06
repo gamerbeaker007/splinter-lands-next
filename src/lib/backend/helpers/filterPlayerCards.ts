@@ -1,10 +1,10 @@
 import { findCardRarity } from "@/lib/utils/cardUtil";
-import { CardFilterInput } from "@/types/filters";
 import {
-  CardSetName,
-  cardSetOptions,
+  CardSetNameLandValid,
+  landCardSet,
   SOULBOUND_EDITIONS,
-} from "@/types/planner";
+} from "@/types/editions";
+import { CardFilterInput } from "@/types/filters";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
@@ -72,7 +72,7 @@ export function filterCardCollection(
 
   return cards.filter((c) => {
     //  Exclude special/unsupported sets
-    if (!cardSetOptions.includes(c.card_set as CardSetName)) return false;
+    if (!landCardSet.includes(c.card_set as CardSetNameLandValid)) return false;
 
     // Edition-specific rule: editions 10/13/16 must be fully unlocked
     //    i.e., bcx_unbound must equal bcx (otherwise return false)
@@ -109,7 +109,8 @@ export function filterCardCollection(
 
     // filter_set
     if (filter_set?.length) {
-      if (!filter_set.includes(c.card_set as CardSetName)) return false;
+      if (!filter_set.includes(c.card_set as CardSetNameLandValid))
+        return false;
     }
 
     //  filter_rarity

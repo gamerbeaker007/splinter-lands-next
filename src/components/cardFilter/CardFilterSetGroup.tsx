@@ -1,4 +1,4 @@
-import { cardSetOptions } from "@/types/planner";
+import { landCardSet } from "@/types/editions";
 import { Box, Typography } from "@mui/material";
 import CardFilterSetIcon from "./CardFilterSetIcon";
 
@@ -8,7 +8,7 @@ export default function CardFilterSetGroup() {
       <Typography variant="body2">Card Set:</Typography>
 
       <Box sx={{ display: "flow", gap: 1 }}>
-        {cardSetOptions.map((set) => (
+        {landCardSet.map((set) => (
           <CardFilterSetIcon key={set} name={set} />
         ))}
       </Box>

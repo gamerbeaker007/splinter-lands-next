@@ -1,9 +1,6 @@
 import { Deed } from "@/generated/prisma";
-import {
-  determineCardInfo,
-  findCardElement,
-  findCardSet,
-} from "@/lib/utils/cardUtil";
+import { determineCardInfo, findCardElement } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
   cardFoilOptions,
   DeedType,
@@ -76,8 +73,8 @@ export function getLowestCardPriceList(
       cardDetails
     );
     const element = findCardElement(cardDetails, card.card_detail_id);
-    const set = findCardSet(cardDetails, card.card_detail_id, card.edition);
     const foil = cardFoilOptions[card.foil];
+    const set = editionMap[card.edition].setName;
     const key = `${rarity}|${element}|${foil}|${set}`;
     if (
       !map.has(key) ||
@@ -86,7 +83,8 @@ export function getLowestCardPriceList(
       map.set(key, {
         rarity,
         element,
-        set,
+        edition: card.edition,
+        set: set as CardSetNameLandValid,
         foil,
         low_price_bcx: card.low_price_bcx,
         card_detail_id: card.card_detail_id,

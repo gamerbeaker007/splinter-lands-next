@@ -1,5 +1,6 @@
+import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
-import { CardRarity, CardSetName } from "@/types/planner";
+import { CardRarity } from "@/types/planner";
 
 export type FilterInput = {
   filter_regions?: number[];
@@ -30,7 +31,7 @@ export type EnableFilterOptions = {
 };
 
 export type CardFilterInput = {
-  filter_set?: CardSetName[];
+  filter_set?: CardSetNameLandValid[];
   filter_rarity?: CardRarity[];
   filter_on_land?: boolean;
   filter_in_set?: boolean;

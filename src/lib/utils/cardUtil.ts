@@ -1,4 +1,5 @@
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
+import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
   CardElement,
   cardElementColorMap,
@@ -6,11 +7,6 @@ import {
   cardFoilSuffixMap,
   CardRarity,
   cardRarityOptions,
-  CardSetName,
-  editionAliasById,
-  editionIdByName,
-  EditionName,
-  editionNameById,
 } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 
@@ -18,8 +14,8 @@ import { SplCardDetails } from "@/types/splCardDetails";
 // Types
 // ----------------------------------
 
-export type FoilBCXType = "normal" | "gold";
-export type SetName = "alpha" | "beta" | "default";
+type FoilBCXType = "normal" | "gold";
+type SetName = "alpha" | "beta" | "default";
 
 type FoilMeta = {
   bcxType: FoilBCXType;
@@ -71,14 +67,6 @@ const getFoilSuffix = (foil: number): string => foilMetaMap[foil]?.suffix ?? "";
 const getFoilType = (foil: number): FoilBCXType =>
   foilMetaMap[foil]?.bcxType ?? "normal";
 
-export function getEditionId(name: EditionName): number {
-  return editionIdByName[name];
-}
-
-export function getEditionName(id: number): EditionName | undefined {
-  return editionAliasById[id] ?? editionNameById[id];
-}
-
 /**
  * @deprecated Use getCardImgV2 instead.
  */
@@ -90,7 +78,7 @@ export function getCardImg(
 ): string {
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
-  const editionName = getEditionName(edition);
+  const editionName = editionMap[edition]?.urlName || "default";
   const safeCardName = encodeURIComponent(cardName.trim());
   const lvl = level && level > 1 ? level : 1;
   return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
@@ -99,15 +87,16 @@ export function getCardImg(
 // New version using Edition and CardFoil types from primitives.ts
 export function getCardImgV2(
   cardName: string,
-  editionName: EditionName | undefined,
+  edition: number,
   foil: CardFoil,
   level?: number
 ): string {
   const suffix = cardFoilSuffixMap[foil];
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const safeCardName = encodeURIComponent(cardName.trim());
+  const editionUrl = editionMap[edition]?.urlName || "default";
   const lvl = level && level > 1 ? level : 1;
-  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
+  return `${baseCardUrl}/${editionUrl}/${safeCardName}_lv${lvl}${suffix}.png`;
 }
 
 export const determineCardMaxBCX = (
@@ -183,14 +172,14 @@ export function findCardSet(
   cardDetails: SplCardDetails[],
   cardDetailId: number,
   edition: number
-): CardSetName {
+): CardSetNameLandValid {
   const ALPHA_MAX_PROMO_ID = 79;
 
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
 
   // 1) If tier exists, it wins.
   if (splCard?.tier != null) {
-    return getEditionName(splCard.tier) as CardSetName;
+    return editionMap[splCard.tier].setName as CardSetNameLandValid;
   }
 
   // 2) Tier is missing → fall back to edition-based rules.
@@ -198,7 +187,7 @@ export function findCardSet(
   if (edition === 3) return "beta";
 
   //    - edition > 3 → use edition mapping (e.g., untamed/chaos/etc.)
-  if (edition > 3) return getEditionName(edition) as CardSetName;
+  if (edition > 3) return editionMap[edition].setName as CardSetNameLandValid;
 
   //    - edition 2 → alpha if id <= 79 else beta
   if (edition === 2) {
@@ -206,20 +195,20 @@ export function findCardSet(
   }
 
   // 3) Last resort: map by edition (covers any remaining edge cases)
-  return getEditionName(edition) as CardSetName;
+  return editionMap[edition].setName as CardSetNameLandValid;
 }
 
 export function findCardEditionNameByName(
   cardDetails: SplCardDetails[],
   cardName: string,
-  set: CardSetName
-): EditionName {
+  set: CardSetNameLandValid
+): string {
   const splCard = cardDetails.find((cd) => cd.name === cardName);
   const editionArray = splCard?.editions.split(",") ?? [];
   if (editionArray.length > 1) {
     //multiple editions assume alpha beta return set
-    return set as EditionName;
+    return set as string;
   } else {
-    return getEditionName(Number(editionArray[0])) as EditionName;
+    return editionMap[Number(editionArray[0])].urlName as string;
   }
 }
