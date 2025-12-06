@@ -32,7 +32,7 @@ import { cache } from "../cache/cache";
 
 export async function getCachedMarketData(
   cardDetails: SplCardDetails[],
-  force = false,
+  force = false
 ): Promise<LowestMarketData> {
   const key = `market-data`;
   if (!force) {
@@ -67,13 +67,13 @@ export async function getCachedMarketData(
 
 export function getLowestCardPriceList(
   cardDetails: SplCardDetails[],
-  cards: SplMarketCardData[],
+  cards: SplMarketCardData[]
 ): LowestCardPriceEntry[] {
   const map = new Map<string, LowestCardPriceEntry>();
   for (const card of cards) {
     const { name, rarity } = determineCardInfo(
       card.card_detail_id,
-      cardDetails,
+      cardDetails
     );
     const element = findCardElement(cardDetails, card.card_detail_id);
     const set = findCardSet(cardDetails, card.card_detail_id, card.edition);
@@ -130,7 +130,7 @@ export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
 }
 
 export function getLowestTotemPriceList(
-  items: SplMarketAsset[],
+  items: SplMarketAsset[]
 ): LowestTotemPriceEntry[] {
   const result: Record<string, LowestTotemPriceEntry> = {};
   for (const item of items) {
@@ -160,7 +160,7 @@ export function getLowestTotemPriceList(
 }
 
 export function getLowestTitlePriceList(
-  items: SplMarketAsset[],
+  items: SplMarketAsset[]
 ): LowestTitlePriceEntry[] {
   const result: Record<Exclude<TitleTier, "none">, LowestTitlePriceEntry> = {};
 

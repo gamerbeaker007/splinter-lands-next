@@ -48,15 +48,15 @@ export async function fetchAndProcessRegionData() {
               (ws: WorksiteDetailUncheckedCreateInput) => ({
                 ...ws,
                 projected_end: safeDate(ws.projected_end),
-              }),
-            ),
+              })
+            )
           );
           allStakings.push(...staking_details);
           logger.info(`⌛ Region ${region}: ${deeds.length} deeds`);
         } catch (error) {
           logError(`❌ Region ${region} failed`, error);
         }
-      }),
+      })
     );
   }
 

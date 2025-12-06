@@ -57,7 +57,7 @@ export default function PriceOutput({
 
   const cardResults = marketData
     ? cards.map((card) =>
-        findLowestCardPrice(card, marketData.lowestCardPrices),
+        findLowestCardPrice(card, marketData.lowestCardPrices)
       )
     : cards.map(() => ({
         price: null,
@@ -93,7 +93,7 @@ export default function PriceOutput({
   const hasRuni = plot.runi != "none";
 
   const hasReplacePowerCore = plot.cardInput.some(
-    (card) => card.landBoosts?.replacePowerCore,
+    (card) => card.landBoosts?.replacePowerCore
   );
 
   const powerCoreDEC = hasRuni || hasReplacePowerCore ? 0 : 5000;
@@ -107,7 +107,7 @@ export default function PriceOutput({
   }, 0);
   stakedDECNeeded = Math.max(
     0,
-    stakedDECNeeded - stakedDECNeeded * totalDecDiscount,
+    stakedDECNeeded - stakedDECNeeded * totalDecDiscount
   );
   const stakedDECinUSD = stakedDECNeeded * (tokenPriceData?.dec ?? 0);
 
@@ -296,7 +296,7 @@ Therefor the exact card you want may not always be available for that price.`}
           <PriceItem
             title={"Total DEC"}
             price={formatNumberWithSuffix(
-              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
+              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0)
             )}
             currency={"DEC"}
           />

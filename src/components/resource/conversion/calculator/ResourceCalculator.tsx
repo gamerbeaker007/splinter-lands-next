@@ -44,7 +44,7 @@ export function ResourceCalculator() {
     mode,
     resourcesInput,
     decExtra,
-    prices,
+    prices
   );
 
   if (loading) {

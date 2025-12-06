@@ -62,7 +62,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
     deedType,
     plotStatus,
     rarity,
-    worksiteType,
+    worksiteType
   );
 
   const isTax = resource === "TAX";

@@ -32,11 +32,11 @@ export async function computeAndStorePlayerProduction(today: Date) {
 
     const total_harvest_pp = flatRows.reduce(
       (sum, r) => sum + (r.stakingDetail?.total_harvest_pp ?? 0),
-      0,
+      0
     );
     const total_base_pp_after_cap = flatRows.reduce(
       (sum, r) => sum + (r.stakingDetail?.total_base_pp_after_cap ?? 0),
-      0,
+      0
     );
     const count = flatRows.length;
 
@@ -65,6 +65,6 @@ export async function computeAndStorePlayerProduction(today: Date) {
   });
 
   logger.info(
-    `✅ Stored player production for ${today.toISOString().split("T")[0]}`,
+    `✅ Stored player production for ${today.toISOString().split("T")[0]}`
   );
 }

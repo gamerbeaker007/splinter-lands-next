@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     logError("Failed to load filter data", err);
     return NextResponse.json(
       { error: "Failed to load filter data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

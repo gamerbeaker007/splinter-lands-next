@@ -35,7 +35,7 @@ const FORTS = new Set<WorksiteType>(["CASTLE", "KEEP"]);
 export function isAllowed(
   worksite: WorksiteType,
   deedType: DeedType,
-  plotStatus: PlotStatus,
+  plotStatus: PlotStatus
 ): boolean {
   // Forts are only valid on kingdom plots
   if (FORTS.has(worksite)) return plotStatus === "kingdom";
@@ -59,7 +59,7 @@ export function WorksiteSelector({
 
   const allowedOptions = useMemo(
     () => worksiteTypeOptions.filter((w) => isAllowed(w, deedType, plotStatus)),
-    [deedType, plotStatus],
+    [deedType, plotStatus]
   );
 
   // Auto-correct selection when it becomes disallowed

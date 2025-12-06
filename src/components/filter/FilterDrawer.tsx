@@ -18,7 +18,7 @@ type Props = {
 };
 export default function FilterDrawer({ player, filtersEnabled }: Props) {
   const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
-    null,
+    null
   );
   const [drawerOpen, setDrawerOpen] = useState(true);
   const query = player ? `?player=${encodeURIComponent(player)}` : "";

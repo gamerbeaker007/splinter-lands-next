@@ -86,7 +86,7 @@ export function getCardImg(
   cardName: string,
   edition: number,
   foil: number,
-  level?: number,
+  level?: number
 ): string {
   const suffix = getFoilSuffix(foil);
   const baseCardUrl = `${WEB_URL}cards_by_level`;
@@ -101,7 +101,7 @@ export function getCardImgV2(
   cardName: string,
   editionName: EditionName | undefined,
   foil: CardFoil,
-  level?: number,
+  level?: number
 ): string {
   const suffix = cardFoilSuffixMap[foil];
   const baseCardUrl = `${WEB_URL}cards_by_level`;
@@ -113,7 +113,7 @@ export function getCardImgV2(
 export const determineCardMaxBCX = (
   cardSet: string,
   rarity: CardRarity,
-  foil: number,
+  foil: number
 ): number => {
   const foilType = getFoilType(foil);
   const validSets: SetName[] = ["alpha", "beta", "default"];
@@ -130,7 +130,7 @@ function rarityName(rarity: number): CardRarity | string {
 
 export function determineCardInfo(
   id: number,
-  cardDetails: SplCardDetails[] | null | undefined,
+  cardDetails: SplCardDetails[] | null | undefined
 ): {
   name: string;
   rarity: CardRarity;
@@ -156,7 +156,7 @@ export function determineBcxCap(
   set: string,
   rarity: CardRarity,
   foilId: number,
-  actualBcx: number,
+  actualBcx: number
 ) {
   const maxBCX = determineCardMaxBCX(set, rarity, foilId);
   return Math.min(actualBcx, maxBCX);
@@ -164,7 +164,7 @@ export function determineBcxCap(
 
 export function findCardRarity(
   cardDetails: SplCardDetails[],
-  cardDetailId: number,
+  cardDetailId: number
 ): CardRarity {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
   return cardRarityOptions[(splCard?.rarity ?? 1) - 1];
@@ -172,7 +172,7 @@ export function findCardRarity(
 
 export function findCardElement(
   cardDetails: SplCardDetails[],
-  cardDetailId: number,
+  cardDetailId: number
 ): CardElement {
   const splCard = cardDetails.find((cd) => cd.id === cardDetailId);
   const color = splCard?.color.toLowerCase() ?? "red";
@@ -182,7 +182,7 @@ export function findCardElement(
 export function findCardSet(
   cardDetails: SplCardDetails[],
   cardDetailId: number,
-  edition: number,
+  edition: number
 ): CardSetName {
   const ALPHA_MAX_PROMO_ID = 79;
 
@@ -212,7 +212,7 @@ export function findCardSet(
 export function findCardEditionNameByName(
   cardDetails: SplCardDetails[],
   cardName: string,
-  set: CardSetName,
+  set: CardSetName
 ): EditionName {
   const splCard = cardDetails.find((cd) => cd.name === cardName);
   const editionArray = splCard?.editions.split(",") ?? [];

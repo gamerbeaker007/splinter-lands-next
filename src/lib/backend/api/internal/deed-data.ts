@@ -31,7 +31,7 @@ async function refreshDeedCache(): Promise<void> {
 }
 
 async function triggerRefreshIfStale(
-  forceWait: boolean = false,
+  forceWait: boolean = false
 ): Promise<boolean> {
   const lastUpdate = await getLastUpdate();
 
@@ -50,7 +50,7 @@ async function triggerRefreshIfStale(
 }
 
 export async function getCachedRegionData(
-  forceWait: boolean = false,
+  forceWait: boolean = false
 ): Promise<DeedComplete[]> {
   await triggerRefreshIfStale(forceWait);
 

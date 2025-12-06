@@ -10,13 +10,13 @@ import { useAuth } from "@/lib/frontend/context/AuthContext";
 
 export function usePlayerCardPP(
   player: string,
-  cardFilters: CardFilterInput = {},
+  cardFilters: CardFilterInput = {}
 ) {
   const { user } = useAuth();
   const { getCsrfToken } = useCsrfToken();
 
   const [cardPPResult, setCardPPResult] = useState<GroupedCardRow[] | null>(
-    null,
+    null
   );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -25,7 +25,7 @@ export function usePlayerCardPP(
     async (
       player: string,
       cardFilters: CardFilterInput,
-      force: boolean,
+      force: boolean
     ): Promise<{ cards: GroupedCardRow[] }> => {
       const url = `/api/player/card/pp`;
       // Get spl_jwt_token from cookies if available
@@ -54,7 +54,7 @@ export function usePlayerCardPP(
 
       return await res.json();
     },
-    [getCsrfToken],
+    [getCsrfToken]
   );
 
   const refetchPlayerCardPP = useCallback(
@@ -80,7 +80,7 @@ export function usePlayerCardPP(
         setLoading(false);
       }
     },
-    [player, cardFilters, fetchPlayerCardPP],
+    [player, cardFilters, fetchPlayerCardPP]
   );
 
   useEffect(() => {

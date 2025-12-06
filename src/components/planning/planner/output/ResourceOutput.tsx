@@ -28,11 +28,11 @@ export const ResourceOutput: React.FC<Props> = ({
   const suffix = isTax ? "" : "/h";
 
   (productionInfo.produce ?? []).sort(
-    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource)
   );
 
   (productionInfo.consume ?? []).sort(
-    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource)
   );
 
   const fontColor = "common.white";

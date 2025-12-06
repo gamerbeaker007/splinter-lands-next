@@ -3,7 +3,7 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import { fetchCardDetails } from "../api/spl/spl-base-api";
 
 export async function getCachedCardDetailsData(
-  force = false,
+  force = false
 ): Promise<SplCardDetails[]> {
   const key = `card-details`;
   if (!force) {

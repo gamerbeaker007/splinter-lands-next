@@ -21,11 +21,11 @@ export default function PercentageSlider({
   };
 
   const handleTextFieldChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const newValue = Math.min(
       100,
-      Math.max(0, parseInt(event.target.value) || 0),
+      Math.max(0, parseInt(event.target.value) || 0)
     );
     onChange(newValue);
   };

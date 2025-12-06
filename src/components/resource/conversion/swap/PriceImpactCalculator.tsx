@@ -65,7 +65,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
       return calculatePriceImpact(
         parsedDecAmount,
         decQuantity,
-        resourceQuantity,
+        resourceQuantity
       );
     }
 
@@ -78,7 +78,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
       return calculatePriceImpact(
         parsedResourceAmount,
         resourceQuantity,
-        decQuantity,
+        decQuantity
       );
     }
 
@@ -98,12 +98,12 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
     ) {
       const decQuantity = parseFloat(selectedResourceData.dec_quantity);
       const resourceQuantity = parseFloat(
-        selectedResourceData.resource_quantity,
+        selectedResourceData.resource_quantity
       );
       const result = calculatePriceImpact(
         parsedValue,
         decQuantity,
-        resourceQuantity,
+        resourceQuantity
       );
       if (result.amountReceived > 0) {
         setResourceAmount(result.amountReceived.toFixed(3));
@@ -128,12 +128,12 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
     ) {
       const decQuantity = parseFloat(selectedResourceData.dec_quantity);
       const resourceQuantity = parseFloat(
-        selectedResourceData.resource_quantity,
+        selectedResourceData.resource_quantity
       );
       const result = calculatePriceImpact(
         parsedValue,
         resourceQuantity,
-        decQuantity,
+        decQuantity
       );
       if (result.amountReceived > 0) {
         setDecAmount(result.amountReceived.toFixed(3));
@@ -211,7 +211,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
                 <Typography variant="body2">
                   <strong>Last Updated:</strong>{" "}
                   {new Date(
-                    timeStamp ? parseInt(timeStamp) : 0,
+                    timeStamp ? parseInt(timeStamp) : 0
                   ).toLocaleString()}
                 </Typography>
                 <Typography variant="body2">
@@ -221,7 +221,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
                 <Typography variant="body2">
                   <strong>{selectedResourceData.token_symbol} in Pool:</strong>{" "}
                   {formatNumber(
-                    parseFloat(selectedResourceData.resource_quantity),
+                    parseFloat(selectedResourceData.resource_quantity)
                   )}
                 </Typography>
                 <Typography variant="body2">
@@ -230,7 +230,7 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
                   {formatNumber(
                     parseFloat(selectedResourceData.dec_quantity) /
                       parseFloat(selectedResourceData.resource_quantity),
-                    4,
+                    4
                   )}{" "}
                   DEC
                 </Typography>

@@ -21,7 +21,7 @@ function boolTest(value: boolean, filter: boolean | null | undefined): boolean {
 // Helper function for cooldown filters
 function cooldownTest(
   date: string | null | undefined,
-  filter: boolean | null | undefined,
+  filter: boolean | null | undefined
 ): boolean {
   if (filter == null) return true; // No filter, always pass
 
@@ -41,7 +41,7 @@ function cooldownTest(
 
 function lastUsedTest(
   lastUsedDate: string | null | undefined,
-  filter: number | null | undefined,
+  filter: number | null | undefined
 ): boolean {
   if (filter == null) return true;
   if (lastUsedDate == null) return true; // Never used, always pass
@@ -55,7 +55,7 @@ export function filterCardCollection(
   cards: SplPlayerCardCollection[],
   cardDetails: SplCardDetails[],
   player: string,
-  filters?: CardFilterInput,
+  filters?: CardFilterInput
 ): SplPlayerCardCollection[] {
   const {
     filter_on_land,

@@ -11,7 +11,7 @@ interface Props {
 }
 
 const getChartTitle = (
-  switchType: "daily_production" | "daily_consume" | "total_supply",
+  switchType: "daily_production" | "daily_consume" | "total_supply"
 ): string => {
   switch (switchType) {
     case "daily_production":
@@ -51,7 +51,7 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
       mode: "lines+markers",
       name: resource,
       line: { color: RESOURCE_COLOR_MAP[resource] || "black" },
-    }),
+    })
   );
 
   return (

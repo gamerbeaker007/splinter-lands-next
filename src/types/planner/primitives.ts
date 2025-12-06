@@ -194,10 +194,7 @@ export type EditionName = keyof typeof editionIdByName;
 export const editionOptions = Object.keys(editionIdByName) as EditionName[];
 
 export const editionNameById = Object.fromEntries(
-  Object.entries(editionIdByName).map(([name, id]) => [
-    id,
-    name as EditionName,
-  ]),
+  Object.entries(editionIdByName).map(([name, id]) => [id, name as EditionName])
 ) as Record<number, EditionName>;
 
 export const editionAliasById: Partial<Record<number, EditionName>> = {
@@ -311,7 +308,7 @@ export const TERRAIN_BONUS: Record<
 };
 
 export const TERRAIN_OPTIONS: DeedType[] = Object.keys(
-  TERRAIN_BONUS,
+  TERRAIN_BONUS
 ) as DeedType[];
 
 export const worksiteTypeOptions = [

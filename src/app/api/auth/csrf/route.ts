@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
       logError("❌ Origin validation failed", "Invalid origin in CSRF request");
       return NextResponse.json(
         { error: "Origin not allowed" },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     logError("Error generating CSRF token:", error);
     return NextResponse.json(
       { error: "Failed to generate CSRF token" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

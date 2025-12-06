@@ -27,7 +27,7 @@ export function MagicTypeSelector({ value, onChange }: Props) {
   const renderIcon = (tier: MagicType, size = 24) => {
     const icon = land_default_off_icon_url_placeholder.replace(
       "__NAME__",
-      tier.toLowerCase(),
+      tier.toLowerCase()
     );
     return (
       <Image

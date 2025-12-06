@@ -23,7 +23,7 @@ interface AuthContextType {
   login: (
     username: string,
     timestamp?: number,
-    signature?: string,
+    signature?: string
   ) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Sign message with Keychain
   const signWithKeychain = async (
     username: string,
-    message: string,
+    message: string
   ): Promise<string> => {
     try {
       interface HiveKeychainWindow extends Window {
@@ -128,7 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (
     username: string,
     timestamp?: number,
-    signature?: string,
+    signature?: string
   ) => {
     try {
       setError(null);

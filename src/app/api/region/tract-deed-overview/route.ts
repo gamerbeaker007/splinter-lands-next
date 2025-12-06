@@ -50,13 +50,13 @@ export async function POST(req: Request) {
                     index,
                     total: sortedDeeds.length,
                     deed: enriched,
-                  }) + "\n",
-                ),
+                  }) + "\n"
+                )
               );
             } catch (err) {
               logError(`Error enriching deed ${deed.deed_uid}`, err);
             }
-          }),
+          })
         );
 
         // Wait for all jobs to finish

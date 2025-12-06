@@ -18,7 +18,7 @@ type StakeInfo = {
 };
 
 function aggregateStakingInfo(
-  regionData: DeedComplete[],
+  regionData: DeedComplete[]
 ): Map<string, StakeInfo> {
   const stakeMap = new Map<string, StakeInfo>();
   const seenPairs = new Set<string>();
@@ -60,7 +60,7 @@ function aggregateStakingInfo(
 
 function applyStakingDataToPlayers(
   players: PlayerProductionSummaryEnriched[],
-  stakeMap: Map<string, StakeInfo>,
+  stakeMap: Map<string, StakeInfo>
 ) {
   for (const player of players) {
     const stakeData = stakeMap.get(player.player) || {
@@ -80,7 +80,7 @@ function applyStakingDataToPlayers(
 function assignRank(
   players: PlayerProductionSummaryEnriched[],
   field: keyof PlayerProductionSummaryEnriched,
-  rankField: string,
+  rankField: string
 ): void {
   const sorted = [...players]
     .filter((p) => isFinite(p[field] as number))
@@ -108,7 +108,7 @@ function normalizeRatio(
   players: PlayerProductionSummaryEnriched[],
   field: keyof PlayerProductionSummaryEnriched,
   targetField: string,
-  scale = 1000,
+  scale = 1000
 ) {
   const values = players
     .map((p) => p[field] as number)
@@ -128,15 +128,15 @@ function calculateRatios(players: PlayerProductionSummaryEnriched[]) {
   for (const player of players) {
     player.LDE_ratio = calculateLDERatio(
       player.total_dec,
-      player.total_dec_stake_in_use ?? 0,
+      player.total_dec_stake_in_use ?? 0
     );
     player.LCE_ratio_base = calculateLCERatio(
       player.total_dec,
-      player.total_base_pp_after_cap ?? 0,
+      player.total_base_pp_after_cap ?? 0
     );
     player.LCE_ratio_boosted = calculateLCERatio(
       player.total_dec,
-      player.total_harvest_pp ?? 0,
+      player.total_harvest_pp ?? 0
     );
     player.LPE_ratio = calculateLPERatio(player.total_dec, player.count);
   }

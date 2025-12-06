@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       logError("Failed to parse JSON body in login request", err);
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
     if (!csrfValidation.isValid) {
       return NextResponse.json(
         { error: csrfValidation.error },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!username || !timestamp || !signature) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { error: "Internal server error during login" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

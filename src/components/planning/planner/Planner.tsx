@@ -107,7 +107,7 @@ export default function Planner({
         plot.deedType,
         plot.plotStatus,
         plot.plotRarity,
-        plot.worksiteType,
+        plot.worksiteType
       ),
     [
       plot.magicType,
@@ -115,12 +115,12 @@ export default function Planner({
       plot.plotStatus,
       plot.plotRarity,
       plot.worksiteType,
-    ],
+    ]
   );
 
   const { totalBasePP, totalBoostedPP } = useMemo(
     () => calcTotalPP(plot),
-    [plot],
+    [plot]
   );
 
   const captureRate = useMemo(() => {
@@ -140,7 +140,7 @@ export default function Planner({
         prices,
         spsRatio,
         regionTax,
-        captureRate,
+        captureRate
       ),
     [
       totalBasePP,
@@ -150,7 +150,7 @@ export default function Planner({
       spsRatio,
       regionTax,
       captureRate,
-    ],
+    ]
   );
 
   const totemChance = useMemo(() => {

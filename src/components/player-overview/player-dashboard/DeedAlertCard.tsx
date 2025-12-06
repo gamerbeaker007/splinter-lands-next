@@ -35,7 +35,7 @@ export const DeedAlertCard: React.FC<Props> = ({ alert }: Props) => {
     alert.deedType,
     alert.plotStatus,
     alert.rarity,
-    alert.worksiteType,
+    alert.worksiteType
   );
 
   return (

@@ -44,7 +44,7 @@ export async function fetchRegionData(region: number) {
 }
 
 export async function fetchRegionDataPlayer(
-  player: string,
+  player: string
 ): Promise<RawRegionDataResponse> {
   const url = "/land/deeds";
   const res = await splLandClient.get(url, {
@@ -84,7 +84,7 @@ export async function fetchStakedAssets(deed_uid: string) {
 }
 
 export async function fetchPlayerPoolInfo(
-  player: string,
+  player: string
 ): Promise<PlayerTradeHubPosition[]> {
   const url = `land/liquidity/pools/${player}/all-no-vesting`;
   const res = await splLandClient.get(url);
@@ -147,7 +147,7 @@ export async function fetchResourceSupply(resource: string) {
 }
 
 export async function fetchAssetsPrices(
-  filter?: Assets[],
+  filter?: Assets[]
 ): Promise<SplMarketAsset[]> {
   try {
     const url = "/market/landing";

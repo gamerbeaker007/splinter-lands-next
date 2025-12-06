@@ -67,19 +67,19 @@ export default function LandBoostComponent({
   });
 
   const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
-    (initialBoost?.consumeGrainDiscount ?? 0) * 100,
+    (initialBoost?.consumeGrainDiscount ?? 0) * 100
   );
 
   // Bloodline boost is now a simple number
   const [bloodlineBoost, setBloodlineBoost] = useState(
-    (initialBoost?.bloodlineBoost ?? 0) * 100,
+    (initialBoost?.bloodlineBoost ?? 0) * 100
   );
 
   const [decDiscount, setDecDiscount] = useState(
-    (initialBoost?.decDiscount ?? 0) * 100,
+    (initialBoost?.decDiscount ?? 0) * 100
   );
   const [replacePowerCore, setReplacePowerCore] = useState(
-    initialBoost?.replacePowerCore ?? false,
+    initialBoost?.replacePowerCore ?? false
   );
   const [laborLuck, setLaborLuck] = useState(initialBoost?.laborLuck ?? false);
 
@@ -93,7 +93,7 @@ export default function LandBoostComponent({
           entries.map(([resource, value]) => ({
             resource: resource as Resource,
             value: value * 100,
-          })),
+          }))
         );
       } else {
         // Default: two rows with GRAIN and WOOD
@@ -139,7 +139,7 @@ export default function LandBoostComponent({
   const updateProduceBoost = (
     index: number,
     field: keyof ResourceBoost,
-    value: Resource | number,
+    value: Resource | number
   ) => {
     const updated = [...produceBoosts];
     updated[index] = { ...updated[index], [field]: value };

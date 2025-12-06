@@ -31,7 +31,7 @@ export function DailyProduceConsumeOverview() {
               resourceName={resourceName}
               row={row}
             />
-          ),
+          )
         )}
     </Box>
   );

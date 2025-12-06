@@ -27,7 +27,7 @@ export default function DeedTypeTile({
               ? land_unsurveyed_deed_icon_url
               : land_default_off_icon_url_placeholder.replace(
                   "__NAME__",
-                  type.toLowerCase(),
+                  type.toLowerCase()
                 );
           return (
             <SummaryTile

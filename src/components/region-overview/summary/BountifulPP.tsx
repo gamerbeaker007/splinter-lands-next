@@ -14,7 +14,7 @@ export default function BountifulPP({ totalAbilityBoosts }: Props) {
   const orderedResources = Object.keys(bountifulResourceIconMap).filter(
     (resource) =>
       totalAbilityBoosts[resource as Resource] &&
-      totalAbilityBoosts[resource as Resource]! > 0,
+      totalAbilityBoosts[resource as Resource]! > 0
   );
 
   return (
@@ -62,7 +62,7 @@ export default function BountifulPP({ totalAbilityBoosts }: Props) {
               sx={{ minHeight: 20 }}
             >
               {formatNumberWithSuffix(
-                totalAbilityBoosts[resource as Resource] ?? 0,
+                totalAbilityBoosts[resource as Resource] ?? 0
               )}
             </Typography>
             <Typography

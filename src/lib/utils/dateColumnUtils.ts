@@ -45,7 +45,7 @@ export function recordToSortedDates(record: Record<string, Date> | undefined) {
  * Get the most recent date from a Record<string, Date>
  */
 export function getMostRecentDate(
-  record: Record<string, Date> | undefined,
+  record: Record<string, Date> | undefined
 ): Date | null {
   if (!record) return null;
 
@@ -73,7 +73,7 @@ export function getCooldownDates(record: Record<string, Date> | undefined) {
  */
 export function getDateDisplayText(
   record: Record<string, Date> | undefined,
-  type: DateSortType,
+  type: DateSortType
 ): string {
   if (!record) return "-";
 
@@ -97,7 +97,7 @@ export function getDateDisplayText(
  */
 export function hasMultipleEntries(
   record: Record<string, Date> | undefined,
-  type: DateSortType,
+  type: DateSortType
 ): boolean {
   if (!record) return false;
 
@@ -115,7 +115,7 @@ export function hasMultipleEntries(
  */
 export function getDateTooltipContent(
   record: Record<string, Date> | undefined,
-  type: DateSortType,
+  type: DateSortType
 ): string {
   if (!record) return "";
 
@@ -138,7 +138,7 @@ export function getDateTooltipContent(
  */
 export function getDateSortValue(
   dates: Record<string, Date>,
-  sortBy: DateSortType,
+  sortBy: DateSortType
 ): number {
   switch (sortBy) {
     case "recent": {

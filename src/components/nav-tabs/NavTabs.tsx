@@ -16,7 +16,7 @@ type NavTabsProps = {
   value: number;
   onChange: (
     event: React.SyntheticEvent | SelectChangeEvent,
-    newValue: number,
+    newValue: number
   ) => void;
 };
 

@@ -47,7 +47,7 @@ export function SimulationResult({ items }: ResultProps) {
 
   const totalNetDEC = items.reduce(
     (acc, it) => acc + (Number.isFinite(it.netDEC) ? it.netDEC! : 0),
-    0,
+    0
   );
 
   const minColumnWidth = 80;

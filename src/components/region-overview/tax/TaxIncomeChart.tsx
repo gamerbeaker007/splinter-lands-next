@@ -65,7 +65,7 @@ function getSortedTracesByResource(
   data: RegionTax[],
   type: "castle" | "keep",
   income: "resource" | "dec",
-  resource: string,
+  resource: string
 ): Partial<PlotData>[] {
   const entries =
     type === "castle"
@@ -83,7 +83,7 @@ function getSortedTracesByResource(
               income === "resource"
                 ? (tract.capturedTaxInResource[resource] ?? 0)
                 : (tract.capturedTaxInDEC[resource] ?? 0),
-          })),
+          }))
         );
 
   const sorted = entries.filter((e) => e.y > 0).sort((a, b) => b.y - a.y);
@@ -102,7 +102,7 @@ function getSortedTracesByResource(
 function getGroupedTracesByResourceSortedByTotalDEC(
   data: RegionTax[],
   type: "castle" | "keep",
-  income: "resource" | "dec",
+  income: "resource" | "dec"
 ): Partial<PlotData>[] {
   const grouped: Record<string, Record<string, number>> = {};
   const totalPerLocation: Record<string, number> = {};

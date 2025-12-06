@@ -61,7 +61,7 @@ export interface CsrfValidationResult {
 
 export async function validateCsrfToken(
   request: NextRequest,
-  requestBody?: { csrfToken?: string; [key: string]: unknown },
+  requestBody?: { csrfToken?: string; [key: string]: unknown }
 ): Promise<CsrfValidationResult> {
   try {
     // Skip CSRF validation for GET, HEAD, OPTIONS requests

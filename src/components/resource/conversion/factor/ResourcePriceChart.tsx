@@ -25,7 +25,7 @@ export const ResourcePriceChart: React.FC<Props> = ({
   }));
 
   const allSymbols = Array.from(
-    new Set(transformedData.map((d) => d.token_symbol)),
+    new Set(transformedData.map((d) => d.token_symbol))
   );
 
   const traces: Partial<ScatterData>[] = allSymbols.map((symbol) => {

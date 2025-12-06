@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     const isNotFound = message.toLowerCase().includes("not found");
     return NextResponse.json(
       { error: message },
-      { status: isNotFound ? 404 : 501 },
+      { status: isNotFound ? 404 : 501 }
     );
   }
 }

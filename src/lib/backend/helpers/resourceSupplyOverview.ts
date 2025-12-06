@@ -13,14 +13,14 @@ export function computeResourceSupplyOverview(
   date: string,
   supply: ResourceSupply[],
   resourceTracking: ResourceTracking[],
-  tradeHubSupply: ResourceHubMetrics[],
+  tradeHubSupply: ResourceHubMetrics[]
 ): ResourceSupplyOverview {
   const resourceMap: ResourceSupplyOverview["resource"] = {};
   const supplyMap = new Map(
-    supply.map((s) => [s.resource, Number(s.total_supply)]),
+    supply.map((s) => [s.resource, Number(s.total_supply)])
   );
   const tradeHubSupplyMap = new Map(
-    tradeHubSupply.map((s) => [s.token_symbol, Number(s.resource_quantity)]),
+    tradeHubSupply.map((s) => [s.token_symbol, Number(s.resource_quantity)])
   );
 
   for (const rt of resourceTracking) {

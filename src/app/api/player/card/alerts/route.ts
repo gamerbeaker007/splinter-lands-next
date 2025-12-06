@@ -26,13 +26,13 @@ export async function POST(req: Request) {
     if (!player) {
       return NextResponse.json(
         { error: "Missing 'player' parameter" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const playerCardCollection = await getCachedPlayerCardCollection(
       player,
-      force,
+      force
     );
     const playerData = await getPlayerData(player, {}, force);
     const cardDetails = await getCachedCardDetailsData();
@@ -41,13 +41,13 @@ export async function POST(req: Request) {
 
     const countAlerts = plotsWithLessThanCards(
       playerCardCollection,
-      indexedDeedsByPlotId,
+      indexedDeedsByPlotId
     );
     const noWorkers = plotsWithNoWorkers(playerData, playerCardCollection);
     const terrainBoostAlerts = classifyCardsByTerrainBonus(
       playerCardCollection,
       indexedDeedsByPlotId,
-      cardDetails,
+      cardDetails
     );
 
     const retVal: CardAlerts = {
@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     const isNotFound = message.toLowerCase().includes("not found");
     return NextResponse.json(
       { error: message },
-      { status: isNotFound ? 404 : 501 },
+      { status: isNotFound ? 404 : 501 }
     );
   }
 }
@@ -79,7 +79,7 @@ function indexDeedsByPlotId(deeds: DeedComplete[]) {
 function plotsWithLessThanCards(
   cards: SplPlayerCardCollection[],
   indexDeeds: Map<number, DeedComplete>,
-  minCount = 5,
+  minCount = 5
 ): CountAlert[] {
   // Group by stake_plot (ignore null plot)
   const byPlot = new Map<number, CountAlert>();
@@ -133,7 +133,7 @@ function plotsWithLessThanCards(
 
 function plotsWithNoWorkers(
   deeds: DeedComplete[],
-  cards: SplPlayerCardCollection[],
+  cards: SplPlayerCardCollection[]
 ): DeedInfo[] {
   // Set of plots that have at least one card
   const plotsWithCards = new Set<number>();
@@ -163,7 +163,7 @@ function plotsWithNoWorkers(
 function classifyCardsByTerrainBonus(
   cards: SplPlayerCardCollection[],
   deedByPlot: Map<number, DeedComplete>,
-  cardDetails: SplCardDetails[],
+  cardDetails: SplCardDetails[]
 ): TerrainBoostAlerts {
   const negative: Array<TerrainCardInfo> = [];
   const zeroNeutral: Array<TerrainCardInfo> = [];
@@ -181,7 +181,7 @@ function classifyCardsByTerrainBonus(
     const cd = cardDetails.find((cd) => cd.id === c.card_detail_id);
     if (!cd) {
       logger.warning(
-        `Card details not found for card_detail_id: ${c.card_detail_id}`,
+        `Card details not found for card_detail_id: ${c.card_detail_id}`
       );
       continue;
     } // skip if we lack details

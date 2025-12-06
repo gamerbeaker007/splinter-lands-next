@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       logError("Failed to parse JSON body in login request", err);
       return NextResponse.json(
         { error: "Invalid JSON in request body" },
-        { status: 400 },
+        { status: 400 }
       );
     }
     // Validate CSRF token
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (!csrfValidation.isValid) {
       return NextResponse.json(
         { error: csrfValidation.error },
-        { status: 403 },
+        { status: 403 }
       );
     }
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
             error: "Authentication expired. Please log in again.",
             expired: true,
           },
-          { status: 401 },
+          { status: 401 }
         );
 
         response.cookies.delete("jwt_token");
@@ -56,13 +56,13 @@ export async function POST(request: NextRequest) {
     if (!player) {
       return NextResponse.json(
         { error: "Missing 'player' parameter" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
     const playerCardCollection = await getCachedPlayerCardCollection(
       player,
-      force,
+      force
     );
 
     const cardDetails = await getCachedCardDetailsData();
@@ -71,14 +71,14 @@ export async function POST(request: NextRequest) {
       playerCardCollection,
       cardDetails,
       player,
-      cardFilters,
+      cardFilters
     );
     const grouped = groupCards(filtered, cardDetails);
     return NextResponse.json(
       {
         cards: Array.from(grouped.values()),
       },
-      { status: 200 },
+      { status: 200 }
     );
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     const isNotFound = message.toLowerCase().includes("not found");
     return NextResponse.json(
       { error: message },
-      { status: isNotFound ? 404 : 501 },
+      { status: isNotFound ? 404 : 501 }
     );
   }
 }
@@ -103,7 +103,7 @@ const groupKey = (c: SplPlayerCardCollection) =>
 // We assume identical (detail_id, bcx, foil) share same base_pp/dec_need per card.
 const groupCards = (
   cards: SplPlayerCardCollection[],
-  cardDetails: SplCardDetails[],
+  cardDetails: SplCardDetails[]
 ): Map<string, GroupedCardRow> => {
   const map = new Map<string, GroupedCardRow>();
 

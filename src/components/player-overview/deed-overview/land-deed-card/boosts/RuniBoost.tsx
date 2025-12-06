@@ -34,7 +34,7 @@ export const RuniBoost: React.FC<RuniBoostProps> = ({
         {runiCards.map((card) => {
           const { name, rarity } = determineCardInfo(
             card.card_detail_id,
-            cardDetails,
+            cardDetails
           );
           const max_bcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 

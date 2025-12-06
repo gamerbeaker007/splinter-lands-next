@@ -51,7 +51,7 @@ export default function TradeHubPositionPage() {
               playerTradeHubPositions={playerTradeHubPositions}
               currentPlayer={selectedPlayer}
             />
-          ),
+          )
         )}
       </Box>
     </>

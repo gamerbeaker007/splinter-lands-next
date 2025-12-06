@@ -14,7 +14,7 @@ export default function AbilityBoost({ countAbilityBoosts }: Props) {
   const orderedResources = Object.keys(bountifulResourceIconMap).filter(
     (resource) =>
       countAbilityBoosts[resource as Resource] &&
-      countAbilityBoosts[resource as Resource]! > 0,
+      countAbilityBoosts[resource as Resource]! > 0
   );
   return (
     <>
@@ -61,7 +61,7 @@ export default function AbilityBoost({ countAbilityBoosts }: Props) {
               sx={{ minHeight: 20 }}
             >
               {formatNumberWithSuffix(
-                countAbilityBoosts[resource as Resource] ?? 0,
+                countAbilityBoosts[resource as Resource] ?? 0
               )}
             </Typography>
             <Typography

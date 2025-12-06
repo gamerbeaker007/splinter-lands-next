@@ -9,14 +9,14 @@ import { NotFoundError } from "@/lib/backend/error";
 
 export async function GET(
   _req: Request,
-  context: { params: Promise<{ id: string }> },
+  context: { params: Promise<{ id: string }> }
 ) {
   const { id } = await context.params;
   const num = Number(id);
   if (!Number.isFinite(num)) {
     return NextResponse.json(
       { error: "Invalid 'id' parameter", code: "BAD_REQUEST" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -27,7 +27,7 @@ export async function GET(
       // Or have fetchDeedUid throw NotFoundError
       return NextResponse.json(
         { error: `Plot ${num} not found`, code: "NOT_FOUND" },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -40,13 +40,13 @@ export async function GET(
     if (err instanceof NotFoundError) {
       return NextResponse.json(
         { error: `Plot ${num} not found`, code: "NOT_FOUND" },
-        { status: 404 },
+        { status: 404 }
       );
     }
     logError("Unhandled error in GET /api/plot/[id]", err);
     return NextResponse.json(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

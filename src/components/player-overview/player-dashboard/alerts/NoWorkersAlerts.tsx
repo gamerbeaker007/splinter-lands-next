@@ -19,7 +19,7 @@ export const NoWorkersAlerts: React.FC<Props> = ({ noWorkersAlerts }) => {
             alert.magicType,
             alert.deedType,
             alert.plotStatus,
-            alert.rarity,
+            alert.rarity
           );
 
           const regionNumber = alert.regionNumber;

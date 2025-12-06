@@ -33,7 +33,7 @@ export async function GET() {
     logError("Failed to load active data", err);
     return NextResponse.json(
       { error: "Failed to load active data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

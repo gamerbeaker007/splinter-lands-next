@@ -27,7 +27,7 @@ async function main() {
   await pushLastUpdateDate();
 
   logger.info(
-    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`,
+    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`
   );
 }
 

@@ -45,7 +45,7 @@ export function DeedPlanning({
 }: Props) {
   const emitPlanChange = useCallback(
     (info: ProductionInfo) => onChange(index, info),
-    [index, onChange],
+    [index, onChange]
   );
 
   return (

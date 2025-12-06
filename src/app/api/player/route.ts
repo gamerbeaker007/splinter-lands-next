@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
         if (warning) {
           controller.enqueue(
-            encoder.encode(JSON.stringify({ type: "warning", warning }) + "\n"),
+            encoder.encode(JSON.stringify({ type: "warning", warning }) + "\n")
           );
         }
 
@@ -62,13 +62,13 @@ export async function POST(req: Request) {
                     index,
                     total: deedsToEnrich.length,
                     deed: enriched,
-                  }) + "\n",
-                ),
+                  }) + "\n"
+                )
               );
             } catch (err) {
               logError(`Error enriching deed ${deed.deed_uid}`, err);
             }
-          }),
+          })
         );
 
         // Wait for all jobs to finish

@@ -10,7 +10,7 @@ type Props = {
 export default function ActiveChart({ playersActive }: Props) {
   // Sort players by total (active + inactive) in descending order
   const sortedPlayers = Object.entries(playersActive).sort(
-    ([, a], [, b]) => b.active + b.inactive - (a.active + a.inactive),
+    ([, a], [, b]) => b.active + b.inactive - (a.active + a.inactive)
   );
 
   const playerNames = sortedPlayers.map(([name]) => name);

@@ -27,7 +27,7 @@ export const TerrainBoostsCard: React.FC<Props> = ({ terrainBoosts }) => {
       acc[plotId].push(alert);
       return acc;
     },
-    {},
+    {}
   );
 
   return (
@@ -39,7 +39,7 @@ export const TerrainBoostsCard: React.FC<Props> = ({ terrainBoosts }) => {
             firstAlert.deedInfo.magicType,
             firstAlert.deedInfo.deedType,
             firstAlert.deedInfo.plotStatus,
-            firstAlert.deedInfo.rarity,
+            firstAlert.deedInfo.rarity
           );
 
           return (

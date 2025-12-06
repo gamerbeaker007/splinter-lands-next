@@ -15,7 +15,7 @@ async function main() {
   await computeAndStorePlayerHubPosition(today);
 
   logger.info(
-    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`,
+    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`
   );
 }
 

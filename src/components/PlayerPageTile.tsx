@@ -16,7 +16,7 @@ export default function PlayerPageTile() {
   const gotoOverview = () => {
     const trimmed = player.trim();
     router.push(
-      trimmed ? `/player-overview?player=${trimmed}` : "/player-overview",
+      trimmed ? `/player-overview?player=${trimmed}` : "/player-overview"
     );
   };
 
@@ -25,7 +25,7 @@ export default function PlayerPageTile() {
     router.push(
       trimmed
         ? `/player-overview?player=${trimmed}&tab=deed`
-        : "/player-overview",
+        : "/player-overview"
     );
   };
 
@@ -34,7 +34,7 @@ export default function PlayerPageTile() {
     router.push(
       trimmed
         ? `/player-overview?player=${trimmed}&tab=overview`
-        : "/player-overview",
+        : "/player-overview"
     );
   };
 

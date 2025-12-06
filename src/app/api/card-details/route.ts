@@ -14,7 +14,7 @@ export async function GET() {
     logError("Failed to load worksite data", err);
     return NextResponse.json(
       { error: "Failed to load worksite data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

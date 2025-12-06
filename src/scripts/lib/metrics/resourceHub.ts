@@ -19,7 +19,7 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
   const decUSDPrice = prices?.dec ?? 0;
 
   const grainResource = resources.find(
-    (r: { token_symbol: string }) => r.token_symbol === "GRAIN",
+    (r: { token_symbol: string }) => r.token_symbol === "GRAIN"
   );
   const grainPrice = grainResource?.resource_price || 0;
 
@@ -29,7 +29,7 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
     const { grainEquivalent, factor } = calculateGrainEquivalentAndFactor(
       resource,
       resourcePrice,
-      grainPrice,
+      grainPrice
     );
     return {
       date: today,
@@ -63,14 +63,14 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
   });
 
   logger.info(
-    `✅ Stored resource hub metrics for ${dataToInsert.length} tokens on ${today.toISOString().split("T")[0]}`,
+    `✅ Stored resource hub metrics for ${dataToInsert.length} tokens on ${today.toISOString().split("T")[0]}`
   );
 }
 
 function calculateGrainEquivalentAndFactor(
   tokenSymbol: string,
   resourcePrice: number,
-  grainPrice: number,
+  grainPrice: number
 ): { grainEquivalent: number | null; factor: number | null } {
   if (tokenSymbol === "GRAIN") {
     return { grainEquivalent: 1, factor: 1 };

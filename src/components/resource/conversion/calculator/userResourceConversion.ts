@@ -12,7 +12,7 @@ export function useResourceConversion(
   mode: Mode,
   resourcesInput: Record<CalculatorResource, number>,
   decExtra: number,
-  prices: Prices | null,
+  prices: Prices | null
 ) {
   const dec_total = useMemo(() => {
     if (!prices) return 0;

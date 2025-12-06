@@ -35,7 +35,7 @@ import { RegionTax } from "@/types/regionTax";
 
 export function terrainBonusPct(
   terrain: DeedType,
-  element: CardElement,
+  element: CardElement
 ): number {
   if (!terrain) return 0;
   return TERRAIN_BONUS[terrain]?.[element] ?? 0;
@@ -43,7 +43,7 @@ export function terrainBonusPct(
 
 export function determineDeedResourceBoost(
   plotStatus: PlotStatus,
-  worksiteType: WorksiteType,
+  worksiteType: WorksiteType
 ): number {
   return deedResourceBoostRules[plotStatus]?.includes(worksiteType) ? 1 : 0;
 }
@@ -51,7 +51,7 @@ export function determineDeedResourceBoost(
 export function calcBoostedPP(
   basePP: number,
   plot: PlotPlannerData,
-  terrainModifier: number,
+  terrainModifier: number
 ) {
   const rarityPct = plotRarityModifiers[plot.plotRarity];
   const titlePct = titleModifiers[plot.title];
@@ -63,12 +63,12 @@ export function calcBoostedPP(
 
   const deedResourceBoost = determineDeedResourceBoost(
     plot.plotStatus,
-    plot.worksiteType,
+    plot.worksiteType
   );
 
   const productionBoosts = determineProductionBoost(
     resourceWorksiteMap[plot.worksiteType],
-    plot.cardInput,
+    plot.cardInput
   );
 
   const totalBoostedMultiplier =
@@ -85,7 +85,7 @@ export function calcBoostedPP(
 
 export function computeSlot(
   slot: SlotInput,
-  plot: PlotPlannerData,
+  plot: PlotPlannerData
 ): SlotComputedPP {
   const basePP = calcBasePP(slot);
 
@@ -125,7 +125,7 @@ export function calcTotalPP(plotPlannerData: PlotPlannerData) {
       acc.sumBoostedPP += boostedPP;
       return acc;
     },
-    { sumBasePP: 0, sumBoostedPP: 0 },
+    { sumBasePP: 0, sumBoostedPP: 0 }
   );
 
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
@@ -143,7 +143,7 @@ export function calcProductionInfo(
   prices: Prices,
   spsRatio: number,
   regionTax: RegionTax[] | null,
-  captureRate: number | null,
+  captureRate: number | null
 ): ProductionInfo {
   const worksiteType = plotPlannerData.worksiteType;
 
@@ -156,7 +156,7 @@ export function calcProductionInfo(
     const consume = worksiteType === "KEEP" ? 1000 : 10_000;
 
     const region = regionTax?.find(
-      (r) => r.castleOwner?.regionNumber === regionNumber,
+      (r) => r.castleOwner?.regionNumber === regionNumber
     );
 
     const rewardsPerHour =
@@ -173,7 +173,7 @@ export function calcProductionInfo(
     }
 
     const produces: ResourceWithDEC[] = Object.entries(
-      capturedTaxInResource,
+      capturedTaxInResource
     ).map(([resource, amount]) => ({
       resource: resource as Resource,
       amount,
@@ -181,13 +181,13 @@ export function calcProductionInfo(
         "sell",
         resource as ResourceWithDEC["resource"],
         amount,
-        prices,
+        prices
       ),
       buyPriceDEC: calcDECPrice(
         "buy",
         resource as ResourceWithDEC["resource"],
         amount,
-        prices,
+        prices
       ),
     }));
 
@@ -209,21 +209,21 @@ export function calcProductionInfo(
   }
 
   const consumeGrainDiscount = determineGrainConsumeReduction(
-    plotPlannerData.cardInput,
+    plotPlannerData.cardInput
   );
   const consume = calcConsumeCosts(
     totalBasePP,
     prices,
     1,
     determineRecipe(resource),
-    consumeGrainDiscount,
+    consumeGrainDiscount
   );
 
   const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
 
   const totalDECConsume = consume.reduce(
     (sum, row) => sum + Number(row.sellPriceDEC || 0),
-    0,
+    0
   );
   const netDEC = produce.sellPriceDEC - totalDECConsume;
 
@@ -237,7 +237,7 @@ export function calcProductionInfo(
 
 export function calcTotemChancePerHour(
   worksiteType: WorksiteType,
-  basePP: number,
+  basePP: number
 ): number | undefined {
   if (
     worksiteType === "KEEP" ||
@@ -266,7 +266,7 @@ export function calcTotemChancePerHour(
  */
 export function determineProductionBoost(
   resource: Resource,
-  cardInput: SlotInput[],
+  cardInput: SlotInput[]
 ): number {
   let maxBoost = 0;
 
@@ -278,7 +278,7 @@ export function determineProductionBoost(
             if (resource === produceBoostResource && boost > 0) {
               maxBoost = Math.max(maxBoost, boost);
             }
-          },
+          }
         );
       }
     });
@@ -335,7 +335,7 @@ export function determineBloodlineBoost(cardInput: SlotInput[]): {
 
     // Count how many cards have this bloodline (with bcx > 0)
     const cardsWithBloodline = cardInput.filter(
-      (card) => card.bloodline === bloodlineType && card.bcx > 0,
+      (card) => card.bloodline === bloodlineType && card.bcx > 0
     );
 
     // Apply boost only if there are at least 2 cards with this bloodline

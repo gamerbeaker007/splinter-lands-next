@@ -72,7 +72,7 @@ export default function PlayerDashboardPage({ player }: Props) {
                       liquidityInfo={playerOverview.liquidityInfo}
                       liquidityPoolInfo={playerOverview.liquidityPoolInfo}
                     />
-                  ),
+                  )
                 )}
               </Box>
               <Box display={"flex"} flexWrap={"wrap"} gap={4}>

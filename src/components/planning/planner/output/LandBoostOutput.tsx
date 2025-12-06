@@ -45,12 +45,12 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
 
   // Check for Replace Power Core
   const hasReplacePowerCore = cardInput.some(
-    (card) => card.landBoosts?.replacePowerCore,
+    (card) => card.landBoosts?.replacePowerCore
   );
 
   // Count Labor Luck
   const laborLuckCount = cardInput.filter(
-    (card) => card.landBoosts?.laborLuck,
+    (card) => card.landBoosts?.laborLuck
   ).length;
 
   // Calculate total bloodline boost including details

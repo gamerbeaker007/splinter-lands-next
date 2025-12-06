@@ -14,7 +14,7 @@ export const BcxInput: React.FC<BcxInputProps> = ({ slot, onChange }) => {
 
   const maxBCX = useMemo(
     () => determineCardMaxBCX(slot.set.toLowerCase(), slot.rarity, foilId),
-    [slot.set, slot.rarity, foilId],
+    [slot.set, slot.rarity, foilId]
   );
 
   // Ensure current value is always within [0, maxBCX] after external changes

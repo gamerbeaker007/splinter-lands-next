@@ -115,7 +115,7 @@ export function LandCardResources({ playerOverview }: Props) {
         }
         return sum;
       },
-      0,
+      0
     );
 
     return liquidityTotal + poolTotal;
@@ -132,7 +132,7 @@ export function LandCardResources({ playerOverview }: Props) {
   const calculateResourcePercentage = (
     rarity: CardRarity,
     resource: Resource,
-    amount: number,
+    amount: number
   ): {
     percentage: number;
     available: number;
@@ -166,7 +166,7 @@ export function LandCardResources({ playerOverview }: Props) {
       available: number;
       needed: number;
       totalNeeded: number;
-    },
+    }
   ): string => {
     if (data.needed === 0) return "Not required";
 
@@ -181,7 +181,7 @@ export function LandCardResources({ playerOverview }: Props) {
           const value = info[resource.toLowerCase() as keyof typeof info];
           return sum + (typeof value === "number" ? value : 0);
         },
-        0,
+        0
       );
 
       const poolTotal = playerOverview.liquidityPoolInfo.reduce(
@@ -192,7 +192,7 @@ export function LandCardResources({ playerOverview }: Props) {
           }
           return sum;
         },
-        0,
+        0
       );
 
       return `Amount: ${amount}\nPer Card: ${data.needed.toLocaleString()}\nTotal Needed: ${data.totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${data.available.toLocaleString()}\nPercentage: ${data.percentage.toFixed(1)}%`;
@@ -252,7 +252,7 @@ export function LandCardResources({ playerOverview }: Props) {
                     const data = calculateResourcePercentage(
                       rarity,
                       resource,
-                      amount,
+                      amount
                     );
 
                     // Show "-" if not needed for this rarity
@@ -277,7 +277,7 @@ export function LandCardResources({ playerOverview }: Props) {
                       rarity,
                       resource,
                       amount,
-                      data,
+                      data
                     );
 
                     // Special handling for CINDER - show total needed instead of percentage
@@ -346,16 +346,16 @@ export function LandCardResources({ playerOverview }: Props) {
                 {formatNumberWithSuffix(
                   cardRarityOptions.reduce(
                     (sum, rarity) => sum + Math.floor(balances[rarity]),
-                    0,
-                  ),
+                    0
+                  )
                 )}
               </TableCell>
               <TableCell align="center" sx={{ fontWeight: "bold" }}>
                 {formatNumberWithSuffix(
                   cardRarityOptions.reduce(
                     (sum, rarity) => sum + getAmount(rarity),
-                    0,
-                  ),
+                    0
+                  )
                 )}
               </TableCell>
               {RESOURCE_ORDER.map((resource) => {
@@ -364,14 +364,14 @@ export function LandCardResources({ playerOverview }: Props) {
                   const data = calculateResourcePercentage(
                     rarity,
                     resource,
-                    amount,
+                    amount
                   );
                   return sum + data.totalNeeded;
                 }, 0);
 
                 const totalAmount = cardRarityOptions.reduce(
                   (sum, rarity) => sum + getAmount(rarity),
-                  0,
+                  0
                 );
 
                 if (totalNeeded === 0 || totalAmount === 0) {
@@ -427,7 +427,7 @@ export function LandCardResources({ playerOverview }: Props) {
                       info[resource.toLowerCase() as keyof typeof info];
                     return sum + (typeof value === "number" ? value : 0);
                   },
-                  0,
+                  0
                 );
 
                 const poolTotal = playerOverview.liquidityPoolInfo.reduce(
@@ -438,7 +438,7 @@ export function LandCardResources({ playerOverview }: Props) {
                     }
                     return sum;
                   },
-                  0,
+                  0
                 );
 
                 const tooltipContent = `Total Amount: ${totalAmount}\nTotal Needed: ${totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${totalAvailable.toLocaleString()}\nPercentage: ${percentage.toFixed(1)}%`;

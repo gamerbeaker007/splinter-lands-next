@@ -31,6 +31,6 @@ export async function computeAndStoreDailyActiveMetrics(today: Date) {
   });
 
   logger.info(
-    `✅ Stored active metrics for ${today.toISOString().split("T")[0]}`,
+    `✅ Stored active metrics for ${today.toISOString().split("T")[0]}`
   );
 }

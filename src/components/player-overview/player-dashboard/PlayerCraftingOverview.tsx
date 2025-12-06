@@ -39,7 +39,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
     const key = res.toLowerCase() as keyof RegionLiquidityInfo;
     resourceAvailableMap[res] = liquidityInfo.reduce(
       (sum, r) => sum + (Number(r[key]) || 0),
-      0,
+      0
     );
   });
 
@@ -48,7 +48,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
       ([resource, needed]) => {
         const available = resourceAvailableMap[resource] ?? 0;
         return available / needed;
-      },
+      }
     );
 
     return Math.floor(Math.min(...possibleCounts));
@@ -56,7 +56,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
 
   const getMissingResources = (
     requirements: Record<string, number>,
-    maxCraftable: number,
+    maxCraftable: number
   ): React.ReactNode => {
     // Subtract used resources from available
     const remainingAfterCraft = Object.entries(requirements).reduce(
@@ -65,7 +65,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
         acc[resource] = available - needed * maxCraftable;
         return acc;
       },
-      {} as Record<string, number>,
+      {} as Record<string, number>
     );
 
     // Determine what's missing to craft ONE MORE item
@@ -138,7 +138,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
               icon={RESOURCE_ICON_MAP[itemKey]}
               title={itemKey}
               number={Number(
-                balances.find((b) => b.token === itemKey)?.balance ?? 0,
+                balances.find((b) => b.token === itemKey)?.balance ?? 0
               )}
               creatable={`${count}x`}
               tooltip_craft={tooltip}

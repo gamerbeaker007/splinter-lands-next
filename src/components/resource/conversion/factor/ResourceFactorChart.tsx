@@ -32,7 +32,7 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
         marker: { size: 6 },
         hovertemplate: `<b>%{x}</b><br>${symbol} factor: %{y}<extra></extra>`,
       };
-    },
+    }
   );
 
   const layout: Partial<Layout> = {

@@ -22,7 +22,7 @@ export const RarityResourceCompareChart = () => {
 
   // For each rarity, create a bar trace for production and one for consumption
   const rarityOptions = plotRarityOptions.filter(
-    (rarity) => rarity !== "mythic",
+    (rarity) => rarity !== "mythic"
   );
 
   for (const rarity of rarityOptions) {
@@ -37,7 +37,7 @@ export const RarityResourceCompareChart = () => {
       name: rarity,
       x: PRODUCING_RESOURCES,
       y: PRODUCING_RESOURCES.map(
-        (resource) => summary.production?.[resource] ?? 0,
+        (resource) => summary.production?.[resource] ?? 0
       ),
       marker: { color: RarityColor[rarity] || "blue" },
     });
@@ -47,7 +47,7 @@ export const RarityResourceCompareChart = () => {
       name: rarity,
       x: NATURAL_RESOURCES,
       y: NATURAL_RESOURCES.map(
-        (resource) => summary.consumption?.[resource] ?? 0,
+        (resource) => summary.consumption?.[resource] ?? 0
       ),
       marker: { color: RarityColor[rarity] || "blue" },
     });

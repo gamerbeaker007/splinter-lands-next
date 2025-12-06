@@ -32,7 +32,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
       name: resource,
       marker: { color: RESOURCE_COLOR_MAP[resource] || "black" },
       barmode: "group",
-    }),
+    })
   );
 
   return (

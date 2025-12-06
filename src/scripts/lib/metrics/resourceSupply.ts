@@ -19,7 +19,7 @@ export async function computeAndStoreTotalSupply(today: Date) {
       const rows = await fetchResourceSupply(resource);
       const totalSupply = rows.reduce(
         (acc, row) => acc + Number(row.amount || 0),
-        0,
+        0
       );
 
       return {
@@ -27,7 +27,7 @@ export async function computeAndStoreTotalSupply(today: Date) {
         resource,
         total_supply: BigInt(Math.round(totalSupply)),
       };
-    }),
+    })
   );
 
   for (const { date, resource, total_supply } of results) {
@@ -50,6 +50,6 @@ export async function computeAndStoreTotalSupply(today: Date) {
   }
 
   logger.info(
-    `✅ Stored resource supply for ${today.toISOString().split("T")[0]}`,
+    `✅ Stored resource supply for ${today.toISOString().split("T")[0]}`
   );
 }

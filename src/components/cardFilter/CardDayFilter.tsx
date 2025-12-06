@@ -13,7 +13,7 @@ export default function CardDayFilter({ title, filterKey }: Props) {
   const { cardFilters, setCardFilters } = useCardFilters();
 
   const [localValue, setLocalValue] = useState<string>(
-    cardFilters[filterKey]?.toString() ?? "",
+    cardFilters[filterKey]?.toString() ?? ""
   );
 
   const commitValue = () => {

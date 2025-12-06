@@ -59,13 +59,13 @@ export async function POST(req: Request) {
     logError("Failed to load active data", err);
     return NextResponse.json(
       { error: "Failed to load active data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }
 
 function orderPerResource(
-  perResource: Record<string, RegionResourcePP>,
+  perResource: Record<string, RegionResourcePP>
 ): Record<string, RegionResourcePP> {
   const ordered: Partial<Record<string, RegionResourcePP>> = {};
   for (const res of DEFAULT_ORDER_RESOURCES) {

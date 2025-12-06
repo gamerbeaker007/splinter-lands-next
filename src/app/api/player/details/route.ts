@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   if (!player) {
     return NextResponse.json(
       { error: "Missing 'player' parameter" },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
     const isNotFound = message.toLowerCase().includes("not found");
     return NextResponse.json(
       { error: message },
-      { status: isNotFound ? 404 : 501 },
+      { status: isNotFound ? 404 : 501 }
     );
   }
 }

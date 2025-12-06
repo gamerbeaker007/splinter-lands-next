@@ -27,7 +27,7 @@ splBaseClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
  * Helper function to get the JWT token from cookies in server-side contexts
  */
 export async function getAuthorizationHeader(
-  player: string,
+  player: string
 ): Promise<Record<string, string> | undefined> {
   try {
     const cookieStore = await cookies();
@@ -49,7 +49,7 @@ export async function getAuthorizationHeader(
 export async function splLogin(
   username: string,
   timestamp: number,
-  signature: string,
+  signature: string
 ): Promise<LoginResponse> {
   const url = "players/v2/login";
 
@@ -148,7 +148,7 @@ export async function fetchMarketCardData() {
 
 export async function fetchPlayerBalances(
   player: string,
-  filterTypes: string[] = [],
+  filterTypes: string[] = []
 ): Promise<Balance[]> {
   const url = "/players/balances";
   logger.info(`Fetch balances for: ${player}, with filters: ${filterTypes}`);

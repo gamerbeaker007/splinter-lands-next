@@ -28,7 +28,7 @@ export default function RankingBarChart({
   const maxVal = Math.max(...values);
 
   const highlightY = sorted.map((d) =>
-    d.player === currentPlayer ? maxVal - (d[valueField] as number) : 0,
+    d.player === currentPlayer ? maxVal - (d[valueField] as number) : 0
   );
 
   const selectedRank = sorted.find((d) => d.player === currentPlayer)?.[

@@ -7,7 +7,7 @@ import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 async function computeAndStoreResource(
   date: Date,
   resource: string,
-  worksite_type?: string,
+  worksite_type?: string
 ) {
   const key = worksite_type ? `${resource} ${worksite_type}` : resource;
 
@@ -48,7 +48,7 @@ async function computeAndStoreResource(
     const costs = calcCostsV2(
       totalBasePPAfterEfficiency,
       1,
-      determineRecipe(resource),
+      determineRecipe(resource)
     );
 
     const data = {
@@ -77,15 +77,15 @@ export async function computeAndStoreResourceProduction(today: Date) {
   try {
     await Promise.all(
       PRODUCING_RESOURCES.map((resource) =>
-        computeAndStoreResource(today, resource),
-      ),
+        computeAndStoreResource(today, resource)
+      )
     );
 
     await computeAndStoreResource(today, "TAX", "CASTLE");
     await computeAndStoreResource(today, "TAX", "KEEP");
 
     logger.info(
-      `✅ Stored resource production for ${today.toISOString().split("T")[0]}`,
+      `✅ Stored resource production for ${today.toISOString().split("T")[0]}`
     );
   } catch (err) {
     logError("❌ Resource production batch failed", err);

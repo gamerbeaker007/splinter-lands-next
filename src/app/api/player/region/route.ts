@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const playerData: DeedComplete[] = await getPlayerData(
       player,
       filters,
-      force,
+      force
     );
 
     if (!playerData)
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     logError("Failed to load player data", err);
     return NextResponse.json(
       { error: "Failed to load player data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

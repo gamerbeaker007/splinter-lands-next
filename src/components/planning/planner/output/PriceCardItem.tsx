@@ -37,13 +37,13 @@ export default function PriceCardItem({
   const editionName = findCardEditionNameByName(
     cardDetails,
     cardInfo?.name || "Unknown",
-    cardInfo?.set || "chaos",
+    cardInfo?.set || "chaos"
   );
 
   const image = getCardImgV2(
     cardInfo?.name || "Unknown",
     editionName,
-    cardInfo?.foil as CardFoil,
+    cardInfo?.foil as CardFoil
   );
 
   return (

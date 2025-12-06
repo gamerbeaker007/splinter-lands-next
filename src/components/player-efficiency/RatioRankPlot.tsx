@@ -57,10 +57,10 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
       ? row.player === currentPlayer
         ? "red"
         : "rgba(0,0,0,0)"
-      : "steelblue",
+      : "steelblue"
   );
   const borderColors = df.map((row) =>
-    highlightEnabled && row.player === currentPlayer ? "red" : "white",
+    highlightEnabled && row.player === currentPlayer ? "red" : "white"
   );
 
   const shapes: Partial<Shape>[] = [];
@@ -89,7 +89,7 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
         y0: yVal,
         y1: yVal,
         line: { color: "red", width: 2, dash: "dash" },
-      },
+      }
     );
   }
 

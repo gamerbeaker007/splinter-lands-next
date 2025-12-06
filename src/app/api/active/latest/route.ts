@@ -13,7 +13,7 @@ export async function GET() {
     logError("Failed to load latest data", err);
     return NextResponse.json(
       { error: "Failed to load latest data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

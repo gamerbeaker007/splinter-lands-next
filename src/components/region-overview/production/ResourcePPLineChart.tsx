@@ -16,7 +16,7 @@ const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
       (acc[entry.token_symbol] ||= []).push(entry);
       return acc;
     },
-    {},
+    {}
   );
 
   const traces: Partial<ScatterData>[] = Object.entries(grouped).map(
@@ -29,7 +29,7 @@ const ResourcePPLineChart: React.FC<Props> = ({ data }) => {
         color: RESOURCE_COLOR_MAP[resource] || "#ccc",
       },
       type: "scatter",
-    }),
+    })
   );
 
   return (
