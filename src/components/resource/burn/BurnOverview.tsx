@@ -40,7 +40,7 @@ export default function BurnOverview({ latestData }: Props) {
   return (
     <Box mb={3} flex={1}>
       <Typography variant="h5" mb={2}>
-        Token Burn Overview
+        Cards Burned For Tokens Overview
       </Typography>
       <Typography variant="body2" color="text.secondary" mb={2}>
         Latest data from {new Date(date).toLocaleDateString()}

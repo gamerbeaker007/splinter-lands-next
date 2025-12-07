@@ -54,12 +54,12 @@ export default function BurnChart({ data }: BurnChartProps) {
   });
 
   const layout: Partial<Plotly.Layout> = {
-    title: { text: "Daily Burned Token Balances" },
+    title: { text: "Daily Burned Cards For Tokens" },
     xaxis: {
       title: { text: "Date" },
     },
     yaxis: {
-      title: { text: "Tokens Burned" },
+      title: { text: "Amount" },
     },
     hovermode: "x unified",
   };
