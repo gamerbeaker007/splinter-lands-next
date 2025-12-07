@@ -92,6 +92,9 @@ export const title_emissary_icon_url = `${WEB_URL}website/icons/icon_active_emis
 
 export const dec_icon_url = `${WEB_URL}website/icon_dec.png`;
 export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
+export const glint_icon_url = `${WEB_URL}website/icons/icon_resource_glint.png`;
+export const cinder_icon_url = `${WEB_URL}website/icons/img_resource_cinder.webp`;
+export const merits_icon_url = `${WEB_URL}website/icons/img_merit_256.png`;
 
 export const alert_gif_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23vsb3F8eJic8GixxxZEDupcjbm63GJEg6JRSn9QroYcV3hdEsjPqCp4VuoxvfDC6SfpW.gif";

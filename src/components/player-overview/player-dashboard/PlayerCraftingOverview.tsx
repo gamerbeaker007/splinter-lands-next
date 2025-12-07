@@ -1,11 +1,11 @@
-import { Box, Typography } from "@mui/material";
-import { InfoCreatableItem } from "./InfoItemWithCraftable";
-import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
-import { Balance } from "@/types/balance";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
+import { SplBalance } from "@/types/spl/balance";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { Box, Typography } from "@mui/material";
 import Tooltip from "@mui/material/Tooltip";
 import React from "react"; // Replace with your actual import
+import { InfoCreatableItem } from "./InfoItemWithCraftable";
 
 const RESOURCES = [
   "GRAIN",
@@ -25,7 +25,7 @@ const CRAFT_REQUIREMENTS = {
 
 type Props = {
   liquidityInfo: RegionLiquidityInfo[];
-  balances: Balance[];
+  balances: SplBalance[];
 };
 
 export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {

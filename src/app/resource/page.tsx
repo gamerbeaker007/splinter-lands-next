@@ -1,5 +1,6 @@
 "use client";
 import NavTabs from "@/components/nav-tabs/NavTabs";
+import BurnPage from "@/components/resource/burn/BurnPage";
 import { ConversionPage } from "@/components/resource/conversion/ConversionPage";
 import { SupplyPage } from "@/components/resource/supply/SupplyPage";
 import TradeHubPositionPage from "@/components/resource/trade-hub-positions/TradeHubPositionsPage";
@@ -17,6 +18,11 @@ const pages: Page[] = [
     key: "tradehub-pos",
     label: "TradeHub Positions",
     component: <TradeHubPositionPage />,
+  },
+  {
+    key: "burn",
+    label: "Burned Resources 🔥",
+    component: <BurnPage />,
   },
 ];
 
