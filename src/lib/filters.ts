@@ -1,10 +1,10 @@
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { SortOptionKey, SortDirection } from "@/types/sorting";
+import { SortDirection, SortOptionKey } from "@/types/sorting";
 
 function isInFilter(
   filter: ReadonlyArray<string | number> | undefined,
-  value: unknown,
+  value: unknown
 ): boolean {
   if (!filter?.length) return true;
   if (typeof value === "string" || typeof value === "number") {
@@ -16,7 +16,7 @@ function isInFilter(
 function inRange(
   value: number | null | undefined,
   min?: number | null,
-  max?: number | null,
+  max?: number | null
 ): boolean {
   // If both min/max are empty => no filtering
   const hasMin = typeof min === "number";
@@ -33,7 +33,7 @@ function inRange(
 
 export function filterDeeds(
   data: DeedComplete[],
-  filters: FilterInput,
+  filters: FilterInput
 ): DeedComplete[] {
   return data.filter((deed) => {
     if (!isInFilter(filters.filter_regions, deed.region_number)) return false;
@@ -60,12 +60,24 @@ export function filterDeeds(
         return false;
     }
 
+    if (filters.filter_has_land_ability !== undefined) {
+      const hasAnyLandAbilities =
+        (deed.stakingDetail?.card_bloodlines_boost ?? 0) > 0 ||
+        (deed.stakingDetail?.dec_stake_needed_discount ?? 0) > 0 ||
+        (deed.stakingDetail?.grain_food_discount ?? 0) > 0 ||
+        (deed.stakingDetail?.card_abilities_boost ?? 0) > 0 ||
+        (deed.stakingDetail?.is_energized ?? false) ||
+        (deed.stakingDetail?.has_labors_luck ?? false);
+
+      if (filters.filter_has_land_ability !== hasAnyLandAbilities) return false;
+    }
+
     const basePP = deed.stakingDetail?.total_base_pp_after_cap;
     if (
       !inRange(
         basePP,
         filters.filter_base_pp_min ?? null,
-        filters.filter_base_pp_max ?? null,
+        filters.filter_base_pp_max ?? null
       )
     ) {
       return false;
@@ -76,7 +88,7 @@ export function filterDeeds(
       !inRange(
         boostedPP,
         filters.filter_boosted_pp_min ?? null,
-        filters.filter_boosted_pp_max ?? null,
+        filters.filter_boosted_pp_max ?? null
       )
     ) {
       return false;
@@ -88,7 +100,7 @@ export function filterDeeds(
 
 export function sortDeeds(
   deeds: DeedComplete[],
-  sorting?: { key: SortOptionKey; direction: SortDirection },
+  sorting?: { key: SortOptionKey; direction: SortDirection }
 ): DeedComplete[] {
   if (!sorting) return deeds;
 
@@ -114,7 +126,7 @@ export function sortDeeds(
 
 function getSortValue(
   deed: DeedComplete,
-  key: SortOptionKey,
+  key: SortOptionKey
 ): string | number | undefined {
   switch (key) {
     case "regionNumber":

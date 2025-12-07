@@ -13,7 +13,7 @@ export function useRegionTaxInfo(filters?: FilterInput) {
   const filtersKey = useMemo<FilterInput>(() => filters ?? {}, [filters]);
 
   async function fetchRegionTaxImpl(
-    filters: FilterInput,
+    filters: FilterInput
   ): Promise<RegionTax[]> {
     const url = "/api/region/tax";
     const res = await fetch(url, {

@@ -52,7 +52,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
       const costs: Record<Resource, number> = calcCostsV2(
         basePP,
         siteEfficiency,
-        resourceRecipe,
+        resourceRecipe
       );
 
       Object.entries(costs).forEach(([resource, value]) => {
@@ -69,7 +69,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
 export function prepareSummary(
   data: DeedComplete[],
   includeTaxes: boolean,
-  includeTransferFee: boolean,
+  includeTransferFee: boolean
 ): RegionSummary[] {
   const summaryMap = getRegionSummary(data);
 

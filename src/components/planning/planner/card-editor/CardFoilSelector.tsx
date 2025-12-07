@@ -4,10 +4,10 @@ import {
   cardFoilModifiers,
   cardFoilModifiersLandCard,
   cardFoilOptions,
-  CardSetName,
 } from "@/types/planner";
 import { TbCardsFilled } from "react-icons/tb";
 
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   Box,
   capitalize,
@@ -33,7 +33,7 @@ const foilStyle: Record<
 
 export type Props = {
   value: CardFoil;
-  set: CardSetName;
+  set: CardSetNameLandValid;
   onChange: (tier: CardFoil) => void;
 };
 
@@ -93,7 +93,7 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
     );
   }
 
-  const isLandSet = set === "land";
+  const isLandSet = set === ("land" as CardSetNameLandValid);
   const multiplier = isLandSet
     ? cardFoilModifiersLandCard[value]
     : cardFoilModifiers[value];

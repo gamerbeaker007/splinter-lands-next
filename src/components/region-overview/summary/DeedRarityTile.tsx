@@ -41,7 +41,7 @@ export default function DeedRarityTile({
                   : land_mythic_icon_url
                 : land_default_off_icon_url_placeholder.replace(
                     "__NAME__",
-                    type.toLowerCase(),
+                    type.toLowerCase()
                   );
             return (
               <SummaryTile

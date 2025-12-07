@@ -1,5 +1,6 @@
+import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
-import { CardRarity, CardSetName } from "@/types/planner";
+import { CardRarity } from "@/types/planner";
 
 export type FilterInput = {
   filter_regions?: number[];
@@ -13,6 +14,7 @@ export type FilterInput = {
   filter_players?: string[];
   filter_developed?: boolean;
   filter_under_construction?: boolean;
+  filter_has_land_ability?: boolean;
   filter_base_pp_min?: number | null;
   filter_base_pp_max?: number | null;
   filter_boosted_pp_min?: number | null;
@@ -30,7 +32,7 @@ export type EnableFilterOptions = {
 };
 
 export type CardFilterInput = {
-  filter_set?: CardSetName[];
+  filter_set?: CardSetNameLandValid[];
   filter_rarity?: CardRarity[];
   filter_on_land?: boolean;
   filter_in_set?: boolean;

@@ -27,7 +27,7 @@ export const ResourcePPChart = ({
     if (!perLocation) return null;
     // Sort locations by boostedPP descending
     const sortedEntries = Object.entries(perLocation).sort(
-      ([, a], [, b]) => b.boostedPP - a.boostedPP,
+      ([, a], [, b]) => b.boostedPP - a.boostedPP
     );
     traces.push({
       type: "bar",

@@ -27,7 +27,7 @@ export type Props = {
 
 export function terrainBonusPct(
   terrain: DeedType,
-  element: CardElement,
+  element: CardElement
 ): number {
   if (!terrain) return 0;
   return TERRAIN_BONUS[terrain]?.[element] ?? 0;
@@ -73,7 +73,7 @@ export function CardElementSelector({ value, deedType, onChange }: Props) {
   const renderIcon = (tier: CardElement, size = 24) => {
     const icon = land_default_element_icon_url_placeholder.replace(
       "__NAME__",
-      tier.toLowerCase(),
+      tier.toLowerCase()
     );
     return (
       <Image

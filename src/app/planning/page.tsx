@@ -60,7 +60,7 @@ export default function PlanningPage() {
         return next;
       });
     },
-    [],
+    []
   );
 
   const addPlan = useCallback(() => {
@@ -85,7 +85,7 @@ export default function PlanningPage() {
   };
   const handleZoomChange = (
     _: React.MouseEvent<HTMLElement>,
-    value: ZoomKey | null,
+    value: ZoomKey | null
   ) => {
     if (value) setLgZoom(value);
   };

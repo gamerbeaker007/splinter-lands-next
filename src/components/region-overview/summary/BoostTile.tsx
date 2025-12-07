@@ -92,7 +92,7 @@ export default function BoostTile({
               if (!meta) return null;
               const image = land_default_off_icon_url_placeholder.replace(
                 "__NAME__",
-                meta.name.toLowerCase(),
+                meta.name.toLowerCase()
               );
               return (
                 <SummaryTile

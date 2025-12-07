@@ -18,7 +18,7 @@ export function TradeHubTokenShareChart({
 }: Props) {
   const totalShare = playerTradeHubPositions.reduce(
     (sum, p) => sum + (p.share_percentage ?? 0),
-    0,
+    0
   );
 
   const undefinedData = 100 - totalShare;
@@ -27,7 +27,7 @@ export function TradeHubTokenShareChart({
   const totalResource =
     playerTradeHubPositions.reduce(
       (sum, p) => sum + (p.resource_quantity ?? 0),
-      0,
+      0
     ) /
     (totalShare / 100);
 
@@ -36,7 +36,7 @@ export function TradeHubTokenShareChart({
     (totalShare / 100);
 
   const sorted = [...playerTradeHubPositions].sort(
-    (a, b) => (b.share_percentage ?? 0) - (a.share_percentage ?? 0),
+    (a, b) => (b.share_percentage ?? 0) - (a.share_percentage ?? 0)
   );
 
   const top10 = sorted.slice(0, 10);
@@ -44,7 +44,7 @@ export function TradeHubTokenShareChart({
 
   const othersShare = rest.reduce(
     (sum, p) => sum + (p.share_percentage ?? 0),
-    0,
+    0
   );
 
   const labels: string[] = [];
@@ -125,19 +125,19 @@ export function TradeHubTokenShareChart({
             <InfoItem
               title={"DEC Earned Total:"}
               text={formatNumberWithSuffix(
-                currentPlayerData.total_fees_earned_dec,
+                currentPlayerData.total_fees_earned_dec
               )}
             />
             <InfoItem
               title={"Resources Earned 1d:"}
               text={formatNumberWithSuffix(
-                currentPlayerData.fees_earned_resource_1,
+                currentPlayerData.fees_earned_resource_1
               )}
             />
             <InfoItem
               title={"Resources Earned Total:"}
               text={formatNumberWithSuffix(
-                currentPlayerData.total_fees_earned_resource,
+                currentPlayerData.total_fees_earned_resource
               )}
             />
           </Box>
@@ -155,7 +155,7 @@ export function TradeHubTokenShareChart({
             hoverinfo: "label+value+percent",
             hole: 0.3,
             pull: labels.map((label) =>
-              label === currentPlayerData?.player ? 0.15 : 0,
+              label === currentPlayerData?.player ? 0.15 : 0
             ),
           },
         ]}

@@ -1,5 +1,5 @@
 import { LoginResponse } from "@/types/auth/auth";
-import { Balance } from "@/types/balance";
+import { SplBalance } from "@/types/spl/balance";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
@@ -27,7 +27,7 @@ splBaseClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
  * Helper function to get the JWT token from cookies in server-side contexts
  */
 export async function getAuthorizationHeader(
-  player: string,
+  player: string
 ): Promise<Record<string, string> | undefined> {
   try {
     const cookieStore = await cookies();
@@ -49,7 +49,7 @@ export async function getAuthorizationHeader(
 export async function splLogin(
   username: string,
   timestamp: number,
-  signature: string,
+  signature: string
 ): Promise<LoginResponse> {
   const url = "players/v2/login";
 
@@ -148,8 +148,8 @@ export async function fetchMarketCardData() {
 
 export async function fetchPlayerBalances(
   player: string,
-  filterTypes: string[] = [],
-): Promise<Balance[]> {
+  filterTypes: string[] = []
+): Promise<SplBalance[]> {
   const url = "/players/balances";
   logger.info(`Fetch balances for: ${player}, with filters: ${filterTypes}`);
 
@@ -167,7 +167,25 @@ export async function fetchPlayerBalances(
   if (filterTypes.length === 0) {
     return data;
   }
-  return data.filter((entry: Balance) => {
+  return data.filter((entry: SplBalance) => {
     return filterTypes.some((filter) => entry.token.startsWith(filter));
   });
+}
+
+export async function fetchBurnedBalances(): Promise<SplBalance[]> {
+  const url = "/players/balances";
+  const player = "$BURNED_CARDS";
+  logger.info(`Fetch balances for: ${player}`);
+
+  const res = await splBaseClient.get(url, {
+    params: { players: player },
+  });
+
+  const data = res.data;
+
+  if (!Array.isArray(data)) {
+    logger.error("Invalid response format from Splinterlands API", data);
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+  return data;
 }

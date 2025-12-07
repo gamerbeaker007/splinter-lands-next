@@ -10,7 +10,7 @@ type CardFilterContextType = {
 };
 
 const CardFilterContext = createContext<CardFilterContextType | undefined>(
-  undefined,
+  undefined
 );
 
 export const CardFilterProvider = ({ children }: { children: ReactNode }) => {

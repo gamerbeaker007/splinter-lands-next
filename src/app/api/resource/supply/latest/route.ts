@@ -16,7 +16,7 @@ export async function GET() {
       date,
       supply,
       resourceTracking,
-      tradeHubSupply,
+      tradeHubSupply
     );
 
     return NextResponse.json(output1, { status: 200 });

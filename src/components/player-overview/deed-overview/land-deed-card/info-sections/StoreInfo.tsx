@@ -31,7 +31,7 @@ export const StoreInfo: React.FC<Props> = ({
       }}
     >
       <Tooltip title={toolTip}>
-        <Box width={300}>
+        <Box width={275}>
           <ProgressBar
             percentage={percentage}
             label={label}

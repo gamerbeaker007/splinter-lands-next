@@ -13,7 +13,7 @@ export async function GET() {
 
     const uniqueDates = [
       ...new Set(
-        supply.map((s) => new Date(s.date).toISOString().split("T")[0]),
+        supply.map((s) => new Date(s.date).toISOString().split("T")[0])
       ),
     ].sort();
 
@@ -21,20 +21,20 @@ export async function GET() {
 
     for (const date of uniqueDates) {
       const filteredSupply = supply.filter(
-        (s) => new Date(s.date).toISOString().split("T")[0] === date,
+        (s) => new Date(s.date).toISOString().split("T")[0] === date
       );
       const filteredTracking = resourceTracking.filter(
-        (r) => new Date(r.date).toISOString().split("T")[0] === date,
+        (r) => new Date(r.date).toISOString().split("T")[0] === date
       );
       const filteredTradeHub = tradeHubSupply.filter(
-        (t) => new Date(t.date).toISOString().split("T")[0] === date,
+        (t) => new Date(t.date).toISOString().split("T")[0] === date
       );
 
       const overview = computeResourceSupplyOverview(
         date,
         filteredSupply,
         filteredTracking,
-        filteredTradeHub,
+        filteredTradeHub
       );
 
       result.push(overview);

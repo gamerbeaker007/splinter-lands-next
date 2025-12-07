@@ -40,11 +40,11 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalBoostedPP = 0;
   let countEnergized = 0;
   let countLaborsLuck = 0;
-  let countAbilityBoost = 0;
+  const countAbilityBoost: Partial<Record<Resource, number>> = {};
   let countBloodlinesBoost = 0;
   let countFoodDiscount = 0;
   let countDecStakeDiscount = 0;
-  let totalAbilityBoostPP = 0;
+  const totalAbilityBoostPP: Partial<Record<Resource, number>> = {};
   let totalBloodlinesBoostPP = 0;
 
   for (const deed of deeds) {
@@ -92,13 +92,23 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 
       countEnergized += staking.is_energized ? 1 : 0;
       countLaborsLuck += staking.has_labors_luck ? 1 : 0;
-      countAbilityBoost += (staking.card_abilities_boost ?? 0 > 0) ? 1 : 0;
+      if (staking.card_abilities_boost != null) {
+        countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] =
+          (countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] ??
+            0) + (staking.card_abilities_boost > 0 ? 1 : 0);
+      }
       countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0 > 0) ? 1 : 0;
       countFoodDiscount += (staking.grain_food_discount ?? 0 > 0) ? 1 : 0;
       countDecStakeDiscount +=
         (staking.dec_stake_needed_discount ?? 0 > 0) ? 1 : 0;
 
-      totalAbilityBoostPP += staking.total_card_abilities_boost_pp ?? 0;
+      const abilityBoost = staking.total_card_abilities_boost_pp ?? 0;
+      if (abilityBoost > 0) {
+        const resource = deed.worksiteDetail?.token_symbol as Resource;
+        totalAbilityBoostPP[resource] =
+          (totalAbilityBoostPP[resource] ?? 0) + abilityBoost;
+      }
+
       totalBloodlinesBoostPP += staking.total_card_bloodlines_boost_pp ?? 0;
 
       const resource = deed.worksiteDetail?.token_symbol as Resource;
@@ -156,7 +166,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 }
 
 export async function getRegionSummary(
-  filters: FilterInput,
+  filters: FilterInput
 ): Promise<RegionSummary> {
   const blob = await getCachedRegionData();
   const filteredDeeds = filterDeeds(blob, filters);
@@ -204,12 +214,12 @@ export async function getActiveDeedCountByRegion(filters: FilterInput) {
 
   // Sort by active count descending
   return Object.fromEntries(
-    Object.entries(result).sort(([, a], [, b]) => b.active - a.active),
+    Object.entries(result).sort(([, a], [, b]) => b.active - a.active)
   );
 }
 
 export async function getAvailableFilterValues(
-  player: string | null,
+  player: string | null
 ): Promise<FilterInput> {
   let blob = await getCachedRegionData();
   if (player) {
@@ -261,7 +271,7 @@ async function getTaxInfo(deedUid: string) {
     const totalCapacity = taxDetails.capacity;
     const totalBalance = taxDetails.taxes.reduce(
       (sum, tax) => sum + tax.balance,
-      0,
+      0
     );
     const percentageDone = (totalBalance / totalCapacity) * 100;
     const infoStr = `${percentageDone.toFixed(2)}% Capacity`;
@@ -283,7 +293,7 @@ async function getTaxInfo(deedUid: string) {
 }
 
 export async function enrichWithProgressInfo(
-  deeds: DeedComplete[],
+  deeds: DeedComplete[]
 ): Promise<DeedComplete[]> {
   return Promise.all(
     deeds.map(async (deed) => {
@@ -294,20 +304,20 @@ export async function enrichWithProgressInfo(
             deed.worksiteDetail?.hours_since_last_op ?? 0,
             deed.worksiteDetail?.project_created_date ?? null,
             deed.worksiteDetail?.projected_end ?? null,
-            deed.stakingDetail?.total_harvest_pp ?? 0,
+            deed.stakingDetail?.total_harvest_pp ?? 0
           );
 
       return {
         ...deed,
         progressInfo,
       };
-    }),
+    })
   );
 }
 
 export function enrichWithProductionInfo(
   deeds: DeedComplete[],
-  prices: Prices,
+  prices: Prices
 ): Promise<DeedComplete[]> {
   return Promise.all(
     deeds.map(async (deed) => {
@@ -345,7 +355,7 @@ export function enrichWithProductionInfo(
 
         const totalProducedInDEC = produces.reduce(
           (sum, row) => sum + Number(row.buyPriceDEC || 0),
-          0,
+          0
         );
         const netDEC = totalProducedInDEC - sellConsumeDEC;
 
@@ -367,18 +377,18 @@ export function enrichWithProductionInfo(
           "sell",
           resource,
           production,
-          prices,
+          prices
         );
 
         const consumeCosts = calcConsumeCosts(
           st.total_base_pp_after_cap ?? 0,
           prices,
           ws.site_efficiency ?? 0,
-          ws.resource_recipe as unknown as ResourceRecipeItem[],
+          ws.resource_recipe as unknown as ResourceRecipeItem[]
         );
         const totalDECConsume = consumeCosts.reduce(
           (sum, row) => sum + Number(row.sellPriceDEC || 0),
-          0,
+          0
         );
         const netDEC = decIncomeSell - totalDECConsume;
 
@@ -401,7 +411,7 @@ export function enrichWithProductionInfo(
           productionInfo: productionIfo,
         };
       }
-    }),
+    })
   );
 }
 
@@ -411,7 +421,7 @@ export function getDeedsAlerts(deeds: DeedComplete[]): DeedAlertsInfo[] {
       (deed) =>
         deed.progressInfo !== undefined &&
         deed.progressInfo !== null &&
-        deed.progressInfo.percentageDone >= 100,
+        deed.progressInfo.percentageDone >= 100
     )
     .map((deed) => {
       return {
@@ -435,7 +445,7 @@ export function getDeedsAlerts(deeds: DeedComplete[]): DeedAlertsInfo[] {
 function ensureRegionBucket(
   result: Record<string, RegionTax>,
   regionUid: string,
-  regionNumber: number,
+  regionNumber: number
 ): RegionTax {
   if (!result[regionUid]) {
     result[regionUid] = {
@@ -466,7 +476,7 @@ function ensureTractBucket(region: RegionTax, tractNumber: number) {
 
 export function calculateRegionTax(
   deeds: DeedComplete[],
-  resourcePrices: Prices,
+  resourcePrices: Prices
 ): RegionTax[] {
   const result: Record<string, RegionTax> = {};
 
@@ -519,7 +529,7 @@ export function calculateRegionTax(
   for (const region of Object.values(result)) {
     // Region level
     for (const [token, rewardsPerHour] of Object.entries(
-      region.resourceRewardsPerHour,
+      region.resourceRewardsPerHour
     )) {
       const captureRate = region.castleOwner.captureRate ?? 0;
       const tax = rewardsPerHour * TAX_RATE * captureRate;
@@ -532,7 +542,7 @@ export function calculateRegionTax(
     for (const tract of Object.values(region.perTract)) {
       const captureRate = tract.keepOwner.captureRate ?? 0;
       for (const [token, rewardsPerHour] of Object.entries(
-        tract.resourceRewardsPerHour,
+        tract.resourceRewardsPerHour
       )) {
         const tax = rewardsPerHour * TAX_RATE * captureRate;
         const decPrice = resourcePrices[token] ?? 0;

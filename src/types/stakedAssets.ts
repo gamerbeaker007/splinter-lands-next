@@ -55,4 +55,8 @@ export type Card = {
   total_harvest_pp: string;
   work_per_hour: string;
   is_powered: boolean;
+  card_abilities_boost: string;
+  card_abilities_boost_pp: string;
+  card_bloodlines_boost: string;
+  card_bloodlines_boost_pp: string;
 };

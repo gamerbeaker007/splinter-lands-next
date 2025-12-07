@@ -22,7 +22,7 @@ export default function ActivityChart() {
   const activeBasedOnPP = data.map((row) => row.active_based_on_pp);
   const activeBasedOnInUse = data.map((row) => row.active_based_on_in_use);
   const percentage = data.map(
-    (row) => (row.active_based_on_pp / 150_000) * 100,
+    (row) => (row.active_based_on_pp / 150_000) * 100
   );
 
   return (

@@ -1,8 +1,8 @@
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   CardElement,
   CardFoil,
   CardRarity,
-  CardSetName,
   DeedType,
   PlotRarity,
   PlotStatus,
@@ -15,7 +15,8 @@ export type LowestCardPriceKey = {
   rarity: CardRarity;
   element: CardElement;
   foil: CardFoil;
-  set: CardSetName;
+  edition: number;
+  set: CardSetNameLandValid;
 };
 
 export type LowestTitlePriceKey = {

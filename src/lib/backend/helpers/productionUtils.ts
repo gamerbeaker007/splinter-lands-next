@@ -11,7 +11,7 @@ export function getProgressInfo(
   hoursSinceLastOp: number | null,
   projectCreatedDate: Date | string | null,
   projectedEndDate: Date | string | null,
-  boostedPP: number,
+  boostedPP: number
 ): ProgressInfo {
   if (validDate(projectedEndDate)) {
     return {
@@ -51,7 +51,7 @@ const epsilon = 1e-6;
 
 export function calculateLDERatio(
   total_dec: number,
-  total_dec_stake_in_use: number,
+  total_dec_stake_in_use: number
 ) {
   return Math.log10(total_dec / (total_dec_stake_in_use + epsilon));
 }

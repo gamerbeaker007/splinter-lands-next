@@ -3,13 +3,13 @@ import { useState, useCallback, useEffect } from "react";
 
 export function usePlayerDashboard(player: string) {
   const [playerOverview, setPlayerOverview] = useState<PlayerOverview | null>(
-    null,
+    null
   );
   const [loadingText, setLoadingText] = useState<string | null>(null);
 
   async function fetchPlayerDashboardData(
     player: string,
-    force: boolean,
+    force: boolean
   ): Promise<PlayerOverview> {
     const res = await fetch("/api/player/dashboard", {
       method: "POST",
@@ -34,7 +34,7 @@ export function usePlayerDashboard(player: string) {
         setLoadingText("An error occurred while loading data.");
       }
     },
-    [player],
+    [player]
   );
 
   useEffect(() => {

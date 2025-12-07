@@ -22,7 +22,7 @@ export default function FilterRarityIcon({ name }: FilterIconProps) {
       ? land_mythic_icon_url
       : land_default_off_icon_url_placeholder.replace(
           "__NAME__",
-          name.toLowerCase(),
+          name.toLowerCase()
         );
 
   const value = filters.filter_rarity;

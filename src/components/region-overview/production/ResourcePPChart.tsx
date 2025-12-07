@@ -14,7 +14,7 @@ type Props = {
 export default function ResourcePPChart({ data }: Props) {
   // Filter out Unknown Resource
   const resourceLabels = Object.keys(data).filter(
-    (r) => r !== "",
+    (r) => r !== ""
   ) as Resource[];
   const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
     const rawPP = data[resourceLabel].totalPP.basePP;
@@ -29,7 +29,7 @@ export default function ResourcePPChart({ data }: Props) {
   });
 
   const boostedValues = resourceLabels.map(
-    (resourceLabel) => data[resourceLabel].totalPP.boostedPP,
+    (resourceLabel) => data[resourceLabel].totalPP.boostedPP
   );
 
   return (

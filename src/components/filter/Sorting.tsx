@@ -43,7 +43,7 @@ export default function SortingFilter({ options = defaultSortOptions }: Props) {
 
   const handleDirectionChange = (
     _: React.MouseEvent<HTMLElement>,
-    newDirection: SortDirection | null,
+    newDirection: SortDirection | null
   ) => {
     if (!newDirection || !sortKey) return;
 

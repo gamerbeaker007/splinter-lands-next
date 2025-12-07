@@ -50,7 +50,7 @@ export default function TractAnalysisPage() {
   };
   const handleZoomChange = (
     _: React.MouseEvent<HTMLElement>,
-    value: ZoomKey | null,
+    value: ZoomKey | null
   ) => {
     if (value) setLgZoom(value);
   };
@@ -140,7 +140,7 @@ export default function TractAnalysisPage() {
       tax_owner: "",
       rewardsPerHour: {},
       production: {},
-    } as AccumulatedData,
+    } as AccumulatedData
   );
 
   return (

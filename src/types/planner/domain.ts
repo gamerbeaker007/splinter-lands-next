@@ -1,10 +1,10 @@
 import { Resource } from "@/constants/resource/resource";
+import { CardSetNameLandValid } from "../editions";
 import {
   CardBloodline,
   CardElement,
   CardFoil,
   CardRarity,
-  CardSetName,
   DeedType,
   MagicType,
   PlotRarity,
@@ -31,7 +31,7 @@ export interface PlotPlannerData {
 
 export interface SlotInput {
   id: number;
-  set: CardSetName;
+  set: CardSetNameLandValid;
   rarity: CardRarity;
   bcx: number; // 0..400
   foil: CardFoil;

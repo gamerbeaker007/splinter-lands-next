@@ -5,12 +5,12 @@ import { FilterInput } from "@/types/filters";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 
 export function mapRegionDataToDeedComplete(
-  data: RawRegionDataResponse,
+  data: RawRegionDataResponse
 ): DeedComplete[] {
   if (Object.entries(data.deeds).length === 0) return [];
 
   const worksiteMap = new Map(
-    data.worksite_details.map((w) => [w.deed_uid, w]),
+    data.worksite_details.map((w) => [w.deed_uid, w])
   );
   const stakingMap = new Map(data.staking_details.map((s) => [s.deed_uid, s]));
   return data.deeds.map((deed) => ({
@@ -23,7 +23,7 @@ export function mapRegionDataToDeedComplete(
 export async function getPlayerData(
   player: string,
   filters: FilterInput = {},
-  force = false,
+  force = false
 ): Promise<DeedComplete[]> {
   const raw = await getCachedPlayerData(player, force);
   if (raw.deeds.length > 0) {

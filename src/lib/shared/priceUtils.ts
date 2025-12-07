@@ -28,7 +28,7 @@ export interface PriceImpactResult {
 export const calculatePriceImpact = (
   X: number,
   totalX: number,
-  totalY: number,
+  totalY: number
 ): PriceImpactResult => {
   const constantProduct = totalX * totalY; // totalShares = k
 

@@ -14,7 +14,7 @@ export default function TopRegionsByResourceChart({ data }: Props) {
   const resourceTypes = Object.keys(data).filter((r) => r !== "");
 
   const [selectedResource, setSelectedResource] = useState<string | null>(
-    resourceTypes[0],
+    resourceTypes[0]
   );
 
   const handleSelect = (resource: string | null) => {

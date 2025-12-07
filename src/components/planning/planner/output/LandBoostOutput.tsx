@@ -3,24 +3,29 @@ import {
   determineGrainConsumeReduction,
   determineProductionBoost,
 } from "@/lib/frontend/utils/plannerCalcs";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
-  land_runi_power_core_icon_url,
+  dec_stake_discount_icon_url,
+  energized_icon_url,
+  labors_luck_icon_url,
+  rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
-import { PlotPlannerData, resourceWorksiteMap } from "@/types/planner";
+import {
+  bountifulResourceIconMap,
+  PlotPlannerData,
+  resourceWorksiteMap,
+} from "@/types/planner";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import { PiCloverFill } from "react-icons/pi";
 
 type Props = {
   plotPlannerData: PlotPlannerData;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const sizeIcon = 20;
+const sizeIcon = 30;
 const fontSize = "0.8rem";
 const fontColor = "common.white";
 
@@ -45,12 +50,12 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
 
   // Check for Replace Power Core
   const hasReplacePowerCore = cardInput.some(
-    (card) => card.landBoosts?.replacePowerCore,
+    (card) => card.landBoosts?.replacePowerCore
   );
 
   // Count Labor Luck
   const laborLuckCount = cardInput.filter(
-    (card) => card.landBoosts?.laborLuck,
+    (card) => card.landBoosts?.laborLuck
   ).length;
 
   // Calculate total bloodline boost including details
@@ -67,7 +72,7 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
         width: w,
         bgcolor: "rgba(0,0,0,0.4)",
         p: 1,
-        minHeight: "145px",
+        minHeight: "110px",
       }}
     >
       <Stack spacing={1}>
@@ -75,18 +80,25 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           Land Boosts:
         </Typography>
         {/* DEC Discount */}
-        <Stack direction="row" spacing={0.75} flexWrap="wrap">
+        <Stack direction="row" spacing={1} flexWrap="wrap">
           {totalDecDiscount > 0 && (
-            <Tooltip title="Dark Discount">
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
+            <Tooltip title="Dark Discount" placement="top">
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
                 <Image
-                  src={RESOURCE_ICON_MAP.DEC}
+                  src={dec_stake_discount_icon_url}
                   alt="DEC"
                   width={sizeIcon}
                   height={sizeIcon}
                 />
                 <Typography fontSize={fontSize} color={fontColor}>
-                  {formatPercentage(totalDecDiscount)}
+                  -{formatPercentage(totalDecDiscount)}
                 </Typography>
               </Box>
             </Tooltip>
@@ -96,11 +108,19 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           {productionBoosts > 0 && (
             <Tooltip
               key={resource}
+              placement="top"
               title={`Bountiful ${resource.charAt(0).toUpperCase() + resource.slice(1).toLowerCase()}`}
             >
-              <Box sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
                 <Image
-                  src={RESOURCE_ICON_MAP[resource]}
+                  src={bountifulResourceIconMap[resource] ?? ""}
                   alt={resource}
                   width={sizeIcon}
                   height={sizeIcon}
@@ -115,12 +135,17 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
           {/* Consumption Discounts */}
           <Stack spacing={0.5}>
             {totalGrainDiscount > 0 && (
-              <Tooltip title="Rationing">
+              <Tooltip title="Rationing" placement="top">
                 <Box
-                  sx={{ display: "flex", alignItems: "flex-start", gap: 0.5 }}
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
                 >
                   <Image
-                    src={RESOURCE_ICON_MAP["GRAIN"]}
+                    src={rationing_icon_url}
                     alt={"GRAIN"}
                     width={sizeIcon}
                     height={sizeIcon}
@@ -132,15 +157,20 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
               </Tooltip>
             )}
           </Stack>
-        </Stack>
 
-        <Stack direction="row" spacing={5} flexWrap="wrap">
           {/* Replace Power Core */}
           {hasReplacePowerCore && (
-            <Tooltip title="Energized">
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Tooltip title="Energized" placement="top">
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
                 <Image
-                  src={land_runi_power_core_icon_url}
+                  src={energized_icon_url}
                   alt={"Power Core"}
                   width={sizeIcon}
                   height={sizeIcon}
@@ -154,9 +184,21 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
 
           {/* Labor Luck */}
           {laborLuckCount > 0 && (
-            <Tooltip title="Labor's Luck">
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-                <PiCloverFill color="green" size={sizeIcon} />
+            <Tooltip title="Labor's Luck" placement="top">
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
+                <Image
+                  src={labors_luck_icon_url}
+                  alt={"Labor's Luck"}
+                  width={sizeIcon}
+                  height={sizeIcon}
+                />{" "}
                 <Typography fontSize={fontSize} color={fontColor}>
                   {laborLuckCount}
                 </Typography>
@@ -181,7 +223,14 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
               </Box>
             }
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 0.5,
+              }}
+            >
               <Image
                 src={bloodline_icon_url}
                 alt={"Toil and Kin"}

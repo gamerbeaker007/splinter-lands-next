@@ -160,7 +160,7 @@ export function ResourceCard({ resourceName, row }: Props) {
                   {formatNumberWithSuffix(Number(val))}
                 </Typography>
               </Box>
-            ) : null,
+            ) : null
           )}
         </Box>
       </CardContent>

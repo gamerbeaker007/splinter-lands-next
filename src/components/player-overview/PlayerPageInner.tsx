@@ -75,7 +75,7 @@ function PlayerPageContent() {
         component: <CollectionOverview player={selectedPlayer} />,
       },
     ],
-    [selectedPlayer],
+    [selectedPlayer]
   );
 
   const tabKey = useMemo(() => {
@@ -107,7 +107,7 @@ function PlayerPageContent() {
       }
 
       void fetch(
-        `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`,
+        `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`
       )
         .then(async (res) => {
           const json = await res.json();

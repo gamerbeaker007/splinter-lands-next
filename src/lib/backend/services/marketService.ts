@@ -1,9 +1,6 @@
 import { Deed } from "@/generated/prisma";
-import {
-  determineCardInfo,
-  findCardElement,
-  findCardSet,
-} from "@/lib/utils/cardUtil";
+import { determineCardInfo, findCardElement } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
   cardFoilOptions,
   DeedType,
@@ -32,7 +29,7 @@ import { cache } from "../cache/cache";
 
 export async function getCachedMarketData(
   cardDetails: SplCardDetails[],
-  force = false,
+  force = false
 ): Promise<LowestMarketData> {
   const key = `market-data`;
   if (!force) {
@@ -67,17 +64,17 @@ export async function getCachedMarketData(
 
 export function getLowestCardPriceList(
   cardDetails: SplCardDetails[],
-  cards: SplMarketCardData[],
+  cards: SplMarketCardData[]
 ): LowestCardPriceEntry[] {
   const map = new Map<string, LowestCardPriceEntry>();
   for (const card of cards) {
     const { name, rarity } = determineCardInfo(
       card.card_detail_id,
-      cardDetails,
+      cardDetails
     );
     const element = findCardElement(cardDetails, card.card_detail_id);
-    const set = findCardSet(cardDetails, card.card_detail_id, card.edition);
     const foil = cardFoilOptions[card.foil];
+    const set = editionMap[card.edition].setName;
     const key = `${rarity}|${element}|${foil}|${set}`;
     if (
       !map.has(key) ||
@@ -86,7 +83,8 @@ export function getLowestCardPriceList(
       map.set(key, {
         rarity,
         element,
-        set,
+        edition: card.edition,
+        set: set as CardSetNameLandValid,
         foil,
         low_price_bcx: card.low_price_bcx,
         card_detail_id: card.card_detail_id,
@@ -130,7 +128,7 @@ export function getLowestDeedPriceList(deeds: Deed[]): LowestDeedPriceEntry[] {
 }
 
 export function getLowestTotemPriceList(
-  items: SplMarketAsset[],
+  items: SplMarketAsset[]
 ): LowestTotemPriceEntry[] {
   const result: Record<string, LowestTotemPriceEntry> = {};
   for (const item of items) {
@@ -160,7 +158,7 @@ export function getLowestTotemPriceList(
 }
 
 export function getLowestTitlePriceList(
-  items: SplMarketAsset[],
+  items: SplMarketAsset[]
 ): LowestTitlePriceEntry[] {
   const result: Record<Exclude<TitleTier, "none">, LowestTitlePriceEntry> = {};
 

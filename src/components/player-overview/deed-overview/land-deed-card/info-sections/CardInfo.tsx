@@ -32,7 +32,7 @@ export const CardInfo: React.FC<Props> = ({
         {stakedAssets?.cards?.map((card) => {
           const { name, rarity } = determineCardInfo(
             card.card_detail_id,
-            cardDetails,
+            cardDetails
           );
 
           if (name === "Runi") return null;

@@ -49,7 +49,7 @@ const TradeHubLineChart: React.FC<Props> = ({ data, type }) => {
       mode: "lines+markers",
       name: resource,
       line: { color: RESOURCE_COLOR_MAP[resource] || "black" },
-    }),
+    })
   );
 
   return (

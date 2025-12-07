@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         totalBasePP,
         prices,
         siteEfficiency,
-        resourceRecipe,
+        resourceRecipe
       );
 
       // Initialize rarity entry if not present
@@ -67,7 +67,7 @@ export async function POST(req: Request) {
     logError("Failed to load rarity compare data", err);
     return NextResponse.json(
       { error: "Failed to load rarity compare data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

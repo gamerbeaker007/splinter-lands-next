@@ -5,7 +5,7 @@ import { RegionSummary } from "@/types/resource";
 
 export function computeNetValues(
   summary: RegionSummary[],
-  unitPrices: Prices,
+  unitPrices: Prices
 ): { dec_net: Record<Resource, number>; total_dec: number } {
   const dec_net: Record<string, number> = {};
   let total_dec = 0;
@@ -15,7 +15,7 @@ export function computeNetValues(
 
     const amount = summary.reduce(
       (acc, row) => acc + ((row.netAdjustedResource[resource] as number) || 0),
-      0,
+      0
     );
 
     const decValue = unitPrices[res] * amount;
@@ -27,7 +27,7 @@ export function computeNetValues(
 }
 
 export function computeResourceNetValue(
-  summary: RegionSummary[],
+  summary: RegionSummary[]
 ): Record<Resource, number> {
   const resource_net: Record<string, number> = {};
 
@@ -36,7 +36,7 @@ export function computeResourceNetValue(
 
     resource_net[`${resource}`] = summary.reduce(
       (acc, row) => acc + ((row.netAdjustedResource[resource] as number) || 0),
-      0,
+      0
     );
   }
 

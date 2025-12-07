@@ -1,8 +1,9 @@
 "use client";
 import { Resource } from "@/constants/resource/resource";
-import { determineBcxCap } from "@/lib/utils/cardUtil";
+import { determineBcxCap, determineLevelFromBCX } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   CardBloodline,
   cardElementColorMap,
@@ -107,7 +108,7 @@ export default function Planner({
         plot.deedType,
         plot.plotStatus,
         plot.plotRarity,
-        plot.worksiteType,
+        plot.worksiteType
       ),
     [
       plot.magicType,
@@ -115,12 +116,12 @@ export default function Planner({
       plot.plotStatus,
       plot.plotRarity,
       plot.worksiteType,
-    ],
+    ]
   );
 
   const { totalBasePP, totalBoostedPP } = useMemo(
     () => calcTotalPP(plot),
-    [plot],
+    [plot]
   );
 
   const captureRate = useMemo(() => {
@@ -140,7 +141,7 @@ export default function Planner({
         prices,
         spsRatio,
         regionTax,
-        captureRate,
+        captureRate
       ),
     [
       totalBasePP,
@@ -150,7 +151,7 @@ export default function Planner({
       spsRatio,
       regionTax,
       captureRate,
-    ],
+    ]
   );
 
   const totemChance = useMemo(() => {
@@ -172,7 +173,7 @@ export default function Planner({
     setPlot((prev) => ({ ...prev, ...patch }));
 
   const toSlotInput = (card: Card, idx: number): SlotInput => {
-    const setName = card.card_set ?? "chaos";
+    const setName = card.card_set ?? ("chaos" as CardSetNameLandValid);
     const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
     const rarity = cardRarityOptions[(splCard?.rarity ?? 0) - 1];
     const foil = card.foil;
@@ -181,22 +182,72 @@ export default function Planner({
     const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
+    // Initialize landboost with default values
+    const landboost = {
+      produceBoost: {} as Record<Resource, number>,
+      consumeGrainDiscount: 0,
+      bloodlineBoost: 0,
+      decDiscount: 0,
+      replacePowerCore: false,
+      laborLuck: false,
+    };
+
+    if (setName === "land") {
+      const determineLevel = determineLevelFromBCX(
+        setName as CardSetNameLandValid,
+        rarity,
+        foil,
+        bcx
+      );
+      const level = determineLevel !== null ? determineLevel : 1;
+      const landAbilities = splCard?.stats?.land_abilities ?? null;
+
+      if (landAbilities && level > 0 && level <= 10) {
+        const landStatsByLevel = landAbilities[level - 1];
+
+        // Parse each ability in the level
+        if (landStatsByLevel) {
+          for (const ability of landStatsByLevel) {
+            const abilityType = ability[0];
+
+            switch (abilityType) {
+              case "DD": // DEC Discount
+                landboost.decDiscount = (ability[1] * -1) as number;
+                break;
+              case "RATIONING":
+                landboost.consumeGrainDiscount = (ability[1] * -1) as number;
+                break;
+              case "BLOODLINE":
+                landboost.bloodlineBoost = ability[1] as number;
+                break;
+              case "GRAIN":
+              case "WOOD":
+              case "STONE":
+              case "IRON":
+              case "AURA":
+                landboost.produceBoost[abilityType] = ability[1] as number;
+                break;
+              case "ENERGIZED":
+                landboost.replacePowerCore = true;
+                break;
+              case "LL": // Labor Luck
+                landboost.laborLuck = true;
+                break;
+            }
+          }
+        }
+      }
+    }
+
     return {
       id: idx,
-      set: setName,
+      set: setName as CardSetNameLandValid,
       rarity,
       bcx,
       foil: cardFoilOptions[foil],
       element,
       bloodline,
-      landBoosts: {
-        produceBoost: ({} = {} as Record<Resource, number>),
-        consumeGrainDiscount: 0,
-        bloodlineBoost: 0,
-        decDiscount: 0,
-        replacePowerCore: false,
-        laborLuck: false,
-      },
+      landBoosts: landboost,
     };
   };
   const updatePlotSlots = (cards: Card[]) => {

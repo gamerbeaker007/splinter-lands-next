@@ -15,7 +15,7 @@ export function getDeedImg(
   deedType: string,
   plotStatus: string,
   rarity: string,
-  worksiteType?: string,
+  worksiteType?: string
 ) {
   if (plotStatus.toLowerCase() === "magical" && magicType) {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${magicType.toLowerCase()}_${rarity.toLowerCase()}.jpg`;

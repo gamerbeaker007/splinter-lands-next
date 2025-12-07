@@ -22,7 +22,7 @@ import { ResourceWithDEC } from "@/types/productionInfo";
 export function calcCostsV2(
   basePP: number,
   siteEfficiency: number,
-  recipe?: ResourceRecipeItem[],
+  recipe?: ResourceRecipeItem[]
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
@@ -44,7 +44,7 @@ export function calcConsumeCosts(
   prices: Record<string, number>,
   siteEfficiency: number,
   recipe: ResourceRecipeItem[],
-  consumeGrainDiscount?: number,
+  consumeGrainDiscount?: number
 ): ResourceWithDEC[] {
   const costs: ResourceWithDEC[] = [];
 
@@ -86,7 +86,7 @@ export function calcProduction(
   total_harvest_pp: number,
   prices: Record<string, number>,
   siteEfficiency: number,
-  spsRatio?: number,
+  spsRatio?: number
 ): ResourceWithDEC {
   const rate =
     resource === "SPS"
@@ -108,7 +108,7 @@ export function calcDECPrice(
   mode: Mode,
   resource: string,
   amount: number,
-  prices: Prices,
+  prices: Prices
 ): number {
   const price = prices[resource] ?? 0;
   return resource === "AURA"
@@ -119,7 +119,7 @@ export function calcDECPrice(
 function calcDirectDECPrice(
   mode: Mode,
   amount: number,
-  decPrice: number,
+  decPrice: number
 ): number {
   if (decPrice === 0) return 0;
   return mode === "buy"

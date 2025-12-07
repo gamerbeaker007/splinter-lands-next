@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 
 export const useTractDeedData = (
   selectedRegion: number | "",
-  selectedTract: number | "",
+  selectedTract: number | ""
 ) => {
   const [deeds, setDeeds] = useState<DeedComplete[] | null>(null);
   const [loadingText, setLoadingText] = useState<string | null>(null);
@@ -80,14 +80,14 @@ export const useTractDeedData = (
                   setProgress(parsed.index);
                   setTotal(parsed.total);
                   setLoadingText(
-                    `Loading tract deed data... ${parsed.index} / ${parsed.total}`,
+                    `Loading tract deed data... ${parsed.index} / ${parsed.total}`
                   );
                 }
               } catch (parseError) {
                 console.warn(
                   "Failed to parse streaming response line:",
                   line,
-                  parseError,
+                  parseError
                 );
               }
             }

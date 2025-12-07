@@ -28,17 +28,17 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
   const fontSize = isTax ? "0.975rem" : "1.0rem";
 
   (produce ?? []).sort(
-    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource)
   );
 
   (consume ?? []).sort(
-    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource),
+    (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource)
   );
 
   const grainConsumed =
     consume?.reduce(
       (acc, r) => (r.resource === "GRAIN" ? acc + r.amount : acc),
-      0,
+      0
     ) ?? 0;
 
   return (

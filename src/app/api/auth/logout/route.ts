@@ -25,7 +25,7 @@ export async function POST() {
 
     return NextResponse.json(
       { error: "Internal server error during logout" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

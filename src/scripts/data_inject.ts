@@ -9,6 +9,7 @@ import { computeAndStoreTotalSupply } from "@/scripts/lib/metrics/resourceSupply
 import { fetchAndProcessRegionData } from "@/scripts/lib/region/region";
 import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
 import dotenv from "dotenv";
+import { computeAndStoreBurnedResources } from "./lib/metrics/resourceBurnedDaily";
 
 dotenv.config();
 
@@ -24,10 +25,11 @@ async function main() {
   await computeAndStoreTotalSupply(today);
   await computeAndStoreResourceProduction(today);
   await computeAndStorePlayerProduction(today);
+  await computeAndStoreBurnedResources(today);
   await pushLastUpdateDate();
 
   logger.info(
-    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`,
+    `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`
   );
 }
 

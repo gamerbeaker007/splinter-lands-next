@@ -35,23 +35,30 @@ interface ResourceBoost {
 
 interface LandBoostProps {
   initialBloodline: CardBloodline;
-  initialBoost?: LandBoost;
+  boosts?: LandBoost;
   onSave: (boost: LandBoost) => void;
 }
 
 const fontSizeToolTip = "0.8rem";
 const sizeIcon = 30;
 
-export default function LandBoostComponent({
-  initialBoost,
-  onSave,
-}: LandBoostProps) {
+export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
   const [open, setOpen] = useState(false);
+  const hasAnyLandBoost = !!(
+    boosts &&
+    ((boosts?.produceBoost &&
+      Object.values(boosts.produceBoost).some((value) => value > 0)) ||
+      (boosts?.consumeGrainDiscount ?? 0) > 0 ||
+      (boosts?.bloodlineBoost ?? 0) > 0 ||
+      (boosts?.decDiscount ?? 0) > 0 ||
+      boosts?.replacePowerCore ||
+      boosts?.laborLuck)
+  );
 
   // Production boosts array - default to two items (GRAIN and WOOD)
   const [produceBoosts, setProduceBoosts] = useState<ResourceBoost[]>(() => {
-    if (initialBoost?.produceBoost) {
-      const entries = Object.entries(initialBoost.produceBoost);
+    if (boosts?.produceBoost) {
+      const entries = Object.entries(boosts.produceBoost);
       if (entries.length > 0) {
         return entries.map(([resource, value]) => ({
           resource: resource as Resource,
@@ -67,33 +74,33 @@ export default function LandBoostComponent({
   });
 
   const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
-    (initialBoost?.consumeGrainDiscount ?? 0) * 100,
+    (boosts?.consumeGrainDiscount ?? 0) * 100
   );
 
   // Bloodline boost is now a simple number
   const [bloodlineBoost, setBloodlineBoost] = useState(
-    (initialBoost?.bloodlineBoost ?? 0) * 100,
+    (boosts?.bloodlineBoost ?? 0) * 100
   );
 
   const [decDiscount, setDecDiscount] = useState(
-    (initialBoost?.decDiscount ?? 0) * 100,
+    (boosts?.decDiscount ?? 0) * 100
   );
   const [replacePowerCore, setReplacePowerCore] = useState(
-    initialBoost?.replacePowerCore ?? false,
+    boosts?.replacePowerCore ?? false
   );
-  const [laborLuck, setLaborLuck] = useState(initialBoost?.laborLuck ?? false);
+  const [laborLuck, setLaborLuck] = useState(boosts?.laborLuck ?? false);
 
   const handleOpen = () => {
     setOpen(true);
     // Reset to initial values when opening
-    if (initialBoost) {
-      const entries = Object.entries(initialBoost.produceBoost ?? {});
+    if (boosts) {
+      const entries = Object.entries(boosts.produceBoost ?? {});
       if (entries.length > 0) {
         setProduceBoosts(
           entries.map(([resource, value]) => ({
             resource: resource as Resource,
             value: value * 100,
-          })),
+          }))
         );
       } else {
         // Default: two rows with GRAIN and WOOD
@@ -103,11 +110,11 @@ export default function LandBoostComponent({
         ]);
       }
 
-      setConsumeGrainDiscount((initialBoost.consumeGrainDiscount ?? 0) * 100);
-      setBloodlineBoost((initialBoost.bloodlineBoost ?? 0) * 100);
-      setDecDiscount((initialBoost.decDiscount ?? 0) * 100);
-      setReplacePowerCore(initialBoost.replacePowerCore);
-      setLaborLuck(initialBoost.laborLuck);
+      setConsumeGrainDiscount((boosts.consumeGrainDiscount ?? 0) * 100);
+      setBloodlineBoost((boosts.bloodlineBoost ?? 0) * 100);
+      setDecDiscount((boosts.decDiscount ?? 0) * 100);
+      setReplacePowerCore(boosts.replacePowerCore);
+      setLaborLuck(boosts.laborLuck);
     }
   };
 
@@ -139,22 +146,11 @@ export default function LandBoostComponent({
   const updateProduceBoost = (
     index: number,
     field: keyof ResourceBoost,
-    value: Resource | number,
+    value: Resource | number
   ) => {
     const updated = [...produceBoosts];
     updated[index] = { ...updated[index], [field]: value };
     setProduceBoosts(updated);
-  };
-
-  const hasLandBoost = () => {
-    return (
-      produceBoosts.some((boost) => boost.value > 0) ||
-      consumeGrainDiscount > 0 ||
-      bloodlineBoost > 0 ||
-      decDiscount > 0 ||
-      replacePowerCore ||
-      laborLuck
-    );
   };
 
   //Using Divs and spans for React hydration error
@@ -229,16 +225,16 @@ export default function LandBoostComponent({
         <Tooltip
           title={title}
           placement={"top-start"}
-          disableHoverListener={!hasLandBoost()}
+          disableHoverListener={!hasAnyLandBoost}
         >
           <IconButton
             onClick={handleOpen}
-            color={hasLandBoost() ? "primary" : "default"}
+            color={hasAnyLandBoost ? "primary" : "default"}
             sx={{
               width: 25,
               height: 25,
-              border: hasLandBoost() ? 2 : 1,
-              borderColor: hasLandBoost() ? "primary.main" : "grey.400",
+              border: hasAnyLandBoost ? 3 : 1,
+              borderColor: hasAnyLandBoost ? "primary.main" : "grey.400",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",

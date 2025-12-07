@@ -24,7 +24,7 @@ interface ProductionBoostSelectorProps {
   onUpdate: (
     index: number,
     field: keyof ResourceBoost,
-    value: Resource | number,
+    value: Resource | number
   ) => void;
 }
 

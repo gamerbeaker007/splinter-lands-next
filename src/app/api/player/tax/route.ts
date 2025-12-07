@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     logError("Failed to load player tax data", err);
     return NextResponse.json(
       { error: "Failed to load player tax data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

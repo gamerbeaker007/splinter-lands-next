@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     console.error("Auth check error:", error);
     return NextResponse.json(
       { authenticated: false, error: "Failed to check authentication" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

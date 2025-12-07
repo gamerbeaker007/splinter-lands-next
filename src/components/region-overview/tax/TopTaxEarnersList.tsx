@@ -31,7 +31,7 @@ export function TopTaxEarnersList({
     if (type === "castle") {
       const totalDEC = Object.values(region.capturedTaxInDEC).reduce(
         (a, b) => a + b,
-        0,
+        0
       );
       if (totalDEC > 0) {
         earners.push({
@@ -46,7 +46,7 @@ export function TopTaxEarnersList({
       for (const tract of Object.values(region.perTract)) {
         const totalDEC = Object.values(tract.capturedTaxInDEC).reduce(
           (a, b) => a + b,
-          0,
+          0
         );
         if (totalDEC > 0) {
           const owner = tract.keepOwner;

@@ -19,6 +19,7 @@ type Props = {
 export default function ArticleCard({ article }: Props) {
   return (
     <Link
+      suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
       href={article.linkUrl}
       passHref
       target="_blank"

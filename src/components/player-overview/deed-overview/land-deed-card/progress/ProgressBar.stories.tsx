@@ -1,10 +1,10 @@
 // components/BiomeBoosts.stories.tsx
-import Box from "@mui/material/Box";
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { ProgressBar } from "./ProgressBar";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import { timeUntil } from "@/lib/utils/timeUtils";
+import Box from "@mui/material/Box";
+import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { ProgressBar } from "./ProgressBar";
 
 const meta: Meta<typeof ProgressBar> = {
   title: "Components/PlayerOverview/ProgressBar",
@@ -27,7 +27,7 @@ export const Default: Story = {
         display={"flex"}
         flexDirection={"column"}
         border={"1px solid red"}
-        width={320}
+        width={275}
         gap={2}
         p={2}
       >

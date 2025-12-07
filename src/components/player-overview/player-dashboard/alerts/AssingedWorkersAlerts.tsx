@@ -21,7 +21,7 @@ export const AssignedWorkersAlerts: React.FC<Props> = ({
             alert.deedInfo.magicType,
             alert.deedInfo.deedType,
             alert.deedInfo.plotStatus,
-            alert.deedInfo.rarity,
+            alert.deedInfo.rarity
           );
 
           const regionNumber = alert.deedInfo.regionNumber;

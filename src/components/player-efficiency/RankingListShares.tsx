@@ -15,7 +15,7 @@ type Props = {
 export default function RankingListShares({ players, currentPlayer }: Props) {
   const totalBasePPInclEfficiency = players.reduce(
     (acc, player) => acc + (player.total_land_base_pp_incl_efficiency ?? 0),
-    0,
+    0
   );
 
   const sorted = [...players]
@@ -23,7 +23,7 @@ export default function RankingListShares({ players, currentPlayer }: Props) {
     .sort(
       (a, b) =>
         b.total_land_base_pp_incl_efficiency! -
-        a.total_land_base_pp_incl_efficiency!,
+        a.total_land_base_pp_incl_efficiency!
     )
     .map((p, index) => ({
       player: p.player,
@@ -34,7 +34,7 @@ export default function RankingListShares({ players, currentPlayer }: Props) {
   const totalShare = sorted.reduce((sum, item) => sum + item.share, 0);
   if (Math.abs(totalShare - 1.0) > 0.01) {
     console.warn(
-      `Total share is ${(totalShare * 100).toFixed(2)}%, expected 100%`,
+      `Total share is ${(totalShare * 100).toFixed(2)}%, expected 100%`
     );
   }
 

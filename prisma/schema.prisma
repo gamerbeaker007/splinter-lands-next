@@ -293,3 +293,13 @@ model PlayerTradeHubPosition {
   @@map("player_trade_hub_position")
 
 }
+
+model DailyBurnedTokenBalance {
+  date         DateTime @db.Date
+  player       String
+  token        String
+  balance      Decimal  @db.Decimal(30, 6)
+
+  @@id([date, player, token])
+  @@map("daily_burned_token_balance")
+}

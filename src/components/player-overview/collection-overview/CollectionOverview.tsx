@@ -17,7 +17,7 @@ export default function CollectionOverview({ player }: Props) {
 
   const { cardPPResult, loading, error, refetchPlayerCardPP } = usePlayerCardPP(
     player,
-    cardFilters,
+    cardFilters
   );
 
   function refetchData() {

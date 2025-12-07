@@ -119,7 +119,7 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
 
 const getCurrentPlayerShape = (
   players: string[],
-  currentPlayer?: string,
+  currentPlayer?: string
 ): Partial<Plotly.Shape>[] => {
   if (!currentPlayer) return [];
 

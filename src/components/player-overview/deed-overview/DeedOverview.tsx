@@ -46,7 +46,7 @@ export default function DeedOverview({ player }: Props) {
   };
   const handleZoomChange = (
     _: React.MouseEvent<HTMLElement>,
-    value: ZoomKey | null,
+    value: ZoomKey | null
   ) => {
     if (value) setLgZoom(value);
   };
@@ -109,7 +109,7 @@ export default function DeedOverview({ player }: Props) {
                 setProgress(parsed.index);
                 setTotal(parsed.total);
                 setLoadingText(
-                  `Loading deeds... ${parsed.index} / ${parsed.total}`,
+                  `Loading deeds... ${parsed.index} / ${parsed.total}`
                 );
               }
             }

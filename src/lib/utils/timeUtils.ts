@@ -20,7 +20,7 @@ export function timeUntil(dateInput: Date | string): string {
 
 export function calculateProgress(
   createdAt: Date | string | null,
-  endsAt: Date | string | null,
+  endsAt: Date | string | null
 ): number {
   if (!createdAt || !endsAt) return 0;
 

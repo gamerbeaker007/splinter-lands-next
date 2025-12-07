@@ -14,7 +14,7 @@ type Props = {
 const TaxCardList: React.FC<Props> = ({ data }) => {
   const regionList: TaxData[] = data.map((region) => {
     const resourceMap = Object.fromEntries(
-      region.resources.map((res) => [String(res.token).toLowerCase(), res]),
+      region.resources.map((res) => [String(res.token).toLowerCase(), res])
     );
     return {
       region_uid: region.region_uid,

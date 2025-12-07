@@ -40,7 +40,7 @@ export default function PlayerRegionOverview({ player }: Props) {
         setLoadingText("An error occurred while loading data.");
       }
     },
-    [filters, player],
+    [filters, player]
   );
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function PlayerRegionOverview({ player }: Props) {
 async function fetchPlayerRegionData(
   player: string,
   filters: FilterInput,
-  force: boolean,
+  force: boolean
 ): Promise<PlayerRegionDataType> {
   const res = await fetch("/api/player/region", {
     method: "POST",
@@ -118,7 +118,7 @@ async function fetchPlayerRegionData(
 
 async function fetchPlayerTaxData(
   player: string,
-  force: boolean,
+  force: boolean
 ): Promise<RegionTaxSummary[]> {
   const res = await fetch("/api/player/tax", {
     method: "POST",

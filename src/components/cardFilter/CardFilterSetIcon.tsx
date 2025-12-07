@@ -1,9 +1,10 @@
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { cardSetIconMap, CardSetName } from "@/types/planner";
+import { CardSetNameLandValid } from "@/types/editions";
+import { cardSetIconMap } from "@/types/planner";
 import FilterIcon from "../filter/FilterIcon";
 
 type Props = {
-  name: string;
+  name: CardSetNameLandValid;
 };
 
 export default function CardFilterSetIcon({ name }: Props) {
@@ -23,7 +24,7 @@ export default function CardFilterSetIcon({ name }: Props) {
   const toggleFilter = () => {
     const current = Array.isArray(value) ? value : [];
     const updated = isActive
-      ? current.filter((item: CardSetName) => item !== name)
+      ? current.filter((item: CardSetNameLandValid) => item !== name)
       : [...current, name];
 
     setCardFilters((prev) => ({ ...prev, filter_set: updated }));

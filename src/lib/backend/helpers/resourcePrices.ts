@@ -11,7 +11,7 @@ function getPrice(
   prices: SplPriceData,
   auraPrices: AuraPrices[],
   token: string,
-  amount: number,
+  amount: number
 ): number {
   if (token === "RESEARCH") {
     return 0;
@@ -98,7 +98,7 @@ function getPrice(
 function computeUnbindAuraPrice(
   auraPrices: AuraPrices[],
   prices: SplPriceData,
-  token: string,
+  token: string
 ): number | null {
   const map: Record<
     string,
@@ -136,7 +136,7 @@ export async function getResourceDECPrices() {
     metrics.map((item: { token_symbol: string; dec_price: number }) => [
       item.token_symbol,
       item.dec_price,
-    ]),
+    ])
   );
   const consumablePrices = await getAURAPrices();
 

@@ -37,7 +37,7 @@ export default function ResourcePPChart({ production }: Props) {
   });
 
   const boostedValues = resourceLabels.map(
-    (resourceLabel) => production[resourceLabel].boostedPP,
+    (resourceLabel) => production[resourceLabel].boostedPP
   );
 
   return (

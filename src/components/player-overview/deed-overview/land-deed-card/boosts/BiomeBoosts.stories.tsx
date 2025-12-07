@@ -3,7 +3,7 @@ import { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { BiomeBoosts } from "./BiomeBoost";
 
 const meta: Meta<typeof BiomeBoosts> = {
-  title: "Components/PlayerOverview/DeeoOverview/BiomeBoosts",
+  title: "Components/PlayerOverview/DeedOverview/BiomeBoosts",
   component: BiomeBoosts,
 };
 

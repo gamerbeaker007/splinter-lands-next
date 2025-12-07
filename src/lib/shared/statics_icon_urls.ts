@@ -92,16 +92,32 @@ export const title_emissary_icon_url = `${WEB_URL}website/icons/icon_active_emis
 
 export const dec_icon_url = `${WEB_URL}website/icon_dec.png`;
 export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
+export const glint_icon_url = `${WEB_URL}website/icons/icon_resource_glint.png`;
+export const cinder_icon_url = `${WEB_URL}website/icons/img_resource_cinder.webp`;
+export const merits_icon_url = `${WEB_URL}website/icons/img_merit_256.png`;
 
 export const alert_gif_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23vsb3F8eJic8GixxxZEDupcjbm63GJEg6JRSn9QroYcV3hdEsjPqCp4VuoxvfDC6SfpW.gif";
 
-export const edition_apha_icon_url = `${WEB_URL}website/icons/icon-edition-alpha.svg`;
+export const edition_alpha_icon_url = `${WEB_URL}website/icons/icon-edition-alpha.svg`;
 export const edition_beta_icon_url = `${WEB_URL}website/icons/icon-edition-beta.svg`;
+export const edition_promo_icon_url = `${WEB_URL}website/icons/icon-edition-promo.svg`;
+export const edition_reward_icon_url = `${WEB_URL}website/icons/icon-edition-reward.svg`;
 export const edition_untamed_icon_url = `${WEB_URL}website/icons/icon-edition-untamed.svg`;
+export const edition_dice_icon_url = `${WEB_URL}website/icons/icon-edition-dice.svg`;
+export const edition_gladius_icon_url = `${WEB_URL}website/icons/icon-edition-gladius.svg`;
 export const edition_chaos_icon_url = `${WEB_URL}website/icons/icon-edition-chaos.svg`;
+export const edition_rift_icon_url = `${WEB_URL}website/icons/icon-edition-rift.svg`;
+export const edition_soulkeep_icon_url = `${WEB_URL}website/icons/soulkeep/towers.svg`;
+export const edition_soulbound_icon_url = edition_reward_icon_url;
 export const edition_rebellion_icon_url = `${WEB_URL}website/icons/icon-edition-rebellion.svg`;
-export const edition_conclave_icon_url = `${WEB_URL}website/icons/icon-edition-conclave-arcana.svg`;
+export const edition_soulbound_rebellion_icon_url = edition_reward_icon_url;
+export const edition_conclave_arcana_icon_url = `${WEB_URL}website/icons/icon-edition-conclave-arcana.svg`;
+export const edition_foundation_icon_url = `${WEB_URL}website/icons/icon-edition-foundations.svg`;
+export const edition_conclave_extra_icon_url = `${WEB_URL}website/icons/icon-edition-extra.svg`;
+export const edition_conclave_rewards_icon_url = edition_reward_icon_url;
+export const edition_eternal_icon_url = `${WEB_URL}website/icons/icon-edition-eternal.svg`;
+export const edition_land_card_icon_url = `${WEB_URL}website/icons/icon-edition-land.svg`;
 
 export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_rarity_common_new.svg`;
 export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;

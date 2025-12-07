@@ -15,7 +15,7 @@ export interface SplJwtValidationResult {
 }
 
 export async function validateSplJwt(
-  token: string,
+  token: string
 ): Promise<SplJwtValidationResult> {
   try {
     if (!token) {

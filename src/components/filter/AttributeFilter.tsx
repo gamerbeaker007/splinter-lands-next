@@ -19,7 +19,10 @@ type Props = {
   options: FilterInput;
 };
 
-type BooleanFilterKey = "filter_developed" | "filter_under_construction";
+type BooleanFilterKey =
+  | "filter_developed"
+  | "filter_under_construction"
+  | "filter_has_land_ability";
 
 export default function AttributeFilter({ options }: Props) {
   const { filters, setFilters } = useFilters();
@@ -86,6 +89,7 @@ export default function AttributeFilter({ options }: Props) {
           [
             "filter_developed",
             "filter_under_construction",
+            "filter_has_land_ability",
           ] as BooleanFilterKey[]
         ).map((key) => (
           <FormControlLabel

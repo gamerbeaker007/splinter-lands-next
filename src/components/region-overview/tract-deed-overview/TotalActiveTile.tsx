@@ -21,7 +21,7 @@ export default function TotalActiveTile({ totalActive, totalInactive }: Props) {
             {totalActive + totalInactive === 0
               ? "N/A"
               : ((totalActive / (totalActive + totalInactive)) * 100).toFixed(
-                  2,
+                  2
                 )}
             %
           </Typography>

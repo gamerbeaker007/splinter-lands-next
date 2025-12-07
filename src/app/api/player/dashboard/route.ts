@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     logError("Failed to load player dashboard data", err);
     return NextResponse.json(
       { error: "Failed to load player dashboard data" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }

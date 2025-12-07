@@ -22,7 +22,7 @@ export async function GET() {
 }
 
 function groupByToken(
-  rows: PlayerTradeHubPosition[],
+  rows: PlayerTradeHubPosition[]
 ): groupedPlayerTradeHubPosition {
   return rows.reduce<groupedPlayerTradeHubPosition>(
     (acc, row) => {
@@ -32,7 +32,7 @@ function groupByToken(
       acc.tokens[row.token].push(row);
       return acc;
     },
-    { date: null, tokens: {} },
+    { date: null, tokens: {} }
   );
 }
 function getDate(data: PlayerTradeHubPosition[]): Date | null {

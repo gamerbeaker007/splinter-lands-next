@@ -9,14 +9,14 @@ import { capitalize } from "@mui/material";
 
 export function formatFallbackWarning(
   preferredKeys: string[],
-  usedKeys: string[],
+  usedKeys: string[]
 ) {
   const keyMap: Record<string, string> = {
     deedType: "Geography",
   };
 
   const dropped = preferredKeys.filter(
-    (k, i) => !usedKeys[i] || usedKeys[i].trim() === "",
+    (k, i) => !usedKeys[i] || usedKeys[i].trim() === ""
   );
 
   if (dropped.length === 0) return null;
@@ -28,13 +28,13 @@ export function formatFallbackWarning(
   const formattedUsed = usedKeys.filter(Boolean).map((v) => capitalize(v));
 
   return `Price fallback applied - ${formattedDropped.join(
-    ", ",
+    ", "
   )} not available. Now based on: ${formattedUsed.join(" | ")}`;
 }
 // Helper to find the best match for deed price with fallback
 export function findLowestDeedPrice(
   plot: PlotPlannerData,
-  deedPrices: LowestDeedPriceEntry[],
+  deedPrices: LowestDeedPriceEntry[]
 ) {
   if (!deedPrices || deedPrices.length === 0)
     return { price: null, usedKey: null, warning: "No market data." };
@@ -71,12 +71,12 @@ export function findLowestDeedPrice(
   for (const keyObj of keys) {
     const match = deedPrices.find((deed) =>
       Object.entries(keyObj).every(
-        ([k, v]) => deed[k as keyof LowestDeedPriceEntry] === v,
-      ),
+        ([k, v]) => deed[k as keyof LowestDeedPriceEntry] === v
+      )
     );
     if (match) {
       const usedKeyArr = preferredKeys.map(
-        (k) => (keyObj as Record<string, string>)[k],
+        (k) => (keyObj as Record<string, string>)[k]
       );
       const warning = usedKeyArr.every((v) => v)
         ? null
@@ -97,7 +97,7 @@ export function findLowestDeedPrice(
 
 export function findLowestCardPrice(
   card: SlotInput,
-  cardPrices: LowestCardPriceEntry[],
+  cardPrices: LowestCardPriceEntry[]
 ) {
   if (!cardPrices || cardPrices.length === 0)
     return {
@@ -124,12 +124,12 @@ export function findLowestCardPrice(
   for (const keyObj of keys) {
     const match = cardPrices.find((cardEntry) =>
       Object.entries(keyObj).every(
-        ([k, v]) => cardEntry[k as keyof LowestCardPriceEntry] === v,
-      ),
+        ([k, v]) => cardEntry[k as keyof LowestCardPriceEntry] === v
+      )
     );
     if (match) {
       const usedKeyArr = preferredKeys.map(
-        (k) => (keyObj as Record<string, string>)[k],
+        (k) => (keyObj as Record<string, string>)[k]
       );
       const warning = usedKeyArr.every((v) => v)
         ? null
@@ -142,6 +142,7 @@ export function findLowestCardPrice(
           rarity: match.rarity,
           element: match.element,
           foil: match.foil,
+          edition: match.edition,
           set: match.set,
           name: match.name,
         },
@@ -160,7 +161,7 @@ export function findLowestCardPrice(
 
 export function findLowestTotemPrice(
   plot: PlotPlannerData,
-  totemPrices: LowestTotemPriceEntry[],
+  totemPrices: LowestTotemPriceEntry[]
 ) {
   if (!totemPrices || totemPrices.length === 0)
     return { price: null, usedKey: null, warning: "No market data." };
@@ -184,7 +185,7 @@ export function findLowestTotemPrice(
 
 export function findLowestTitlePrice(
   plot: PlotPlannerData,
-  titlePrices: LowestTitlePriceEntry[],
+  titlePrices: LowestTitlePriceEntry[]
 ) {
   if (!titlePrices || titlePrices.length === 0)
     return { price: null, usedKey: null, warning: "No market data." };

@@ -32,26 +32,26 @@ export function ResourceOverviewCard({
 
   const totalFromLiquidityInfo = liquidityInfo.reduce(
     (sum, info) => sum + Number(info[resourceKey] ?? 0),
-    0,
+    0
   );
 
   const poolMatches = liquidityPoolInfo.filter((pos) =>
-    pos.token.includes(resource),
+    pos.token.includes(resource)
   );
 
   const totalFromPool = poolMatches.reduce(
     (sum, pos) => sum + pos.resource_quantity,
-    0,
+    0
   );
 
   const totalDECFromPool = poolMatches.reduce(
     (sum, pos) => sum + pos.dec_quantity,
-    0,
+    0
   );
 
   const totalPercentage = poolMatches.reduce(
     (sum, pos) => sum + pos.share_percentage,
-    0,
+    0
   );
 
   return (

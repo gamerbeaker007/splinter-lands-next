@@ -20,11 +20,11 @@ const TaxTotalsDEC: React.FC<Props> = ({ taxData }) => {
     ? taxData.reduce((sum, entry) => {
         const resourceSum = entry.resources.reduce((acc, res) => {
           const decKeys = Object.keys(res).filter((key) =>
-            key.startsWith("dec"),
+            key.startsWith("dec")
           );
           const decSum = decKeys.reduce(
             (subAcc, key) => subAcc + Number(res[key] || 0),
-            0,
+            0
           );
           return acc + decSum;
         }, 0);

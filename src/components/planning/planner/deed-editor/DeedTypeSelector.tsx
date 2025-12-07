@@ -45,7 +45,7 @@ export function DeedTypeSelector({
   const renderIcon = (tier: DeedType, size = 24) => {
     const icon = land_default_off_icon_url_placeholder.replace(
       "__NAME__",
-      tier.toLowerCase(),
+      tier.toLowerCase()
     );
     return (
       <Image

@@ -37,7 +37,7 @@ export async function getLatestResourceSupplyEntries(): Promise<
 
   //Filter all entries with that date
   const latestEntries = all.filter(
-    (entry) => entry.date.getTime() === latestDate.getTime(),
+    (entry) => entry.date.getTime() === latestDate.getTime()
   );
 
   return latestEntries;

@@ -98,7 +98,7 @@ export default function ArticleSection() {
           ))}
         </Grid>
       ),
-    }),
+    })
   );
 
   return (

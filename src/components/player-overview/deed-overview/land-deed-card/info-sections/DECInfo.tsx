@@ -20,7 +20,7 @@ function tooltipContent(
   totalConsumeBuy: number,
   totalProduceSell: number,
   totalProduceBuy: number,
-  netDEC: number,
+  netDEC: number
 ) {
   return (
     <Box sx={{ p: 1.5, minWidth: 280 }}>
@@ -185,7 +185,7 @@ export const DECInfo: React.FC<Props> = ({
               totalConsumeBuy,
               totalProduceSell,
               totalProduceBuy,
-              netDEC,
+              netDEC
             )}
             placement="top"
             arrow

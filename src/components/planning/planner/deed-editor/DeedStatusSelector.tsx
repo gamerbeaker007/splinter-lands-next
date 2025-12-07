@@ -30,7 +30,7 @@ export type Props = {
 
 export function isAllowedStatus(
   status: PlotStatus,
-  rarity?: PlotRarity,
+  rarity?: PlotRarity
 ): boolean {
   if (rarity === "mythic") return status === "kingdom";
   return status !== "kingdom";
@@ -45,7 +45,7 @@ export function PlotStatusSelector({
   // allowed statuses for current rarity
   const allowedOptions = useMemo(
     () => plotStatusOptions.filter((s) => isAllowedStatus(s, rarity)),
-    [rarity],
+    [rarity]
   );
 
   // auto-correct if current value becomes invalid
@@ -65,7 +65,7 @@ export function PlotStatusSelector({
   const renderIcon = (tier: PlotStatus, size = 24) => {
     const icon = land_default_off_icon_url_placeholder.replace(
       "__NAME__",
-      tier.toLowerCase(),
+      tier.toLowerCase()
     );
     return (
       <Image

@@ -14,7 +14,7 @@ export function useRegionCompareRarity(filters?: FilterInput) {
   const filtersKey = useMemo<FilterInput>(() => filters ?? {}, [filters]);
 
   async function fetchRegionCompareRarityImpl(
-    filters: FilterInput,
+    filters: FilterInput
   ): Promise<RarityResourceSummary | null> {
     const url = "/api/region/compare/rarity";
     const res = await fetch(url, {

@@ -1,10 +1,6 @@
 "use client";
-import {
-  CardElement,
-  cardSetModifiers,
-  CardSetName,
-  cardSetOptions,
-} from "@/types/planner";
+import { CardSetNameLandValid } from "@/types/editions";
+import { CardElement, cardSetModifiers } from "@/types/planner";
 import { cardSetIconMap } from "@/types/planner/primitives";
 import {
   Box,
@@ -20,16 +16,16 @@ import {
 import Image from "next/image";
 
 export type Props = {
-  value: CardSetName;
+  value: CardSetNameLandValid;
   onChange: (tier: CardElement) => void;
 };
 
 export function SetSelector({ value, onChange }: Props) {
-  const handleChange = (e: SelectChangeEvent<CardSetName>) => {
-    onChange(e.target.value as CardSetName);
+  const handleChange = (e: SelectChangeEvent<CardSetNameLandValid>) => {
+    onChange(e.target.value as CardSetNameLandValid);
   };
 
-  const renderIcon = (tier: CardSetName, size = 24) => {
+  const renderIcon = (tier: CardSetNameLandValid, size = 24) => {
     return (
       <Image
         src={cardSetIconMap[tier]}
@@ -47,12 +43,12 @@ export function SetSelector({ value, onChange }: Props) {
     <Box borderRadius={1} minWidth={90}>
       <FormControl size="small" variant="outlined" fullWidth>
         <InputLabel sx={{ color: fontColor }}>Set:</InputLabel>
-        <Select<CardSetName>
+        <Select<CardSetNameLandValid>
           value={value}
           onChange={handleChange}
           displayEmpty
           renderValue={(val) => {
-            const v = (val as CardSetName) ?? value;
+            const v = (val as CardSetNameLandValid) ?? value;
             return (
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 {renderIcon(v)}
@@ -69,10 +65,10 @@ export function SetSelector({ value, onChange }: Props) {
             ".MuiOutlinedInput-notchedOutline": { border: "none" },
           }}
         >
-          {cardSetOptions.map((setName) => (
+          {Object.entries(cardSetModifiers).map(([setName, modifier]) => (
             <MenuItem key={setName} value={setName}>
               <ListItemIcon sx={{ minWidth: 32 }}>
-                {renderIcon(setName, 18)}
+                {renderIcon(setName as CardSetNameLandValid, 18)}
               </ListItemIcon>
               <Box
                 sx={{
@@ -83,7 +79,7 @@ export function SetSelector({ value, onChange }: Props) {
                 }}
               >
                 <Typography variant="body2" sx={{ flexGrow: 1 }}>
-                  {`${capitalize(setName)} (${cardSetModifiers[setName]}x)`}
+                  {`${capitalize(setName)} (${modifier}x)`}
                 </Typography>
               </Box>
             </MenuItem>

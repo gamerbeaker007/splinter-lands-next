@@ -20,7 +20,7 @@ export async function GET() {
     logError("Error refreshing caches:", e);
     return NextResponse.json(
       { status: "Error refreshing caches" },
-      { status: 501 },
+      { status: 501 }
     );
   }
 }
