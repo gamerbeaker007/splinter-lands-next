@@ -15,7 +15,6 @@ interface Props {
 
 export default function BurnOverview({ latestData }: Props) {
   const date = latestData[0].date;
-  console.log("Latest Data in BurnOverview:", latestData);
   const tokens = [
     {
       label: "GLINT",

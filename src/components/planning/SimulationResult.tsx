@@ -4,7 +4,7 @@ import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimula
 import { Resource, RESOURCES } from "@/constants/resource/resource";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
-import { Box, Paper, Typography, useTheme } from "@mui/material";
+import { Box, Paper, Typography } from "@mui/material";
 import Image from "next/image";
 import SPSWarning from "./planner/output/SPSWarning";
 
@@ -17,8 +17,6 @@ const fmt = (n: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
 export function SimulationResult({ items }: ResultProps) {
-  const theme = useTheme();
-
   const consumed: Record<Resource, number> = makeZeroMap();
   const produced: Record<Resource, number> = makeZeroMap();
 
@@ -53,11 +51,7 @@ export function SimulationResult({ items }: ResultProps) {
   const minColumnWidth = 80;
   const gridTemplate = `140px repeat(${PRODUCING_RESOURCES.length}, minmax(${minColumnWidth}px, 1fr))`;
   const netColor = (v: number) =>
-    v > 0
-      ? theme.palette.success.main
-      : v < 0
-        ? theme.palette.error.main
-        : theme.palette.text.primary;
+    v > 0 ? "success.main" : v < 0 ? "error.main" : "text.primary";
 
   return (
     <Paper sx={{ maxWidth: 800 }}>

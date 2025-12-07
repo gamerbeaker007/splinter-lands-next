@@ -23,8 +23,8 @@ type Props = {
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const iconSize = 30;
-const fontSize = "0.8rem";
+const iconSize = 25;
+const fontSize = "0.7rem";
 const fontColor = "common.white";
 
 export const LandBoosts: React.FC<Props> = ({
@@ -57,16 +57,6 @@ export const LandBoosts: React.FC<Props> = ({
     ? Math.round(productionBoost * 100)
     : 0;
 
-  console.log("LandBoosts Rendered with props:", {
-    resource,
-    bloodlineBoost,
-    decDiscount,
-    grainConsumeReduction,
-    productionBoost,
-    replacePowerCore,
-    laborLuck,
-    pos,
-  });
   return (
     <Box
       sx={{

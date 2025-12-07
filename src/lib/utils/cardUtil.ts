@@ -212,3 +212,39 @@ export function findCardEditionNameByName(
     return editionMap[Number(editionArray[0])].urlName as string;
   }
 }
+
+const combine_rates: Record<CardRarity, number[]> = {
+  common: [1, 5, 14, 30, 60, 100, 150, 220, 300, 400],
+  rare: [1, 5, 14, 25, 40, 60, 85, 115],
+  epic: [1, 4, 10, 20, 32, 46],
+  legendary: [1, 3, 6, 11],
+};
+const combine_rates_gold: Record<CardRarity, number[]> = {
+  common: [0, 0, 1, 2, 5, 9, 14, 20, 27, 38],
+  rare: [0, 1, 2, 4, 7, 11, 16, 22],
+  epic: [0, 1, 2, 4, 7, 10],
+  legendary: [0, 1, 2, 4],
+};
+
+export function determineLevelFromBCX(
+  cardSet: CardSetNameLandValid,
+  rarity: CardRarity,
+  foil: number,
+  bcx: number
+): number {
+  if (cardSet !== "land") {
+    console.error("Not Land card detected, for now only Land cards.");
+    return 0;
+  }
+  const rates = foil === 0 ? combine_rates : combine_rates_gold;
+  const ratesForRarity = rates[rarity];
+  let level = 0;
+  for (let i = 0; i < ratesForRarity.length; i++) {
+    if (bcx >= ratesForRarity[i]) {
+      level = i + 1;
+    } else {
+      break;
+    }
+  }
+  return level;
+}

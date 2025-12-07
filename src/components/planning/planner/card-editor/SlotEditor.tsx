@@ -92,7 +92,7 @@ export default function SlotEditor({
 
         <LandBoostComponent
           initialBloodline={plot.cardInput[index].bloodline}
-          initialBoost={plot.cardInput[index].landBoosts}
+          boosts={plot.cardInput[index].landBoosts}
           onSave={(boost) => {
             onChange({ ...plot.cardInput[index], landBoosts: boost });
           }}

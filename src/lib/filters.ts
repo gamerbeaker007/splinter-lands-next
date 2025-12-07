@@ -1,6 +1,6 @@
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { SortOptionKey, SortDirection } from "@/types/sorting";
+import { SortDirection, SortOptionKey } from "@/types/sorting";
 
 function isInFilter(
   filter: ReadonlyArray<string | number> | undefined,
@@ -58,6 +58,18 @@ export function filterDeeds(
       const isUnderConstruction = deed.worksiteDetail?.is_construction ?? false;
       if (filters.filter_under_construction !== isUnderConstruction)
         return false;
+    }
+
+    if (filters.filter_has_land_ability !== undefined) {
+      const hasAnyLandAbilities =
+        (deed.stakingDetail?.card_bloodlines_boost ?? 0) > 0 ||
+        (deed.stakingDetail?.dec_stake_needed_discount ?? 0) > 0 ||
+        (deed.stakingDetail?.grain_food_discount ?? 0) > 0 ||
+        (deed.stakingDetail?.card_abilities_boost ?? 0) > 0 ||
+        (deed.stakingDetail?.is_energized ?? false) ||
+        (deed.stakingDetail?.has_labors_luck ?? false);
+
+      if (filters.filter_has_land_ability !== hasAnyLandAbilities) return false;
     }
 
     const basePP = deed.stakingDetail?.total_base_pp_after_cap;
