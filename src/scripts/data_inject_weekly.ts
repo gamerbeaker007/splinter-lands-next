@@ -4,7 +4,6 @@ import { logError } from "@/lib/backend/log/logUtils";
 import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
 import { computeAndStorePlayerHubPosition } from "./lib/metrics/playerTradeHubPosition";
 
-
 async function main() {
   logger.info("🚀 Starting weekly data inject script...");
   const start = Date.now();
