@@ -25,11 +25,17 @@ export async function computeAndStoreBurnedResources(today: Date) {
     [] as DailyBurnedTokenBalanceInput[]
   );
 
-  logger.info(`📦 Inserting ${burnedBalances.length} burnedBalances...`);
-  await prisma.dailyBurnedTokenBalance.createMany({
-    data,
+  // Check if data exists for this date
+  const existingCount = await prisma.dailyBurnedTokenBalance.count({
+    where: { date: today },
   });
 
+  if (existingCount === 0) {
+    await prisma.dailyBurnedTokenBalance.createMany({ data });
+    logger.info(`✅ Stored ${data.length} burned resources`);
+  } else {
+    logger.info(`⏭️  Skipped - data already exists for this date`);
+  }
   logger.info(
     `✅ Stored burned resources for ${today.toISOString().split("T")[0]}`
   );
