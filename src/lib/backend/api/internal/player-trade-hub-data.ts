@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 
 let cachedPlayerTradeHubPositionData: PlayerTradeHubPosition[] | null = null;
 let cachedTimestamp: Date | null = null;

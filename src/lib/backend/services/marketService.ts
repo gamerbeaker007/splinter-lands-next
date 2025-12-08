@@ -1,4 +1,4 @@
-import { Deed } from "@/generated/prisma";
+import { Deed } from "@/generated/prisma/client";
 import { determineCardInfo, findCardElement } from "@/lib/utils/cardUtil";
 import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {

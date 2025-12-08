@@ -1,4 +1,4 @@
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
 import { RegionSummary } from "@/types/regionSummary";

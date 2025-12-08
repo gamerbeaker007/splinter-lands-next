@@ -1,4 +1,4 @@
-import { ResourceTracking } from "@/generated/prisma";
+import { ResourceTracking } from "@/generated/prisma/client";
 import { getLastUpdate } from "@/lib/backend/cache/utils";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";

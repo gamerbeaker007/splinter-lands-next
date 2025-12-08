@@ -1,4 +1,4 @@
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import {
   fetchLandResourcesPools,
   fetchPlayerPoolInfo,

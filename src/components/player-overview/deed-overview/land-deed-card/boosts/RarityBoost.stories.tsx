@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Meta, StoryObj } from "@storybook/react";
 import { RarityBoost } from "./RarityBoost";
 
 const meta: Meta<typeof RarityBoost> = {

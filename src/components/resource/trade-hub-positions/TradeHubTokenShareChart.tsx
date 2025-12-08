@@ -3,7 +3,7 @@
 import { InfoItem } from "@/components/resource/trade-hub-positions/InfoItem";
 import { PoolIcon } from "@/components/resource/trade-hub-positions/PoolIcon";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import { Box } from "@mui/system";
 

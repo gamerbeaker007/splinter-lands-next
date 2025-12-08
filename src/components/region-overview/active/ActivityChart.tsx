@@ -1,5 +1,5 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { Active } from "@/generated/prisma";
+import { Active } from "@/generated/prisma/client";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 

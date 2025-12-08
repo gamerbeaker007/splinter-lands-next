@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";

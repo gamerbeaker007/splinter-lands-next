@@ -1,4 +1,4 @@
-import { Deed, StakingDetail, WorksiteDetail } from "@/generated/prisma";
+import { Deed, StakingDetail, WorksiteDetail } from "@/generated/prisma/client";
 
 export type RawRegionDataResponse = {
   deeds: Deed[];

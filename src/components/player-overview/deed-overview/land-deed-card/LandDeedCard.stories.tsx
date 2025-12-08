@@ -2,7 +2,7 @@
 import { DeedComplete } from "@/types/deed";
 import { SplCardDetails } from "@/types/splCardDetails";
 import Box from "@mui/material/Box";
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Meta, StoryObj } from "@storybook/react";
 import { LandDeedCard } from "./LandDeedCard";
 
 const meta: Meta<typeof LandDeedCard> = {

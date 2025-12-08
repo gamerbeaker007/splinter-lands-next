@@ -1,6 +1,6 @@
 "use client";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { ResourceHubMetrics } from "@/generated/prisma";
+import { ResourceHubMetrics } from "@/generated/prisma/client";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { Box } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";

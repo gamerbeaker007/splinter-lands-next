@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { fetchLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import logger from "@/lib/backend/log/logger.server";

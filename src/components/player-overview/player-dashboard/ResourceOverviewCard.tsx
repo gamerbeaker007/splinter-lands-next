@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { InfoItem } from "@/components/resource/trade-hub-positions/InfoItem";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 

@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { fetchBurnedBalances } from "@/lib/backend/api/spl/spl-base-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";

@@ -1,4 +1,4 @@
-import { Deed, WorksiteDetail, StakingDetail } from "@/generated/prisma";
+import { Deed, WorksiteDetail, StakingDetail } from "@/generated/prisma/client";
 import { StakedAssets } from "./stakedAssets";
 import { ProgressInfo } from "./progressInfo";
 import { ProductionInfo } from "@/types/productionInfo";

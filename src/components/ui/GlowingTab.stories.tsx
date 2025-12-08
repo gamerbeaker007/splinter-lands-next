@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import GlowingTab from "./GlowingTab";
 import { Tabs } from "@mui/material";
+import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
+import GlowingTab from "./GlowingTab";
 
 const meta: Meta<typeof GlowingTab> = {
   title: "Components/UI/Tabs",

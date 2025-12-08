@@ -2,7 +2,7 @@ import {
   ResourceHubMetrics,
   ResourceSupply,
   ResourceTracking,
-} from "@/generated/prisma";
+} from "@/generated/prisma/client";
 import {
   DEFAULT_ORDER_RESOURCES,
   PRODUCING_RESOURCES,

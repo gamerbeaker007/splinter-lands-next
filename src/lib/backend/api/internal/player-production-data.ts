@@ -1,7 +1,7 @@
 import { getLastUpdate } from "@/lib/backend/cache/utils";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
-import { PlayerProductionSummary } from "@/generated/prisma";
+import { PlayerProductionSummary } from "@/generated/prisma/client";
 
 let cachedPlayerProductionSummaryData: PlayerProductionSummary[] | null = null;
 let cachedTimestamp: Date | null = null;

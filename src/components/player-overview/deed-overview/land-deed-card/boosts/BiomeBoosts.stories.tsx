@@ -1,5 +1,5 @@
 // components/BiomeBoosts.stories.tsx
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Meta, StoryObj } from "@storybook/react";
 import { BiomeBoosts } from "./BiomeBoost";
 
 const meta: Meta<typeof BiomeBoosts> = {

@@ -1,3 +1,4 @@
+import "dotenv/config";
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";
@@ -8,10 +9,7 @@ import { computeAndStoreResourceProduction } from "@/scripts/lib/metrics/resourc
 import { computeAndStoreTotalSupply } from "@/scripts/lib/metrics/resourceSupply";
 import { fetchAndProcessRegionData } from "@/scripts/lib/region/region";
 import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
-import dotenv from "dotenv";
 import { computeAndStoreBurnedResources } from "./lib/metrics/resourceBurnedDaily";
-
-dotenv.config();
 
 async function main() {
   logger.info("🚀 Starting daily data inject script...");

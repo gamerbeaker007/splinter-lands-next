@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Box } from "@mui/material";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
+import { Box } from "@mui/material";
+import type { Meta, StoryObj } from "@storybook/react";
 import FilterResourceIcon from "./FilterResourceIcon";
 
 const meta: Meta<typeof FilterResourceIcon> = {

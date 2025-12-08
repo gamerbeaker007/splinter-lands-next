@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import SummaryTile from "./SummaryTile";
 import {
   land_aura_lab_icon_url,
   land_castle_icon_url,
@@ -7,6 +5,8 @@ import {
   land_shard_mine_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { Box } from "@mui/material";
+import type { Meta, StoryObj } from "@storybook/react";
+import SummaryTile from "./SummaryTile";
 
 const meta: Meta<typeof SummaryTile> = {
   title: "Components/Region/SummaryTile",

@@ -1,6 +1,6 @@
 "use client";
 
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { Box } from "@mui/material";
 import { TradeHubTokenShareChart } from "@/components/resource/trade-hub-positions/TradeHubTokenShareChart";
 import { TradeHubRankingList } from "@/components/resource/trade-hub-positions/TradeHubRankingList";

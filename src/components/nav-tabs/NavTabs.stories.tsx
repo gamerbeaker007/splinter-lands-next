@@ -1,8 +1,8 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import NavTabs from "./NavTabs";
 import { Page } from "@/types/Page";
-import { useState } from "react";
 import { Box } from "@mui/material";
+import type { Meta, StoryObj } from "@storybook/react";
+import { useState } from "react";
+import NavTabs from "./NavTabs";
 
 const meta: Meta<typeof NavTabs> = {
   title: "Components/Tabs",

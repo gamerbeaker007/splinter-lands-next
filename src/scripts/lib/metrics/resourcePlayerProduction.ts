@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma";
+import { Prisma } from "@/generated/prisma/client";
 import { computeNetValues } from "@/lib/backend/helpers/computeNetValues";
 import { prepareSummary } from "@/lib/backend/helpers/productionCosts";
 import { getResourceDECPrices } from "@/lib/backend/helpers/resourcePrices";
