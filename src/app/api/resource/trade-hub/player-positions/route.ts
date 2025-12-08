@@ -1,4 +1,4 @@
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { getPlayerTradeHubPositionData } from "@/lib/backend/api/internal/player-trade-hub-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { NextResponse } from "next/server";

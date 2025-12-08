@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Tooltip from "@mui/material/Tooltip";
-import { Active } from "@/generated/prisma";
+import { Active } from "@/generated/prisma/client";
 
 const MAX_PLOTS = 150_000;
 

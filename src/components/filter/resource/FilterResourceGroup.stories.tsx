@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
-import FilterResourceGroup from "./FilterResourceGroup";
+import type { Meta, StoryObj } from "@storybook/react";
 import FilterRarityGroup from "../rarity/FilterRarityGroup";
+import FilterResourceGroup from "./FilterResourceGroup";
 
 const meta: Meta<typeof FilterRarityGroup> = {
   title: "Components/Filter/Resource/Group",

@@ -1,5 +1,5 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { ResourceHubMetrics } from "@/generated/prisma";
+import { ResourceHubMetrics } from "@/generated/prisma/client";
 import { paddedSMA, paddedEMA } from "@/lib/shared/priceUtils";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";

@@ -3,7 +3,7 @@ import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import { timeUntil } from "@/lib/utils/timeUtils";
 import Box from "@mui/material/Box";
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Meta, StoryObj } from "@storybook/react";
 import { ProgressBar } from "./ProgressBar";
 
 const meta: Meta<typeof ProgressBar> = {

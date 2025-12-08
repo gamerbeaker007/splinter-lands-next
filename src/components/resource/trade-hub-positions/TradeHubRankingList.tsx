@@ -1,6 +1,6 @@
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { PoolIcon } from "@/components/resource/trade-hub-positions/PoolIcon";
-import { PlayerTradeHubPosition } from "@/generated/prisma";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import { Box, Card, Typography } from "@mui/material";
 

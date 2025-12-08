@@ -1,4 +1,4 @@
-import { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { Meta, StoryObj } from "@storybook/react";
 import { ItemBoosts } from "./ItemBoost";
 
 const meta: Meta<typeof ItemBoosts> = {

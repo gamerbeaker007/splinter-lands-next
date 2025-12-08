@@ -1,4 +1,4 @@
-import { Deed, PlayerTradeHubPosition } from "@/generated/prisma";
+import { Deed, PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
 import { Assets } from "@/types/planner/market/market";

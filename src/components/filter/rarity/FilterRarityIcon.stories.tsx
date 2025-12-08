@@ -1,7 +1,7 @@
-import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import FilterRarityIcon from "./FilterRarityIcon";
-import { Box } from "@mui/material";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
+import { Box } from "@mui/material";
+import type { Meta, StoryObj } from "@storybook/react";
+import FilterRarityIcon from "./FilterRarityIcon";
 
 const meta: Meta<typeof FilterRarityIcon> = {
   title: "Components/Filter/Rarity",

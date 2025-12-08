@@ -1,6 +1,6 @@
 "use client";
 
-import { ResourceHubMetrics } from "@/generated/prisma";
+import { ResourceHubMetrics } from "@/generated/prisma/client";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,

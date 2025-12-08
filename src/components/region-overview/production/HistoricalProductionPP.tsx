@@ -1,6 +1,6 @@
 "use client";
 
-import { ResourceTracking } from "@/generated/prisma";
+import { ResourceTracking } from "@/generated/prisma/client";
 import Box from "@mui/material/Box";
 import { useEffect, useState } from "react";
 import ResourcePPLineChart from "./ResourcePPLineChart";

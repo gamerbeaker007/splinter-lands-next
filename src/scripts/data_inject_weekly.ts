@@ -1,10 +1,9 @@
+import "dotenv/config";
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
-import dotenv from "dotenv";
 import { computeAndStorePlayerHubPosition } from "./lib/metrics/playerTradeHubPosition";
 
-dotenv.config();
 
 async function main() {
   logger.info("🚀 Starting weekly data inject script...");

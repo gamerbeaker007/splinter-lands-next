@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ResourceFactorChart } from "./ResourceFactorChart";
-import { ResourceHubMetrics } from "@/generated/prisma";
+import { ResourceHubMetrics } from "@/generated/prisma/client";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ResourcePriceChart } from "./ResourcePriceChart";
 
