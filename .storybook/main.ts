@@ -1,4 +1,8 @@
 import type { StorybookConfig } from "@storybook/nextjs-vite";
+import { resolve } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -14,14 +18,15 @@ const config: StorybookConfig = {
     options: {},
   },
   staticDirs: ["../public"],
-  typescript: {
-    check: false, // Disable type-checking during Storybook build
-    reactDocgen: "react-docgen-typescript",
-    reactDocgenTypescriptOptions: {
-      shouldExtractLiteralValuesFromEnum: true,
-      propFilter: (prop) =>
-        prop.parent ? !/node_modules/.test(prop.parent.fileName) : true,
-    },
+  viteFinal: async (config) => {
+    // Add path alias resolution for Vite
+    if (config.resolve) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "@": resolve(__dirname, "../src"),
+      };
+    }
+    return config;
   },
 };
 export default config;
