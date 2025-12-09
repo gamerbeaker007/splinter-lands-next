@@ -10,13 +10,13 @@ import {
   Typography,
 } from "@mui/material";
 
+import { LowestMarketData } from "@/types/planner/market/market";
 import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
-import { SplCardDetails } from "@/types/splCardDetails";
-import Planner from "./planner/Planner";
-import { useCallback } from "react";
 import { RegionTax } from "@/types/regionTax";
-import { LowestMarketData } from "@/types/planner/market/market";
+import { SplCardDetails } from "@/types/splCardDetails";
+import { useCallback } from "react";
+import Planner from "./Planner";
 
 export type Props = {
   index: number;

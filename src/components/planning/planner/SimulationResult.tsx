@@ -6,7 +6,7 @@ import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography } from "@mui/material";
 import Image from "next/image";
-import SPSWarning from "./planner/output/SPSWarning";
+import SPSWarning from "./output/SPSWarning";
 
 type ResultProps = { items: ProductionInfo[] };
 

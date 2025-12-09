@@ -114,10 +114,22 @@ export async function fetchPlayerDetails(player: string) {
   return data as SplPlayerDetails;
 }
 
-export async function fetchPlayerCardCollection(player: string) {
+/**
+ *
+ * @param player
+ * @param skipHeaders This is added to avoid sending auth headers for certain requests (server action)
+ * should be removed when completely migrated to server actions
+ * @returns
+ */
+export async function fetchPlayerCardCollection(
+  player: string,
+  skipHeaders = false
+) {
   const url = `cards/collection/${player}`;
   logger.info(`Fetch player card collection for: ${player}`);
-  const headers = await getAuthorizationHeader(player);
+  const headers = skipHeaders
+    ? undefined
+    : await getAuthorizationHeader(player);
 
   const res = await splBaseClient.get(url, {
     headers,

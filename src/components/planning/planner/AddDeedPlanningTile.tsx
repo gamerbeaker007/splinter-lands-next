@@ -1,8 +1,7 @@
 "use client";
 
-import * as React from "react";
-import { Card, CardActionArea, Box } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
+import { Box, Card, CardActionArea } from "@mui/material";
 
 type AddDeedTileProps = {
   onAdd: () => void;

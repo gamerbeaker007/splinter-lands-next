@@ -1,5 +1,5 @@
-import { filterDeeds } from "@/lib/filters";
 import { getCachedPlayerData } from "@/lib/backend/services/playerService";
+import { filterDeeds } from "@/lib/filters";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
