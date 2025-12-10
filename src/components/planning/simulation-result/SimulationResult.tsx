@@ -1,6 +1,6 @@
 "use client";
 
-import TaxSimulationWarning from "@/components/planning/planner/output/TaxSimulationWarning";
+import TaxSimulationWarning from "@/components/planning/output/TaxSimulationWarning";
 import { Resource, RESOURCES } from "@/constants/resource/resource";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";

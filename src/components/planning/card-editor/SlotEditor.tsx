@@ -1,6 +1,6 @@
 "use client";
 
-import { CardBloodLineSelector } from "@/components/planning/planner/card-editor/CardBloodLineSelector";
+import { CardBloodLineSelector } from "@/components/planning/card-editor/CardBloodLineSelector";
 import { computeSlot } from "@/lib/frontend/utils/plannerCalcs";
 import { CSSSize } from "@/types/cssSize";
 import { PlotPlannerData, SlotInput } from "@/types/planner";

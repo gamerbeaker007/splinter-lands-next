@@ -4,11 +4,12 @@ import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { cacheLife } from "next/cache";
+import { fetchCardDetails } from "../api/spl/spl-base-api";
 import {
-  fetchCardDetails,
-  fetchPlayerCardCollection,
-} from "../api/spl/spl-base-api";
-import { fetchRegionDataPlayer } from "../api/spl/spl-land-api";
+  getCachedPlayerCardCollection,
+  getCachedPlayerData,
+} from "../services/playerService";
+import { getCachedCardDetailsData } from "../services/cardService";
 
 /**
  * Get player card collection with caching.
@@ -17,10 +18,7 @@ import { fetchRegionDataPlayer } from "../api/spl/spl-land-api";
 export async function getPlayerCollection(
   player: string
 ): Promise<SplPlayerCardCollection[]> {
-  "use cache";
-  cacheLife("hours");
-
-  return await fetchPlayerCardCollection(player, true);
+  return await getCachedPlayerCardCollection(player);
 }
 
 /**
@@ -30,10 +28,7 @@ export async function getPlayerCollection(
 export async function getPlayerDeeds(
   player: string
 ): Promise<RawRegionDataResponse> {
-  "use cache";
-  cacheLife("hours");
-
-  return await fetchRegionDataPlayer(player);
+  return await getCachedPlayerData(player);
 }
 
 /**
@@ -41,10 +36,7 @@ export async function getPlayerDeeds(
  * Uses daily cache since card details rarely change.
  */
 export async function getCardDetails(): Promise<SplCardDetails[]> {
-  "use cache";
-  cacheLife("days");
-
-  const result = await fetchCardDetails();
+  const result = await getCachedCardDetailsData();
   if (!result) {
     throw new Error("No card details found");
   }

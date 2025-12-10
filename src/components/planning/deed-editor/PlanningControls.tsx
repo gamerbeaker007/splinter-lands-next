@@ -1,6 +1,6 @@
 "use client";
 
-import { NumberSelection } from "@/components/planning/planner/deed-editor/NumberSelector";
+import { NumberSelection } from "@/components/planning/deed-editor/NumberSelector";
 import { DeedComplete } from "@/types/deed";
 import {
   DeedType,

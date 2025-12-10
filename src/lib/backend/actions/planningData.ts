@@ -2,15 +2,11 @@
 
 import { getCachedSplPriceData } from "@/lib/backend/services/tokenService";
 import { SplPriceData } from "@/types/price";
-import { cacheLife } from "next/cache";
 
 /**
  * Get token prices with hourly cache.
  */
 export async function getPlanningTokenPrices(): Promise<SplPriceData> {
-  "use cache";
-  cacheLife("hours");
-
   const data = await getCachedSplPriceData(false);
 
   // Convert Prices to SplPriceData

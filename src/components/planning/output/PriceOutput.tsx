@@ -1,5 +1,5 @@
-import PriceCardItem from "@/components/planning/planner/output/PriceCardItem";
-import PriceItem from "@/components/planning/planner/output/PriceItem";
+import PriceCardItem from "@/components/planning/output/PriceCardItem";
+import PriceItem from "@/components/planning/output/PriceItem";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import {
   findLowestCardPrice,

@@ -34,7 +34,7 @@ import {
   calcProductionInfo,
   calcTotalPP,
   calcTotemChancePerHour,
-} from "../../../../lib/frontend/utils/plannerCalcs";
+} from "../../../lib/frontend/utils/plannerCalcs";
 import SlotEditor from "../card-editor/SlotEditor";
 import { PlannerControls } from "../deed-editor/PlanningControls";
 import { DECOutput } from "../output/DECOutput";

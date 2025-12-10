@@ -1,7 +1,8 @@
 "use client";
-import { AddDeedPlanningTile } from "@/components/planning/planner/planner-tile/AddDeedPlanningTile";
-import { DeedPlanning } from "@/components/planning/planner/planner-tile/DeedPlanning";
-import { SimulationResult } from "@/components/planning/planner/simulation-result/SimulationResult";
+import { AddDeedPlanningTile } from "@/components/planning/planner-tile/AddDeedPlanningTile";
+import { DeedPlanning } from "@/components/planning/planner-tile/DeedPlanning";
+import { SimulationResult } from "@/components/planning/simulation-result/SimulationResult";
+import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
@@ -15,7 +16,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -34,6 +35,12 @@ export default function PlanningPageContent({
   tokenPriceData,
   regionTax,
 }: PlanningPageContentProps) {
+  const { setTitle } = usePageTitle();
+
+  useEffect(() => {
+    setTitle("Land Planning");
+  }, [setTitle]);
+
   const [plans, setPlans] = useState<ProductionInfo[]>([
     {
       consume: [],

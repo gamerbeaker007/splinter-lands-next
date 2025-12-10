@@ -1,7 +1,5 @@
 import PlanningPageSkeleton from "@/app/planning/loading";
-import PlanningTabNavigation from "@/app/planning/PlanningTabNavigation";
-import PlanningPageContent from "@/components/planning/planner/PlanningPageContent";
-import PlayerPlaygroundPage from "@/components/planning/playground/PlayerPlaygroundPage";
+import PlanningPageContent from "@/components/planning/PlanningPageContent";
 import { getPlanningTokenPrices } from "@/lib/backend/actions/planningData";
 import { getCardDetails } from "@/lib/backend/actions/playerPlanning";
 import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
@@ -33,25 +31,12 @@ async function PlanningTab() {
   );
 }
 
-async function PlaygroundTab() {
-  return <PlayerPlaygroundPage />;
-}
-
 export default function PlanningPage() {
   return (
     <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
-      <PlanningTabNavigation
-        planningTab={
-          <Suspense fallback={<PlanningPageSkeleton />}>
-            <PlanningTab />
-          </Suspense>
-        }
-        playgroundTab={
-          <Suspense fallback={<PlanningPageSkeleton />}>
-            <PlaygroundTab />
-          </Suspense>
-        }
-      />
+      <Suspense fallback={<PlanningPageSkeleton />}>
+        <PlanningTab />
+      </Suspense>
     </Container>
   );
 }
