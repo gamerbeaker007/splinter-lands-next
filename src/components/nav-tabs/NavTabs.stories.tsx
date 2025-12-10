@@ -1,7 +1,7 @@
-import { Page } from "@/types/Page";
 import { Box } from "@mui/material";
 import type { Meta, StoryObj } from "@storybook/react";
 import { useState } from "react";
+import { Page } from "../../types/Page";
 import NavTabs from "./NavTabs";
 
 const meta: Meta<typeof NavTabs> = {

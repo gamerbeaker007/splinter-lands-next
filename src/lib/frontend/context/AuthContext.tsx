@@ -1,6 +1,10 @@
 "use client";
 
-import { useCsrfToken } from "@/hooks/useCsrf";
+import {
+  getAuthStatus,
+  loginAction,
+  logoutAction,
+} from "@/lib/backend/actions/authActions";
 import logger from "@/lib/frontend/log/logger.client";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import {
@@ -34,7 +38,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { getCsrfToken } = useCsrfToken();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,31 +46,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const checkAuthStatus = async () => {
     try {
       setError(null);
-      const response = await fetch("/api/auth/status", {
-        credentials: "include",
-      });
+      const data = await getAuthStatus();
 
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.username) {
-          setUser({
-            username: data.username,
-            isAuthenticated: data.authenticated,
-          });
-        } else {
-          setUser(null);
-        }
-      } else if (response.status === 401) {
-        // Expected when not logged in
-        setUser(null);
+      if (data.authenticated && data.username) {
+        setUser({
+          username: data.username,
+          isAuthenticated: true,
+        });
       } else {
-        const errorMsg = `Auth status check failed with status: ${response.status}`;
-        logger.error(errorMsg);
-        setError(errorMsg);
         setUser(null);
       }
     } catch (error) {
-      const errorMsg = "Auth check network error";
+      const errorMsg = "Auth check error";
       logger.error(errorMsg, error);
       setError(errorMsg);
       setUser(null);
@@ -133,9 +123,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       setError(null);
 
-      // Fetch CSRF token when needed (lazy loading)
-      const csrfToken = await getCsrfToken();
-
       const finalTimestamp = timestamp || Date.now();
       const message = `${username.toLowerCase()}${finalTimestamp}`;
 
@@ -143,24 +130,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const finalSignature =
         signature || (await signWithKeychain(username, message));
 
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": csrfToken,
-        },
-        body: JSON.stringify({
-          username: username.toLowerCase(),
-          timestamp: finalTimestamp,
-          signature: finalSignature,
-        }),
-        credentials: "include",
-      });
+      // Use server action instead of API route
+      const result = await loginAction(
+        username.toLowerCase(),
+        finalTimestamp,
+        finalSignature
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        const errorMsg =
-          errorData.error || `Login failed with status: ${response.status}`;
+      if (!result.success) {
+        const errorMsg = result.error || "Login failed";
         setError(errorMsg);
         throw new Error(errorMsg);
       }
@@ -183,10 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       setError(null);
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      await logoutAction();
     } catch (error) {
       const errorMsg = "Logout network error";
       logger.error(errorMsg, error);

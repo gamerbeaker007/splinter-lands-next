@@ -1,95 +1,15 @@
-import { validateCsrfToken } from "@/lib/backend/csrf";
+"use server";
+
 import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
 import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
-import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import { determineCardInfo } from "@/lib/utils/cardUtil";
+import { CardFilterInput } from "@/types/filters";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { NextRequest, NextResponse } from "next/server";
-
-export async function POST(request: NextRequest) {
-  try {
-    let player, force, cardFilters, requestBody;
-    try {
-      requestBody = await request.json();
-      player = requestBody.player;
-      force = requestBody.force || false;
-      cardFilters = requestBody.cardFilters || {};
-    } catch (err) {
-      logError("Failed to parse JSON body in login request", err);
-      return NextResponse.json(
-        { error: "Invalid JSON in request body" },
-        { status: 400 }
-      );
-    }
-    // Validate CSRF token
-    const csrfValidation = await validateCsrfToken(request, requestBody);
-    if (!csrfValidation.isValid) {
-      return NextResponse.json(
-        { error: csrfValidation.error },
-        { status: 403 }
-      );
-    }
-
-    // Validate JWT token if present (for authenticated requests)
-    const jwtToken = request.cookies.get("jwt_token")?.value;
-    if (jwtToken) {
-      const jwtValidation = await validateSplJwt(jwtToken);
-      if (!jwtValidation.valid) {
-        // Clear expired JWT token (the other cookies are just convenience)
-        const response = NextResponse.json(
-          {
-            error: "Authentication expired. Please log in again.",
-            expired: true,
-          },
-          { status: 401 }
-        );
-
-        response.cookies.delete("jwt_token");
-        return response;
-      }
-    }
-
-    if (!player) {
-      return NextResponse.json(
-        { error: "Missing 'player' parameter" },
-        { status: 400 }
-      );
-    }
-
-    const playerCardCollection = await getCachedPlayerCardCollection(
-      player,
-      force
-    );
-
-    const cardDetails = await getCachedCardDetailsData();
-
-    const filtered = filterCardCollection(
-      playerCardCollection,
-      cardDetails,
-      player,
-      cardFilters
-    );
-    const grouped = groupCards(filtered, cardDetails);
-    return NextResponse.json(
-      {
-        cards: Array.from(grouped.values()),
-      },
-      { status: 200 }
-    );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-
-    const isNotFound = message.toLowerCase().includes("not found");
-    return NextResponse.json(
-      { error: message },
-      { status: isNotFound ? 404 : 501 }
-    );
-  }
-}
+import { cookies } from "next/headers";
 
 const parsePP = (ppStr: string | number | null | undefined): number => {
   if (ppStr == null) return 0;
@@ -169,3 +89,43 @@ const groupCards = (
 
   return map;
 };
+
+export async function getPlayerCardCollection(
+  player: string,
+  cardFilters: CardFilterInput = {},
+  force: boolean = false
+): Promise<GroupedCardRow[]> {
+  if (!player) {
+    throw new Error("Player parameter is required");
+  }
+
+  // Validate JWT token if present - if expired, clear cookie and redirect to login
+  const cookieStore = await cookies();
+  const jwtToken = cookieStore.get("jwt_token")?.value;
+  if (jwtToken) {
+    const jwtValidation = await validateSplJwt(jwtToken);
+    if (!jwtValidation.valid) {
+      // Clear expired JWT token
+      cookieStore.delete("jwt_token");
+      // Throw a specific error that the client can handle for logout
+      throw new Error("AUTH_EXPIRED");
+    }
+  }
+
+  const playerCardCollection = await getCachedPlayerCardCollection(
+    player,
+    force
+  );
+
+  const cardDetails = await getCachedCardDetailsData();
+
+  const filtered = filterCardCollection(
+    playerCardCollection,
+    cardDetails,
+    player,
+    cardFilters
+  );
+
+  const grouped = groupCards(filtered, cardDetails);
+  return Array.from(grouped.values());
+}

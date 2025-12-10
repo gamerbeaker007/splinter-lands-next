@@ -16,16 +16,16 @@ export default function PlayerPageTile() {
   const gotoOverview = () => {
     const trimmed = player.trim();
     router.push(
-      trimmed ? `/player-overview?player=${trimmed}` : "/player-overview"
+      trimmed
+        ? `/player-overview/dashboard?player=${trimmed}`
+        : "/player-overview"
     );
   };
 
   const gotoDeeds = () => {
     const trimmed = player.trim();
     router.push(
-      trimmed
-        ? `/player-overview?player=${trimmed}&tab=deed`
-        : "/player-overview"
+      trimmed ? `/player-overview/deed?player=${trimmed}` : "/player-overview"
     );
   };
 
@@ -33,7 +33,7 @@ export default function PlayerPageTile() {
     const trimmed = player.trim();
     router.push(
       trimmed
-        ? `/player-overview?player=${trimmed}&tab=overview`
+        ? `/player-overview/overview?player=${trimmed}`
         : "/player-overview"
     );
   };

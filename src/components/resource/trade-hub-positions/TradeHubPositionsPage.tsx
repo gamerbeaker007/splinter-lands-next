@@ -1,8 +1,9 @@
+"use client";
 import { groupedPlayerTradeHubPosition } from "@/app/api/resource/trade-hub/player-positions/route";
+import PlayerInput from "@/components/player-overview/PlayerInput";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { TradeHubTokenSection } from "./TradeHubTokenSection";
-import PlayerInput from "@/components/player-overview/PlayerInput";
 
 export default function TradeHubPositionPage() {
   const [groupedPlayerTradeHubPosition, setGroupedPlayerTradeHubPosition] =
