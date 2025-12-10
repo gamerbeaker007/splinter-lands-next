@@ -1,4 +1,4 @@
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { filterDeeds } from "@/lib/filters";
 import { DEFAULT_ORDER_RESOURCES } from "@/lib/shared/statics";
@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const filters: FilterInput = await req.json();
-    const blob = await getCachedRegionData();
+    const blob = await getCachedRegionDataSSR();
     const filteredDeeds = filterDeeds(blob, filters);
 
     const result: Record<string, RegionActiveSummary> = {};
@@ -48,7 +48,6 @@ export async function POST(req: Request) {
         orderedResourceMap[res] = result[res];
       }
     }
-
     return NextResponse.json(orderedResourceMap);
   } catch (err) {
     logError("Failed to load active data", err);

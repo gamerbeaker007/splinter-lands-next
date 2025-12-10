@@ -1,14 +1,14 @@
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
+import { processPlayerTaxIncome } from "@/lib/backend/services/playerService";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { filterDeeds } from "@/lib/filters";
 import { NextResponse } from "next/server";
-import { processPlayerTaxIncome } from "@/lib/backend/services/playerService";
 
 export async function POST(req: Request) {
   try {
     const { player } = await req.json();
-    const allData = await getCachedRegionData();
+    const allData = await getCachedRegionDataSSR();
     const resourcePrices = await getCachedResourcePrices();
     const playerData = filterDeeds(allData, {
       filter_players: [player],

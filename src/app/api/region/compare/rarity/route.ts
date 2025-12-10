@@ -1,5 +1,5 @@
 import { Resource } from "@/constants/resource/resource";
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { filterDeeds } from "@/lib/filters";
@@ -13,7 +13,7 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   try {
     const filters: FilterInput = await req.json();
-    const blob = await getCachedRegionData();
+    const blob = await getCachedRegionDataSSR();
     const filteredDeeds = filterDeeds(blob, filters);
 
     const prices = await getCachedResourcePrices();

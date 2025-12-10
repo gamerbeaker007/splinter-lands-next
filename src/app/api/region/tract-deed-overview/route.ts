@@ -1,4 +1,4 @@
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getCachedStakedAssets } from "@/lib/backend/services/playerService";
 import {
@@ -17,7 +17,7 @@ let nextAvailableTime = Date.now();
 export async function POST(req: Request) {
   try {
     const filters: FilterInput = await req.json();
-    const deeds = await getCachedRegionData();
+    const deeds = await getCachedRegionDataSSR();
     const deedsFiltered = filterDeeds(deeds, filters);
     const prices = await getCachedResourcePrices();
     const enriched1 = await enrichWithProgressInfo(deedsFiltered);

@@ -3,13 +3,11 @@
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { cacheLife } from "next/cache";
-import { fetchCardDetails } from "../api/spl/spl-base-api";
+import { getCachedCardDetailsData } from "../services/cardService";
 import {
   getCachedPlayerCardCollection,
   getCachedPlayerData,
 } from "../services/playerService";
-import { getCachedCardDetailsData } from "../services/cardService";
 
 /**
  * Get player card collection with caching.

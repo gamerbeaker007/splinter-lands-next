@@ -1,5 +1,4 @@
-import {} from "../../api/internal/deed-data";
-import { getCachedRegionDataSSR } from "../../api/internal/deed-data-v2";
+import { getCachedRegionDataSSR } from "../../api/internal/deed-data";
 
 /**
  * Get Daily SPS ratio this is average of (rewards_per_hour / (boostedPP * site_efficiency)) for all deeds producing SPS

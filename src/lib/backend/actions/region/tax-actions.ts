@@ -1,8 +1,8 @@
 import { FilterInput } from "@/types/filters";
 import { RegionTax } from "@/types/regionTax";
+import { getCachedRegionDataSSR } from "../../api/internal/deed-data";
 import { calculateRegionTax } from "../../services/regionService";
 import { getActualResourcePrices } from "../resources/prices-actions";
-import { getCachedRegionDataSSR } from "../../api/internal/deed-data-v2";
 
 /**
  * Get region tax information with hourly cache.

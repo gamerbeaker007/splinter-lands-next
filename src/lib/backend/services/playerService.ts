@@ -1,5 +1,4 @@
 import { Resource } from "@/constants/resource/resource";
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
 import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
 import {
   computeNetValues,
@@ -29,6 +28,7 @@ import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import { SplTaxes } from "@/types/splTaxes";
 import { StakedAssets } from "@/types/stakedAssets";
+import { getCachedRegionDataSSR } from "../api/internal/deed-data";
 import {
   fetchPlayerBalances,
   fetchPlayerCardCollection,
@@ -195,7 +195,7 @@ export async function getCachedPlayerOverviewData(
   const total_dec = playerRegionInfo.totals.totalDEC;
 
   //DEC Tax Income
-  const allData = await getCachedRegionData();
+  const allData = await getCachedRegionDataSSR();
   const resourcePrices = await getCachedResourcePrices();
   const playerData = filterDeeds(allData, {
     filter_players: [player],

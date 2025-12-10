@@ -1,4 +1,4 @@
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { getPlayerProductionData } from "@/lib/backend/api/internal/player-production-data";
 import {
   calculateLCERatio,
@@ -177,7 +177,7 @@ export async function GET() {
   try {
     const playerSummaryData: PlayerProductionSummaryEnriched[] =
       await getPlayerProductionData();
-    const regionData = await getCachedRegionData();
+    const regionData = await getCachedRegionDataSSR();
 
     const stakeMap = aggregateStakingInfo(regionData);
     applyStakingDataToPlayers(playerSummaryData, stakeMap);
