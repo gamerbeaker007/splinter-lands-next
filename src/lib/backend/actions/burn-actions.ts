@@ -4,6 +4,7 @@ import { BurnCardsDataPoint } from "@/types/burn";
 
 /**
  * Get the daily burned token balances.
+ * For now no caching is implemented. low data low frequency.
  */
 
 export async function getDailyBurnedBalances(): Promise<{

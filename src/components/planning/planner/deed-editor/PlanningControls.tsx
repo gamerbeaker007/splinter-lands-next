@@ -1,5 +1,6 @@
 "use client";
 
+import { NumberSelection } from "@/components/planning/planner/deed-editor/NumberSelector";
 import { DeedComplete } from "@/types/deed";
 import {
   DeedType,
@@ -11,12 +12,11 @@ import {
 import CloudDownloadIcon from "@mui/icons-material/CloudDownload";
 import { IconButton, Stack, Tooltip } from "@mui/material";
 import * as React from "react";
-import { ImportDeedDialog } from "../ImportDeedDialog";
+import { ImportDeedDialog } from "../planner-tile/ImportDeedDialog";
 import { MagicTypeSelector } from "./DeedMagicTypeSelector";
 import { PlotRaritySelector } from "./DeedRaritySelector";
 import { PlotStatusSelector } from "./DeedStatusSelector";
 import { DeedTypeSelector } from "./DeedTypeSelector";
-import { NumberSelection } from "@/components/planning/planner/deed-editor/NumberSelector";
 
 type Props = {
   value: PlotPlannerData;

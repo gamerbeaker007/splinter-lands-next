@@ -2,6 +2,7 @@ import "dotenv/config";
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { prisma } from "@/lib/prisma";
+import { refreshNextCache } from "@/scripts/lib/cache/refreshCache";
 import { computeAndStoreDailyActiveMetrics } from "@/scripts/lib/metrics/active";
 import { computeAndStoreResourceHubMetrics } from "@/scripts/lib/metrics/resourceHub";
 import { computeAndStorePlayerProduction } from "@/scripts/lib/metrics/resourcePlayerProduction";
@@ -25,6 +26,16 @@ async function main() {
   await computeAndStorePlayerProduction(today);
   await computeAndStoreBurnedResources(today);
   await pushLastUpdateDate();
+
+  // Refresh Next.js cache after data injection
+  try {
+    await refreshNextCache();
+  } catch (error) {
+    logger.warn(
+      "⚠️  Failed to refresh Next.js cache - continuing anyway ...",
+      error
+    );
+  }
 
   logger.info(
     `--------- ✅ Finished data inject. Total time: ${(Date.now() - start) / 1000}s ---------`

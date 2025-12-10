@@ -169,7 +169,8 @@ export default function PriceOutput({
             Total USD Price:
           </Typography>
           <Typography variant="body1" color="success.main">
-            {totalUSD.toLocaleString()} USD
+            {totalUSD.toLocaleString("en-US")} USD{" "}
+            {/* TODO investigate SSR and locale formatting */}
           </Typography>
           {hasWarning && (
             <Tooltip

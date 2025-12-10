@@ -41,7 +41,7 @@ export async function getAuthorizationHeader(
 
     return headers ? headers : undefined;
   } catch (error) {
-    logger.warn("Failed to read auth token from cookies:", error);
+    logger.warn(`Failed to read auth token from cookies: ${error}`);
     return undefined;
   }
 }

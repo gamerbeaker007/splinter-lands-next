@@ -34,15 +34,15 @@ import {
   calcProductionInfo,
   calcTotalPP,
   calcTotemChancePerHour,
-} from "../../../lib/frontend/utils/plannerCalcs";
-import SlotEditor from "./card-editor/SlotEditor";
-import { PlannerControls } from "./deed-editor/PlanningControls";
-import { DECOutput } from "./output/DECOutput";
-import ImportedPlotInfo from "./output/ImportedPlotInfo";
-import { LandBoostOutput } from "./output/LandBoostOutput";
-import PriceOutput from "./output/PriceOutput";
-import { ProductionOutput } from "./output/ProductionOutput";
-import { ResourceOutput } from "./output/ResourceOutput";
+} from "../../../../lib/frontend/utils/plannerCalcs";
+import SlotEditor from "../card-editor/SlotEditor";
+import { PlannerControls } from "../deed-editor/PlanningControls";
+import { DECOutput } from "../output/DECOutput";
+import ImportedPlotInfo from "../output/ImportedPlotInfo";
+import { LandBoostOutput } from "../output/LandBoostOutput";
+import PriceOutput from "../output/PriceOutput";
+import { ProductionOutput } from "../output/ProductionOutput";
+import { ResourceOutput } from "../output/ResourceOutput";
 import { RuniSelector } from "./RuniSelector";
 import { TitleSelector } from "./TitleSelector";
 import { TotemSelector } from "./TotemSelector";

@@ -1,7 +1,7 @@
 "use client";
-import { AddDeedPlanningTile } from "@/components/planning/planner/AddDeedPlanningTile";
-import { DeedPlanning } from "@/components/planning/planner/DeedPlanning";
-import { SimulationResult } from "@/components/planning/planner/SimulationResult";
+import { AddDeedPlanningTile } from "@/components/planning/planner/planner-tile/AddDeedPlanningTile";
+import { DeedPlanning } from "@/components/planning/planner/planner-tile/DeedPlanning";
+import { SimulationResult } from "@/components/planning/planner/simulation-result/SimulationResult";
 import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
