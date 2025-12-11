@@ -4,23 +4,24 @@ import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
 
 // Global cache using globalThis (survives hot reloads)
+// Properties are namespaced to avoid collisions with other caches
 const cache = globalThis as unknown as {
-  playerTradeHubData: PlayerTradeHubPosition[] | null;
-  promise: Promise<PlayerTradeHubPosition[]> | null;
-  lastDate: Date | null;
+  __playerTradeHubCache: PlayerTradeHubPosition[] | null;
+  __playerTradeHubPromise: Promise<PlayerTradeHubPosition[]> | null;
+  __playerTradeHubLastDate: Date | null;
 };
 
-cache.playerTradeHubData ??= null;
-cache.promise ??= null;
-cache.lastDate ??= null;
+cache.__playerTradeHubCache ??= null;
+cache.__playerTradeHubPromise ??= null;
+cache.__playerTradeHubLastDate ??= null;
 
 export async function getPlayerTradeHubPositionData(
   forceWait: boolean = false
 ): Promise<PlayerTradeHubPosition[]> {
   // If forcing refresh, invalidate cache
   if (forceWait) {
-    cache.playerTradeHubData = null;
-    cache.lastDate = null;
+    cache.__playerTradeHubCache = null;
+    cache.__playerTradeHubLastDate = null;
   }
 
   // Check for new data in database
@@ -38,39 +39,39 @@ export async function getPlayerTradeHubPositionData(
 
   // Return cached data if it's up to date
   if (
-    cache.playerTradeHubData &&
-    cache.lastDate &&
+    cache.__playerTradeHubCache &&
+    cache.__playerTradeHubLastDate &&
     latestDate &&
-    cache.lastDate.getTime() === latestDate.getTime()
+    cache.__playerTradeHubLastDate.getTime() === latestDate.getTime()
   ) {
-    return cache.playerTradeHubData;
+    return cache.__playerTradeHubCache;
   }
 
   // Wait for existing fetch if in progress
-  if (cache.promise) {
+  if (cache.__playerTradeHubPromise) {
     logger.info(
       "⏳ Waiting for in-progress player trade hub position data fetch..."
     );
-    return cache.promise;
+    return cache.__playerTradeHubPromise;
   }
 
   // Fetch from database
   logger.info("🔄 Fetching player trade hub position data from database...");
-  cache.promise = prisma.playerTradeHubPosition.findMany({});
+  cache.__playerTradeHubPromise = prisma.playerTradeHubPosition.findMany({});
 
-  cache.playerTradeHubData = await cache.promise;
-  cache.lastDate = latestDate;
-  cache.promise = null;
+  cache.__playerTradeHubCache = await cache.__playerTradeHubPromise;
+  cache.__playerTradeHubLastDate = latestDate;
+  cache.__playerTradeHubPromise = null;
 
   logger.info(
-    `✅ Cached ${cache.playerTradeHubData.length} player trade hub position entries`
+    `✅ Cached ${cache.__playerTradeHubCache.length} player trade hub position entries`
   );
-  return cache.playerTradeHubData;
+  return cache.__playerTradeHubCache;
 }
 
 export async function invalidatePlayerTradeHubDataCache(): Promise<void> {
   logger.info("🗑️ Invalidating player trade hub position data cache");
-  cache.playerTradeHubData = null;
-  cache.promise = null;
-  cache.lastDate = null;
+  cache.__playerTradeHubCache = null;
+  cache.__playerTradeHubPromise = null;
+  cache.__playerTradeHubLastDate = null;
 }

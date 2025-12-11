@@ -4,46 +4,47 @@ import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
 
 // Global cache using globalThis (survives hot reloads)
+// Properties are namespaced to avoid collisions with other caches
 const cache = globalThis as unknown as {
-  tradeHubData: ResourceHubMetrics[] | null;
-  promise: Promise<ResourceHubMetrics[]> | null;
+  __tradeHubCache: ResourceHubMetrics[] | null;
+  __tradeHubPromise: Promise<ResourceHubMetrics[]> | null;
 };
 
-cache.tradeHubData ??= null;
-cache.promise ??= null;
+cache.__tradeHubCache ??= null;
+cache.__tradeHubPromise ??= null;
 
 export async function getAllTradeHubData(
   forceWait: boolean = false
 ): Promise<ResourceHubMetrics[]> {
   // If forcing refresh, invalidate cache
   if (forceWait) {
-    cache.tradeHubData = null;
+    cache.__tradeHubCache = null;
   }
 
   // Return cached data if available
-  if (cache.tradeHubData) {
-    return cache.tradeHubData;
+  if (cache.__tradeHubCache) {
+    return cache.__tradeHubCache;
   }
 
   // Wait for existing fetch if in progress
-  if (cache.promise) {
+  if (cache.__tradeHubPromise) {
     logger.info("⏳ Waiting for in-progress trade hub data fetch...");
-    return cache.promise;
+    return cache.__tradeHubPromise;
   }
 
   // Fetch from database
   logger.info("🔄 Fetching trade hub data from database...");
-  cache.promise = prisma.resourceHubMetrics.findMany({
+  cache.__tradeHubPromise = prisma.resourceHubMetrics.findMany({
     orderBy: {
       date: "asc",
     },
   });
 
-  cache.tradeHubData = await cache.promise;
-  cache.promise = null;
+  cache.__tradeHubCache = await cache.__tradeHubPromise;
+  cache.__tradeHubPromise = null;
 
-  logger.info(`✅ Cached ${cache.tradeHubData.length} trade hub entries`);
-  return cache.tradeHubData;
+  logger.info(`✅ Cached ${cache.__tradeHubCache.length} trade hub entries`);
+  return cache.__tradeHubCache;
 }
 
 export async function getLatestTradeHubEntries(): Promise<
@@ -66,6 +67,6 @@ export async function getLatestTradeHubEntries(): Promise<
 
 export async function invalidateTradeHubDataCache(): Promise<void> {
   logger.info("🗑️ Invalidating trade hub data cache");
-  cache.tradeHubData = null;
-  cache.promise = null;
+  cache.__tradeHubCache = null;
+  cache.__tradeHubPromise = null;
 }
