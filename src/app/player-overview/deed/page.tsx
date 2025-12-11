@@ -2,7 +2,7 @@
 
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import DeedOverview from "@/components/player-overview/deed-overview/DeedOverview";
-import { usePlayerOverview } from "../layout";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 
 const filterOptions = {
   regions: true,
@@ -14,12 +14,12 @@ const filterOptions = {
 };
 
 export default function Deed() {
-  const { selectedPlayer } = usePlayerOverview();
+  const { selectedPlayer } = usePlayer();
 
   return (
     <>
       <FilterDrawer player={selectedPlayer} filtersEnabled={filterOptions} />
-      <DeedOverview player={selectedPlayer} />
+      <DeedOverview />
     </>
   );
 }

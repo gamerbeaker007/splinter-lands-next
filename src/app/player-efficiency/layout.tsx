@@ -7,15 +7,13 @@ import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummary
 import { Box, Container } from "@mui/material";
 import {
   createContext,
+  ReactNode,
   useContext,
   useEffect,
   useState,
-  ReactNode,
 } from "react";
 
 type PlayerEfficiencyContextType = {
-  selectedPlayer: string;
-  setSelectedPlayer: (player: string) => void;
   playerProductionSummaryData: PlayerProductionSummaryEnriched[] | null;
 };
 
@@ -48,7 +46,7 @@ export default function PlayerEfficiencyLayout({
   children,
 }: PlayerEfficiencyLayoutProps) {
   const { setTitle } = usePageTitle();
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
+
   const [playerProductionSummaryData, setPlayerProductionSummaryData] =
     useState<PlayerProductionSummaryEnriched[] | null>(null);
 
@@ -69,13 +67,11 @@ export default function PlayerEfficiencyLayout({
   }, []);
 
   return (
-    <PlayerEfficiencyContext.Provider
-      value={{ selectedPlayer, setSelectedPlayer, playerProductionSummaryData }}
-    >
+    <PlayerEfficiencyContext.Provider value={{ playerProductionSummaryData }}>
       <PageNavTabs pages={pages} />
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={2}>
-          <PlayerInput onPlayerChange={setSelectedPlayer} />
+          <PlayerInput />
         </Box>
         <Box mt={4}>{children}</Box>
       </Container>

@@ -4,19 +4,17 @@ import RegionCardList from "@/components/player-overview/region-overview/RegionC
 import TaxCardList from "@/components/player-overview/region-overview/TaxCardList";
 import TotalsCardList from "@/components/player-overview/region-overview/TotalsCardList";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { FilterInput } from "@/types/filters";
 import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
+import { Refresh } from "@mui/icons-material";
 import { Box, Button, Typography } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 import ProductionTotalsDEC from "./ProductionTotalsDEC";
 import TaxTotalsDEC from "./TaxTotalsDEC";
-import { Refresh } from "@mui/icons-material";
 
-type Props = {
-  player: string;
-};
-
-export default function PlayerRegionOverview({ player }: Props) {
+export default function PlayerRegionOverview() {
+  const { selectedPlayer } = usePlayer();
   const [data, setData] = useState<PlayerRegionDataType | null>(null);
   const [taxData, setTaxData] = useState<RegionTaxSummary[] | null>(null);
   const [loadingText, setLoadingText] = useState<string | null>(null);
@@ -29,8 +27,12 @@ export default function PlayerRegionOverview({ player }: Props) {
         setData(null);
         setTaxData(null);
 
-        const data = await fetchPlayerRegionData(player, filters, force);
-        const taxData = await fetchPlayerTaxData(player, force);
+        const data = await fetchPlayerRegionData(
+          selectedPlayer,
+          filters,
+          force
+        );
+        const taxData = await fetchPlayerTaxData(selectedPlayer, force);
 
         setLoadingText(null);
         setData(data);
@@ -40,13 +42,13 @@ export default function PlayerRegionOverview({ player }: Props) {
         setLoadingText("An error occurred while loading data.");
       }
     },
-    [filters, player]
+    [filters, selectedPlayer]
   );
 
   useEffect(() => {
     (async () => {
       if (!filters) return;
-      if (!player || player === "") {
+      if (!selectedPlayer || selectedPlayer === "") {
         setData(null);
         setLoadingText(null);
         setTaxData(null);
@@ -55,7 +57,7 @@ export default function PlayerRegionOverview({ player }: Props) {
 
       await fetchPlayerData(false);
     })();
-  }, [filters, player, fetchPlayerData]);
+  }, [filters, selectedPlayer, fetchPlayerData]);
 
   return (
     <>

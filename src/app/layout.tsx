@@ -3,6 +3,7 @@ import SideBar from "@/components/side-bar/SideBar";
 import TopBar from "@/components/top-bar/TopBar";
 import { AuthProvider } from "@/lib/frontend/context/AuthContext";
 import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
+import { PlayerProvider } from "@/lib/frontend/context/PlayerContext";
 import theme from "@/lib/frontend/themes/themes";
 import {
   CssBaseline,
@@ -29,15 +30,17 @@ export default function RootLayout({
             <CssBaseline />
             <AuthProvider>
               <PageTitleProvider>
-                <Box display="flex" height="100vh" overflow="hidden">
-                  <SideBar />
-                  <Box display="flex" flexDirection="column" flexGrow={1}>
-                    <TopBar />
-                    <Box component="main" flexGrow={1} overflow="auto">
-                      {children}
+                <PlayerProvider>
+                  <Box display="flex" height="100vh" overflow="hidden">
+                    <SideBar />
+                    <Box display="flex" flexDirection="column" flexGrow={1}>
+                      <TopBar />
+                      <Box component="main" flexGrow={1} overflow="auto">
+                        {children}
+                      </Box>
                     </Box>
                   </Box>
-                </Box>
+                </PlayerProvider>
               </PageTitleProvider>
             </AuthProvider>
           </ThemeProvider>

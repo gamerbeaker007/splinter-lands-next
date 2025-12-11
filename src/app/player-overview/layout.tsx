@@ -8,38 +8,10 @@ import {
   useFilters,
 } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import { Alert, Box, Container } from "@mui/material";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-
-type PlayerOverviewContextType = {
-  selectedPlayer: string;
-  setSelectedPlayer: (player: string) => void;
-  playerData: SplPlayerDetails | null;
-  error: string | null;
-};
-
-const PlayerOverviewContext = createContext<PlayerOverviewContextType | null>(
-  null
-);
-
-export function usePlayerOverview() {
-  const context = useContext(PlayerOverviewContext);
-  if (!context) {
-    throw new Error(
-      "usePlayerOverview must be used within PlayerOverviewLayout"
-    );
-  }
-  return context;
-}
+import { ReactNode, useEffect, useState } from "react";
 
 const pages = [
   {
@@ -67,66 +39,60 @@ type PlayerOverviewLayoutProps = {
 function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
   const { setTitle } = usePageTitle();
   const { resetFilters } = useFilters();
-
-  // Read initial player from URL on mount only
-  const initialPlayer = useMemo(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("player")?.trim() || "";
-    }
-    return "";
-  }, []);
-
-  const [selectedPlayer, setSelectedPlayer] = useState<string>(initialPlayer);
+  const { selectedPlayer } = usePlayer();
   const [playerData, setPlayerData] = useState<SplPlayerDetails | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const prevPlayer = useRef<string | null>(null);
 
   useEffect(() => {
     setTitle("Player Overview");
   }, [setTitle]);
 
   useEffect(() => {
-    if (selectedPlayer && selectedPlayer !== prevPlayer.current) {
+    if (selectedPlayer) {
       resetFilters();
-      prevPlayer.current = selectedPlayer;
     }
   }, [selectedPlayer, resetFilters]);
 
+  // Fetch player data for validation
   useEffect(() => {
-    (async () => {
-      if (!selectedPlayer || selectedPlayer.trim() === "") {
-        setPlayerData(null);
-        setError(null);
-        return;
-      }
+    if (!selectedPlayer || selectedPlayer.trim() === "") {
+      setPlayerData(null);
+      setError(null);
+      return;
+    }
 
-      void fetch(
-        `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`
-      )
-        .then(async (res) => {
-          const json = await res.json();
-          if (!res.ok || json?.error) {
-            throw new Error(json?.error || "Unknown error");
-          }
-          setPlayerData(json);
-          setError(null);
-        })
-        .catch(() => {
-          setPlayerData(null);
-          setError(`Unable to find player: ${selectedPlayer}`);
-        });
-    })();
+    const fetchPlayerData = async () => {
+      try {
+        const res = await fetch(
+          `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`
+        );
+        const json = await res.json();
+
+        if (!res.ok || json?.error) {
+          throw new Error(json?.error || "Unknown error");
+        }
+
+        setPlayerData(json);
+        setError(null);
+      } catch (err) {
+        setPlayerData(null);
+        setError(
+          err instanceof Error
+            ? err.message
+            : `Unable to find player: ${selectedPlayer}`
+        );
+      }
+    };
+
+    fetchPlayerData();
   }, [selectedPlayer]);
 
   return (
-    <PlayerOverviewContext.Provider
-      value={{ selectedPlayer, setSelectedPlayer, playerData, error }}
-    >
+    <>
       <PageNavTabs pages={pages} />
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={2}>
-          <PlayerInput onPlayerChange={setSelectedPlayer} />
+          <PlayerInput />
         </Box>
 
         {error && (
@@ -141,7 +107,7 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
           </Box>
         )}
       </Container>
-    </PlayerOverviewContext.Provider>
+    </>
   );
 }
 

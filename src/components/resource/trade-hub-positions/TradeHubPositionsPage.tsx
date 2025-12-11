@@ -1,15 +1,15 @@
 "use client";
 import { groupedPlayerTradeHubPosition } from "@/app/api/resource/trade-hub/player-positions/route";
 import PlayerInput from "@/components/player-overview/PlayerInput";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { TradeHubTokenSection } from "./TradeHubTokenSection";
 
 export default function TradeHubPositionPage() {
+  const { selectedPlayer } = usePlayer();
   const [groupedPlayerTradeHubPosition, setGroupedPlayerTradeHubPosition] =
     useState<groupedPlayerTradeHubPosition | null>(null);
-
-  const [selectedPlayer, setSelectedPlayer] = useState<string>("");
 
   useEffect(() => {
     fetch("/api/resource/trade-hub/player-positions", {
@@ -30,7 +30,7 @@ export default function TradeHubPositionPage() {
   return (
     <>
       <Box mt={2}>
-        <PlayerInput onPlayerChange={setSelectedPlayer} />
+        <PlayerInput />
       </Box>
       <Box mt={2}>
         <Typography variant="h5">

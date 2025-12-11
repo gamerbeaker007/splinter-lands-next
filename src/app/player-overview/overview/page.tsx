@@ -2,9 +2,9 @@
 
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import PlayerRegionOverview from "@/components/player-overview/region-overview/PlayerRegionOverview";
-import { usePlayerOverview } from "../layout";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 
-const filterOptions = {
+const filterConfig = {
   regions: true,
   tracts: true,
   plots: true,
@@ -13,13 +13,13 @@ const filterOptions = {
   sorting: false,
 };
 
-export default function Overview() {
-  const { selectedPlayer } = usePlayerOverview();
+export default function PlayerOverviewPage() {
+  const { selectedPlayer } = usePlayer();
 
   return (
     <>
-      <FilterDrawer player={selectedPlayer} filtersEnabled={filterOptions} />
-      <PlayerRegionOverview player={selectedPlayer} />
+      <FilterDrawer player={selectedPlayer} filtersEnabled={filterConfig} />
+      <PlayerRegionOverview />
     </>
   );
 }

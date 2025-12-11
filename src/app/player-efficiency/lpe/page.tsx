@@ -1,10 +1,12 @@
 "use client";
 
 import LPEPage from "@/components/player-efficiency/LPEPage";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { usePlayerEfficiency } from "../layout";
 
 export default function LPE() {
-  const { playerProductionSummaryData, selectedPlayer } = usePlayerEfficiency();
+  const { selectedPlayer } = usePlayer();
+  const { playerProductionSummaryData } = usePlayerEfficiency();
 
   return (
     <LPEPage
