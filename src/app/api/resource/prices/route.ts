@@ -1,10 +1,10 @@
-import { getResourceDECPrices } from "@/lib/backend/helpers/resourcePrices";
+import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
 import { logError } from "@/lib/backend/log/logUtils";
 import { NextResponse } from "next/server";
 
 export async function GET() {
   try {
-    const data = await getResourceDECPrices();
+    const data = await getActualResourcePrices();
     return NextResponse.json(data, { status: 200 });
   } catch (err) {
     logError("Failed to load data", err);

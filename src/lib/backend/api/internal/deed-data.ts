@@ -1,63 +1,54 @@
-import { getLastUpdate } from "@/lib/backend/cache/utils";
+"use server";
 import { prisma } from "@/lib/prisma";
 import { DeedComplete } from "@/types/deed";
 import logger from "../../log/logger.server";
 
-let cachedDeedData: DeedComplete[] | null = null;
-let cachedDeedTimestamp: Date | null = null;
-let refreshPromise: Promise<void> | null = null;
+// Global cache using globalThis (survives hot reloads)
+const cache = globalThis as unknown as {
+  deeds: DeedComplete[] | null;
+  promise: Promise<DeedComplete[]> | null;
+};
 
-async function getAllDeedData(): Promise<DeedComplete[]> {
-  logger.info("getAllDeedData...");
-  return prisma.deed.findMany({
+cache.deeds ??= null;
+cache.promise ??= null;
+
+export async function getCachedRegionDataSSR(
+  forceWait: boolean = false
+): Promise<DeedComplete[]> {
+  // If forcing refresh, invalidate cache
+  if (forceWait) {
+    cache.deeds = null;
+  }
+
+  // Return cached data if available
+  if (cache.deeds) {
+    return cache.deeds;
+  }
+
+  // Wait for existing fetch if in progress
+  if (cache.promise) {
+    logger.info("⏳ Waiting for in-progress fetch...");
+    return cache.promise;
+  }
+
+  // Fetch from database
+  logger.info("🔄 Fetching deeds from database...");
+  cache.promise = prisma.deed.findMany({
     include: {
       worksiteDetail: true,
       stakingDetail: true,
     },
   });
+
+  cache.deeds = await cache.promise;
+  cache.promise = null;
+
+  logger.info(`✅ Cached ${cache.deeds.length} deeds`);
+  return cache.deeds;
 }
 
-async function refreshDeedCache(): Promise<void> {
-  if (!refreshPromise) {
-    refreshPromise = (async () => {
-      const lastUpdate = await getLastUpdate();
-      logger.info("Refreshing deed data...");
-      cachedDeedData = await getAllDeedData();
-      cachedDeedTimestamp = lastUpdate;
-      refreshPromise = null;
-    })();
-  }
-  return refreshPromise;
-}
-
-async function triggerRefreshIfStale(
-  forceWait: boolean = false
-): Promise<boolean> {
-  const lastUpdate = await getLastUpdate();
-
-  const needsRefresh =
-    !cachedDeedData || !cachedDeedTimestamp || cachedDeedTimestamp < lastUpdate;
-
-  if (needsRefresh) {
-    if (forceWait) {
-      await refreshDeedCache();
-    } else {
-      void refreshDeedCache(); // Fire-and-forget
-    }
-  }
-
-  return needsRefresh;
-}
-
-export async function getCachedRegionData(
-  forceWait: boolean = false
-): Promise<DeedComplete[]> {
-  await triggerRefreshIfStale(forceWait);
-
-  if (!cachedDeedData) {
-    logger.info("No cache yet – forcing wait for refresh...");
-    await refreshDeedCache();
-  }
-
-  return cachedDeedData!;
+export async function invalidateDeedCache(): Promise<void> {
+  logger.info("🗑️ Invalidating deed cache");
+  cache.deeds = null;
+  cache.promise = null;
 }

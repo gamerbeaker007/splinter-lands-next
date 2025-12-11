@@ -13,7 +13,7 @@ import { ProgressInfo } from "@/types/progressInfo";
 import { RegionSummary } from "@/types/regionSummary";
 import { RegionTax } from "@/types/regionTax";
 import { filterDeeds } from "../../filters";
-import { getCachedRegionData } from "../api/internal/deed-data";
+import { getCachedRegionDataSSR } from "../api/internal/deed-data";
 import { getCachedTaxes } from "./playerService";
 
 export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
@@ -168,14 +168,14 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 export async function getRegionSummary(
   filters: FilterInput
 ): Promise<RegionSummary> {
-  const blob = await getCachedRegionData();
+  const blob = await getCachedRegionDataSSR();
   const filteredDeeds = filterDeeds(blob, filters);
 
   return summarizeDeedsData(filteredDeeds);
 }
 
 export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
-  const blob = await getCachedRegionData(forceWait);
+  const blob = await getCachedRegionDataSSR(forceWait);
 
   const uniquePlayers = new Set<string>();
 
@@ -190,7 +190,7 @@ export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
 }
 
 export async function getActiveDeedCountByRegion(filters: FilterInput) {
-  const blob = await getCachedRegionData();
+  const blob = await getCachedRegionDataSSR();
   const filteredDeeds = filterDeeds(blob, filters);
 
   const countByTract = filters.filter_regions?.length === 1;
@@ -221,7 +221,7 @@ export async function getActiveDeedCountByRegion(filters: FilterInput) {
 export async function getAvailableFilterValues(
   player: string | null
 ): Promise<FilterInput> {
-  let blob = await getCachedRegionData();
+  let blob = await getCachedRegionDataSSR();
   if (player) {
     blob = filterDeeds(blob, { filter_players: [player] });
   }

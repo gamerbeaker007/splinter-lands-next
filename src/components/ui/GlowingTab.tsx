@@ -37,7 +37,8 @@ const StyledTab = styled(Tab, {
     transform: "translate(-50%, -50%)",
     borderRadius: "50%",
     background: `radial-gradient(circle, ${theme.palette.primary.light} 0%, transparent 70%)`,
-    zIndex: -1,
+    zIndex: 0,
+    pointerEvents: "none",
   },
 
   // Selected diamond marker

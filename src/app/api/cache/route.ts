@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     const [uniquePlayers, lastUpdate] = await Promise.all([
-      getUniquePlayerCountFromBlob(true),
+      getUniquePlayerCountFromBlob(),
       getLastUpdate(),
       // otherCacheRefreshers()
     ]);

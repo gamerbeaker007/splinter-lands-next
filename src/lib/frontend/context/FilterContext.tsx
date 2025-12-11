@@ -1,7 +1,13 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
 import { FilterInput } from "@/types/filters";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useState,
+} from "react";
 
 type FilterContextType = {
   filters: FilterInput;
@@ -14,7 +20,7 @@ const FilterContext = createContext<FilterContextType | undefined>(undefined);
 export const FilterProvider = ({ children }: { children: ReactNode }) => {
   const [filters, setFilters] = useState<FilterInput>({});
 
-  const resetFilters = () => setFilters({});
+  const resetFilters = useCallback(() => setFilters({}), []);
 
   return (
     <FilterContext.Provider value={{ filters, setFilters, resetFilters }}>

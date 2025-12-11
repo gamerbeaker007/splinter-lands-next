@@ -1,4 +1,4 @@
-import { getDailyBurnedBalances } from "@/lib/backend/actions/burn";
+import { getDailyBurnedBalances } from "@/lib/backend/actions/burn-actions";
 import { BurnCardsDataPoint } from "@/types/burn";
 import { useEffect, useState } from "react";
 

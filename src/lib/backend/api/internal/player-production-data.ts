@@ -1,25 +1,51 @@
-import { getLastUpdate } from "@/lib/backend/cache/utils";
+"use server";
+import { PlayerProductionSummary } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
-import { PlayerProductionSummary } from "@/generated/prisma/client";
 
-let cachedPlayerProductionSummaryData: PlayerProductionSummary[] | null = null;
-let cachedTimestamp: Date | null = null;
+// Global cache using globalThis (survives hot reloads)
+const cache = globalThis as unknown as {
+  playerProductionData: PlayerProductionSummary[] | null;
+  promise: Promise<PlayerProductionSummary[]> | null;
+};
 
-export async function getPlayerProductionData(): Promise<
-  PlayerProductionSummary[]
-> {
-  const lastUpdate = await getLastUpdate();
-  if (
-    !cachedPlayerProductionSummaryData ||
-    !cachedTimestamp ||
-    cachedTimestamp < lastUpdate
-  ) {
-    logger.info("Refreshing resourceTracking data cache...");
-    cachedPlayerProductionSummaryData =
-      await prisma.playerProductionSummary.findMany({});
-    cachedTimestamp = lastUpdate;
+cache.playerProductionData ??= null;
+cache.promise ??= null;
+
+export async function getPlayerProductionData(
+  forceWait: boolean = false
+): Promise<PlayerProductionSummary[]> {
+  // If forcing refresh, invalidate cache
+  if (forceWait) {
+    cache.playerProductionData = null;
   }
 
-  return cachedPlayerProductionSummaryData;
+  // Return cached data if available
+  if (cache.playerProductionData) {
+    return cache.playerProductionData;
+  }
+
+  // Wait for existing fetch if in progress
+  if (cache.promise) {
+    logger.info("⏳ Waiting for in-progress player production data fetch...");
+    return cache.promise;
+  }
+
+  // Fetch from database
+  logger.info("🔄 Fetching player production data from database...");
+  cache.promise = prisma.playerProductionSummary.findMany({});
+
+  cache.playerProductionData = await cache.promise;
+  cache.promise = null;
+
+  logger.info(
+    `✅ Cached ${cache.playerProductionData.length} player production entries`
+  );
+  return cache.playerProductionData;
+}
+
+export async function invalidatePlayerProductionDataCache(): Promise<void> {
+  logger.info("🗑️ Invalidating player production data cache");
+  cache.playerProductionData = null;
+  cache.promise = null;
 }

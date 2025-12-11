@@ -1,5 +1,6 @@
 "use client";
 
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { alpha } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
@@ -10,32 +11,32 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function PlayerPageTile() {
+  const { setSelectedPlayer } = usePlayer();
   const [player, setPlayer] = useState("");
   const router = useRouter();
 
   const gotoOverview = () => {
     const trimmed = player.trim();
-    router.push(
-      trimmed ? `/player-overview?player=${trimmed}` : "/player-overview"
-    );
+    if (trimmed) {
+      setSelectedPlayer(trimmed);
+    }
+    router.push("/player-overview/dashboard");
   };
 
   const gotoDeeds = () => {
     const trimmed = player.trim();
-    router.push(
-      trimmed
-        ? `/player-overview?player=${trimmed}&tab=deed`
-        : "/player-overview"
-    );
+    if (trimmed) {
+      setSelectedPlayer(trimmed);
+    }
+    router.push("/player-overview/deed");
   };
 
   const gotoRegionOverview = () => {
     const trimmed = player.trim();
-    router.push(
-      trimmed
-        ? `/player-overview?player=${trimmed}&tab=overview`
-        : "/player-overview"
-    );
+    if (trimmed) {
+      setSelectedPlayer(trimmed);
+    }
+    router.push("/player-overview/overview");
   };
 
   const temp_image =

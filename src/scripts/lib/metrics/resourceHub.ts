@@ -54,9 +54,6 @@ export async function computeAndStoreResourceHubMetrics(today: Date) {
     };
   });
 
-  // Optional: delete today's existing entries to avoid duplicates
-  await prisma.resourceHubMetrics.deleteMany({ where: { date: today } });
-
   await prisma.resourceHubMetrics.createMany({
     data: dataToInsert as Prisma.ResourceHubMetricsCreateManyInput[],
     skipDuplicates: true,

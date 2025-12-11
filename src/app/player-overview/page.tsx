@@ -1,15 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import PlayerPageInner from "@/components/player-overview/PlayerPageInner";
-import { FilterProvider } from "@/lib/frontend/context/FilterContext";
-import { CardFilterProvider } from "@/lib/frontend/context/CardFilterContext";
-
-export default function PlayerPage() {
-  return (
-    <FilterProvider>
-      <CardFilterProvider>
-        <PlayerPageInner />
-      </CardFilterProvider>
-    </FilterProvider>
-  );
+// Redirect root to dashboard page
+export default async function PlayerOverviewPage() {
+  redirect("/player-overview/dashboard");
 }

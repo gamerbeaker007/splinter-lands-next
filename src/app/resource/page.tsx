@@ -1,49 +1,6 @@
-"use client";
-import NavTabs from "@/components/nav-tabs/NavTabs";
-import BurnPage from "@/components/resource/burn/BurnPage";
-import { ConversionPage } from "@/components/resource/conversion/ConversionPage";
-import { SupplyPage } from "@/components/resource/supply/SupplyPage";
-import TradeHubPositionPage from "@/components/resource/trade-hub-positions/TradeHubPositionsPage";
-import { TradeHubPage } from "@/components/resource/trade-hub/TradeHubPage";
-import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
-import { Page } from "@/types/Page";
-import { Box, Container } from "@mui/material";
-import { useEffect, useState } from "react";
+import { redirect } from "next/navigation";
 
-const pages: Page[] = [
-  { key: "conversion", label: "Conversion", component: <ConversionPage /> },
-  { key: "supply", label: "Supply", component: <SupplyPage /> },
-  { key: "tradehub", label: "TradeHub", component: <TradeHubPage /> },
-  {
-    key: "tradehub-pos",
-    label: "TradeHub Positions",
-    component: <TradeHubPositionPage />,
-  },
-  {
-    key: "burn",
-    label: "Burned Resources 🔥",
-    component: <BurnPage />,
-  },
-];
-
-export default function ResourcePage() {
-  const { setTitle } = usePageTitle();
-  const [activeTab, setActiveTab] = useState<number>(0);
-
-  useEffect(() => {
-    setTitle("Resource Overview");
-  }, [setTitle]);
-
-  return (
-    <>
-      <NavTabs
-        pages={pages}
-        value={activeTab}
-        onChange={(_, newValue) => setActiveTab(newValue)}
-      />
-      <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
-        <Box mt={4}>{pages[activeTab].component}</Box>
-      </Container>
-    </>
-  );
+// Redirect root to conversion page
+export default async function ResourcePage() {
+  redirect("/resource/conversion");
 }

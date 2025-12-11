@@ -1,16 +1,16 @@
-import { getCachedRegionData } from "@/lib/backend/api/internal/deed-data";
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { logError } from "@/lib/backend/log/logUtils";
 import { filterDeeds } from "@/lib/filters";
 import { DEFAULT_ORDER_RESOURCES } from "@/lib/shared/statics";
 import { FilterInput } from "@/types/filters";
 import { ProductionPoints } from "@/types/productionPoints";
-import { CompareProductionPoint as CompareProductionPoint } from "@/types/regionCompareProduction";
+import { CompareProductionPoint } from "@/types/regionCompareProduction";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
     const filters: FilterInput = await req.json();
-    const blob = await getCachedRegionData();
+    const blob = await getCachedRegionDataSSR();
     const filteredDeeds = filterDeeds(blob, filters);
 
     const method: "plot" | "tract" | "region" = filters.filter_plots?.length

@@ -1,15 +1,16 @@
 "use client";
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { DeedComplete } from "@/types/deed";
 import { SplCardDetails } from "@/types/splCardDetails";
 import {
   Alert,
   Box,
   LinearProgress,
-  Typography,
   ToggleButton,
   ToggleButtonGroup,
+  Typography,
   useMediaQuery,
 } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
@@ -17,13 +18,10 @@ import { useEffect, useState } from "react";
 import DeedCount from "./land-deed-card/deed-count/DeedCount";
 import { LandDeedCard } from "./land-deed-card/LandDeedCard";
 
-type Props = {
-  player: string;
-};
-
 type ZoomKey = "small" | "medium" | "large";
 
-export default function DeedOverview({ player }: Props) {
+export default function DeedOverview() {
+  const { selectedPlayer } = usePlayer();
   const [data, setData] = useState<DeedComplete[] | null>(null);
   const [loadingText, setLoadingText] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
@@ -60,10 +58,10 @@ export default function DeedOverview({ player }: Props) {
       .then((res) => res.json())
       .then(setCardDetails)
       .catch(console.error);
-  }, [filters, player]);
+  }, [filters, selectedPlayer]);
 
   useEffect(() => {
-    if (!filters || !player) return;
+    if (!filters || !selectedPlayer) return;
 
     const run = async () => {
       try {
@@ -76,7 +74,7 @@ export default function DeedOverview({ player }: Props) {
         const res = await fetch("/api/player", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ filters, player }),
+          body: JSON.stringify({ filters, player: selectedPlayer }),
         });
 
         const reader = res.body?.getReader();
@@ -124,7 +122,7 @@ export default function DeedOverview({ player }: Props) {
     };
 
     run();
-  }, [filters, player]);
+  }, [filters, selectedPlayer]);
 
   return (
     <>

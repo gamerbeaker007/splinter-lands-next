@@ -18,15 +18,14 @@ import { useState } from "react";
 import AlertSection from "./alerts/AlertSection";
 import { LandCardResources } from "./LandCardResources";
 import { PlayerProductionOverview } from "./PlayerProductionOverview";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 
-type Props = {
-  player: string;
-};
 
-export default function PlayerDashboardPage({ player }: Props) {
+export default function PlayerDashboardPage() {
+  const {selectedPlayer} = usePlayer();
   const [force, setForce] = useState(false);
   const { playerOverview, loadingText, fetchPlayerData } =
-    usePlayerDashboard(player);
+    usePlayerDashboard(selectedPlayer);
 
   function refetchData() {
     setForce((prev) => !prev); // Toggle force to trigger useEffect in child components
@@ -59,7 +58,7 @@ export default function PlayerDashboardPage({ player }: Props) {
             >
               <AlertSection
                 alerts={playerOverview.alerts}
-                player={player}
+                player={selectedPlayer}
                 force={force}
               />
               <Typography variant={"h5"}>Resource Stores</Typography>

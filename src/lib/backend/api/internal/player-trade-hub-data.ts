@@ -1,13 +1,29 @@
+"use server";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
-import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 
-let cachedPlayerTradeHubPositionData: PlayerTradeHubPosition[] | null = null;
-let cachedTimestamp: Date | null = null;
+// Global cache using globalThis (survives hot reloads)
+const cache = globalThis as unknown as {
+  playerTradeHubData: PlayerTradeHubPosition[] | null;
+  promise: Promise<PlayerTradeHubPosition[]> | null;
+  lastDate: Date | null;
+};
 
-export async function getPlayerTradeHubPositionData(): Promise<
-  PlayerTradeHubPosition[]
-> {
+cache.playerTradeHubData ??= null;
+cache.promise ??= null;
+cache.lastDate ??= null;
+
+export async function getPlayerTradeHubPositionData(
+  forceWait: boolean = false
+): Promise<PlayerTradeHubPosition[]> {
+  // If forcing refresh, invalidate cache
+  if (forceWait) {
+    cache.playerTradeHubData = null;
+    cache.lastDate = null;
+  }
+
+  // Check for new data in database
   const latestRow = await prisma.playerTradeHubPosition.findFirst({
     orderBy: { date: "desc" },
     select: { date: true },
@@ -17,18 +33,44 @@ export async function getPlayerTradeHubPositionData(): Promise<
 
   if (!latestRow) {
     logger.warn("No PlayerTradeHubPosition data found.");
+    return [];
   }
 
+  // Return cached data if it's up to date
   if (
-    !cachedPlayerTradeHubPositionData ||
-    !cachedTimestamp ||
-    (latestDate && cachedTimestamp < latestDate)
+    cache.playerTradeHubData &&
+    cache.lastDate &&
+    latestDate &&
+    cache.lastDate.getTime() === latestDate.getTime()
   ) {
-    logger.info("Refreshing PlayerTradeHubPosition cache...");
-    cachedPlayerTradeHubPositionData =
-      await prisma.playerTradeHubPosition.findMany({});
-    cachedTimestamp = latestDate;
+    return cache.playerTradeHubData;
   }
 
-  return cachedPlayerTradeHubPositionData;
+  // Wait for existing fetch if in progress
+  if (cache.promise) {
+    logger.info(
+      "⏳ Waiting for in-progress player trade hub position data fetch..."
+    );
+    return cache.promise;
+  }
+
+  // Fetch from database
+  logger.info("🔄 Fetching player trade hub position data from database...");
+  cache.promise = prisma.playerTradeHubPosition.findMany({});
+
+  cache.playerTradeHubData = await cache.promise;
+  cache.lastDate = latestDate;
+  cache.promise = null;
+
+  logger.info(
+    `✅ Cached ${cache.playerTradeHubData.length} player trade hub position entries`
+  );
+  return cache.playerTradeHubData;
+}
+
+export async function invalidatePlayerTradeHubDataCache(): Promise<void> {
+  logger.info("🗑️ Invalidating player trade hub position data cache");
+  cache.playerTradeHubData = null;
+  cache.promise = null;
+  cache.lastDate = null;
 }
