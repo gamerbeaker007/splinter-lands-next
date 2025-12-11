@@ -31,7 +31,10 @@ export async function refreshNextCache() {
 
     const result = await response.json();
     logger.info("✅ Cache refreshed successfully");
-    logger.info(`   - Records: ${result.recordCount}`);
+    logger.info("   - Record counts:");
+    Object.entries(result.recordCounts).map(([key, count]) =>
+      logger.info(`        ${key}: ${count}`)
+    );
     logger.info(`   - Duration: ${result.durationMs}ms`);
     logger.info(`   - Timestamp: ${result.timestamp}`);
   } catch (error) {
