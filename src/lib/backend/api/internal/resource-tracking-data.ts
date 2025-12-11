@@ -4,48 +4,49 @@ import { prisma } from "@/lib/prisma";
 import logger from "../../log/logger.server";
 
 // Global cache using globalThis (survives hot reloads)
+// Properties are namespaced to avoid collisions with other caches
 const cache = globalThis as unknown as {
-  resourceTrackingData: ResourceTracking[] | null;
-  promise: Promise<ResourceTracking[]> | null;
+  __resourceTrackingCache: ResourceTracking[] | null;
+  __resourceTrackingPromise: Promise<ResourceTracking[]> | null;
 };
 
-cache.resourceTrackingData ??= null;
-cache.promise ??= null;
+cache.__resourceTrackingCache ??= null;
+cache.__resourceTrackingPromise ??= null;
 
 export async function getAllResourceTrackingdata(
   forceWait: boolean = false
 ): Promise<ResourceTracking[]> {
   // If forcing refresh, invalidate cache
   if (forceWait) {
-    cache.resourceTrackingData = null;
+    cache.__resourceTrackingCache = null;
   }
 
   // Return cached data if available
-  if (cache.resourceTrackingData) {
-    return cache.resourceTrackingData;
+  if (cache.__resourceTrackingCache) {
+    return cache.__resourceTrackingCache;
   }
 
   // Wait for existing fetch if in progress
-  if (cache.promise) {
+  if (cache.__resourceTrackingPromise) {
     logger.info("⏳ Waiting for in-progress resource tracking data fetch...");
-    return cache.promise;
+    return cache.__resourceTrackingPromise;
   }
 
   // Fetch from database
   logger.info("🔄 Fetching resource tracking data from database...");
-  cache.promise = prisma.resourceTracking.findMany({
+  cache.__resourceTrackingPromise = prisma.resourceTracking.findMany({
     orderBy: {
       date: "asc",
     },
   });
 
-  cache.resourceTrackingData = await cache.promise;
-  cache.promise = null;
+  cache.__resourceTrackingCache = await cache.__resourceTrackingPromise;
+  cache.__resourceTrackingPromise = null;
 
   logger.info(
-    `✅ Cached ${cache.resourceTrackingData.length} resource tracking entries`
+    `✅ Cached ${cache.__resourceTrackingCache.length} resource tracking entries`
   );
-  return cache.resourceTrackingData;
+  return cache.__resourceTrackingCache;
 }
 
 export async function getLatestResourceTrackingEntries(): Promise<
@@ -68,6 +69,6 @@ export async function getLatestResourceTrackingEntries(): Promise<
 
 export async function invalidateResourceTrackingDataCache(): Promise<void> {
   logger.info("🗑️ Invalidating resource tracking data cache");
-  cache.resourceTrackingData = null;
-  cache.promise = null;
+  cache.__resourceTrackingCache = null;
+  cache.__resourceTrackingPromise = null;
 }

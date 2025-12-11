@@ -4,51 +4,52 @@ import { DeedComplete } from "@/types/deed";
 import logger from "../../log/logger.server";
 
 // Global cache using globalThis (survives hot reloads)
+// Using namespaced properties to avoid collisions with other caches
 const cache = globalThis as unknown as {
-  deeds: DeedComplete[] | null;
-  promise: Promise<DeedComplete[]> | null;
+  __deedsCache: DeedComplete[] | null;
+  __deedsPromise: Promise<DeedComplete[]> | null;
 };
 
-cache.deeds ??= null;
-cache.promise ??= null;
+cache.__deedsCache ??= null;
+cache.__deedsPromise ??= null;
 
 export async function getCachedRegionDataSSR(
   forceWait: boolean = false
 ): Promise<DeedComplete[]> {
   // If forcing refresh, invalidate cache
   if (forceWait) {
-    cache.deeds = null;
+    cache.__deedsCache = null;
   }
 
   // Return cached data if available
-  if (cache.deeds) {
-    return cache.deeds;
+  if (cache.__deedsCache) {
+    return cache.__deedsCache;
   }
 
   // Wait for existing fetch if in progress
-  if (cache.promise) {
+  if (cache.__deedsPromise) {
     logger.info("⏳ Waiting for in-progress fetch...");
-    return cache.promise;
+    return cache.__deedsPromise;
   }
 
   // Fetch from database
   logger.info("🔄 Fetching deeds from database...");
-  cache.promise = prisma.deed.findMany({
+  cache.__deedsPromise = prisma.deed.findMany({
     include: {
       worksiteDetail: true,
       stakingDetail: true,
     },
   });
 
-  cache.deeds = await cache.promise;
-  cache.promise = null;
+  cache.__deedsCache = await cache.__deedsPromise;
+  cache.__deedsPromise = null;
 
-  logger.info(`✅ Cached ${cache.deeds.length} deeds`);
-  return cache.deeds;
+  logger.info(`✅ Cached ${cache.__deedsCache.length} deeds`);
+  return cache.__deedsCache;
 }
 
 export async function invalidateDeedCache(): Promise<void> {
   logger.info("🗑️ Invalidating deed cache");
-  cache.deeds = null;
-  cache.promise = null;
+  cache.__deedsCache = null;
+  cache.__deedsPromise = null;
 }
