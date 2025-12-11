@@ -39,20 +39,19 @@ export async function loginAction(
   try {
     const result = await splLogin(username.toLowerCase(), timestamp, signature);
 
-    if (!result.token) {
+    if (!result.jwt_token) {
       return { success: false, error: "No token received from Splinterlands" };
     }
 
     // Set JWT token in HTTP-only cookie
     const cookieStore = await cookies();
-    cookieStore.set("jwt_token", result.token, {
+    cookieStore.set("jwt_token", result.jwt_token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
-
     return { success: true, username: result.name };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
