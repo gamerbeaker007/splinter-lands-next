@@ -114,12 +114,23 @@ export async function fetchPlayerDetails(player: string) {
   return data as SplPlayerDetails;
 }
 
+
+function assertValidPlayerId(player: string) {
+  // Adjust rules to whatever Splinterlands usernames allow
+  const USERNAME_REGEX = /^[a-z0-9_\-\.]{3,32}$/i;
+
+  if (!USERNAME_REGEX.test(player)) {
+    throw new Error("Invalid player identifier");
+  }
+}
+
 /**
  * Fetches player card collection from Splinterlands API
  * Always includes auth headers if available for the player
  */
 export async function fetchPlayerCardCollection(player: string) {
-  const url = `cards/collection/${player}`;
+  assertValidPlayerId(player);
+  const url = `cards/collection/${encodeURIComponent(player)}`;
   logger.info(`Fetch player card collection for: ${player}`);
   const headers = await getAuthorizationHeader(player);
 
