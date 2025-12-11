@@ -8,7 +8,7 @@ import {
   Tabs,
   useMediaQuery,
 } from "@mui/material";
-import { useRouter, usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import GlowingTab from "../ui/GlowingTab";
 
 type PageNavItem = {
@@ -88,10 +88,9 @@ export default function PageNavTabs({
           onChange={handleTabChange}
           variant="scrollable"
           scrollButtons="auto"
-          TabIndicatorProps={{
-            style: {
-              display: "none",
-            },
+          allowScrollButtonsMobile
+          sx={{
+            minHeight: compact ? 22 : 36,
           }}
         >
           {pages.map((page) => (
