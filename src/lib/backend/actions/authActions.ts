@@ -3,6 +3,7 @@
 import { splLogin } from "@/lib/backend/api/spl/spl-base-api";
 import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
 import { cookies } from "next/headers";
+import { invalidatePlayerCaches } from "../services/playerService";
 
 export async function getAuthStatus() {
   try {
@@ -52,6 +53,10 @@ export async function loginAction(
       path: "/",
       maxAge: 60 * 60 * 24 * 30, // 30 days
     });
+
+    // clear previous player caches upon login
+    await invalidatePlayerCaches(username.toLowerCase());
+
     return { success: true, username: result.name };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
