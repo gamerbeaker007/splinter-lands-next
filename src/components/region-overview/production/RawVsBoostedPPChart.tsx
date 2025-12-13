@@ -1,14 +1,15 @@
 "use client";
 
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { RegionPP } from "@/types/regionProductionSummary";
+import { ProductionPoints } from "@/types/productionPoints";
 import { Box } from "@mui/material";
 
 type Props = {
-  data: RegionPP;
+  title: string;
+  totalPP: ProductionPoints;
 };
 
-export default function BaseVsBoostedPPChart({ data }: Props) {
+export default function BaseVsBoostedPPChart({ title, totalPP }: Props) {
   return (
     <>
       <Box
@@ -21,21 +22,21 @@ export default function BaseVsBoostedPPChart({ data }: Props) {
           data={[
             {
               x: ["BASE"],
-              y: [data.totalPP.basePP],
+              y: [totalPP.basePP],
               name: "Base PP",
               type: "bar",
               marker: { color: "steelblue" },
             },
             {
               x: ["BOOSTED"],
-              y: [data.totalPP.boostedPP],
+              y: [totalPP.boostedPP],
               name: "Boosted PP",
               type: "bar",
               marker: { color: "#94a3b8" }, // light blue
             },
           ]}
           layout={{
-            title: { text: "Base vs Boosted PP" },
+            title: { text: title },
             barmode: "group",
             xaxis: {
               title: { text: "Regions" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { getPlayerCardAlerts } from "@/lib/backend/actions/playerCardAlerts";
+import { getPlayerCardAlerts } from "@/lib/backend/actions/player/alerts-actions";
 import { CardAlerts } from "@/types/cardAlerts";
 import { useEffect, useState } from "react";
 

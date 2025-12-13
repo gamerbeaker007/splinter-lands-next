@@ -20,12 +20,12 @@ import {
 import { SplBalance } from "@/types/spl/balance";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { getPlayerData } from "../api/internal/player-data";
-import { fetchPlayerBalances } from "../api/spl/spl-base-api";
-import { getResourceDECPrices } from "../helpers/resourcePrices";
-import { getCachedCardDetailsData } from "../services/cardService";
-import { getCachedPlayerCardCollection } from "../services/playerService";
-import { enrichWithProductionInfo } from "../services/regionService";
+import { getPlayerData } from "../../api/internal/player-data";
+import { fetchPlayerBalances } from "../../api/spl/spl-base-api";
+import { getResourceDECPrices } from "../../helpers/resourcePrices";
+import { getCachedCardDetailsData } from "../../services/cardService";
+import { getCachedPlayerCardCollection } from "../../services/playerService";
+import { enrichWithProductionInfo } from "../../services/regionService";
 
 /**
  * Server action to fetch player card alerts

@@ -1,23 +1,13 @@
+import { getPlayerDashboardData } from "@/lib/backend/actions/player/dashboard-actions";
 import { PlayerOverview } from "@/types/playerOverview";
-import { useState, useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState, useTransition } from "react";
 
 export function usePlayerDashboard(player: string) {
   const [playerOverview, setPlayerOverview] = useState<PlayerOverview | null>(
     null
   );
   const [loadingText, setLoadingText] = useState<string | null>(null);
-
-  async function fetchPlayerDashboardData(
-    player: string,
-    force: boolean
-  ): Promise<PlayerOverview> {
-    const res = await fetch("/api/player/dashboard", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ player, force }),
-    });
-    return await res.json();
-  }
+  const [isPending, startTransition] = useTransition();
 
   const fetchPlayerData = useCallback(
     async (force: boolean = false) => {
@@ -25,10 +15,16 @@ export function usePlayerDashboard(player: string) {
         setLoadingText("Fetching base player data...");
         setPlayerOverview(null);
 
-        const data = await fetchPlayerDashboardData(player, force);
-
-        setLoadingText(null);
-        setPlayerOverview(data);
+        startTransition(async () => {
+          try {
+            const data = await getPlayerDashboardData(player, force);
+            setLoadingText(null);
+            setPlayerOverview(data);
+          } catch (err) {
+            console.error("Failed to fetch data", err);
+            setLoadingText("An error occurred while loading data.");
+          }
+        });
       } catch (err) {
         console.error("Failed to fetch data", err);
         setLoadingText("An error occurred while loading data.");
@@ -48,5 +44,5 @@ export function usePlayerDashboard(player: string) {
     })();
   }, [player, fetchPlayerData]);
 
-  return { playerOverview, loadingText, fetchPlayerData };
+  return { playerOverview, loadingText, fetchPlayerData, isPending };
 }

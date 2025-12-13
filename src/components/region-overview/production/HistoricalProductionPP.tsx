@@ -1,24 +1,25 @@
 "use client";
 
 import { ResourceTracking } from "@/generated/prisma/client";
+import { getResourceMetricsData } from "@/lib/backend/actions/resources/metrics-actions";
+import { Skeleton, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import ResourcePPLineChart from "./ResourcePPLineChart";
-import { Typography } from "@mui/material";
 
 export function HistoricalProductionPP() {
   const [data, setData] = useState<ResourceTracking[] | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    fetch("/api/resource/metrics", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((res) => res.json())
-      .then((raw) => {
-        setData(raw);
-      })
-      .catch(console.error);
+    startTransition(async () => {
+      try {
+        const result = await getResourceMetricsData();
+        setData(result);
+      } catch (error) {
+        console.error("Failed to load resource metrics:", error);
+      }
+    });
   }, []);
 
   return (
@@ -27,7 +28,11 @@ export function HistoricalProductionPP() {
         Historical Boosted PP
       </Typography>
 
-      {data && <ResourcePPLineChart data={data} />}
+      {isPending && !data ? (
+        <Skeleton variant="rectangular" width="100%" height={300} />
+      ) : (
+        data && <ResourcePPLineChart data={data} />
+      )}
     </Box>
   );
 }

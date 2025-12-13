@@ -179,6 +179,7 @@ export async function getCachedPlayerOverviewData(
   const balances = await fetchPlayerBalances(player, [
     "DEC",
     "SPS",
+    "CINDER",
     "VOUCHER",
     "MIDNIGHTPOT",
     "WAGONKIT",
@@ -190,6 +191,7 @@ export async function getCachedPlayerOverviewData(
     "ALLOCATION_RIGHT_L",
     "POWER_CORE_PURCHASES",
   ]);
+  console.log("Balances fetched for player overview:", balances);
 
   //DEC Income
   const playerRegionInfo = await processPlayerRegionInformation(deeds);

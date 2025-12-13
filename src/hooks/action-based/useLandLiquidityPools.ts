@@ -1,5 +1,5 @@
 "use client";
-import { getLandLiquidityPools } from "@/lib/backend/actions/tradeHub";
+import { getLandLiquidityPools } from "@/lib/backend/actions/resources/trade-hub-actions";
 import { SplLandPool } from "@/types/spl/landPools";
 import { useCallback, useEffect, useState } from "react";
 

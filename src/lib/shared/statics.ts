@@ -1,4 +1,5 @@
 import {
+  cinder_icon_url,
   dec_icon_url,
   land_aura_lab_icon_url,
   land_castle_icon_url,
@@ -123,6 +124,7 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   UNBIND_CA_R: resource_unbinding_rare_icon_url,
   UNBIND_CA_E: resource_unbinding_epic_icon_url,
   UNBIND_CA_L: resource_unbinding_legendary_icon_url,
+  CINDER: cinder_icon_url,
   "": land_hammer_icon_url,
 };
 
