@@ -188,6 +188,7 @@ export async function getCachedPlayerOverviewData(
     "ALLOCATION_RIGHT_R",
     "ALLOCATION_RIGHT_E",
     "ALLOCATION_RIGHT_L",
+    "POWER_CORE_PURCHASES",
   ]);
 
   //DEC Income

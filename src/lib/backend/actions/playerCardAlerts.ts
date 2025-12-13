@@ -1,12 +1,13 @@
-import { getPlayerData } from "@/lib/backend/api/internal/player-data";
+"use server";
+
 import logger from "@/lib/backend/log/logger.server";
-import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
-import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
+import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { determineCardMaxBCX, findCardRarity } from "@/lib/utils/cardUtil";
 import {
   CardAlerts,
   CountAlert,
   DeedInfo,
+  NegativeDecAlert,
   TerrainBoostAlerts,
   TerrainCardInfo,
 } from "@/types/cardAlerts";
@@ -16,28 +17,48 @@ import {
   cardElementColorMap,
   TERRAIN_BONUS,
 } from "@/types/planner";
+import { SplBalance } from "@/types/spl/balance";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
-import { NextResponse } from "next/server";
+import { getPlayerData } from "../api/internal/player-data";
+import { fetchPlayerBalances } from "../api/spl/spl-base-api";
+import { getResourceDECPrices } from "../helpers/resourcePrices";
+import { getCachedCardDetailsData } from "../services/cardService";
+import { getCachedPlayerCardCollection } from "../services/playerService";
+import { enrichWithProductionInfo } from "../services/regionService";
 
-export async function POST(req: Request) {
+/**
+ * Server action to fetch player card alerts
+ * Analyzes player's cards and deeds to identify potential issues
+ */
+export async function getPlayerCardAlerts(
+  player: string,
+  force: boolean = false
+): Promise<CardAlerts> {
+  if (!player || typeof player !== "string") {
+    throw new Error("Player name is required");
+  }
+
+  const trimmed = player.trim().toLowerCase();
+
   try {
-    const { player, force } = await req.json();
-    if (!player) {
-      return NextResponse.json(
-        { error: "Missing 'player' parameter" },
-        { status: 400 }
-      );
-    }
+    logger.info(`Fetching card alerts for player: ${trimmed}`);
 
     const playerCardCollection = await getCachedPlayerCardCollection(
       player,
       force
     );
+    const playerBalances = await fetchPlayerBalances(player); // todo verify i this is needed to put in a cache
     const playerData = await getPlayerData(player, {}, force);
+    const prices = await getResourceDECPrices();
+
+    const enrichedPlayerData = await enrichWithProductionInfo(
+      playerData,
+      prices
+    );
     const cardDetails = await getCachedCardDetailsData();
 
-    const indexedDeedsByPlotId = indexDeedsByPlotId(playerData);
+    const indexedDeedsByPlotId = indexDeedsByPlotId(enrichedPlayerData);
 
     const countAlerts = plotsWithLessThanCards(
       playerCardCollection,
@@ -50,20 +71,26 @@ export async function POST(req: Request) {
       cardDetails
     );
 
-    const retVal: CardAlerts = {
+    const { negativeNaturalResourceDeeds, negativeOtherResourceDeeds } =
+      plotsWithNegativeDECEarnings(enrichedPlayerData);
+
+    const { unusedPowerSource, noPowerSource, powerCoreWhileEnergized } =
+      plotstWithPowerSourceIssues(enrichedPlayerData, playerBalances);
+
+    return {
       assignedWorkersAlerts: countAlerts,
       noWorkersAlerts: noWorkers,
       terrainBoostAlerts: terrainBoostAlerts,
+      negativeDECNaturalResourceDeeds: negativeNaturalResourceDeeds,
+      negativeDECOtherResourceDeeds: negativeOtherResourceDeeds,
+      unusedPowerSource: unusedPowerSource,
+      noPowerSource: noPowerSource,
+      powerCoreWhileEnergized: powerCoreWhileEnergized,
     };
-
-    return NextResponse.json(retVal, { status: 200 });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unknown error";
-
-    const isNotFound = message.toLowerCase().includes("not found");
-    return NextResponse.json(
-      { error: message },
-      { status: isNotFound ? 404 : 501 }
+  } catch (error) {
+    logger.error(`Failed to get card alerts for ${trimmed}:`, error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to fetch alerts"
     );
   }
 }
@@ -129,6 +156,130 @@ function plotsWithLessThanCards(
 
   // Filter < minCount
   return Array.from(byPlot.values()).filter((v) => v.assignedCards < minCount);
+}
+
+function plotstWithPowerSourceIssues(
+  deeds: DeedComplete[],
+  balances: SplBalance[]
+): {
+  unusedPowerSource: number;
+  noPowerSource: DeedInfo[];
+  powerCoreWhileEnergized: DeedInfo[];
+} {
+  const noPowerSource: DeedInfo[] = [];
+  const powerCoreWhileEnergized: DeedInfo[] = [];
+
+  let numberOfPowerSources =
+    Number(balances.find((b) => b.token === "POWER_CORE_PURCHASES")?.balance) ??
+    0;
+
+  for (const deed of deeds) {
+    const isEnergized = deed.stakingDetail?.is_energized ?? false;
+    const isPowered = deed.stakingDetail?.is_powered ?? false;
+    const isPowerCoreStaked = deed.stakingDetail?.is_power_core_staked ?? false;
+
+    if (isPowerCoreStaked && isEnergized) {
+      powerCoreWhileEnergized.push({
+        plotId: deed.plot_id!,
+        regionNumber: deed.region_number!,
+        plotNumber: deed.plot_number!,
+        deedType: deed.deed_type!,
+        magicType: deed.magic_type!,
+        plotStatus: deed.plot_status!,
+        rarity: deed.rarity!,
+        worksiteType: deed.worksite_type!,
+        regionName: deed.region_name!,
+        tractNumber: deed.tract_number!,
+        territory: deed.territory!,
+      });
+    }
+    if (!isPowered) {
+      noPowerSource.push({
+        plotId: deed.plot_id!,
+        regionNumber: deed.region_number!,
+        plotNumber: deed.plot_number!,
+        deedType: deed.deed_type!,
+        magicType: deed.magic_type!,
+        plotStatus: deed.plot_status!,
+        rarity: deed.rarity!,
+        worksiteType: deed.worksite_type!,
+        regionName: deed.region_name!,
+        tractNumber: deed.tract_number!,
+        territory: deed.territory!,
+      });
+    }
+
+    if (isPowerCoreStaked) {
+      numberOfPowerSources -= 1;
+    }
+  }
+  return {
+    unusedPowerSource: numberOfPowerSources,
+    noPowerSource: noPowerSource,
+    powerCoreWhileEnergized: powerCoreWhileEnergized,
+  };
+}
+
+function plotsWithNegativeDECEarnings(deeds: DeedComplete[]): {
+  negativeNaturalResourceDeeds: NegativeDecAlert[];
+  negativeOtherResourceDeeds: NegativeDecAlert[];
+} {
+  const negativeNaturalResourceDeeds = deeds
+    .filter((d) => {
+      const hasNetDec = d.productionInfo?.netDEC != null;
+      const isNegative = (d.productionInfo?.netDEC ?? 0) < -0.001;
+      const hasTokenSymbol = d.worksiteDetail?.token_symbol != null;
+      const isNaturalResource =
+        hasTokenSymbol &&
+        NATURAL_RESOURCES.includes(d.worksiteDetail?.token_symbol || "");
+
+      return hasNetDec && isNegative && hasTokenSymbol && isNaturalResource;
+    })
+    .map((d) => ({
+      negativeDecPerHour: d.productionInfo!.netDEC!,
+      deedInfo: {
+        plotId: d.plot_id!,
+        regionNumber: d.region_number!,
+        plotNumber: d.plot_number!,
+        deedType: d.deed_type!,
+        magicType: d.magic_type!,
+        plotStatus: d.plot_status!,
+        rarity: d.rarity!,
+        worksiteType: d.worksite_type!,
+        regionName: d.region_name!,
+        tractNumber: d.tract_number!,
+        territory: d.territory!,
+      },
+    }));
+
+  const negativeOtherResourceDeeds = deeds
+    .filter((d) => {
+      const hasNetDec = d.productionInfo?.netDEC != null;
+      const isNegative = (d.productionInfo?.netDEC ?? 0) < -0.001;
+      const hasTokenSymbol = d.worksiteDetail?.token_symbol != null;
+      const isNotNaturalResource =
+        hasTokenSymbol &&
+        !NATURAL_RESOURCES.includes(d.worksiteDetail?.token_symbol || "");
+      return hasNetDec && isNegative && hasTokenSymbol && isNotNaturalResource;
+    })
+    .map((d) => ({
+      negativeDecPerHour: d.productionInfo!.netDEC!,
+      deedInfo: {
+        plotId: d.plot_id!,
+        regionNumber: d.region_number!,
+        plotNumber: d.plot_number!,
+        deedType: d.deed_type!,
+        magicType: d.magic_type!,
+        plotStatus: d.plot_status!,
+        rarity: d.rarity!,
+        worksiteType: d.worksite_type!,
+        regionName: d.region_name!,
+        tractNumber: d.tract_number!,
+        territory: d.territory!,
+      },
+    }));
+
+  return { negativeNaturalResourceDeeds, negativeOtherResourceDeeds };
 }
 
 function plotsWithNoWorkers(

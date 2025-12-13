@@ -114,7 +114,6 @@ export async function fetchPlayerDetails(player: string) {
   return data as SplPlayerDetails;
 }
 
-
 function assertValidPlayerId(player: string) {
   // Adjust rules to whatever Splinterlands usernames allow
   const USERNAME_REGEX = /^[a-z0-9_\-\.]{3,32}$/i;

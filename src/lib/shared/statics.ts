@@ -1,6 +1,16 @@
 import {
   dec_icon_url,
+  land_aura_lab_icon_url,
+  land_castle_icon_url,
+  land_grain_farm_icon_url,
   land_hammer_icon_url,
+  land_keep_icon_url,
+  land_logging_camp_icon_url,
+  land_ore_mine_icon_url,
+  land_quarry_icon_url,
+  land_research_hut_icon_url,
+  land_shard_mine_icon_url,
+  land_under_construction_icon_url,
   resource_auction_mark_icon_url,
   resource_aura_icon_url,
   resource_fortune_ticket_icon_url,
@@ -118,3 +128,16 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
 
 export const TRADE_HUB_FEE = 0.9;
 export const TAX_RATE = 0.1;
+
+export const worksiteTypeMapping: Record<string, string> = {
+  "Grain Farm": land_grain_farm_icon_url,
+  "Logging Camp": land_logging_camp_icon_url,
+  "Ore Mine": land_ore_mine_icon_url,
+  Quarry: land_quarry_icon_url,
+  "Research Hut": land_research_hut_icon_url,
+  "Aura Lab": land_aura_lab_icon_url,
+  "Shard Mine": land_shard_mine_icon_url,
+  KEEP: land_keep_icon_url,
+  CASTLE: land_castle_icon_url,
+  Undeveloped: land_under_construction_icon_url,
+};
