@@ -100,23 +100,12 @@ export default function AlertSection({ alerts, player, force }: Props) {
       ),
     },
     {
-      key: "ZeroNeutralTerrainBoost",
-      label: "Zero Boost (Neutral)",
-      alertsCount: cardAlerts?.terrainBoostAlerts.zeroNeutral?.length ?? 0,
-      icon: <Block fontSize="large" />,
-      dialogTitle: "Zero terrain boost (neutral)",
-      dialogContent: (
-        <TerrainBoostsCard
-          terrainBoosts={cardAlerts.terrainBoostAlerts.zeroNeutral}
-        />
-      ),
-    },
-    {
       key: "NegativeDECAlertsNaturalResource",
-      label: "Negative DEC (Natural Resource)",
+      label: "Negative DEC",
+      subLabel: "Natural Resource",
       alertsCount: cardAlerts?.negativeDECNaturalResourceDeeds.length ?? 0,
       icon: <Warning fontSize="large" />,
-      dialogTitle: "Deeds with Negative DEC  Production Natrual resource",
+      dialogTitle: "Deeds with Negative DEC Production Natural resource",
       dialogContent: (
         <NegativeDECAlerts
           negativeDECAlerts={cardAlerts.negativeDECNaturalResourceDeeds}
@@ -126,9 +115,10 @@ export default function AlertSection({ alerts, player, force }: Props) {
     {
       key: "NegativeDECAlertsOtherResource",
       label: "Negative DEC",
+      subLabel: "Other Resource",
       alertsCount: cardAlerts?.negativeDECOtherResourceDeeds.length ?? 0,
       icon: <Warning fontSize="large" />,
-      dialogTitle: "Deeds with Negative DEC Production Non Natrual resource",
+      dialogTitle: "Deeds with Negative DEC Production Non Natural resource",
       dialogContent: (
         <NegativeDECAlerts
           negativeDECAlerts={cardAlerts.negativeDECOtherResourceDeeds}
@@ -137,10 +127,10 @@ export default function AlertSection({ alerts, player, force }: Props) {
     },
     {
       key: "UnusedPowerSource",
-      label: "Unused Power Source",
+      label: "Unused Power",
       alertsCount: cardAlerts?.unusedPowerSource ?? 0,
       icon: <BoltIcon fontSize="large" />,
-      dialogTitle: "Unused Power Source",
+      dialogTitle: "Unused Power Core",
       dialogContent: (
         <Typography variant="body1">
           You have {cardAlerts?.unusedPowerSource} unused power source(s).
@@ -149,10 +139,10 @@ export default function AlertSection({ alerts, player, force }: Props) {
     },
     {
       key: "noPowerSource",
-      label: "No Power Source",
+      label: "No Power",
       alertsCount: cardAlerts?.noPowerSource.length ?? 0,
       icon: <BoltIcon fontSize="large" />,
-      dialogTitle: "No Power Source",
+      dialogTitle: "No Power Core",
       dialogContent: (
         <PowerCoreAlerts powerCoreAlerts={cardAlerts?.noPowerSource} />
       ),
@@ -166,6 +156,18 @@ export default function AlertSection({ alerts, player, force }: Props) {
       dialogContent: (
         <PowerCoreAlerts
           powerCoreAlerts={cardAlerts?.powerCoreWhileEnergized}
+        />
+      ),
+    },
+    {
+      key: "ZeroNeutralTerrainBoost",
+      label: "Zero Boost (Neutral)",
+      alertsCount: cardAlerts?.terrainBoostAlerts.zeroNeutral?.length ?? 0,
+      icon: <Block fontSize="large" />,
+      dialogTitle: "Zero terrain boost (neutral)",
+      dialogContent: (
+        <TerrainBoostsCard
+          terrainBoosts={cardAlerts.terrainBoostAlerts.zeroNeutral}
         />
       ),
     },
@@ -201,6 +203,11 @@ export default function AlertSection({ alerts, player, force }: Props) {
               <Box mt={1} fontSize={10} fontWeight="bold">
                 {btn.label}
               </Box>
+              {btn.subLabel && (
+                <Box fontSize={8} color="text.secondary">
+                  {btn.subLabel}
+                </Box>
+              )}
               <Box fontSize={10} color="text.secondary">
                 ({btn.alertsCount})
               </Box>

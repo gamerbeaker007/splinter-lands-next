@@ -11,6 +11,8 @@ interface Props {
   negativeDECAlerts: NegativeDecAlert[];
 }
 
+const fontSize = 12;
+
 export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
   return (
     <Box mt={2}>
@@ -121,8 +123,13 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                       backgroundColor: "rgba(240, 240, 240, 0.85)",
                     }}
                   >
-                    <Typography variant="body1" fontWeight={600} color="error">
-                      {`${alert.negativeDecPerHour.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} Dec/h`}
+                    <Typography
+                      variant="body1"
+                      fontWeight={600}
+                      fontSize={fontSize}
+                      color="error"
+                    >
+                      {`${alert.negativeDecPerHour.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DEC/h`}
                     </Typography>
                   </Box>
                 </Box>
