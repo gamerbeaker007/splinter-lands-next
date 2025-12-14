@@ -32,14 +32,14 @@ import { enrichWithProductionInfo } from "../../services/regionService";
  */
 function createDeedInfo(deed: DeedComplete): DeedInfo {
   return {
-    plotId: deed.plot_id!,
-    regionNumber: deed.region_number!,
-    plotNumber: deed.plot_number ?? 0,
+    plotId: deed.plot_id,
+    regionNumber: deed.region_number,
+    plotNumber: deed.plot_number,
     deedType: deed.deed_type ?? "Unknown",
     magicType: deed.magic_type ?? "Unknown",
     plotStatus: deed.plot_status ?? "Unknown",
     rarity: deed.rarity ?? "Unknown",
-    worksiteType: deed.worksite_type ?? "Unknown",
+    worksiteType: deed.worksiteDetail?.worksite_type ?? "Unknown",
     regionName: deed.region_name ?? "Unknown",
     tractNumber: deed.tract_number ?? 0,
     territory: deed.territory ?? "Unknown",
@@ -83,11 +83,6 @@ export async function getPlayerCardAlerts(
       prices
     );
 
-    // Create indexes once to avoid repeated lookups
-    const deedByPlotId = createDeedIndex(enrichedPlayerData);
-    const cardDetailsById = createCardDetailsIndex(cardDetails);
-    const cardsWithValidPlots = filterActiveCards(playerCardCollection);
-
     const ownedPowerCores =
       Number(
         playerBalances.find((b) => b.token === "POWER_CORE_PURCHASES")?.balance
@@ -96,16 +91,14 @@ export async function getPlayerCardAlerts(
     // Analyze all alerts in a single pass through deeds
     const { countAlerts, negativeAlerts, powerSourceAlerts } = analyzeAllDeeds(
       enrichedPlayerData,
-      cardsWithValidPlots,
-      deedByPlotId,
       ownedPowerCores
     );
 
     // Analyze cards for terrain bonuses
     const terrainBoostAlerts = analyzeTerrainBonuses(
       playerCardCollection,
-      deedByPlotId,
-      cardDetailsById
+      enrichedPlayerData,
+      cardDetails
     );
 
     return {
@@ -127,47 +120,11 @@ export async function getPlayerCardAlerts(
 }
 
 /**
- * Create a Map for O(1) deed lookups instead of repeated array searches
- */
-function createDeedIndex(deeds: DeedComplete[]): Map<number, DeedComplete> {
-  const index = new Map<number, DeedComplete>();
-  for (const deed of deeds) {
-    index.set(deed.plot_id!, deed);
-  }
-  return index;
-}
-
-/**
- * Create a Map for O(1) card details lookups instead of repeated array searches
- */
-function createCardDetailsIndex(
-  cardDetails: SplCardDetails[]
-): Map<number, SplCardDetails> {
-  const index = new Map<number, SplCardDetails>();
-  for (const card of cardDetails) {
-    index.set(card.id, card);
-  }
-  return index;
-}
-
-/**
- * Filter cards to only those with valid plots and no end dates
- * Reuse this filter across multiple analyses
- */
-function filterActiveCards(
-  cards: SplPlayerCardCollection[]
-): SplPlayerCardCollection[] {
-  return cards.filter((c) => c.stake_plot != null && c.stake_end_date == null);
-}
-
-/**
  * Single-pass analysis of all deeds to extract multiple alert types
  * Much more efficient than looping over deeds multiple times
  */
 function analyzeAllDeeds(
   deeds: DeedComplete[],
-  activeCards: SplPlayerCardCollection[],
-  deedByPlot: Map<number, DeedComplete>,
   ownedPowerCores: number
 ): {
   countAlerts: CountAlert[];
@@ -182,29 +139,7 @@ function analyzeAllDeeds(
     powerCoreWhileEnergized: DeedInfo[];
   };
 } {
-  // Build set of plots with cards once
-  const plotsWithCards = new Set<number>();
-  for (const card of activeCards) {
-    plotsWithCards.add(card.stake_plot!);
-  }
-
-  // Accumulate card counts per plot
-  const cardCountByPlot = new Map<
-    number,
-    { count: number; regionNumber: number }
-  >();
-  for (const card of activeCards) {
-    const existing = cardCountByPlot.get(card.stake_plot!);
-    if (existing) {
-      existing.count++;
-    } else {
-      cardCountByPlot.set(card.stake_plot!, {
-        count: 1,
-        regionNumber: card.stake_region,
-      });
-    }
-  }
-
+  const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
   const negativeNaturalResource: NegativeDecAlert[] = [];
   const negativeOtherResource: NegativeDecAlert[] = [];
@@ -215,11 +150,19 @@ function analyzeAllDeeds(
   // Single loop through all deeds
   for (const deed of deeds) {
     const deedInfo = createDeedInfo(deed);
-    const plotId = deed.plot_id!;
+    const workersCount = deed.stakingDetail?.worker_count ?? 0;
 
     // Check for no workers
-    if (!plotsWithCards.has(plotId)) {
+    if (workersCount === 0) {
       noWorkers.push(deedInfo);
+    }
+
+    // Check for workers below 5
+    if (workersCount > 0 && workersCount < 5) {
+      countAlerts.push({
+        assignedCards: workersCount,
+        deedInfo,
+      });
     }
 
     // Check for negative DEC earnings
@@ -255,19 +198,6 @@ function analyzeAllDeeds(
     }
   }
 
-  // Build count alerts from accumulated data
-  const countAlerts = Array.from(cardCountByPlot.entries())
-    .filter(([, data]) => data.count < 5)
-    .map(([plotId, data]) => {
-      const deed = deedByPlot.get(plotId);
-      return {
-        assignedCards: data.count,
-        deedInfo: deed
-          ? createDeedInfo(deed)
-          : getDeedInfoForPlot(plotId, data.regionNumber),
-      };
-    });
-
   return {
     countAlerts,
     negativeAlerts: {
@@ -284,31 +214,12 @@ function analyzeAllDeeds(
 }
 
 /**
- * Fallback for creating DeedInfo when deed is not found
- */
-function getDeedInfoForPlot(plotId: number, regionNumber: number): DeedInfo {
-  return {
-    plotId,
-    regionNumber,
-    plotNumber: 0,
-    deedType: "Unknown",
-    magicType: "Unknown",
-    plotStatus: "Unknown",
-    rarity: "Unknown",
-    worksiteType: "Unknown",
-    regionName: "Unknown",
-    tractNumber: 0,
-    territory: "Unknown",
-  };
-}
-
-/**
  * Analyze cards for terrain bonus issues
  */
 function analyzeTerrainBonuses(
   cards: SplPlayerCardCollection[],
-  deedByPlot: Map<number, DeedComplete>,
-  cardDetailsById: Map<number, SplCardDetails>
+  deeds: DeedComplete[],
+  cardDetails: SplCardDetails[]
 ): TerrainBoostAlerts {
   const negative: TerrainCardInfo[] = [];
   const zeroNeutral: TerrainCardInfo[] = [];
@@ -317,10 +228,10 @@ function analyzeTerrainBonuses(
   for (const card of cards) {
     if (card.stake_plot == null || card.stake_end_date != null) continue;
 
-    const deed = deedByPlot.get(card.stake_plot);
+    const deed = deeds.find((d) => d.plot_id === card.stake_plot);
     if (!deed) continue;
 
-    const cardDetail = cardDetailsById.get(card.card_detail_id);
+    const cardDetail = cardDetails.find((cd) => cd.id === card.card_detail_id);
     if (!cardDetail) {
       logger.warning(
         `Card details not found for card_detail_id: ${card.card_detail_id}`

@@ -21,7 +21,7 @@ async function PlanningTab() {
       getDailySPSRatio(),
       getTokenPrices(),
       getDailyRegionTax(),
-      getMarketData()
+      getMarketData(),
     ]);
 
   return (
