@@ -257,7 +257,7 @@ function analyzeAllDeeds(
 
   // Build count alerts from accumulated data
   const countAlerts = Array.from(cardCountByPlot.entries())
-    .filter(([_, data]) => data.count < 5)
+    .filter(([, data]) => data.count < 5)
     .map(([plotId, data]) => {
       const deed = deedByPlot.get(plotId);
       return {
