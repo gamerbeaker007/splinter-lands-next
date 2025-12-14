@@ -186,10 +186,6 @@ export async function getCachedPlayerOverviewData(
     "WAGONKIT",
     "AM",
     "FT",
-    "ALLOCATION_RIGHT_C",
-    "ALLOCATION_RIGHT_R",
-    "ALLOCATION_RIGHT_E",
-    "ALLOCATION_RIGHT_L",
     "POWER_CORE_PURCHASES",
   ]);
 

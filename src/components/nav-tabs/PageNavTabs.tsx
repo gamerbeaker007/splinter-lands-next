@@ -68,7 +68,7 @@ export default function PageNavTabs({
       }}
     >
       {compact ? (
-        <Box border={"1px solid red"} justifyItems={"left"} width={"100%"}>
+        <Box justifyItems={"left"} width={"100%"}>
           <Select
             value={pages[value]?.label || ""}
             onChange={handleSelectChange}
