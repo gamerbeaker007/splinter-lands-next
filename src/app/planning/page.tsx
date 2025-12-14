@@ -1,6 +1,7 @@
 import PlanningPageSkeleton from "@/app/planning/loading";
 import PlanningPageContent from "@/components/planning/PlanningPageContent";
 import { getCardDetails } from "@/lib/backend/actions/card-detail-actions";
+import { getMarketData } from "@/lib/backend/actions/market-actions";
 import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
 import { getRegionTax as getDailyRegionTax } from "@/lib/backend/actions/region/tax-actions";
 import {
@@ -13,13 +14,14 @@ import { Suspense } from "react";
 
 async function PlanningTab() {
   await headers(); // Ensure this is a server component
-  const [cardDetails, prices, spsRatio, tokenPriceData, regionTax] =
+  const [cardDetails, prices, spsRatio, tokenPriceData, regionTax, marketData] =
     await Promise.all([
       getCardDetails(),
       getActualResourcePrices(),
       getDailySPSRatio(),
       getTokenPrices(),
       getDailyRegionTax(),
+      getMarketData()
     ]);
 
   return (
@@ -29,6 +31,7 @@ async function PlanningTab() {
       spsRatio={spsRatio}
       tokenPriceData={tokenPriceData}
       regionTax={regionTax}
+      marketData={marketData}
     />
   );
 }

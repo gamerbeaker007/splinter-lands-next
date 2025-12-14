@@ -3,6 +3,7 @@ import { AddDeedPlanningTile } from "@/components/planning/planner-tile/AddDeedP
 import { DeedPlanning } from "@/components/planning/planner-tile/DeedPlanning";
 import { SimulationResult } from "@/components/planning/simulation-result/SimulationResult";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
+import { LowestMarketData } from "@/types/planner/market/market";
 import { Prices, SplPriceData } from "@/types/price";
 import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
@@ -26,6 +27,7 @@ interface PlanningPageContentProps {
   spsRatio: number;
   tokenPriceData: SplPriceData | null;
   regionTax: RegionTax[] | null;
+  marketData: LowestMarketData | null;
 }
 
 export default function PlanningPageContent({
@@ -34,6 +36,7 @@ export default function PlanningPageContent({
   spsRatio,
   tokenPriceData,
   regionTax,
+  marketData,
 }: PlanningPageContentProps) {
   const { setTitle } = usePageTitle();
 
@@ -141,7 +144,7 @@ export default function PlanningPageContent({
                   spsRatio={spsRatio}
                   tokenPriceData={tokenPriceData}
                   regionTax={regionTax}
-                  marketData={null}
+                  marketData={marketData}
                   onChange={handlePlanChange}
                   onDelete={deletePlan}
                   deletable={idx !== 0}
