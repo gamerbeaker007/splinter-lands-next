@@ -4,7 +4,7 @@ import {
   getAuthStatus,
   loginAction,
   logoutAction,
-} from "@/lib/backend/actions/authActions";
+} from "@/lib/backend/actions/auth-actions";
 import logger from "@/lib/frontend/log/logger.client";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import {

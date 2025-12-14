@@ -1,6 +1,6 @@
 "use client";
 
-import { getPlayerDeeds } from "@/lib/backend/actions/playerPlanning";
+import { getPlayerDeeds } from "@/lib/backend/actions/player/deed-actions";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { useEffect, useState } from "react";
 

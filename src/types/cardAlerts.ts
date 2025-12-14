@@ -1,11 +1,11 @@
 import {
   CardElement,
+  CardRarity,
   DeedType,
   MagicType,
-  PlotStatus,
   PlotRarity,
+  PlotStatus,
   WorksiteType,
-  CardRarity,
 } from "./planner";
 
 export type TerrainCardInfo = {
@@ -42,6 +42,11 @@ export type CountAlert = {
   assignedCards: number;
 };
 
+export type NegativeDecAlert = {
+  deedInfo: DeedInfo;
+  negativeDecPerHour: number;
+};
+
 export type BoostCategory = "negative" | "zeroNeutral" | "zeroNonNeutral";
 
 export type TerrainBoostAlerts = Record<BoostCategory, TerrainCardInfo[]>;
@@ -50,4 +55,9 @@ export type CardAlerts = {
   assignedWorkersAlerts: CountAlert[];
   noWorkersAlerts: DeedInfo[];
   terrainBoostAlerts: TerrainBoostAlerts;
+  negativeDECNaturalResourceDeeds: NegativeDecAlert[];
+  negativeDECOtherResourceDeeds: NegativeDecAlert[];
+  unusedPowerSource: number;
+  noPowerSource: DeedInfo[];
+  powerCoreWhileEnergized: DeedInfo[];
 };

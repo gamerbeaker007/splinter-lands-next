@@ -160,25 +160,27 @@ export async function getCachedPlayerOverviewData(
     const cached = cache.get<PlayerOverview>(key);
     if (cached) return cached;
   }
+  const safePlayer = encodeURIComponent(player);
 
   const deeds = mapRegionDataToDeedComplete(
-    await fetchRegionDataPlayer(player)
+    await fetchRegionDataPlayer(safePlayer)
   );
   const enrichedDeeds = await enrichWithProgressInfo(deeds);
   const summarizedRegionInfo = summarizeDeedsData(enrichedDeeds);
   const alerts = getDeedsAlerts(enrichedDeeds);
 
-  const liquidityInfo = await fetchPlayerLiquidity(player);
+  const liquidityInfo = await fetchPlayerLiquidity(safePlayer);
 
-  const poolInfo = await fetchPlayerPoolInfo(player);
+  const poolInfo = await fetchPlayerPoolInfo(safePlayer);
   const metrics = await fetchLandResourcesPools();
   const today = new Date();
   poolInfo.map((row) => enrichPoolData(row, today, metrics));
   const liquidityPoolInfo = poolInfo;
 
-  const balances = await fetchPlayerBalances(player, [
+  const balances = await fetchPlayerBalances(safePlayer, [
     "DEC",
     "SPS",
+    "CINDER",
     "VOUCHER",
     "MIDNIGHTPOT",
     "WAGONKIT",
@@ -188,6 +190,7 @@ export async function getCachedPlayerOverviewData(
     "ALLOCATION_RIGHT_R",
     "ALLOCATION_RIGHT_E",
     "ALLOCATION_RIGHT_L",
+    "POWER_CORE_PURCHASES",
   ]);
 
   //DEC Income

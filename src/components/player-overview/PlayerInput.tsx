@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 
 export default function PlayerInput() {
   const { selectedPlayer, setSelectedPlayer } = usePlayer();
-  const [inputValue, setInputValue] = useState(selectedPlayer);
+  const [inputValue, setInputValue] = useState("");
 
   // Sync input value when context changes
   useEffect(() => {

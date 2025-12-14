@@ -129,3 +129,12 @@ export async function getPlayerCardCollection(
   const grouped = groupCards(filtered, cardDetails);
   return Array.from(grouped.values());
 }
+
+/**
+ * Get player card collection with caching.
+ */
+export async function getPlayerCollection(
+  player: string
+): Promise<SplPlayerCardCollection[]> {
+  return await getCachedPlayerCardCollection(player);
+}

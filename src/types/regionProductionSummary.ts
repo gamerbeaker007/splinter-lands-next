@@ -1,3 +1,4 @@
+import { Resource } from "@/constants/resource/resource";
 import { ProductionPoints } from "@/types/productionPoints";
 
 export type RegionResourcePP = {
@@ -9,6 +10,7 @@ export type RegionResourcePP = {
 // Total production points for a region
 export type RegionPP = {
   totalPP: ProductionPoints;
+  laborsLuckPP: ProductionPoints;
   // Split by resource name, e.g., "GRAIN", "WOOD"
-  perResource: Record<string, RegionResourcePP>;
+  perResource: Record<Resource, RegionResourcePP>;
 };

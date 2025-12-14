@@ -20,14 +20,22 @@ import Link from "../ui/LinkWrapper";
 
 const links = [
   { href: "/", label: "Home", icon: <FiHome /> },
-  { href: "/resource", label: "Resource", icon: <FiDatabase /> },
-  { href: "/region-overview", label: "Region Overview", icon: <FiMap /> },
+  { href: "/resource/conversion", label: "Resource", icon: <FiDatabase /> },
   {
-    href: "/player-efficiency",
+    href: "/region-overview/activity",
+    label: "Region Overview",
+    icon: <FiMap />,
+  },
+  {
+    href: "/player-efficiency/rankings",
     label: "Player Efficiency",
     icon: <MdOutlineLeaderboard />,
   },
-  { href: "/player-overview", label: "Player Overview", icon: <FiUsers /> },
+  {
+    href: "/player-overview/dashboard",
+    label: "Player Overview",
+    icon: <FiUsers />,
+  },
   {
     href: "/planning",
     label: "Land  Planning",

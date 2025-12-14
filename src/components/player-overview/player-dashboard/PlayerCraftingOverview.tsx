@@ -31,6 +31,7 @@ type Props = {
 export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
   // Total of a given resource
   const resourceAvailableMap: Record<string, number> = {
+    CINDER: Number(balances.find((b) => b.token === "CINDER")?.balance ?? 0),
     DEC: Number(balances.find((b) => b.token === "DEC")?.balance ?? 0),
     VOUCHER: Number(balances.find((b) => b.token === "VOUCHER")?.balance ?? 0),
   };
@@ -100,15 +101,22 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
       <Box maxWidth={350}>
         <Typography variant="h6">Resource Overview</Typography>
 
-        {RESOURCES.map((resource) => (
-          <InfoCreatableItem
-            key={resource}
-            icon={RESOURCE_ICON_MAP[resource]}
-            title={resource}
-            number={resourceAvailableMap[resource]}
-          />
-        ))}
+        {RESOURCES.map((resource) => {
+          return (
+            <InfoCreatableItem
+              key={resource}
+              icon={RESOURCE_ICON_MAP[resource]}
+              title={resource}
+              number={resourceAvailableMap[resource]}
+            />
+          );
+        })}
 
+        <InfoCreatableItem
+          icon={RESOURCE_ICON_MAP["CINDER"]}
+          title="CINDER"
+          number={resourceAvailableMap["CINDER"]}
+        />
         <InfoCreatableItem
           icon={RESOURCE_ICON_MAP["DEC"]}
           title="DEC"

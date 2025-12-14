@@ -9,8 +9,9 @@ import DeedRarityTile from "@/components/region-overview/summary/DeedRarityTile"
 import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile";
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
-import { usePlayerDashboard } from "@/hooks/usePlayerDashboard";
+import { usePlayerDashboard } from "@/hooks/action-based/usePlayerDashboard";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
@@ -18,11 +19,9 @@ import { useState } from "react";
 import AlertSection from "./alerts/AlertSection";
 import { LandCardResources } from "./LandCardResources";
 import { PlayerProductionOverview } from "./PlayerProductionOverview";
-import { usePlayer } from "@/lib/frontend/context/PlayerContext";
-
 
 export default function PlayerDashboardPage() {
-  const {selectedPlayer} = usePlayer();
+  const { selectedPlayer } = usePlayer();
   const [force, setForce] = useState(false);
   const { playerOverview, loadingText, fetchPlayerData } =
     usePlayerDashboard(selectedPlayer);
@@ -56,6 +55,7 @@ export default function PlayerDashboardPage() {
               flexDirection={"column"}
               mt={4}
             >
+              <Typography variant="h5">Alerts</Typography>
               <AlertSection
                 alerts={playerOverview.alerts}
                 player={selectedPlayer}

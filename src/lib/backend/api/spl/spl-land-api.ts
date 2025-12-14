@@ -63,7 +63,7 @@ export async function fetchRegionDataPlayer(
 }
 
 export async function fetchPlayerLiquidity(player: string) {
-  const url = `/land/liquidity/region/${player}`;
+  const url = `/land/liquidity/region/${encodeURIComponent(player)}`;
   const res = await splLandClient.get(url);
 
   logger.info(`SPL API - fetch land player liquidity for: ${player}`);
@@ -86,7 +86,7 @@ export async function fetchStakedAssets(deed_uid: string) {
 export async function fetchPlayerPoolInfo(
   player: string
 ): Promise<PlayerTradeHubPosition[]> {
-  const url = `land/liquidity/pools/${player}/all-no-vesting`;
+  const url = `land/liquidity/pools/${encodeURIComponent(player)}/all-no-vesting`;
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;

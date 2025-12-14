@@ -1,6 +1,6 @@
 "use client";
 
-import { getPlayerCollection } from "@/lib/backend/actions/playerPlanning";
+import { getPlayerCollection } from "@/lib/backend/actions/player/collection-actions";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { useEffect, useState } from "react";
 

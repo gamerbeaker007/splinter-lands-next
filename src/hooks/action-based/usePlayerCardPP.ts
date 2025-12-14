@@ -1,6 +1,6 @@
 "use client";
 
-import { getPlayerCardCollection } from "@/lib/backend/actions/playerCollectionData";
+import { getPlayerCardCollection as getPlayerCardCollectionGrouped } from "@/lib/backend/actions/player/collection-actions";
 import { useAuth } from "@/lib/frontend/context/AuthContext";
 import { CardFilterInput } from "@/types/filters";
 import { GroupedCardRow } from "@/types/groupedCardRow";
@@ -33,7 +33,7 @@ export function usePlayerCardPP(
       setError(null);
 
       try {
-        const result = await getPlayerCardCollection(
+        const result = await getPlayerCardCollectionGrouped(
           player,
           cardFilters,
           force

@@ -68,12 +68,18 @@ export const LandBoosts: React.FC<Props> = ({
       }}
     >
       <Box borderRadius={1} bgcolor="rgba(70, 71, 70, 0.9)" minHeight={110}>
-        <Box display={"flex"} flexDirection={"row"} flexWrap={"wrap"}>
+        <Box
+          display={"flex"}
+          flexDirection={"row"}
+          flexWrap={"wrap"}
+          gap={1.5}
+          p={1}
+        >
           {productionBoost > 0 && (
             <Tooltip
               title={`Production Boost ${capitalize(resource.toLowerCase())} by ${productionBoostPct}%`}
             >
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={bountifulResourceIconMap[resource] ?? ""}
                   alt={resource}
@@ -90,7 +96,7 @@ export const LandBoosts: React.FC<Props> = ({
             <Tooltip
               title={`Bloodline Boost by ${Math.round(bloodlineBoost * 100)}%`}
             >
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={bloodline_icon_url}
                   alt="Bloodline"
@@ -107,7 +113,7 @@ export const LandBoosts: React.FC<Props> = ({
             <Tooltip
               title={`DEC Stake Discount by ${Math.round(decDiscount * 100)}%`}
             >
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={dec_stake_discount_icon_url}
                   alt="DEC Discount"
@@ -124,7 +130,7 @@ export const LandBoosts: React.FC<Props> = ({
             <Tooltip
               title={`Grain Consumption Reduction by ${Math.round(grainConsumeReduction * 100)}%`}
             >
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={rationing_icon_url}
                   alt="Grain Reduction"
@@ -139,7 +145,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {replacePowerCore && (
             <Tooltip title="Replaces Power Core">
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={energized_icon_url}
                   alt="Power Core"
@@ -152,7 +158,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {laborLuck && (
             <Tooltip title="Labor's Luck">
-              <Box display={"flex"} flexDirection={"column"} m={1}>
+              <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={labors_luck_icon_url}
                   alt="Labor's Luck"
