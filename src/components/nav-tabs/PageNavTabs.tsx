@@ -68,20 +68,22 @@ export default function PageNavTabs({
       }}
     >
       {compact ? (
-        <Select
-          value={pages[value]?.label || ""}
-          onChange={handleSelectChange}
-          sx={{
-            m: 1,
-            minWidth: 200,
-          }}
-        >
-          {pages.map((page) => (
-            <MenuItem key={page.key} value={page.label}>
-              {page.label}
-            </MenuItem>
-          ))}
-        </Select>
+        <Box border={"1px solid red"} justifyItems={"left"} width={"100%"}>
+          <Select
+            value={pages[value]?.label || ""}
+            onChange={handleSelectChange}
+            sx={{
+              m: 1,
+              minWidth: 200,
+            }}
+          >
+            {pages.map((page) => (
+              <MenuItem key={page.key} value={page.label}>
+                {page.label}
+              </MenuItem>
+            ))}
+          </Select>
+        </Box>
       ) : (
         <Tabs
           value={value}

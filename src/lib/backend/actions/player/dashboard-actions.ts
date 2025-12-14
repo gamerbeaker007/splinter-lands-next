@@ -7,5 +7,5 @@ export async function getPlayerDashboardData(
   player: string,
   force: boolean = false
 ): Promise<PlayerOverview> {
-  return await getCachedPlayerOverviewData(player, force);
+  return await getCachedPlayerOverviewData(encodeURIComponent(player), force);
 }
