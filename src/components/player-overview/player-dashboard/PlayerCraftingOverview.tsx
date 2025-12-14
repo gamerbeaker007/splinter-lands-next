@@ -30,18 +30,12 @@ type Props = {
 
 export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
   // Total of a given resource
-  console.log("Calculating resource availability for crafting overview.");
-  console.log("Balances:", balances);
   const resourceAvailableMap: Record<string, number> = {
     CINDER: Number(balances.find((b) => b.token === "CINDER")?.balance ?? 0),
     DEC: Number(balances.find((b) => b.token === "DEC")?.balance ?? 0),
     VOUCHER: Number(balances.find((b) => b.token === "VOUCHER")?.balance ?? 0),
   };
 
-  console.log(
-    "Initial resourceAvailableMap with DEC, VOUCHER, CINDER:",
-    resourceAvailableMap
-  );
   RESOURCES.forEach((res) => {
     const key = res.toLowerCase() as keyof RegionLiquidityInfo;
     resourceAvailableMap[res] = liquidityInfo.reduce(
