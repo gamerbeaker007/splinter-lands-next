@@ -102,12 +102,10 @@ export function TradeHubTokenShareChart({
         <InfoItem
           title={`Total ${playerTradeHubPositions[0]?.token.split("-")[1]}:`}
           text={formatNumberWithSuffix(totalResource)}
-          fontSize={10}
         />
         <InfoItem
           title={"Total DEC:"}
           text={formatNumberWithSuffix(totalDEC)}
-          fontSize={10}
         />
 
         {currentPlayerData && (
