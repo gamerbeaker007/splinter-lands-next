@@ -89,10 +89,12 @@ export async function getPlayerCardAlerts(
       ) ?? 0;
 
     // Analyze all alerts in a single pass through deeds
-    const { countAlerts, negativeAlerts, powerSourceAlerts } = analyzeAllDeeds(
-      enrichedPlayerData,
-      ownedPowerCores
-    );
+    const {
+      countAlerts,
+      negativeAlerts,
+      powerSourceAlerts,
+      missingBloodLineBoost,
+    } = analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
 
     // Analyze cards for terrain bonuses
     const terrainBoostAlerts = analyzeTerrainBonuses(
@@ -110,6 +112,7 @@ export async function getPlayerCardAlerts(
       unusedPowerSource: powerSourceAlerts.unusedPowerSource,
       noPowerSource: powerSourceAlerts.noPowerSource,
       powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
+      missingBloodLineBoost: missingBloodLineBoost,
     };
   } catch (error) {
     logger.error(`Failed to get card alerts for ${trimmed}:`, error);
@@ -138,6 +141,7 @@ function analyzeAllDeeds(
     noPowerSource: DeedInfo[];
     powerCoreWhileEnergized: DeedInfo[];
   };
+  missingBloodLineBoost: DeedInfo[];
 } {
   const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
@@ -146,6 +150,7 @@ function analyzeAllDeeds(
   const noPowerSource: DeedInfo[] = [];
   const powerCoreWhileEnergized: DeedInfo[] = [];
   let numberOfPowerCores = ownedPowerCores;
+  const missingBloodLineBoost: DeedInfo[] = [];
 
   // Single loop through all deeds
   for (const deed of deeds) {
@@ -186,6 +191,8 @@ function analyzeAllDeeds(
     const isEnergized = deed.stakingDetail?.is_energized ?? false;
     const isPowered = deed.stakingDetail?.is_powered ?? false;
     const isPowerCoreStaked = deed.stakingDetail?.is_power_core_staked ?? false;
+    const hasBloodLineBoost =
+      (deed.stakingDetail?.card_bloodlines_boost ?? 0) > 0;
 
     if (isPowerCoreStaked && isEnergized) {
       powerCoreWhileEnergized.push(deedInfo);
@@ -195,6 +202,13 @@ function analyzeAllDeeds(
     }
     if (isPowerCoreStaked) {
       numberOfPowerCores--;
+    }
+
+    if (
+      hasBloodLineBoost &&
+      (deed.stakingDetail?.total_card_bloodlines_boost_pp ?? 0) === 0
+    ) {
+      missingBloodLineBoost.push(deedInfo);
     }
   }
 
@@ -210,6 +224,7 @@ function analyzeAllDeeds(
       noPowerSource,
       powerCoreWhileEnergized,
     },
+    missingBloodLineBoost,
   };
 }
 

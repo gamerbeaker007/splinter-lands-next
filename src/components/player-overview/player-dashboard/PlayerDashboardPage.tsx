@@ -56,7 +56,7 @@ export default function PlayerDashboardPage() {
             >
               <Typography variant="h5">Alerts</Typography>
               <AlertSection
-                alerts={playerOverview.alerts}
+                finishedFullAlerts={playerOverview.alerts}
                 player={selectedPlayer}
                 force={force}
               />

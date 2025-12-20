@@ -5,6 +5,7 @@ import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import {
   AssignmentInd,
   Block,
+  FormatColorReset,
   Landscape,
   RemoveCircleOutline,
   Store,
@@ -24,18 +25,23 @@ import { useState } from "react";
 import { AlertSectionSkeleton } from "./AlertSectionSkeleton";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
 import { DeedAlertSection } from "./DeedAlertSection";
+import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
 import { NoWorkersAlerts } from "./NoWorkersAlerts";
 import { PowerCoreAlerts } from "./PowerCoreAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
 
 type Props = {
-  alerts: DeedAlertsInfo[];
+  finishedFullAlerts: DeedAlertsInfo[];
   player: string;
   force: boolean;
 };
 
-export default function AlertSection({ alerts, player, force }: Props) {
+export default function AlertSection({
+  finishedFullAlerts,
+  player,
+  force,
+}: Props) {
   const { cardAlerts, loading, error } = usePlayerAlerts(player, force);
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
@@ -43,15 +49,16 @@ export default function AlertSection({ alerts, player, force }: Props) {
   if (error) return <div>Error loading alerts: {error}</div>;
   if (!cardAlerts) return <div>No alerts available.</div>;
 
+  console.log("Card Alerts:", cardAlerts);
   // Button configs
   const buttons = [
     {
       key: "finishedBuilding",
       label: "Finished/Full",
-      alertsCount: alerts.length,
+      alertsCount: finishedFullAlerts.length,
       icon: <Store fontSize="large" />,
       dialogTitle: "Finished Building / Full Store",
-      dialogContent: <DeedAlertSection alerts={alerts} />,
+      dialogContent: <DeedAlertSection alerts={finishedFullAlerts} />,
     },
     {
       key: "AssignedWorkersAlert",
@@ -156,6 +163,18 @@ export default function AlertSection({ alerts, player, force }: Props) {
       dialogContent: (
         <PowerCoreAlerts
           powerCoreAlerts={cardAlerts?.powerCoreWhileEnergized}
+        />
+      ),
+    },
+    {
+      key: "MissingBloodlineBoost",
+      label: "Missing Bloodline Boost",
+      alertsCount: cardAlerts?.missingBloodLineBoost.length ?? 0,
+      icon: <FormatColorReset fontSize="large" />,
+      dialogTitle: "Deeds Missing Bloodline Boost",
+      dialogContent: (
+        <MissingBloodLineBoostAlerts
+          missingBloodLineBoost={cardAlerts?.missingBloodLineBoost}
         />
       ),
     },

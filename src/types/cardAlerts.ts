@@ -60,4 +60,5 @@ export type CardAlerts = {
   unusedPowerSource: number;
   noPowerSource: DeedInfo[];
   powerCoreWhileEnergized: DeedInfo[];
+  missingBloodLineBoost: DeedInfo[];
 };
