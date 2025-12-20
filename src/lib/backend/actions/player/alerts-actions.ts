@@ -279,7 +279,8 @@ function analyzeTerrainBonuses(
     };
 
     if (boost < 0) negative.push(item);
-    else if (boost === 0 && element === "neutral") zeroNeutral.push(item);
+    else if (boost === 0 && element === "neutral" && item.cardName != "Runi")
+      zeroNeutral.push(item);
     else if (boost === 0 && element !== "neutral") zeroNonNeutral.push(item);
   }
 

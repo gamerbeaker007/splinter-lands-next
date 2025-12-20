@@ -49,7 +49,6 @@ export default function AlertSection({
   if (error) return <div>Error loading alerts: {error}</div>;
   if (!cardAlerts) return <div>No alerts available.</div>;
 
-  console.log("Card Alerts:", cardAlerts);
   // Button configs
   const buttons = [
     {
