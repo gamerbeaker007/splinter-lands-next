@@ -1,10 +1,11 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { NegativeDecAlert } from "@/types/cardAlerts";
-import { Box, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 
 import { worksiteTypeMapping } from "@/lib/shared/statics";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import React from "react";
+import { LocationInfo } from "../../deed-overview/land-deed-card/info-sections/LocationInfo";
 import { ManageLink } from "../../deed-overview/land-deed-card/link-components/ManageLink";
 
 interface Props {
@@ -15,7 +16,7 @@ const fontSize = 12;
 
 export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
   return (
-    <Box mt={2}>
+    <Box mt={1}>
       <Box display={"flex"} flexWrap={"wrap"} gap={1} mb={1}>
         {negativeDECAlerts.map((alert, idx) => {
           const DeedImg = getDeedImg(
@@ -37,7 +38,6 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                 width: "100%",
                 maxWidth: "300px",
                 aspectRatio: "800 / 422",
-                mb: 3,
                 overflow: "hidden",
                 backgroundSize: "cover",
                 backgroundPosition: "center",
@@ -72,7 +72,6 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                   sx={{
                     position: "absolute",
                     left: 10,
-                    top: 10,
                     width: "auto",
                     textAlign: "left",
                   }}
@@ -83,7 +82,6 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                     display={"flex"}
                     flexDirection={"row"}
                     alignItems={"center"}
-                    padding={1}
                   >
                     <Box
                       sx={{
@@ -114,35 +112,47 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                       </Typography>
                     </Box>
                   </Box>
-                  <Box
-                    justifyContent={"center"}
-                    alignItems={"center"}
-                    display={"flex"}
-                    borderRadius={2}
-                    sx={{
-                      backgroundColor: "rgba(240, 240, 240, 0.85)",
-                    }}
-                  >
+                  <Box display={"flex"} flexDirection={"row"} mt={1}>
+                    <LocationInfo
+                      regionNumber={alert.deedInfo.regionNumber}
+                      tractNumber={alert.deedInfo.tractNumber}
+                      plotNumber={alert.deedInfo.plotNumber}
+                    />
+                  </Box>
+                </Box>
+                <Box
+                  justifyContent={"center"}
+                  alignItems={"center"}
+                  display={"flex"}
+                  borderRadius={2}
+                  sx={{
+                    position: "absolute",
+                    top: 70,
+                    left: 210,
+                    width: "auto",
+                    textAlign: "left",
+                    px: 2,
+                  }}
+                >
+                  <Stack alignItems={"center"} spacing={0.1} py={1}>
                     <Typography
                       variant="body1"
                       fontWeight={600}
                       fontSize={fontSize}
                       color="error"
                     >
-                      {`${alert.negativeDecPerHour.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} DEC/h`}
+                      {`${alert.negativeDecPerHour.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`}
                     </Typography>
-                  </Box>
+                    <Typography
+                      variant="body1"
+                      fontWeight={600}
+                      fontSize={fontSize}
+                      color="error"
+                    >
+                      DEC/h
+                    </Typography>
+                  </Stack>
                 </Box>
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    left: "20px",
-                    top: "115px",
-                    width: "auto",
-                    textAlign: "left",
-                  }}
-                ></Box>
               </Box>
             </Box>
           );
