@@ -1,31 +1,30 @@
-"use client";
-
-import { enrichDeedsWithStakedAssets } from "@/lib/backend/actions/player/enriched-deed-actions";
-import { getFilteredEnrichedTractDeeds } from "@/lib/backend/actions/region/tract-deed-actions";
-import { useFilters } from "@/lib/frontend/context/FilterContext";
+import {
+  enrichDeedsWithStakedAssets,
+  getFilteredEnrichedPlayerDeeds,
+} from "@/lib/backend/actions/player/enriched-deed-actions";
 import { DeedComplete } from "@/types/deed";
+import { FilterInput } from "@/types/filters";
 import { useCallback, useEffect, useState } from "react";
 
 /**
- * Two-phase hook for SSR-friendly tract deed loading with progress indication:
- * Phase 1: Fast server action to get filtered tract deeds (without staked assets)
+ * Two-phase hook for SSR-friendly deed loading with progress indication:
+ * Phase 1: Fast server action to get filtered deeds (without staked assets)
  * Phase 2: Progressive enrichment with staked assets (with progress updates)
  */
-export const useTractDeedData = (
-  selectedRegion: number | "",
-  selectedTract: number | ""
-) => {
+export function useEnrichedPlayerDeeds(
+  playerName: string | null,
+  filters: FilterInput | null
+) {
   const [deeds, setDeeds] = useState<DeedComplete[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [loadingText, setLoadingText] = useState<string | null>(null);
   const [progress, setProgress] = useState<number>(0);
   const [total, setTotal] = useState<number>(0);
-  const [error, setError] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
-  const { filters } = useFilters();
 
   const fetchDeeds = useCallback(async () => {
-    if (!filters || !selectedRegion || !selectedTract) {
+    if (!playerName || !filters) {
       setDeeds([]);
       setError(null);
       setLoading(false);
@@ -37,7 +36,6 @@ export const useTractDeedData = (
     }
 
     setLoading(true);
-
     setDeeds([]);
     setError(null);
     setProgress(0);
@@ -45,29 +43,22 @@ export const useTractDeedData = (
     setWarning(null);
 
     try {
-      // Phase 1: Fast call to get filtered tract deeds (without staked assets)
-      setLoadingText("Gathering tract deed data...");
-
-      const updatedFilters = {
-        ...filters,
-        filter_regions: [selectedRegion],
-        filter_tracts: [selectedTract],
-      };
-
-      const result = await getFilteredEnrichedTractDeeds(updatedFilters);
+      // Phase 1: Fast call to get filtered deeds (without staked assets)
+      setLoadingText("Gathering player data...");
+      const result = await getFilteredEnrichedPlayerDeeds(playerName, filters);
 
       setWarning(result.warning);
       setTotal(result.total);
       setDeeds(result.deeds);
 
-      // Phase 2: Progressive enrichment with staked assets
+      // Phase 2: Progressive enrichment with staked assets in fewer, larger batches
       setLoadingText(`Fetching staked assets... 0 / ${result.total}`);
 
       let enrichedCount = 0;
       const enrichedDeeds: DeedComplete[] = [];
 
-      // Use larger batches (50 deeds per server action call) to reduce roundtrips
-      // Each server action internally processes with concurrency limit of 5
+      // Use larger batches (10 deeds per server action call) to reduce roundtrips
+      // Each server action internally processes 10 deeds in parallel
       const BATCH_SIZE = 10;
       for (let i = 0; i < result.deeds.length; i += BATCH_SIZE) {
         const batch = result.deeds.slice(i, i + BATCH_SIZE);
@@ -90,14 +81,16 @@ export const useTractDeedData = (
       setDeeds(enrichedDeeds);
       setLoadingText(null);
     } catch (err) {
-      console.error("Failed to load tract deed data:", err);
-      setError(err instanceof Error ? err.message : "An error occurred");
-      setLoadingText(null);
+      console.error("Failed to fetch enriched player deeds:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load enriched deeds"
+      );
       setDeeds([]);
+      setLoadingText("An error occurred while loading deeds.");
     } finally {
       setLoading(false);
     }
-  }, [filters, selectedRegion, selectedTract]);
+  }, [playerName, filters]);
 
   useEffect(() => {
     fetchDeeds();
@@ -113,4 +106,4 @@ export const useTractDeedData = (
     warning,
     refetch: fetchDeeds,
   };
-};
+}

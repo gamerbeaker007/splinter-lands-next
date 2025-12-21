@@ -2,11 +2,11 @@ import { CSSSize } from "@/types/cssSize";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { StakedAssets } from "@/types/stakedAssets";
 import { Box, Divider } from "@mui/material";
+import { BiomeBoosts } from "../boosts/BiomeBoost";
 import { DeedStatusBoost } from "../boosts/DeedStatusBoost";
 import { ItemBoosts } from "../boosts/ItemBoost";
 import { RarityBoost } from "../boosts/RarityBoost";
 import { RuniBoost } from "../boosts/RuniBoost";
-import { BiomeBoosts } from "../boosts/BiomeBoost";
 
 type Props = {
   rarity: string;
@@ -42,6 +42,11 @@ export default function BoostInfo({
   pos = { x: "0px", y: "0px", w: "auto" },
 }: Props) {
   const { x, y, w } = pos;
+
+  // Do not render if rarity is "Unknown" (possible whith unsurveyed deeds)
+  if (rarity === "Unknown") {
+    return <></>;
+  }
 
   return (
     <Box

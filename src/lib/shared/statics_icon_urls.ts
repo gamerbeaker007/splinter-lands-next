@@ -38,6 +38,7 @@ export const land_default_element_icon_url_placeholder = `${WEB_URL}website/coll
 export const land_mythic_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/legendaryOff.svg`;
 export const land_unsurveyd_deed_icon_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23wC7viFdG9aaUG2ExWbVuUA3aXqt5W273W2Fa3NEGsWHsHHEw3JLbTX1o7pFQsCgh7qV.svg";
+export const land_unsurveyd_deed_url = `${WEB_URL}website/land/deed_unsurveyed.jpg`;
 
 export const land_title_rare_icon_url = `${WEB_URL}website/icons/icon_active_legionnaire.svg`;
 export const land_title_epic_icon_url = `${WEB_URL}website/icons/icon_active_thegambler.svg`;

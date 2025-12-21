@@ -83,7 +83,7 @@ export default function PlayerRegionOverview() {
               <Typography variant="h6" mt={2}>
                 🌍 Total Net (All Regions)
               </Typography>
-                <TotalsCardList regionTotals={data.totals} />
+              <TotalsCardList regionTotals={data.totals} />
               <Typography variant="h4" mt={2}>
                 Production Overview
               </Typography>
