@@ -72,7 +72,11 @@ const LandAbilityDot = ({ landBoosts }: Props) => {
                     alignItems="center"
                   >
                     <Image
-                      src={bountifulResourceIconMap[resource] ?? ""}
+                      src={
+                        bountifulResourceIconMap[
+                          resource as keyof typeof bountifulResourceIconMap
+                        ] ?? ""
+                      }
                       alt={resource}
                       width={sizeIcon}
                       height={sizeIcon}
