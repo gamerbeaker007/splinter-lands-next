@@ -1,6 +1,7 @@
 "use client";
 
 import { ResourceHubMetrics } from "@/generated/prisma/client";
+import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Alert,
@@ -22,15 +23,14 @@ export function TradeHubPage() {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
-    fetch("/api/resource/trade-hub/", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setHistoricalTradeHubMetrics)
-      .catch(console.error);
+    (async () => {
+      try {
+        const data = await getAllTradeHubData();
+        setHistoricalTradeHubMetrics(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, []);
 
   return (

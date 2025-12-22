@@ -189,7 +189,9 @@ export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
   return uniquePlayers.size;
 }
 
-export async function getActiveDeedCountByRegion(filters: FilterInput) {
+export async function getActiveDeedCountByRegion(
+  filters: FilterInput
+): Promise<Record<string, { active: number; inactive: number }>> {
   const blob = await getCachedRegionDataSSR();
   const filteredDeeds = filterDeeds(blob, filters);
 

@@ -2,6 +2,7 @@
 
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import PlayerInput from "@/components/player-overview/PlayerInput";
+import { getPlayerEfficiency } from "@/lib/backend/actions/efficiency-actions";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { Box, Container } from "@mui/material";
@@ -55,15 +56,14 @@ export default function PlayerEfficiencyLayout({
   }, [setTitle]);
 
   useEffect(() => {
-    fetch("/api/efficiency", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setPlayerProductionSummaryData)
-      .catch(console.error);
+    (async () => {
+      try {
+        const data = await getPlayerEfficiency();
+        setPlayerProductionSummaryData(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, []);
 
   return (

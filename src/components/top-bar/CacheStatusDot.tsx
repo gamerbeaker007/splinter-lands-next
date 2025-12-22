@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { getCacheStatus } from "@/lib/backend/actions/cache-actions";
 import Box from "@mui/material/Box";
+import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import CircularProgress from "@mui/material/CircularProgress";
+import { useEffect, useState } from "react";
 
 type Status = "idle" | "loading" | "success" | "error";
 
@@ -18,19 +19,17 @@ export default function CacheStatusDot() {
   useEffect(() => {
     (async () => {
       setStatus("loading");
-      fetch("/api/cache")
-        .then((res) => {
-          if (!res.ok) throw new Error("Failed to refresh cache");
-          return res.json();
-        })
-        .then((json) => {
-          setInfo({
-            lastUpdate: json.lastUpdate,
-            uniquePlayers: json.uniquePlayers,
-          });
-          setStatus("success");
-        })
-        .catch(() => setStatus("error"));
+      try {
+        const data = await getCacheStatus();
+        setInfo({
+          lastUpdate: data.lastUpdate.toString(),
+          uniquePlayers: data.uniquePlayers,
+        });
+        setStatus("success");
+      } catch (error) {
+        console.error(error);
+        setStatus("error");
+      }
     })();
   }, []);
 

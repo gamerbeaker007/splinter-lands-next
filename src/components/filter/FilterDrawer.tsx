@@ -1,6 +1,8 @@
 "use client";
 
+import { getAvailableFilterValues } from "@/lib/backend/actions/filter/filter-actions";
 import { EnableFilterOptions, FilterInput } from "@/types/filters";
+import { Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
@@ -9,7 +11,6 @@ import AttributeFilter from "./AttributeFilter";
 import LocationFilter from "./LocationFilter";
 import PlayerFilter from "./PlayerFilter";
 import ResetFiltersButton from "./reset-filters/ResetFiltersButton";
-import { Typography } from "@mui/material";
 import Sorting from "./Sorting";
 
 type Props = {
@@ -21,13 +22,17 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
     null
   );
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const query = player ? `?player=${encodeURIComponent(player)}` : "";
+
   useEffect(() => {
-    fetch(`/api/filters${query}`)
-      .then((res) => res.json())
-      .then(setAvailableOptions)
-      .catch(console.error);
-  }, [query]);
+    (async () => {
+      try {
+        const data = await getAvailableFilterValues(player ?? null);
+        setAvailableOptions(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
+  }, [player]);
 
   useEffect(() => {
     (async () => {

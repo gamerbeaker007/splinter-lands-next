@@ -3,7 +3,7 @@
 import RegionCardList from "@/components/player-overview/region-overview/RegionCardList";
 import TaxCardList from "@/components/player-overview/region-overview/TaxCardList";
 import TotalsCardList from "@/components/player-overview/region-overview/TotalsCardList";
-import { usePlayerRegionData } from "@/hooks/action-based/usePlayerRegionData";
+import { usePlayerRegionData } from "@/hooks/usePlayerRegionData";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Refresh } from "@mui/icons-material";

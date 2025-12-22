@@ -1,6 +1,6 @@
 "use client";
 
-import { usePlayerAlerts } from "@/hooks/action-based/usePlayerAlerts";
+import { usePlayerAlerts } from "@/hooks/usePlayerAlerts";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import {
   AssignmentInd,

@@ -127,8 +127,8 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                   borderRadius={2}
                   sx={{
                     position: "absolute",
-                    top: 70,
-                    left: 210,
+                    top: 95,
+                    left: 220,
                     width: "auto",
                     textAlign: "left",
                     px: 2,

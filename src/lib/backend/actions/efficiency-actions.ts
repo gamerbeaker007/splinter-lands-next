@@ -1,3 +1,5 @@
+"use server";
+
 import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { getPlayerProductionData } from "@/lib/backend/api/internal/player-production-data";
 import {
@@ -5,10 +7,8 @@ import {
   calculateLDERatio,
   calculateLPERatio,
 } from "@/lib/backend/helpers/productionUtils";
-import { logError } from "@/lib/backend/log/logUtils";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { DeedComplete } from "@/types/deed";
-import { NextResponse } from "next/server";
 
 type StakeInfo = {
   totalDecStakeNeeded: number;
@@ -173,22 +173,22 @@ function calculateTotalLandScore(players: PlayerProductionSummaryEnriched[]) {
   }
 }
 
-export async function GET() {
-  try {
-    const playerSummaryData: PlayerProductionSummaryEnriched[] =
-      await getPlayerProductionData();
-    const regionData = await getCachedRegionDataSSR();
+/**
+ * Get player efficiency data.
+ */
+export async function getPlayerEfficiency(): Promise<
+  PlayerProductionSummaryEnriched[]
+> {
+  const playerSummaryData: PlayerProductionSummaryEnriched[] =
+    await getPlayerProductionData();
+  const regionData = await getCachedRegionDataSSR();
 
-    const stakeMap = aggregateStakingInfo(regionData);
-    applyStakingDataToPlayers(playerSummaryData, stakeMap);
-    calculateRatios(playerSummaryData);
-    normalizeRatios(playerSummaryData);
-    calculateTotalLandScore(playerSummaryData);
-    calculateRanks(playerSummaryData);
+  const stakeMap = aggregateStakingInfo(regionData);
+  applyStakingDataToPlayers(playerSummaryData, stakeMap);
+  calculateRatios(playerSummaryData);
+  normalizeRatios(playerSummaryData);
+  calculateTotalLandScore(playerSummaryData);
+  calculateRanks(playerSummaryData);
 
-    return NextResponse.json(playerSummaryData, { status: 200 });
-  } catch (err) {
-    logError("Failed to load data", err);
-    return NextResponse.json({ error: "Failed to load data" }, { status: 501 });
-  }
+  return playerSummaryData;
 }

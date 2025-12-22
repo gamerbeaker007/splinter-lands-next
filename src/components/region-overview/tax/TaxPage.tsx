@@ -1,13 +1,13 @@
 "use client";
 
+import ErrorComponent from "@/components/ui/ErrorComponent";
+import LoadingComponent from "@/components/ui/LoadingComponent";
+import { useRegionTaxInfo } from "@/hooks/useRegionTax";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { TaxChartsWrapper } from "./TaxChartSection";
 import { TopCaptureRateList } from "./TopCapturedRateList";
 import { TopTaxEarnersList } from "./TopTaxEarnersList";
-import { useRegionTaxInfo } from "@/hooks/useRegionTax";
-import LoadingComponent from "@/components/ui/LoadingComponent";
-import ErrorComponent from "@/components/ui/ErrorComponent";
 
 export function TaxPage() {
   const { filters } = useFilters();

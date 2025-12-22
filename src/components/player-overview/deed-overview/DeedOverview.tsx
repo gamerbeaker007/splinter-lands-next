@@ -1,7 +1,7 @@
 "use client";
 
-import { useCardDetailsAction } from "@/hooks/action-based/useCardDetails";
-import { useEnrichedPlayerDeeds } from "@/hooks/action-based/useEnrichedPlayerDeeds";
+import { useCardDetailsAction } from "@/hooks/useCardDetails";
+import { useEnrichedPlayerDeeds } from "@/hooks/useEnrichedPlayerDeeds";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import {

@@ -1,6 +1,7 @@
 "use client";
 
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { getActiveDeedCountByRegion } from "@/lib/backend/actions/region/active-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -8,27 +9,27 @@ import { useEffect, useState } from "react";
 
 export default function ActiveDeedsChart() {
   const { filters } = useFilters();
-  const [data, setData] = useState<Record<string, Record<string, number>>>({});
+  const [data, setData] = useState<
+    Record<string, { active: number; inactive: number }>
+  >({});
   const [xTitle, setXTitle] = useState<string>("");
 
   useEffect(() => {
     if (!filters) return;
 
-    fetch("/api/region/active", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then((raw) => {
+    (async () => {
+      try {
+        const raw = await getActiveDeedCountByRegion(filters);
         if (filters.filter_regions?.length === 1) {
           setXTitle("Tract");
         } else {
           setXTitle("Region");
         }
         setData(raw);
-      })
-      .catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, [filters]);
 
   const regionLabels = Object.keys(data);

@@ -1,6 +1,7 @@
 // hooks/usePrices.ts
-import { useState, useEffect, useCallback } from "react";
+import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
 import { Prices } from "@/types/price";
+import { useCallback, useEffect, useState } from "react";
 
 export function usePrices() {
   const [prices, setPrices] = useState<Prices | null>(null);
@@ -10,8 +11,7 @@ export function usePrices() {
   const fetchPrices = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/resource/prices`);
-      const data = await res.json();
+      const data = await getActualResourcePrices();
       setPrices(data);
       setError(null);
     } catch (err) {

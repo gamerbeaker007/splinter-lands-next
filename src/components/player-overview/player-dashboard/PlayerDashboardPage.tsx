@@ -9,7 +9,7 @@ import DeedRarityTile from "@/components/region-overview/summary/DeedRarityTile"
 import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile";
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
-import { usePlayerDashboard } from "@/hooks/action-based/usePlayerDashboard";
+import { usePlayerDashboard } from "@/hooks/usePlayerDashboard";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";

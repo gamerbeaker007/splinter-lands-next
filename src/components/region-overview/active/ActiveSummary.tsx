@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import Box from "@mui/material/Box";
-import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { ResourceActiveSummaryCard } from "@/components/region-overview/active/ResrouceSummaryCard";
+import { getActiveProductionSummary } from "@/lib/backend/actions/region/production-actions";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionActiveSummary } from "@/types/regionActiveSummary";
+import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { useEffect, useState } from "react";
 
 export default function ActiveSummary() {
   const { filters } = useFilters();
@@ -14,16 +15,14 @@ export default function ActiveSummary() {
   useEffect(() => {
     if (!filters) return;
 
-    fetch("/api/region/active/production", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then((raw) => {
+    (async () => {
+      try {
+        const raw = await getActiveProductionSummary(filters);
         setData(raw);
-      })
-      .catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, [filters]);
 
   return (

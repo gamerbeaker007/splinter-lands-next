@@ -3,8 +3,8 @@
 import { LandDeedCard } from "@/components/player-overview/deed-overview/land-deed-card/LandDeedCard";
 import LoadingComponent from "@/components/ui/LoadingComponent";
 import { Resource } from "@/constants/resource/resource";
-import { useCardDetailsAction } from "@/hooks/action-based/useCardDetails";
-import { useTractDeedData } from "@/hooks/region-overview/useTractDeedData";
+import { useCardDetailsAction } from "@/hooks/useCardDetails";
+import { useTractDeedData } from "@/hooks/useTractDeedData";
 import { WorksiteType } from "@/types/planner/primitives";
 import { ProductionPoints } from "@/types/productionPoints";
 import {

@@ -1,3 +1,4 @@
+"use server";
 import { FilterInput } from "@/types/filters";
 import { RegionTax } from "@/types/regionTax";
 import { getCachedRegionDataSSR } from "../../api/internal/deed-data";

@@ -3,6 +3,7 @@
 import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
 import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
+import { getRegionSummary } from "@/lib/backend/actions/region/summary-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionSummary } from "@/types/regionSummary";
 import { Box, Stack, Typography } from "@mui/material";
@@ -20,16 +21,14 @@ export default function SummaryPage() {
   useEffect(() => {
     if (!filters) return;
 
-    fetch("/api/region/summary", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then(setSummary)
-      .catch(console.error);
+    (async () => {
+      try {
+        const data = await getRegionSummary(filters);
+        setSummary(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, [filters]);
 
   return (
