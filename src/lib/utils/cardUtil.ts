@@ -1,3 +1,4 @@
+import { Resource } from "@/constants/resource/resource";
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
@@ -229,14 +230,14 @@ const combine_rates_gold: Record<CardRarity, number[]> = {
 export function determineLevelFromBCX(
   cardSet: CardSetNameLandValid,
   rarity: CardRarity,
-  foil: number,
+  foil: CardFoil,
   bcx: number
 ): number {
   if (cardSet !== "land") {
     console.error("Not Land card detected, for now only Land cards.");
     return 0;
   }
-  const rates = foil === 0 ? combine_rates : combine_rates_gold;
+  const rates = foil === "regular" ? combine_rates : combine_rates_gold;
   const ratesForRarity = rates[rarity];
   let level = 0;
   for (let i = 0; i < ratesForRarity.length; i++) {
@@ -247,4 +248,62 @@ export function determineLevelFromBCX(
     }
   }
   return level;
+}
+
+export function determineLandBoosts(
+  rarity: CardRarity,
+  foil: CardFoil,
+  bcx: number,
+  splCard: SplCardDetails | undefined
+) {
+  const landboost = {
+    produceBoost: {} as Record<Resource, number>,
+    consumeGrainDiscount: 0,
+    bloodlineBoost: 0,
+    decDiscount: 0,
+    replacePowerCore: false,
+    laborLuck: false,
+  };
+
+  const determineLevel = determineLevelFromBCX("land", rarity, foil, bcx);
+
+  const level = determineLevel !== null ? determineLevel : 1;
+  const landAbilities = splCard?.stats?.land_abilities ?? null;
+
+  if (landAbilities && level > 0 && level <= 10) {
+    const landStatsByLevel = landAbilities[level - 1];
+
+    // Parse each ability in the level
+    if (landStatsByLevel) {
+      for (const ability of landStatsByLevel) {
+        const abilityType = ability[0];
+
+        switch (abilityType) {
+          case "DD": // DEC Discount
+            landboost.decDiscount = (ability[1] * -1) as number;
+            break;
+          case "RATIONING":
+            landboost.consumeGrainDiscount = (ability[1] * -1) as number;
+            break;
+          case "BLOODLINE":
+            landboost.bloodlineBoost = ability[1] as number;
+            break;
+          case "GRAIN":
+          case "WOOD":
+          case "STONE":
+          case "IRON":
+          case "AURA":
+            landboost.produceBoost[abilityType] = ability[1] as number;
+            break;
+          case "ENERGIZED":
+            landboost.replacePowerCore = true;
+            break;
+          case "LL": // Labor Luck
+            landboost.laborLuck = true;
+            break;
+        }
+      }
+    }
+  }
+  return landboost;
 }

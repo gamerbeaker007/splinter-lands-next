@@ -1,5 +1,10 @@
-import { determineCardInfo, determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import {
+  determineCardInfo,
+  determineCardMaxBCX,
+  determineLandBoosts,
+} from "@/lib/utils/cardUtil";
 import { CSSSize } from "@/types/cssSize";
+import { cardFoilOptions } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { StakedAssets } from "@/types/stakedAssets";
 import { Box } from "@mui/material";
@@ -39,6 +44,16 @@ export const CardInfo: React.FC<Props> = ({
 
           const max_bcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 
+          const landBoost =
+            card.card_set === "land"
+              ? determineLandBoosts(
+                  rarity,
+                  cardFoilOptions[card.foil],
+                  card.bcx,
+                  cardDetails.find((cd) => cd.id === card.card_detail_id)
+                )
+              : undefined;
+
           return (
             <CardTile
               key={card.uid}
@@ -52,6 +67,7 @@ export const CardInfo: React.FC<Props> = ({
               base_pp={Number(card.base_pp_after_cap)}
               boosted_pp={Number(card.total_harvest_pp)}
               uid={card.uid}
+              landBoosts={landBoost}
             />
           );
         })}

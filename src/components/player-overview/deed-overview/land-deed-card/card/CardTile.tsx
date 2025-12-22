@@ -1,10 +1,11 @@
 import { formatLargeNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
-import { getCardImg } from "@/lib/utils/cardUtil";
+import { getCardImgV2 } from "@/lib/utils/cardUtil";
+import { cardFoilOptions, LandBoost, RarityColor } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
+import LandAbilityDot from "./LandAbiltiyDot";
 import PPMultiplierDot from "./PPMultiplierDot";
-import { RarityColor } from "@/types/planner";
 
 type Props = {
   name: string;
@@ -17,6 +18,7 @@ type Props = {
   base_pp: number;
   uid: string;
   boosted_pp?: number;
+  landBoosts?: LandBoost;
 };
 
 export default function CardTile({
@@ -30,6 +32,7 @@ export default function CardTile({
   base_pp,
   boosted_pp,
   uid,
+  landBoosts,
 }: Props) {
   const isFoil = foil === 1 || foil === 2;
 
@@ -40,10 +43,12 @@ export default function CardTile({
   const img =
     name === "Runi"
       ? `https://runi.splinterlands.com/cards/${uid}.jpg`
-      : getCardImg(name, edition, foil);
+      : getCardImgV2(name, edition, cardFoilOptions[foil]);
 
   const displayPP = Number(boosted_pp !== undefined ? boosted_pp : base_pp);
 
+  if (landBoosts)
+    console.log("Rendering CardTile for:", name, { edition, foil, uid });
   return (
     <>
       <Box border={"solid 1xp red"} width={85} height={110}>
@@ -101,6 +106,8 @@ export default function CardTile({
             border={1}
             bgcolor={RarityColor[rarity]}
           />
+
+          {landBoosts && <LandAbilityDot landBoosts={landBoosts} />}
 
           {/* bottom-left multiplier dot (placeholder logic) */}
           <PPMultiplierDot
