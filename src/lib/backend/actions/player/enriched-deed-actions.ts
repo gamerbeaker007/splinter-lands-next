@@ -80,7 +80,7 @@ export async function enrichDeedsWithStakedAssets(
               stakedAssets,
             };
           } catch (err) {
-            console.error(`Error enriching deed ${deed.deed_uid}`, err);
+            console.error("Error enriching deed", deed.deed_uid, err);
             return deed;
           }
         })
