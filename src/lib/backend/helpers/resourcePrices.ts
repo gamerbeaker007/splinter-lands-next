@@ -87,7 +87,6 @@ function getPrice(
     return price;
   }
 
-
   const matchingMetric = landResourcePrices[token] ?? null;
   if (!matchingMetric || !matchingMetric) {
     throw new Error(`Missing dec_price for token ${token}`);
