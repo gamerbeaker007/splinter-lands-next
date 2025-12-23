@@ -6,7 +6,7 @@
 export type DateSortType = "recent" | "cooldown";
 
 /**
- * Format a date relative to now (x hours, x days format)
+ * Format a date relative to now (x minutes, x hours, x days format)
  * For future dates, show positive values (e.g., "5 (hours)" means "in 5 (hours)")
  */
 export function formatRelativeDate(date: Date, isFuture = false): string {
@@ -14,10 +14,13 @@ export function formatRelativeDate(date: Date, isFuture = false): string {
   const diffMs = isFuture
     ? date.getTime() - now.getTime()
     : now.getTime() - date.getTime();
+  const diffMinutes = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffHours < 48) {
+  if (diffHours < 1) {
+    return `${diffMinutes} (minutes)`;
+  } else if (diffHours < 48) {
     return `${diffHours} (hours)`;
   } else {
     return `${diffDays} (days)`;

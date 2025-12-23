@@ -1,3 +1,4 @@
+"use server";
 import { Prices } from "@/types/price";
 import { cacheLife } from "next/cache";
 import { getResourceDECPrices } from "../../helpers/resourcePrices";

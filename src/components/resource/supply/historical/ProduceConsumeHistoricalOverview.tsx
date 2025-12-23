@@ -1,10 +1,11 @@
 "use client";
 
+import { getAllResourceSupply } from "@/lib/backend/actions/resources/supply-actions";
+import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
-import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
-import SupplyLineChart from "./SupplyLineChart";
 import ProduceConsumeBarChart from "./ProduceConsumeBarChart";
+import SupplyLineChart from "./SupplyLineChart";
 
 export function ProduceConsumeHistoricalOverview() {
   const [historicalResourcesSupply, setHistoricalResourcesSupply] = useState<
@@ -14,15 +15,14 @@ export function ProduceConsumeHistoricalOverview() {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
-    fetch("/api/resource/supply/", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setHistoricalResourcesSupply)
-      .catch(console.error);
+    (async () => {
+      try {
+        const data = await getAllResourceSupply();
+        setHistoricalResourcesSupply(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, []);
 
   return (

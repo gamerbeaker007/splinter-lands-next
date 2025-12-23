@@ -9,6 +9,8 @@ export type PresetName =
   | "unbinding rare"
   | "unbinding epic"
   | "unbinding legendary"
+  | "polymorph potion"
+  | "capacity flux"
   | "clear";
 
 export const RESOURCE_PRESETS: Record<
@@ -52,6 +54,14 @@ export const RESOURCE_PRESETS: Record<
   },
   "unbinding legendary": {
     input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 10000, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "polymorph potion": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 400, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "capacity flux": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 1000, VOUCHER: 0 },
     decExtra: 0,
   },
   clear: {

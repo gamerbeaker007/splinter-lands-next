@@ -1,5 +1,3 @@
-"use client";
-
 import { CaptureRateOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/CaptureRateOutput";
 import { TotemChanceOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/TotemChangeOutput";
 import { Resource } from "@/constants/resource/resource";

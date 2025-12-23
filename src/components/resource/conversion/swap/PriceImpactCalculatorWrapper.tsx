@@ -1,4 +1,4 @@
-import { useLandLiquidityPools } from "@/hooks/action-based/useLandLiquidityPools";
+import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import { Alert, Box, CircularProgress, Typography } from "@mui/material";
 import { PriceImpactCalculator } from "./PriceImpactCalculator";
 

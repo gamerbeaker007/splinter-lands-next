@@ -1,5 +1,6 @@
 "use client";
 
+import { getRegionCompare } from "@/lib/backend/actions/region/compare-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { CompareProductionPoint } from "@/types/regionCompareProduction";
 import Container from "@mui/material/Container";
@@ -16,16 +17,14 @@ export function ComparePage() {
   useEffect(() => {
     if (!filters) return;
 
-    fetch("/api/region/compare", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    })
-      .then((res) => res.json())
-      .then((raw: CompareProductionPoint) => {
+    (async () => {
+      try {
+        const raw = await getRegionCompare(filters);
         setData(raw);
-      })
-      .catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, [filters]);
 
   return (

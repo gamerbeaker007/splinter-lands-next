@@ -3,8 +3,8 @@
 import { LandDeedCard } from "@/components/player-overview/deed-overview/land-deed-card/LandDeedCard";
 import LoadingComponent from "@/components/ui/LoadingComponent";
 import { Resource } from "@/constants/resource/resource";
-import { useTractDeedData } from "@/hooks/region-overview/useTractDeedData";
-import { useCardDetails } from "@/hooks/useCardDetails";
+import { useCardDetailsAction } from "@/hooks/useCardDetails";
+import { useTractDeedData } from "@/hooks/useTractDeedData";
 import { WorksiteType } from "@/types/planner/primitives";
 import { ProductionPoints } from "@/types/productionPoints";
 import {
@@ -18,13 +18,13 @@ import {
   useTheme,
 } from "@mui/material";
 import { useState } from "react";
-import ResourceRewardChart from "./ResourceRewardChart";
-import ResourcePPChart from "./ResourcePPChart";
 import PlayerTopTenTile from "../summary/PlayerTopTenTile";
 import ActiveChart from "./ActiveChart";
 import RegionTractSelector from "./RegionTractSelector";
-import TotalActiveTile from "./TotalActiveTile";
+import ResourcePPChart from "./ResourcePPChart";
+import ResourceRewardChart from "./ResourceRewardChart";
 import TaxOwnerTile from "./TaxOwnerTile";
+import TotalActiveTile from "./TotalActiveTile";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -35,8 +35,8 @@ export default function TractAnalysisPage() {
     cardDetails,
     loading: cardLoading,
     error: cardError,
-  } = useCardDetails();
-  const { deeds, loadingText, total, progressPercentage, error, warning } =
+  } = useCardDetailsAction();
+  const { deeds, loadingText, error, warning, total, progress } =
     useTractDeedData(selectedRegion, selectedTract);
 
   // --- Large-screen zoom controls ---
@@ -143,14 +143,18 @@ export default function TractAnalysisPage() {
     } as AccumulatedData
   );
 
+  const hasDataLoaded = cardDetails && tractData && deeds && deeds.length > 0;
+
   return (
     <>
-      <RegionTractSelector
-        selectedRegion={selectedRegion}
-        selectedTract={selectedTract}
-        onRegionChange={handleRegionChange}
-        onTractChange={handleTractChange}
-      />
+      <Box mt={2}>
+        <RegionTractSelector
+          selectedRegion={selectedRegion}
+          selectedTract={selectedTract}
+          onRegionChange={handleRegionChange}
+          onTractChange={handleTractChange}
+        />
+      </Box>
 
       {loadingText ? (
         <Box sx={{ mt: 2 }}>
@@ -158,7 +162,7 @@ export default function TractAnalysisPage() {
           {total > 0 && (
             <LinearProgress
               variant="determinate"
-              value={progressPercentage}
+              value={progress}
               sx={{ mt: 1 }}
             />
           )}
@@ -169,7 +173,7 @@ export default function TractAnalysisPage() {
         </Alert>
       ) : (
         <>
-          {tractData && (
+          {hasDataLoaded && (
             <Box sx={{ mb: 2 }}>
               <Box display={"flex"} gap={2} flexWrap="wrap" mb={2}>
                 <PlayerTopTenTile players={tractData.players} />
@@ -203,7 +207,7 @@ export default function TractAnalysisPage() {
               </Box>
             </Box>
           )}
-          {tractData && isLargeUp && (
+          {hasDataLoaded && isLargeUp && (
             <Box sx={{ display: "flex", justifyContent: "left", mb: 2 }}>
               <ToggleButtonGroup
                 color="primary"
@@ -234,7 +238,7 @@ export default function TractAnalysisPage() {
               justifyContent: "left",
             }}
           >
-            {cardDetails && deeds && deeds.length > 0
+            {hasDataLoaded
               ? deeds.map((deed) => (
                   <Box
                     key={deed.plot_id}

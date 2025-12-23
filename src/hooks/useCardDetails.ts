@@ -1,34 +1,33 @@
 "use client";
 
+import { getCardDetails } from "@/lib/backend/actions/card-detail-actions";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { useEffect, useState } from "react";
 
-export function useCardDetails() {
+export function useCardDetailsAction() {
   const [cardDetails, setCardDetails] = useState<SplCardDetails[] | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    (async () => {
+    const fetchCardDetails = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        setError(null);
-
-        const res = await fetch("/api/card-details", {
-          headers: { "Content-Type": "application/json" },
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-        const data = (await res.json()) as SplCardDetails[];
+        const data = await getCardDetails();
         setCardDetails(data);
-      } catch (e) {
-        console.error(e);
-        setError("Failed to load card details.");
+      } catch (err) {
+        console.error("Failed to fetch card details:", err);
+        setError(
+          err instanceof Error ? err.message : "Failed to load card details"
+        );
         setCardDetails(null);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchCardDetails();
   }, []);
 
   return { cardDetails, loading, error };

@@ -56,13 +56,20 @@ export function TradeHubTokenShareChart({
   });
 
   if (othersShare > 0) {
-    labels.push("Others");
-    values.push(othersShare + undefinedData);
-  }
+    let others = othersShare + undefinedData;
 
-  if (currentPlayerData) {
-    labels.push(currentPlayerData.player);
-    values.push(currentPlayerData.share_percentage ?? 0);
+    // Add the current player to labels and values if it exists
+    if (
+      currentPlayerData &&
+      !labels.find((p) => p == currentPlayerData.player)
+    ) {
+      others = others - currentPlayerData.share_percentage;
+      labels.push(currentPlayerData.player);
+      values.push(currentPlayerData.share_percentage ?? 0);
+    }
+
+    labels.push("Others");
+    values.push(others);
   }
 
   return (
@@ -95,12 +102,10 @@ export function TradeHubTokenShareChart({
         <InfoItem
           title={`Total ${playerTradeHubPositions[0]?.token.split("-")[1]}:`}
           text={formatNumberWithSuffix(totalResource)}
-          fontSize={10}
         />
         <InfoItem
           title={"Total DEC:"}
           text={formatNumberWithSuffix(totalDEC)}
-          fontSize={10}
         />
 
         {currentPlayerData && (
@@ -146,6 +151,7 @@ export function TradeHubTokenShareChart({
       <FullscreenPlotWrapper
         data={[
           {
+            title: { text: `${playerTradeHubPositions[0].token}` },
             type: "pie",
             labels,
             values,

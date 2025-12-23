@@ -74,7 +74,7 @@ export async function fetchPlayerLiquidity(player: string) {
 }
 
 export async function fetchStakedAssets(deed_uid: string) {
-  const url = `/land/stake/deeds/${deed_uid}/assets`;
+  const url = `/land/stake/deeds/${encodeURIComponent(deed_uid)}/assets`;
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;
@@ -109,7 +109,7 @@ export async function fetchPlayerPoolInfo(
 }
 
 export async function fetchDeedUid(plotId: number) {
-  const url = `/land/deeds/${plotId}`;
+  const url = `/land/deeds/${encodeURIComponent(plotId)}`;
   const res = await splLandClient.get(url);
 
   const data = res.data?.data;
@@ -188,6 +188,8 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       "UNBIND_CA_R",
       "UNBIND_CA_E",
       "UNBIND_CA_L",
+      "POLYMORPH",
+      "FLUX",
     ];
 
     return assets
@@ -205,7 +207,7 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
 }
 
 export async function fetchTaxes(deedUid: string) {
-  const url = `land/resources/taxes/${deedUid}`;
+  const url = `land/resources/taxes/${encodeURIComponent(deedUid)}`;
 
   const res = await splLandClient.get(url);
 

@@ -1,5 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { Active } from "@/generated/prisma/client";
+import { getAllActiveData } from "@/lib/backend/api/internal/active-data";
 import { Box, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 
@@ -7,15 +8,14 @@ export default function ActivityChart() {
   const [data, setData] = useState<Active[]>([]);
 
   useEffect(() => {
-    fetch("/api/active", {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((res) => res.json())
-      .then((raw) => {
+    (async () => {
+      try {
+        const raw = await getAllActiveData();
         setData(raw);
-      })
-      .catch(console.error);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, []);
 
   const dates = data.map((row) => row.date);

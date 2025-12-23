@@ -1,8 +1,10 @@
 "use client";
 import { useFetchPlot } from "@/hooks/useFetchPlot";
 import type { DeedComplete } from "@/types/deed";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import {
   Alert,
+  Box,
   Button,
   CircularProgress,
   Dialog,
@@ -14,11 +16,9 @@ import {
   Stack,
   TextField,
   Tooltip,
-  Box,
 } from "@mui/material";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import { useEffect, useState } from "react";
 
 type Props = {
   open: boolean;

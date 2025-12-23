@@ -82,9 +82,9 @@ function getPrice(
     return (totalDec - baseCost) / preset.input.AURA;
   }
 
-  const unbindPrice = computeUnbindAuraPrice(auraPrices, prices, token);
-  if (unbindPrice !== null) {
-    return unbindPrice;
+  const price = computeAuraPriceSingleSource(auraPrices, prices, token);
+  if (price !== null) {
+    return price;
   }
 
   const matchingMetric = landResourcePrices[token] ?? null;
@@ -95,7 +95,7 @@ function getPrice(
   return amount / matchingMetric;
 }
 
-function computeUnbindAuraPrice(
+function computeAuraPriceSingleSource(
   auraPrices: AuraPrices[],
   prices: SplPriceData,
   token: string
@@ -114,6 +114,8 @@ function computeUnbindAuraPrice(
       detailId: "UNBIND_CA_L",
       presetKey: "unbinding legendary",
     },
+    AURA_POLYMORPH: { detailId: "POLYMORPH", presetKey: "polymorph potion" },
+    AURA_FLUX: { detailId: "FLUX", presetKey: "capacity flux" },
   };
 
   const entry = map[token];
@@ -155,6 +157,8 @@ export async function getResourceDECPrices() {
     "AURA_UNBIND_CA_R",
     "AURA_UNBIND_CA_E",
     "AURA_UNBIND_CA_L",
+    "AURA_POLYMORPH",
+    "AURA_FLUX",
     "SPS",
     "VOUCHER",
   ]) {

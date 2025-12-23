@@ -1,7 +1,7 @@
 // components/ResourceInput.tsx
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { Box, TextField, Typography } from "@mui/material";
 import Image from "next/image";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 
 type Props = {
   resource: string;
@@ -15,14 +15,14 @@ export function ResourceInput({ resource, value, onChange }: Props) {
       display="flex"
       flexDirection="column"
       alignItems="center"
-      minWidth={100}
+      minWidth={75}
       gap={1}
     >
       <Image
         src={RESOURCE_ICON_MAP[resource]}
         alt={resource}
-        width={100}
-        height={100}
+        width={75}
+        height={75}
       />
       <Typography variant="subtitle2">{resource}</Typography>
       <TextField
@@ -36,6 +36,7 @@ export function ResourceInput({ resource, value, onChange }: Props) {
         sx={{
           width: "150px",
           "& input": {
+            fontSize: "0.8rem",
             textAlign: "center",
           },
         }}

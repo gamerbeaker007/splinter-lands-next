@@ -3,6 +3,8 @@
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import PlayerRegionOverview from "@/components/player-overview/region-overview/PlayerRegionOverview";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
+import { Box, CircularProgress } from "@mui/material";
+import { Suspense } from "react";
 
 const filterConfig = {
   regions: true,
@@ -19,7 +21,15 @@ export default function PlayerOverviewPage() {
   return (
     <>
       <FilterDrawer player={selectedPlayer} filtersEnabled={filterConfig} />
-      <PlayerRegionOverview />
+      <Suspense
+        fallback={
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <CircularProgress />
+          </Box>
+        }
+      >
+        <PlayerRegionOverview />
+      </Suspense>
     </>
   );
 }

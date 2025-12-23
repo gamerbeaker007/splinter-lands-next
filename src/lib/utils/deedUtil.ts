@@ -1,4 +1,7 @@
-import { SPL_WEB_URL } from "@/lib/shared/statics_icon_urls";
+import {
+  land_unsurveyd_deed_url,
+  SPL_WEB_URL,
+} from "@/lib/shared/statics_icon_urls";
 
 const BASE_URL = "https://next.splinterlands.com/assets/lands/deedsSurveyed";
 
@@ -17,7 +20,9 @@ export function getDeedImg(
   rarity: string,
   worksiteType?: string
 ) {
-  if (plotStatus.toLowerCase() === "magical" && magicType) {
+  if (deedType.toLowerCase() === "unsurveyed deed") {
+    return land_unsurveyd_deed_url;
+  } else if (plotStatus.toLowerCase() === "magical" && magicType) {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${magicType.toLowerCase()}_${rarity.toLowerCase()}.jpg`;
   } else if (plotStatus.toLowerCase() === "kingdom") {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${worksiteType?.toLowerCase()}.jpg`;

@@ -47,23 +47,6 @@ export function ResourceCalculator() {
     prices
   );
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" mt={4}>
-        <Typography variant="body1">Loading prices...</Typography>
-      </Box>
-    );
-  }
-
-  if (error) {
-    return (
-      <Alert severity="error" sx={{ mt: 2 }}>
-        <AlertTitle>Error</AlertTitle>
-        Failed to fetch prices: {error}
-      </Alert>
-    );
-  }
-
   const handleChange = (resource: CalculatorResource, value: number) => {
     setResourcesInput((prev) => ({ ...prev, [resource]: value }));
     setDecExtra(0);
@@ -124,9 +107,16 @@ export function ResourceCalculator() {
 
         <ResourcePresets onSelect={applyPreset} />
 
-        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+        {error && (
+          <Alert severity="error">
+            <AlertTitle>Error</AlertTitle>
+            Failed to fetch prices: {error}
+          </Alert>
+        )}
+
+        <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
           {CALCULATOR_RESOURCES.map((res, i) => (
-            <Box key={res} display="flex" alignItems="center" gap={2}>
+            <Box key={res} display="flex" alignItems="center" gap={1}>
               <ResourceInput
                 resource={res}
                 value={resourcesInput[res]}
@@ -146,6 +136,7 @@ export function ResourceCalculator() {
             dec={dec_total}
             sps={sps_amount}
             decExtra={decExtra}
+            loading={loading}
           />
         </Box>
 
@@ -170,7 +161,7 @@ export function ResourceCalculator() {
         </Alert>
       </Box>
       <Box display="flex" flexDirection="row" flexWrap={"wrap"} gap={2}>
-        {prices && <AuraPriceBox prices={prices} />}
+        <AuraPriceBox prices={prices} loading={loading} />
         {/* Price Impact Calculator - Separate data source */}
         <PriceImpactCalculatorWrapper />
       </Box>

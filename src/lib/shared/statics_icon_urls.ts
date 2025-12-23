@@ -30,6 +30,8 @@ export const resource_unbinding_common_icon_url = `${WEB_URL}website/icons/unbin
 export const resource_unbinding_rare_icon_url = `${WEB_URL}website/icons/unbind_rare.webp`;
 export const resource_unbinding_epic_icon_url = `${WEB_URL}website/icons/unbind_epic.webp`;
 export const resource_unbinding_legendary_icon_url = `${WEB_URL}website/icons/unbind_legendary.webp`;
+export const resource_polymorph_potion_icon_url = `${WEB_URL}website/icons/img_polymorph-potion_400.webp`;
+export const resource_capacity_flux_icon_url = `${WEB_URL}website/icons/img_capacity-flux_400.webp`;
 
 export const land_default_off_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
 export const land_default_on_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__On.svg`;
@@ -38,6 +40,7 @@ export const land_default_element_icon_url_placeholder = `${WEB_URL}website/coll
 export const land_mythic_icon_url = `${WEB_URL}website/ui_elements/lands/sideMenu/legendaryOff.svg`;
 export const land_unsurveyd_deed_icon_url =
   "https://files.peakd.com/file/peakd-hive/beaker007/23wC7viFdG9aaUG2ExWbVuUA3aXqt5W273W2Fa3NEGsWHsHHEw3JLbTX1o7pFQsCgh7qV.svg";
+export const land_unsurveyd_deed_url = `${WEB_URL}website/land/deed_unsurveyed.jpg`;
 
 export const land_title_rare_icon_url = `${WEB_URL}website/icons/icon_active_legionnaire.svg`;
 export const land_title_epic_icon_url = `${WEB_URL}website/icons/icon_active_thegambler.svg`;

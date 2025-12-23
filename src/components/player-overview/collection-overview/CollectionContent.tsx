@@ -2,7 +2,7 @@
 
 import ErrorComponent from "@/components/ui/ErrorComponent";
 import LoadingComponent from "@/components/ui/LoadingComponent";
-import { usePlayerCardPP } from "@/hooks/action-based/usePlayerCardPP";
+import { usePlayerCardPP } from "@/hooks/usePlayerCardPP";
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import CollectionDisplay from "./CollectionDisplay";

@@ -9,9 +9,8 @@ import {
 } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
-import { SplPlayerDetails } from "@/types/splPlayerDetails";
-import { Alert, Box, Container } from "@mui/material";
-import { ReactNode, useEffect, useState } from "react";
+import { Box, Container } from "@mui/material";
+import { ReactNode, useEffect } from "react";
 
 const pages = [
   {
@@ -40,8 +39,6 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
   const { setTitle } = usePageTitle();
   const { resetFilters } = useFilters();
   const { selectedPlayer } = usePlayer();
-  const [playerData, setPlayerData] = useState<SplPlayerDetails | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setTitle("Player Overview");
@@ -53,40 +50,6 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
     }
   }, [selectedPlayer, resetFilters]);
 
-  // Fetch player data for validation
-  useEffect(() => {
-    if (!selectedPlayer || selectedPlayer.trim() === "") {
-      setPlayerData(null);
-      setError(null);
-      return;
-    }
-
-    const fetchPlayerData = async () => {
-      try {
-        const res = await fetch(
-          `/api/player/details?player=${encodeURIComponent(selectedPlayer)}`
-        );
-        const json = await res.json();
-
-        if (!res.ok || json?.error) {
-          throw new Error(json?.error || "Unknown error");
-        }
-
-        setPlayerData(json);
-        setError(null);
-      } catch (err) {
-        setPlayerData(null);
-        setError(
-          err instanceof Error
-            ? err.message
-            : `Unable to find player: ${selectedPlayer}`
-        );
-      }
-    };
-
-    fetchPlayerData();
-  }, [selectedPlayer]);
-
   return (
     <>
       <PageNavTabs pages={pages} />
@@ -95,13 +58,7 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
           <PlayerInput />
         </Box>
 
-        {error && (
-          <Box mt={4}>
-            <Alert severity="warning">{error}</Alert>
-          </Box>
-        )}
-
-        {!error && playerData && selectedPlayer && (
+        {selectedPlayer && (
           <Box mt={4} mb={4}>
             {children}
           </Box>

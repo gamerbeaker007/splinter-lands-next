@@ -1,9 +1,10 @@
 "use client";
 
+import { getRegionTax } from "@/lib/backend/actions/region/tax-actions";
 import logger from "@/lib/frontend/log/logger.client";
 import { FilterInput } from "@/types/filters";
-import { useCallback, useEffect, useMemo, useState } from "react";
 import { RegionTax } from "@/types/regionTax";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 export function useRegionTaxInfo(filters?: FilterInput) {
   const [regionTax, setRegionTax] = useState<RegionTax[] | null>(null);
@@ -12,24 +13,12 @@ export function useRegionTaxInfo(filters?: FilterInput) {
 
   const filtersKey = useMemo<FilterInput>(() => filters ?? {}, [filters]);
 
-  async function fetchRegionTaxImpl(
-    filters: FilterInput
-  ): Promise<RegionTax[]> {
-    const url = "/api/region/tax";
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    });
-    return await res.json();
-  }
-
   const fetchRegionTax = useCallback(async (filters: FilterInput) => {
     setLoading(true);
     setError(null);
 
     try {
-      const payload = await fetchRegionTaxImpl(filters);
+      const payload = await getRegionTax(filters);
       setRegionTax(payload as RegionTax[]);
       return payload as RegionTax[];
     } catch (err) {

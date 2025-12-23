@@ -2,8 +2,10 @@
 
 import {
   resource_auction_mark_icon_url,
+  resource_capacity_flux_icon_url,
   resource_fortune_ticket_icon_url,
   resource_midnight_potion_icon_url,
+  resource_polymorph_potion_icon_url,
   resource_unbinding_common_icon_url,
   resource_unbinding_epic_icon_url,
   resource_unbinding_legendary_icon_url,
@@ -24,6 +26,8 @@ type PresetName =
   | "unbinding rare"
   | "unbinding epic"
   | "unbinding legendary"
+  | "polymorph potion"
+  | "capacity flux"
   | "clear";
 
 interface Preset {
@@ -77,6 +81,16 @@ const PRESETS: Preset[] = [
     name: "unbinding legendary",
     label: "Unbinding Legendary",
     iconSrc: resource_unbinding_legendary_icon_url,
+  },
+  {
+    name: "polymorph potion",
+    label: "Polymorph Potion",
+    iconSrc: resource_polymorph_potion_icon_url,
+  },
+  {
+    name: "capacity flux",
+    label: "Capacity Flux",
+    iconSrc: resource_capacity_flux_icon_url,
   },
   {
     name: "clear",

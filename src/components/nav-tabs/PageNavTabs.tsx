@@ -72,9 +72,12 @@ export default function PageNavTabs({
           <Select
             value={pages[value]?.label || ""}
             onChange={handleSelectChange}
+            size="small"
             sx={{
-              m: 1,
-              minWidth: 200,
+              ml: 1,
+              mt: 0.5,
+              mb: 0.5,
+              width: "95%",
             }}
           >
             {pages.map((page) => (

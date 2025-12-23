@@ -1,5 +1,6 @@
 "use client";
 
+import { getRegionCompareRarity } from "@/lib/backend/actions/region/compare-rarity-actions";
 import logger from "@/lib/frontend/log/logger.client";
 import { FilterInput } from "@/types/filters";
 import { RarityResourceSummary } from "@/types/regionCompareProduction";
@@ -13,24 +14,12 @@ export function useRegionCompareRarity(filters?: FilterInput) {
 
   const filtersKey = useMemo<FilterInput>(() => filters ?? {}, [filters]);
 
-  async function fetchRegionCompareRarityImpl(
-    filters: FilterInput
-  ): Promise<RarityResourceSummary | null> {
-    const url = "/api/region/compare/rarity";
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(filters),
-    });
-    return await res.json();
-  }
-
   const fetchRegionCompareRarity = useCallback(async (filters: FilterInput) => {
     setLoading(true);
     setError(null);
 
     try {
-      const payload = await fetchRegionCompareRarityImpl(filters);
+      const payload = await getRegionCompareRarity(filters);
       setRegionCompareRarity(payload);
       return payload;
     } catch (err) {

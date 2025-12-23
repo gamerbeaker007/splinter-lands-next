@@ -1,9 +1,10 @@
 "use client";
 
+import { ResourceHubMetrics } from "@/generated/prisma/client";
+import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
+import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ResourceFactorChart } from "./ResourceFactorChart";
-import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ResourcePriceChart } from "./ResourcePriceChart";
 
 export function ResourceFactorSection() {
@@ -15,15 +16,14 @@ export function ResourceFactorSection() {
   >(null);
 
   useEffect(() => {
-    fetch("/api/resource/trade-hub", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setTradeHubMetrics)
-      .catch(console.error);
+    (async () => {
+      try {
+        const data = await getAllTradeHubData();
+        setTradeHubMetrics(data);
+      } catch (error) {
+        console.error(error);
+      }
+    })();
   }, []);
 
   return (

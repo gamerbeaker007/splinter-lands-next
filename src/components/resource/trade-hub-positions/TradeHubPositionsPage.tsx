@@ -1,30 +1,27 @@
 "use client";
-import { groupedPlayerTradeHubPosition } from "@/app/api/resource/trade-hub/player-positions/route";
 import PlayerInput from "@/components/player-overview/PlayerInput";
+import { GroupedPlayerTradeHubPosition } from "@/lib/backend/actions/resources/trade-hub-actions";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Box, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
 import { TradeHubTokenSection } from "./TradeHubTokenSection";
 
-export default function TradeHubPositionPage() {
-  const { selectedPlayer } = usePlayer();
-  const [groupedPlayerTradeHubPosition, setGroupedPlayerTradeHubPosition] =
-    useState<groupedPlayerTradeHubPosition | null>(null);
+type Props = {
+  groupedPlayerTradeHubPosition: GroupedPlayerTradeHubPosition;
+};
 
-  useEffect(() => {
-    fetch("/api/resource/trade-hub/player-positions", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then(setGroupedPlayerTradeHubPosition)
-      .catch(console.error);
-  }, []);
+export default function TradeHubPositionPage({
+  groupedPlayerTradeHubPosition,
+}: Props) {
+  const { selectedPlayer } = usePlayer();
 
   if (!groupedPlayerTradeHubPosition) {
-    return <Box>... Loading Data</Box>;
+    return (
+      <Box mt={2}>
+        <Typography variant="h6" color="text.secondary">
+          No trade hub position data available.
+        </Typography>
+      </Box>
+    );
   }
 
   return (
@@ -36,9 +33,7 @@ export default function TradeHubPositionPage() {
         <Typography variant="h5">
           Based on data retrieved from:{" "}
           {groupedPlayerTradeHubPosition.date
-            ? new Date(groupedPlayerTradeHubPosition.date)
-                .toISOString()
-                .slice(0, 10)
+            ? groupedPlayerTradeHubPosition.date.slice(0, 10)
             : ""}
         </Typography>
       </Box>
