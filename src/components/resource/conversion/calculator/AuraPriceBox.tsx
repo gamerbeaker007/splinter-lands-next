@@ -1,10 +1,18 @@
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import { Avatar, Box, Divider, Stack, Typography } from "@mui/material";
+import {
+  Avatar,
+  Box,
+  Divider,
+  Skeleton,
+  Stack,
+  Typography,
+} from "@mui/material";
 
 type Prices = Record<string, number>;
 
 type AuraPriceBoxProps = {
-  prices: Prices;
+  prices: Prices | null;
+  loading?: boolean;
 };
 
 const AURA_SOURCES = [
@@ -20,9 +28,14 @@ const AURA_SOURCES = [
     label: "Unbinding Legendary",
     icon: "UNBIND_CA_L",
   },
+  { key: "AURA_POLYMORPH", label: "Polymorph Potion", icon: "POLYMORPH" },
+  { key: "AURA_FLUX", label: "Capacity Flux", icon: "FLUX" },
 ];
 
-export default function AuraPriceBox({ prices }: AuraPriceBoxProps) {
+export default function AuraPriceBox({
+  prices,
+  loading = false,
+}: AuraPriceBoxProps) {
   return (
     <Box
       sx={{
@@ -72,9 +85,18 @@ export default function AuraPriceBox({ prices }: AuraPriceBoxProps) {
               justifyContent="space-between"
               gap={1}
             >
-              <Typography variant="body2" fontWeight="bold">
-                {prices[key]?.toFixed(3) ?? "N/A"}
-              </Typography>
+              {loading ? (
+                <Skeleton
+                  variant="rectangular"
+                  width={60}
+                  height={20}
+                  sx={{ borderRadius: 1 }}
+                />
+              ) : (
+                <Typography variant="body2" fontWeight="bold">
+                  {prices?.[key]?.toFixed(3) ?? "N/A"}
+                </Typography>
+              )}
               <Avatar
                 src={RESOURCE_ICON_MAP["DEC"]}
                 alt="AURA"

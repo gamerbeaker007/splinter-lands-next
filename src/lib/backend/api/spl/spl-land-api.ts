@@ -188,6 +188,8 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       "UNBIND_CA_R",
       "UNBIND_CA_E",
       "UNBIND_CA_L",
+      "POLYMORPH",
+      "FLUX",
     ];
 
     return assets

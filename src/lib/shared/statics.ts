@@ -14,10 +14,12 @@ import {
   land_under_construction_icon_url,
   resource_auction_mark_icon_url,
   resource_aura_icon_url,
+  resource_capacity_flux_icon_url,
   resource_fortune_ticket_icon_url,
   resource_grain_icon_url,
   resource_iron_icon_url,
   resource_midnight_potion_icon_url,
+  resource_polymorph_potion_icon_url,
   resource_research_icon_url,
   resource_stone_icon_url,
   resource_tax_icon_url,
@@ -125,6 +127,8 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   UNBIND_CA_E: resource_unbinding_epic_icon_url,
   UNBIND_CA_L: resource_unbinding_legendary_icon_url,
   CINDER: cinder_icon_url,
+  FLUX: resource_capacity_flux_icon_url,
+  POLYMORPH: resource_polymorph_potion_icon_url,
   "": land_hammer_icon_url,
 };
 

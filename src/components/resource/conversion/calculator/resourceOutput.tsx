@@ -1,14 +1,15 @@
 import { dec_icon_url, sps_icon_url } from "@/lib/shared/statics_icon_urls";
-import { Box, Typography } from "@mui/material";
+import { Box, Skeleton, Typography } from "@mui/material";
 import Image from "next/image";
 
 type Props = {
   dec: number;
   sps: number;
   decExtra: number;
+  loading?: boolean;
 };
 
-export function ResourceOutput({ dec, sps, decExtra }: Props) {
+export function ResourceOutput({ dec, sps, decExtra, loading = false }: Props) {
   return (
     <Box
       display="flex"
@@ -20,9 +21,19 @@ export function ResourceOutput({ dec, sps, decExtra }: Props) {
       <Image src={dec_icon_url} alt="DEC" width={60} height={60} />
       <Typography variant="subtitle2">DEC</Typography>
       <Box display={"flex"} flexWrap={"wrap"} alignItems={"center"} gap={1}>
-        <Typography fontWeight="bold">{(dec + decExtra).toFixed(2)}</Typography>
-        {decExtra > 0 && (
-          <Typography fontSize={10}>(incl. {decExtra.toFixed(2)})</Typography>
+        {loading ? (
+          <Skeleton variant="rectangular" width={80} height={24} />
+        ) : (
+          <>
+            <Typography fontWeight="bold">
+              {(dec + decExtra).toFixed(2)}
+            </Typography>
+            {decExtra > 0 && (
+              <Typography fontSize={10}>
+                (incl. {decExtra.toFixed(2)})
+              </Typography>
+            )}
+          </>
         )}
       </Box>
 
@@ -34,7 +45,16 @@ export function ResourceOutput({ dec, sps, decExtra }: Props) {
         style={{ marginTop: 16 }}
       />
       <Typography variant="subtitle2">SPS</Typography>
-      <Typography fontWeight="bold">{sps.toFixed(2)}</Typography>
+      {loading ? (
+        <Skeleton
+          variant="rectangular"
+          width={80}
+          height={24}
+          sx={{ borderRadius: 1 }}
+        />
+      ) : (
+        <Typography fontWeight="bold">{sps.toFixed(2)}</Typography>
+      )}
     </Box>
   );
 }
