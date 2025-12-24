@@ -48,7 +48,6 @@ export default function CardTile({
   const displayPP = Number(boosted_pp !== undefined ? boosted_pp : base_pp);
 
   if (landBoosts)
-    console.log("Rendering CardTile for:", name, { edition, foil, uid });
   return (
     <>
       <Box border={"solid 1xp red"} width={85} height={110}>

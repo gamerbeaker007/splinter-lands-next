@@ -1,5 +1,5 @@
 export const WEB_URL = `https://d36mxiodymuqjm.cloudfront.net/`;
-export const SPL_WEB_URL = `https://next.splinterlands.com/`;
+export const SPL_WEB_URL = `https://splinterlands.com/`;
 
 export const land_hammer_icon_url = `${WEB_URL}website/land/deedOverview/hammer.svg`;
 export const land_grain_farm_icon_url = `${WEB_URL}website/land/worksite/img_worksite_grain_v2.webp`;

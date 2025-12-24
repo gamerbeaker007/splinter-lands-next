@@ -8,7 +8,6 @@ import {
   getActualResourcePrices,
   getTokenPrices,
 } from "@/lib/backend/actions/resources/prices-actions";
-import { Container } from "@mui/material";
 import { headers } from "next/headers";
 import { Suspense } from "react";
 
@@ -38,10 +37,8 @@ async function PlanningTab() {
 
 export default function PlanningPage() {
   return (
-    <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
-      <Suspense fallback={<PlanningPageSkeleton />}>
-        <PlanningTab />
-      </Suspense>
-    </Container>
+    <Suspense fallback={<PlanningPageSkeleton />}>
+      <PlanningTab />
+    </Suspense>
   );
 }
