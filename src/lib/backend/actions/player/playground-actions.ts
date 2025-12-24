@@ -7,20 +7,27 @@ import {
   getCachedPlayerCardCollection,
   getCachedPlayerData,
 } from "@/lib/backend/services/playerService";
-import { determineCardInfo } from "@/lib/utils/cardUtil";
+import { determineBcxCap, determineCardInfo } from "@/lib/utils/cardUtil";
+import { CardSetName, CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
+  CardBloodline,
+  CardElement,
+  cardElementColorMap,
+  cardFoilOptions,
+  CardRarity,
+  cardRarityOptions,
   DeedType,
   MagicType,
   PlotRarity,
   PlotStatus,
   RUNI_FLAT_ADD,
   RuniTier,
+  SlotInput,
+  titleModifiers,
   TitleTier,
+  totemModifiers,
   TotemTier,
   WorksiteType,
-  cardFoilOptions,
-  titleModifiers,
-  totemModifiers,
 } from "@/types/planner";
 import {
   PlaygroundCard,
@@ -106,6 +113,36 @@ export async function getPlaygroundData(
         )?.[0] as TotemTier) || "none"
       : "none";
 
+    // Create SlotInput for each worker
+    const createSlotInput = (uid: string | null): SlotInput | null => {
+      if (!uid) return null;
+
+      const card = cardCollection.find((c) => c.uid === uid);
+      if (!card) return null;
+
+      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+      const setName = card.card_set ?? "chaos";
+      const rarity = cardRarityOptions[
+        (splCard?.rarity ?? 1) - 1
+      ] as CardRarity;
+      const foil = cardFoilOptions[card.foil] || "regular";
+      const color = splCard?.color.toLowerCase() ?? "red";
+      const element = cardElementColorMap[color];
+      const bcx = determineBcxCap(setName, rarity, card.foil, card.bcx);
+      const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
+
+      return {
+        id: 0, // Will be overridden by slot index
+        set: setName as CardSetNameLandValid,
+        rarity,
+        bcx,
+        foil,
+        element,
+        bloodline,
+        uid, // Store the card UID for tracking
+      };
+    };
+
     return {
       deed_uid: deed.deed_uid,
       region_number: deed.region_number,
@@ -122,11 +159,11 @@ export async function getPlaygroundData(
       runi,
       titleTier,
       totemTier,
-      worker1Uid: workerUids[0] || null,
-      worker2Uid: workerUids[1] || null,
-      worker3Uid: workerUids[2] || null,
-      worker4Uid: workerUids[3] || null,
-      worker5Uid: workerUids[4] || null,
+      worker1Uid: createSlotInput(workerUids[0]),
+      worker2Uid: createSlotInput(workerUids[1]),
+      worker3Uid: createSlotInput(workerUids[2]),
+      worker4Uid: createSlotInput(workerUids[3]),
+      worker5Uid: createSlotInput(workerUids[4]),
     };
   });
 
@@ -137,16 +174,19 @@ export async function getPlaygroundData(
         card.card_detail_id,
         cardDetails
       );
-      const basePP =
-        typeof card.land_base_pp === "string"
-          ? parseFloat(card.land_base_pp)
-          : card.land_base_pp || 0;
+      const basePP = card.land_base_pp;
+
+      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
 
       return {
         uid: card.uid,
         card_detail_id: card.card_detail_id,
         name: name,
-        rarity: rarity.toLowerCase(),
+        set: editionMap[card.edition].setName as CardSetName,
+        rarity: rarity.toLowerCase() as CardRarity,
+        element: cardElementColorMap[splCard?.color?.toLowerCase() ?? "red"] as CardElement,
+        subElement:
+          cardElementColorMap[splCard?.secondary_color?.toLowerCase() ?? "red"] as CardElement,
         land_base_pp: basePP,
         last_used_date: card.last_used_date || null,
         bcx: card.bcx,

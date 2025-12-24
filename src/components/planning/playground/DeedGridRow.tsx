@@ -6,7 +6,10 @@ import {
   land_mythic_icon_url,
   land_under_construction_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { SlotInput } from "@/types/planner";
 import {
+  CardBloodline,
+  cardIconMap,
   RuniTier,
   TERRAIN_BONUS,
   TitleTier,
@@ -28,7 +31,7 @@ type Props = {
   deed: PlaygroundDeed;
   availableCards: PlaygroundCard[];
   allCards: PlaygroundCard[];
-  cardDetails: SplCardDetails[]; // Currently unused but kept for future enhancements
+  cardDetails: SplCardDetails[];
   onChange: (change: DeedChange) => void;
   girdColumnsSizes: string;
 };
@@ -44,6 +47,7 @@ export default function DeedGridRow({
   deed,
   availableCards,
   allCards,
+  cardDetails,
   onChange,
   girdColumnsSizes,
 }: Props) {
@@ -54,11 +58,11 @@ export default function DeedGridRow({
   const [selectedTitle, setSelectedTitle] = useState(deed.titleTier);
   const [selectedTotem, setSelectedTotem] = useState(deed.totemTier);
   const [selectedWorkers, setSelectedWorkers] = useState<(string | null)[]>([
-    deed.worker1Uid,
-    deed.worker2Uid,
-    deed.worker3Uid,
-    deed.worker4Uid,
-    deed.worker5Uid,
+    deed.worker1Uid?.uid ?? null,
+    deed.worker2Uid?.uid ?? null,
+    deed.worker3Uid?.uid ?? null,
+    deed.worker4Uid?.uid ?? null,
+    deed.worker5Uid?.uid ?? null,
   ]);
 
   const handleWorksiteChange = (newWorksite: string) => {
@@ -110,6 +114,44 @@ export default function DeedGridRow({
     newWorkers[slotIndex] = cardUid || null;
     setSelectedWorkers(newWorkers);
 
+    // Create SlotInput for the change
+    let newSlotInput: SlotInput | null = null;
+    if (cardUid) {
+      // Check if this is from original deed data
+      const originalWorkers = [
+        deed.worker1Uid,
+        deed.worker2Uid,
+        deed.worker3Uid,
+        deed.worker4Uid,
+        deed.worker5Uid,
+      ];
+      const originalSlot = originalWorkers.find(
+        (slot) => slot?.uid === cardUid
+      );
+
+      if (originalSlot) {
+        newSlotInput = originalSlot;
+      } else {
+        // Create new SlotInput from card data
+        const card = allCards.find((c) => c.uid === cardUid);
+        if (card) {
+          const splCard = cardDetails.find(
+            (cd) => cd.id === card.card_detail_id
+          );
+          newSlotInput = {
+            id: 0,
+            set: card.set,
+            rarity: card.rarity,
+            bcx: card.bcx,
+            foil: card.foil,
+            element: card.element,
+            bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
+            uid: card.uid,
+          };
+        }
+      }
+    }
+
     const workerField = `worker${slotIndex + 1}` as
       | "worker1"
       | "worker2"
@@ -120,34 +162,47 @@ export default function DeedGridRow({
       deed_uid: deed.deed_uid,
       field: workerField,
       oldValue: selectedWorkers[slotIndex],
-      newValue: cardUid || null,
+      newValue: newSlotInput,
       timestamp: new Date(),
     });
   };
 
-  // Calculate boosted PP dynamically based on selected cards
-  const boostedPP = useMemo(() => {
-    const workerCards = selectedWorkers
-      .filter((uid) => uid !== null)
-      .map((uid) => allCards.find((c) => c.uid === uid))
-      .filter((card): card is PlaygroundCard => card !== undefined);
+  // Create SlotInput array for selected workers
+  const selectedWorkerSlots = useMemo(() => {
+    return selectedWorkers.map((uid) => {
+      if (!uid) return null;
 
-    const cardInputs = workerCards.map((card) => ({
-      uid: card.uid,
-      card_detail_id: card.card_detail_id,
-      bcx: card.bcx,
-      level: card.level,
-      foil: card.foil,
-      landBasePP: card.land_base_pp,
-    }));
+      // Check if this is from original deed data
+      const originalWorkers = [
+        deed.worker1Uid,
+        deed.worker2Uid,
+        deed.worker3Uid,
+        deed.worker4Uid,
+        deed.worker5Uid,
+      ];
 
-    // Sum base PP from workers
-    const workerPP = cardInputs.reduce((sum, c) => sum + c.landBasePP, 0);
+      // Find in original slots first
+      const originalSlot = originalWorkers.find((slot) => slot?.uid === uid);
+      if (originalSlot) return originalSlot;
 
-    // Calculate total boosted PP (simplified version)
-    // This is a simplified calculation - for full accuracy, would need to use computeSlot per card
-    return deed.basePP + workerPP;
-  }, [deed.basePP, selectedWorkers, allCards]);
+      // Otherwise, create new SlotInput from card data
+      const card = allCards.find((c) => c.uid === uid);
+      if (!card) return null;
+
+      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+
+      return {
+        id: 0,
+        set: card.set,
+        rarity: card.rarity,
+        bcx: card.bcx,
+        foil: card.foil,
+        element: card.element,
+        bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
+        uid: card.uid,
+      };
+    });
+  }, [selectedWorkers, deed, allCards, cardDetails]);
 
   const getRarityIcon = (rarity: string | null) => {
     if (!rarity) return null;
@@ -253,6 +308,33 @@ export default function DeedGridRow({
   const fmt = (n: number) =>
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
+  const getElementIcon = (card: PlaygroundCard) => {
+    const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+    const color = splCard?.color?.toLowerCase() ?? "red";
+    const elementMap: Record<string, string> = {
+      red: "fire",
+      blue: "water",
+      white: "life",
+      black: "death",
+      green: "earth",
+      gold: "dragon",
+      gray: "neutral",
+    };
+    const element = elementMap[color] || "fire";
+    return land_default_element_icon_url_placeholder.replace(
+      "__NAME__",
+      element.toLowerCase()
+    );
+  };
+
+  const getRarityIconForCard = (card: PlaygroundCard) => {
+    const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+    const rarityIndex = (splCard?.rarity ?? 1) - 1;
+    const rarities = ["common", "rare", "epic", "legendary"];
+    const rarity = rarities[rarityIndex] || "common";
+    return cardIconMap[rarity as keyof typeof cardIconMap];
+  };
+
   return (
     <Box
       sx={{
@@ -334,27 +416,93 @@ export default function DeedGridRow({
 
         return (
           <Select
-            key={slotIndex}
+            key={`${deed.deed_uid}-worker${slotIndex}`}
             size="small"
             value={workerUid || ""}
             onChange={(e) => handleWorkerChange(slotIndex, e.target.value)}
             displayEmpty
+            renderValue={(value) => {
+              if (!value) return <em>Empty</em>;
+              const card = allCards.find((c) => c.uid === value);
+              if (!card) return <em>Empty</em>;
+
+              // Show same format as dropdown: element icon, rarity icon, name, PP
+              const elementIcon = getElementIcon(card);
+              const rarityIcon = getRarityIconForCard(card);
+
+              return (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <Image
+                    src={elementIcon}
+                    alt="element"
+                    width={14}
+                    height={14}
+                    style={{ objectFit: "contain" }}
+                  />
+                  <Image
+                    src={rarityIcon}
+                    alt="rarity"
+                    width={14}
+                    height={14}
+                    style={{ objectFit: "contain" }}
+                  />
+                  <Typography variant="caption" noWrap sx={{ maxWidth: 100 }}>
+                    {card.name}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    ({fmt(card.land_base_pp)})
+                  </Typography>
+                </Box>
+              );
+            }}
             sx={{ fontSize: "0.75rem" }}
           >
             <MenuItem value="">
               <em>Empty</em>
             </MenuItem>
-            {options.map((card) => (
-              <MenuItem key={card.uid} value={card.uid}>
-                <Box>
-                  <Typography variant="caption">{card.name}</Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {" "}
-                    ({fmt(card.land_base_pp)} PP)
-                  </Typography>
-                </Box>
-              </MenuItem>
-            ))}
+            {options.map((card) => {
+              const elementIcon = getElementIcon(card);
+              const rarityIcon = getRarityIconForCard(card);
+
+              return (
+                <MenuItem key={`${slotIndex}-${card.uid}`} value={card.uid}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      width: "100%",
+                    }}
+                  >
+                    {/* Element Icon */}
+                    <Image
+                      src={elementIcon}
+                      alt="element"
+                      width={16}
+                      height={16}
+                      style={{ objectFit: "contain" }}
+                    />
+                    {/* Rarity Icon */}
+                    <Image
+                      src={rarityIcon}
+                      alt="rarity"
+                      width={16}
+                      height={16}
+                      style={{ objectFit: "contain" }}
+                    />
+                    {/* Name and PP */}
+                    <Box sx={{ flex: 1 }}>
+                      <Typography variant="caption" display="block">
+                        {card.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {fmt(card.land_base_pp)} PP
+                      </Typography>
+                    </Box>
+                  </Box>
+                </MenuItem>
+              );
+            })}
           </Select>
         );
       })}
@@ -366,8 +514,7 @@ export default function DeedGridRow({
         selectedRuni={selectedRuni}
         selectedTitle={selectedTitle}
         selectedTotem={selectedTotem}
-        selectedWorkers={selectedWorkers}
-        boostedPP={boostedPP}
+        selectedWorkers={selectedWorkerSlots}
       />
     </Box>
   );

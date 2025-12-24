@@ -38,6 +38,7 @@ export interface SlotInput {
   element: CardElement;
   bloodline: CardBloodline;
   landBoosts?: LandBoost;
+  uid?: string; // Optional: card UID for playground tracking
 }
 
 export interface LandBoost {

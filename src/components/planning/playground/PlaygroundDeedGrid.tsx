@@ -50,9 +50,9 @@ export default function PlaygroundDeedGrid({
         deed.worker3Uid,
         deed.worker4Uid,
         deed.worker5Uid,
-      ].forEach((uid) => {
-        if (uid) {
-          workers.add(uid);
+      ].forEach((slotInput) => {
+        if (slotInput?.uid) {
+          workers.add(slotInput.uid);
         }
       });
       deedWorkers.set(deed.deed_uid, workers);

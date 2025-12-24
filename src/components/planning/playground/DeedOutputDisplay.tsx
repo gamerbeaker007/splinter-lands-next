@@ -1,6 +1,9 @@
 "use client";
 
-import { calcProductionInfo } from "@/lib/frontend/utils/plannerCalcs";
+import {
+  calcProductionInfo,
+  calcTotalPP,
+} from "@/lib/frontend/utils/plannerCalcs";
 import {
   PlotPlannerData,
   resourceWorksiteMap,
@@ -20,8 +23,7 @@ type Props = {
   selectedRuni: RuniTier;
   selectedTitle: TitleTier | null;
   selectedTotem: TotemTier | null;
-  selectedWorkers: (string | null)[];
-  boostedPP: number;
+  selectedWorkers: (SlotInput | null)[]; // Changed from string UIDs to SlotInput
 };
 
 export default function DeedOutputDisplay({
@@ -31,17 +33,21 @@ export default function DeedOutputDisplay({
   selectedTitle,
   selectedTotem,
   selectedWorkers,
-  boostedPP,
 }: Props) {
   const output = useMemo(() => {
     const resource =
       selectedWorksite && resourceWorksiteMap[selectedWorksite as WorksiteType];
 
-    if (!resource || !boostedPP) {
-      return { produce: "-", consume: "-" };
+    if (!resource) {
+      return { produce: "-", consume: "-", boostedPP: 0 };
     }
 
-    // Build PlotPlannerData for calcProductionInfo
+    // Filter out null workers and create card input array
+    const cardInput = selectedWorkers
+      .filter((w): w is SlotInput => w !== null)
+      .map((w, idx) => ({ ...w, id: idx + 1 }));
+
+    // Build PlotPlannerData for calculation
     const plotData: PlotPlannerData = {
       regionNumber: deed.region_number,
       tractNumber: deed.tract_number,
@@ -50,11 +56,14 @@ export default function DeedOutputDisplay({
       magicType: deed.magicType || "",
       deedType: deed.deedType,
       worksiteType: selectedWorksite as WorksiteType,
-      cardInput: [] as SlotInput[], // Card input not used for simple produce/consume calculation
+      cardInput,
       runi: selectedRuni,
       title: selectedTitle || "none",
       totem: selectedTotem || "none",
     };
+
+    // Calculate boosted PP from plot data
+    const { totalBasePP, totalBoostedPP } = calcTotalPP(plotData);
 
     // Use simplified prices (set to 0 for display purposes)
     const prices = {
@@ -70,8 +79,8 @@ export default function DeedOutputDisplay({
 
     try {
       const productionInfo = calcProductionInfo(
-        deed.basePP,
-        boostedPP,
+        totalBasePP,
+        totalBoostedPP,
         plotData,
         prices,
         1, // spsRatio
@@ -92,10 +101,11 @@ export default function DeedOutputDisplay({
       return {
         produce: produceText || "-",
         consume: consumeText || "-",
+        boostedPP: totalBoostedPP,
       };
     } catch (error) {
       console.error("Error calculating production:", error);
-      return { produce: "Error", consume: "Error" };
+      return { produce: "Error", consume: "Error", boostedPP: 0 };
     }
   }, [
     deed,
@@ -104,7 +114,6 @@ export default function DeedOutputDisplay({
     selectedTitle,
     selectedTotem,
     selectedWorkers,
-    boostedPP,
   ]);
 
   const fmt = (n: number) =>
@@ -112,11 +121,8 @@ export default function DeedOutputDisplay({
 
   return (
     <Box>
-      <Typography variant="body2" fontSize="0.75rem" fontWeight="bold">
-        BIG TODO NOT CORRECT YET
-      </Typography>
       <Typography variant="body2" fontSize="0.7rem">
-        PP: {fmt(boostedPP)}
+        PP: {fmt(output.boostedPP)}
       </Typography>
       <Typography variant="body2" fontSize="0.65rem" color="success.main">
         ▲ {output.produce}

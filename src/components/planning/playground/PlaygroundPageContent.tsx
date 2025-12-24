@@ -6,10 +6,16 @@ import { getCardDetails } from "@/lib/backend/actions/card-detail-actions";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import {
+  calcProductionInfo,
+  calcTotalPP,
+} from "@/lib/frontend/utils/plannerCalcs";
+import { PlotPlannerData, SlotInput } from "@/types/planner";
+import {
   DeedChange,
   DeedFilterOptions,
   PlaygroundDeed,
 } from "@/types/playground";
+import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { WarningAmber } from "@mui/icons-material";
 import DownloadIcon from "@mui/icons-material/Download";
@@ -32,6 +38,7 @@ export default function PlaygroundPageContent() {
   const { selectedPlayer } = usePlayer();
   const { data, loading, error } = usePlaygroundData(selectedPlayer);
 
+  const [mounted, setMounted] = useState(false);
   const [cardDetails, setCardDetails] = useState<SplCardDetails[]>([]);
   const [loadingCards, setLoadingCards] = useState(true);
   const [changes, setChanges] = useState<DeedChange[]>([]);
@@ -42,6 +49,10 @@ export default function PlaygroundPageContent() {
     tracts: [],
     plots: [],
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     setTitle("Land Playground");
@@ -92,6 +103,48 @@ export default function PlaygroundPageContent() {
     setChanges((prev) => [...prev, change]);
   };
 
+  // Calculate original outputs
+  const originalOutputs = useMemo((): PlaygroundSummary => {
+    if (!data) {
+      return {
+        totalBasePP: 0,
+        totalBoostedPP: 0,
+        perResource: {} as Record<
+          string,
+          { pp: number; produced: number; consumed: number; net: number }
+        >,
+        totalNetDEC: 0,
+      };
+    }
+
+    return calculateSummary(data.deeds, {});
+  }, [data]);
+
+  // Calculate updated outputs with changes applied
+  const updatedOutputs = useMemo((): PlaygroundSummary => {
+    if (!data) {
+      return {
+        totalBasePP: 0,
+        totalBoostedPP: 0,
+        perResource: {} as Record<
+          string,
+          { pp: number; produced: number; consumed: number; net: number }
+        >,
+        totalNetDEC: 0,
+      };
+    }
+
+    // Apply changes to deeds
+    const changesMap = new Map<string, DeedChange[]>();
+    changes.forEach((change) => {
+      const existing = changesMap.get(change.deed_uid) || [];
+      existing.push(change);
+      changesMap.set(change.deed_uid, existing);
+    });
+
+    return calculateSummary(data.deeds, Object.fromEntries(changesMap));
+  }, [data, changes]);
+
   const handleExportOriginal = () => {
     if (!data) return;
 
@@ -111,20 +164,21 @@ export default function PlaygroundPageContent() {
 
   const totalPages = Math.ceil(filteredDeeds.length / ITEMS_PER_PAGE);
 
+  // Prevent hydration mismatch by showing loading state until mounted
+  if (!mounted || loading || loadingCards) {
+    return (
+      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   if (!selectedPlayer) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h6" color="text.secondary">
           Please select a player to view playground data
         </Typography>
-      </Box>
-    );
-  }
-
-  if (loading || loadingCards) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
-        <CircularProgress />
       </Box>
     );
   }
@@ -158,7 +212,11 @@ export default function PlaygroundPageContent() {
       </Typography>
       <PlayerInput />
       {/* Overview */}
-      <PlaygroundOverview deeds={filteredDeeds} />
+      <PlaygroundOverview
+        deeds={filteredDeeds}
+        originalOutputs={originalOutputs}
+        updatedOutputs={updatedOutputs}
+      />
 
       {/* Export Buttons */}
       <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
@@ -284,4 +342,132 @@ function downloadCSV(content: string, filename: string) {
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+}
+
+// Helper function to calculate summary
+function calculateSummary(
+  deeds: PlaygroundDeed[],
+  changesMap: Record<string, DeedChange[]>
+): PlaygroundSummary {
+  const perResource: Record<
+    string,
+    { pp: number; produced: number; consumed: number; net: number }
+  > = {};
+  let totalBasePP = 0;
+  let totalBoostedPP = 0;
+  let totalNetDEC = 0;
+
+  const prices = {
+    dec: 0,
+    sps: 0,
+    grain: 0,
+    stone: 0,
+    wood: 0,
+    essence: 0,
+    research: 0,
+    totems: 0,
+  };
+
+  deeds.forEach((deed) => {
+    // Apply changes if any
+    let worksite = deed.worksiteType;
+    let runi = deed.runi;
+    let title = deed.titleTier;
+    let totem = deed.totemTier;
+    const workers: (SlotInput | null)[] = [
+      deed.worker1Uid,
+      deed.worker2Uid,
+      deed.worker3Uid,
+      deed.worker4Uid,
+      deed.worker5Uid,
+    ];
+
+    const deedChanges = changesMap[deed.deed_uid];
+    if (deedChanges) {
+      deedChanges.forEach((change) => {
+        if (change.field === "worksite") worksite = change.newValue as string;
+        if (change.field === "runi") runi = change.newValue as string;
+        if (change.field === "title") title = change.newValue as string;
+        if (change.field === "totem") totem = change.newValue as string;
+        // Apply worker changes
+        if (change.field === "worker1")
+          workers[0] = change.newValue as SlotInput | null;
+        if (change.field === "worker2")
+          workers[1] = change.newValue as SlotInput | null;
+        if (change.field === "worker3")
+          workers[2] = change.newValue as SlotInput | null;
+        if (change.field === "worker4")
+          workers[3] = change.newValue as SlotInput | null;
+        if (change.field === "worker5")
+          workers[4] = change.newValue as SlotInput | null;
+      });
+    }
+
+    const plotData: PlotPlannerData = {
+      regionNumber: deed.region_number,
+      tractNumber: deed.tract_number,
+      plotStatus: deed.plotStatus,
+      plotRarity: deed.rarity,
+      magicType: deed.magicType || "",
+      deedType: deed.deedType,
+      worksiteType: worksite,
+      cardInput: workers.filter((w): w is SlotInput => w !== null),
+      runi: runi || "none",
+      title: title || "none",
+      totem: totem || "none",
+    };
+
+    try {
+      const { totalBasePP: deedBasePP, totalBoostedPP: deedBoostedPP } =
+        calcTotalPP(plotData);
+      totalBasePP += deedBasePP;
+      totalBoostedPP += deedBoostedPP;
+
+      const productionInfo = calcProductionInfo(
+        deedBasePP,
+        deedBoostedPP,
+        plotData,
+        prices,
+        1,
+        null,
+        null
+      );
+
+      totalNetDEC += productionInfo.netDEC || 0;
+
+      // Aggregate per resource
+      productionInfo.produce?.forEach((p) => {
+        if (!perResource[p.resource]) {
+          perResource[p.resource] = { pp: 0, produced: 0, consumed: 0, net: 0 };
+        }
+        perResource[p.resource].produced += p.amount;
+        perResource[p.resource].pp += deedBoostedPP; // Add PP for this resource
+      });
+
+      productionInfo.consume?.forEach((c) => {
+        if (!perResource[c.resource]) {
+          perResource[c.resource] = { pp: 0, produced: 0, consumed: 0, net: 0 };
+        }
+        perResource[c.resource].consumed += c.amount;
+      });
+    } catch (error) {
+      console.error(`Error calculating for deed ${deed.deed_uid}:`, error);
+    }
+  });
+
+  // Calculate net values
+  Object.keys(perResource).forEach((resource) => {
+    perResource[resource].net =
+      perResource[resource].produced - perResource[resource].consumed;
+  });
+
+  return {
+    totalBasePP,
+    totalBoostedPP,
+    perResource: perResource as Record<
+      string,
+      { pp: number; produced: number; consumed: number; net: number }
+    >,
+    totalNetDEC,
+  };
 }

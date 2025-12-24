@@ -1,7 +1,9 @@
 // Optimized types for playground to reduce data transfer
 
 import { Resource } from "@/constants/resource/resource";
+import { CardSetName } from "./editions";
 import {
+  CardElement,
   CardFoil,
   CardRarity,
   DeedType,
@@ -9,6 +11,7 @@ import {
   PlotRarity,
   PlotStatus,
   RuniTier,
+  SlotInput,
   TitleTier,
   TotemTier,
   WorksiteType,
@@ -30,18 +33,21 @@ export type PlaygroundDeed = {
   runi: RuniTier | null;
   titleTier: TitleTier | null;
   totemTier: TotemTier | null;
-  worker1Uid: string | null;
-  worker2Uid: string | null;
-  worker3Uid: string | null;
-  worker4Uid: string | null;
-  worker5Uid: string | null;
+  worker1Uid: SlotInput | null;
+  worker2Uid: SlotInput | null;
+  worker3Uid: SlotInput | null;
+  worker4Uid: SlotInput | null;
+  worker5Uid: SlotInput | null;
 };
 
 export type PlaygroundCard = {
   uid: string;
   card_detail_id: number;
   name: string;
+  set: CardSetName;
   rarity: CardRarity;
+  element: CardElement;
+  subElement: CardElement;
   land_base_pp: number;
   last_used_date: string | null;
   bcx: number;
@@ -67,8 +73,8 @@ export type DeedChange = {
     | "worker3"
     | "worker4"
     | "worker5";
-  oldValue: number | string | null;
-  newValue: number | string | null;
+  oldValue: number | string | SlotInput | null;
+  newValue: number | string | SlotInput | null;
   timestamp: Date;
 };
 
