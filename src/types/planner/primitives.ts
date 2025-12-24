@@ -326,7 +326,7 @@ export const allowedTerrainsByWorksite: Partial<
 
 export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
   magical: ["Research Hut", "Aura Lab"],
-  occupied: ["Shard Mine"],
+  occupied: ["Shard Mine", "Aura Lab"],
 };
 
 export const CARD_BLOODLINES = [
