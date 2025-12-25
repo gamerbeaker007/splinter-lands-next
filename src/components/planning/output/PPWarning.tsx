@@ -1,6 +1,5 @@
-import { Box, Tooltip, Typography } from "@mui/material";
-import React from "react";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { Box, Tooltip, Typography } from "@mui/material";
 
 export default function PPWarning() {
   return (
@@ -12,7 +11,7 @@ export default function PPWarning() {
           </Typography>
           <Typography variant="body2">
             Your current selection exceeds the maximum allowed base PP. SPL caps
-            base PP at 100,000, so the values shown here are not be accurate.
+            base PP at 100,000. Calclation based on the 100,000 cap.
           </Typography>
         </Box>
       }

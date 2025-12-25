@@ -130,10 +130,23 @@ export function calcTotalPP(plotPlannerData: PlotPlannerData) {
 
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
   const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
-  const totalBasePP = sumBasePP + runiBasePP;
-  const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
-  return { totalBasePP, totalBoostedPP };
+  let totalBasePP = sumBasePP;
+  let totalBoostedPP = sumBoostedPP;
+  let capped = false;
+  if (sumBasePP > 100_000) {
+    totalBasePP = 100_000;
+    capped = true;
+  } else {
+    // Strange case: if basePP is under 100k, add runi boosted PP to total boosted PP
+    //This seems to be inline with the raw data of a actual plot.
+    totalBoostedPP += runiBoostedPP;
+  }
+
+  // Always add runi base PP
+  totalBasePP += runiBasePP;
+
+  return { totalBasePP, totalBoostedPP, capped };
 }
 
 export function calcProductionInfo(

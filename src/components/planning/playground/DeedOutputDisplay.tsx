@@ -14,6 +14,7 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import { PlaygroundDeed } from "@/types/playground";
+import { WarningAmber } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import { useMemo } from "react";
 
@@ -39,7 +40,7 @@ export default function DeedOutputDisplay({
       selectedWorksite && resourceWorksiteMap[selectedWorksite as WorksiteType];
 
     if (!resource) {
-      return { produce: "-", consume: "-", boostedPP: 0 };
+      return { produce: "-", consume: "-", boostedPP: 0, capped: false };
     }
 
     // Filter out null workers and create card input array
@@ -63,7 +64,7 @@ export default function DeedOutputDisplay({
     };
 
     // Calculate boosted PP from plot data
-    const { totalBasePP, totalBoostedPP } = calcTotalPP(plotData);
+    const { totalBasePP, totalBoostedPP, capped } = calcTotalPP(plotData);
 
     // Use simplified prices (set to 0 for display purposes)
     const prices = {
@@ -102,10 +103,16 @@ export default function DeedOutputDisplay({
         produce: produceText || "-",
         consume: consumeText || "-",
         boostedPP: totalBoostedPP,
+        capped,
       };
     } catch (error) {
       console.error("Error calculating production:", error);
-      return { produce: "Error", consume: "Error", boostedPP: 0 };
+      return {
+        produce: "Error",
+        consume: "Error",
+        boostedPP: 0,
+        capped: false,
+      };
     }
   }, [
     deed,
@@ -121,6 +128,12 @@ export default function DeedOutputDisplay({
 
   return (
     <Box>
+      {output.capped && (
+        <Typography variant="body2" fontSize="0.65rem" color="warning.main">
+          <WarningAmber />
+          BASE PP capped at 100,000
+        </Typography>
+      )}
       <Typography variant="body2" fontSize="0.7rem">
         PP: {fmt(output.boostedPP)}
       </Typography>

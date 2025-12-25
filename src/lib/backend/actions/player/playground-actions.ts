@@ -8,7 +8,11 @@ import {
   getCachedPlayerData,
 } from "@/lib/backend/services/playerService";
 import { determineBcxCap, determineCardInfo } from "@/lib/utils/cardUtil";
-import { CardSetName, CardSetNameLandValid, editionMap } from "@/types/editions";
+import {
+  CardSetName,
+  CardSetNameLandValid,
+  editionMap,
+} from "@/types/editions";
 import {
   CardBloodline,
   CardElement,
@@ -71,7 +75,8 @@ export async function getPlaygroundData(
   const stakedCardsByDeed = new Map<string, string[]>();
 
   cardCollection.forEach((card) => {
-    if (card.stake_ref_uid) {
+    if (card.stake_ref_uid && card.card_detail_id !== 505) {
+      //Exclude Runi cards
       const isStaked =
         !card.stake_end_date || new Date(card.stake_end_date) > now;
       if (isStaked) {
@@ -184,9 +189,12 @@ export async function getPlaygroundData(
         name: name,
         set: editionMap[card.edition].setName as CardSetName,
         rarity: rarity.toLowerCase() as CardRarity,
-        element: cardElementColorMap[splCard?.color?.toLowerCase() ?? "red"] as CardElement,
-        subElement:
-          cardElementColorMap[splCard?.secondary_color?.toLowerCase() ?? "red"] as CardElement,
+        element: cardElementColorMap[
+          splCard?.color?.toLowerCase() ?? "red"
+        ] as CardElement,
+        subElement: cardElementColorMap[
+          splCard?.secondary_color?.toLowerCase() ?? "red"
+        ] as CardElement,
         land_base_pp: basePP,
         last_used_date: card.last_used_date || null,
         bcx: card.bcx,

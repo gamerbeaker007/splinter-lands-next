@@ -61,27 +61,25 @@ export function WorksiteIconSelector({
 
   // Icon renderer
   const renderIcon = (worksite: WorksiteType, size = 24) => (
-    (
-      <Box
-        sx={{
-          position: "relative",
-          width: size,
-          height: size,
+    <Box
+      sx={{
+        position: "relative",
+        width: size,
+        height: size,
+      }}
+    >
+      <Image
+        src={worksiteIconMap[worksite]}
+        alt={`${worksite} icon`}
+        fill
+        sizes={`${size}px`}
+        style={{
+          objectFit: "contain",
+          objectPosition: "center",
+          display: "block",
         }}
-      >
-        <Image
-          src={worksiteIconMap[worksite]}
-          alt={`${worksite} icon`}
-          fill
-          sizes={`${size}px`}
-          style={{
-            objectFit: "contain",
-            objectPosition: "center",
-            display: "block",
-          }}
-        />
-      </Box>
-    )
+      />
+    </Box>
   );
 
   return (

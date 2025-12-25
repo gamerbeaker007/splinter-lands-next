@@ -119,7 +119,7 @@ export default function Planner({
     ]
   );
 
-  const { totalBasePP, totalBoostedPP } = useMemo(
+  const { totalBasePP, totalBoostedPP, capped } = useMemo(
     () => calcTotalPP(plot),
     [plot]
   );
@@ -526,6 +526,7 @@ export default function Planner({
         <ProductionOutput
           totalBasePP={totalBasePP}
           totalBoostPP={totalBoostedPP}
+          capped={capped}
           captureRate={captureRate ?? undefined}
           totemChance={totemChance ?? undefined}
           pos={{ x: "770px", y: "20px", w: "250px" }}
