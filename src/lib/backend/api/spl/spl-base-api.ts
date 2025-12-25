@@ -10,6 +10,7 @@ import * as rax from "retry-axios";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
+import { SplInventory } from "@/types/spl/inventory";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -193,6 +194,23 @@ export async function fetchBurnedBalances(): Promise<SplBalance[]> {
 
   const res = await splBaseClient.get(url, {
     params: { players: player },
+  });
+
+  const data = res.data;
+
+  if (!Array.isArray(data)) {
+    logger.error("Invalid response format from Splinterlands API", data);
+    throw new Error(data?.error || "Invalid response from Splinterlands API");
+  }
+  return data;
+}
+
+export async function fetchPlayerInventory(player: string): Promise<SplInventory[]> {
+  const url = "/players/inventory";
+  logger.info(`Fetch player inventory`);
+
+  const res = await splBaseClient.get(url, {
+    params: { username: player },
   });
 
   const data = res.data;

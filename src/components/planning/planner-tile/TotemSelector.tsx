@@ -1,10 +1,5 @@
 "use client";
-import {
-  land_common_totem_icon_url,
-  land_epic_totem_icon_url,
-  land_legendary_totem_icon_url,
-  land_rare_totem_icon_url,
-} from "@/lib/shared/statics_icon_urls";
+import { totemIconMap } from "@/lib/shared/statics";
 import { CSSSize } from "@/types/cssSize";
 import { totemModifiers, totemOptions, type TotemTier } from "@/types/planner";
 import BlockIcon from "@mui/icons-material/Block";
@@ -20,13 +15,6 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-
-const ICONS: Record<Exclude<TotemTier, "none">, string> = {
-  common: land_common_totem_icon_url,
-  rare: land_rare_totem_icon_url,
-  epic: land_epic_totem_icon_url,
-  legendary: land_legendary_totem_icon_url,
-};
 
 export type Props = {
   value: TotemTier;
@@ -45,7 +33,7 @@ export function TotemSelector({ value, onChange, pos }: Props) {
       <BlockIcon fontSize="small" />
     ) : (
       <Image
-        src={ICONS[tier]}
+        src={totemIconMap[tier]}
         alt={`${tier} totem`}
         width={size}
         height={size}

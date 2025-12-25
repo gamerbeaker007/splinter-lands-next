@@ -114,7 +114,7 @@ export default function WorkerSelector({
           </Box>
         );
       }}
-      sx={{ fontSize: "0.75rem" }}
+      sx={{ fontSize: "0.75rem", ml: 0.5, mr: 0.5 }}
     >
       <MenuItem value="">
         <em>Empty</em>

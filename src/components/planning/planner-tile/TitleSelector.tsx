@@ -1,9 +1,5 @@
 "use client";
-import {
-  land_title_epic_icon_url,
-  land_title_legendary_icon_url,
-  land_title_rare_icon_url,
-} from "@/lib/shared/statics_icon_urls";
+import { titleIconMap } from "@/lib/shared/statics";
 import { CSSSize } from "@/types/cssSize";
 import { titleModifiers, titleOptions, TitleTier } from "@/types/planner";
 import BlockIcon from "@mui/icons-material/Block";
@@ -19,12 +15,6 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-
-const ICONS: Record<Exclude<TitleTier, "none">, string> = {
-  rare: land_title_rare_icon_url,
-  epic: land_title_epic_icon_url,
-  legendary: land_title_legendary_icon_url,
-};
 
 export type Props = {
   value: TitleTier;
@@ -43,7 +33,7 @@ export function TitleSelector({ value, onChange, pos }: Props) {
       <BlockIcon fontSize="small" />
     ) : (
       <Image
-        src={ICONS[tier]}
+        src={titleIconMap[tier]}
         alt={`${tier} Title`}
         width={size}
         height={size}
