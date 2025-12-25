@@ -141,7 +141,6 @@ export default function PlaygroundOverview({
 
   allCards.forEach((card) => {
     if (card.name.toLowerCase() === "runi") {
-      console.log("Found runi card in inventory:", card.uid, card.foil, card);
       if (runiCounts[card.foil as keyof typeof runiCounts]) {
         runiCounts[card.foil as keyof typeof runiCounts].owned++;
       }
@@ -151,12 +150,6 @@ export default function PlaygroundOverview({
   deeds.forEach((deed) => {
     if (deed.runi && deed.runi !== "none") {
       if (runiCounts[deed.runi as keyof typeof runiCounts]) {
-        console.log(
-          "Incrementing runi count for",
-          deed.runi,
-          "deed:",
-          deed.deed_uid
-        );
         runiCounts[deed.runi as keyof typeof runiCounts].selected++;
       }
     }

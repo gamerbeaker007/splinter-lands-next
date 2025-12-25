@@ -1,5 +1,7 @@
 "use client";
 
+import { usePrices } from "@/hooks/usePrices";
+import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
 import {
   calcProductionInfo,
   calcTotalPP,
@@ -12,10 +14,11 @@ import {
   PlaygroundDeed,
 } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
+import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
 import DownloadIcon from "@mui/icons-material/Download";
 import { Box, Button, Pagination, Paper, Typography } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import DeedGridRow from "./DeedGridRow";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
@@ -42,6 +45,21 @@ export default function PlaygroundDeedGrid({
     tracts: [],
     plots: [],
   });
+  const [spsRatio, setSpsRatio] = useState<number>(0);
+  const { prices } = usePrices();
+
+  // Fetch SPS ratio on mount
+  useEffect(() => {
+    const fetchSpsRatio = async () => {
+      try {
+        const ratio = await getDailySPSRatio();
+        setSpsRatio(ratio);
+      } catch (err) {
+        console.error("Failed to fetch SPS ratio:", err);
+      }
+    };
+    fetchSpsRatio();
+  }, []);
 
   const handleDeedChange = (change: DeedChange) => {
     setChanges((prev) => [...prev, change]);
@@ -79,14 +97,14 @@ export default function PlaygroundDeedGrid({
 
   // Calculate original outputs
   const originalOutputs = useMemo(
-    (): PlaygroundSummary => calculateSummary(deeds),
-    [deeds]
+    (): PlaygroundSummary => calculateSummary(deeds, prices, spsRatio),
+    [deeds, prices, spsRatio]
   );
 
   // Calculate updated outputs
   const updatedOutputs = useMemo(
-    (): PlaygroundSummary => calculateSummary(updatedDeeds),
-    [updatedDeeds]
+    (): PlaygroundSummary => calculateSummary(updatedDeeds, prices, spsRatio),
+    [updatedDeeds, prices, spsRatio]
   );
 
   // Get paginated deeds
@@ -162,16 +180,18 @@ export default function PlaygroundDeedGrid({
   return (
     <Box>
       {/* Overview */}
-      <PlaygroundOverview
-        deeds={updatedDeeds}
-        originalOutputs={originalOutputs}
-        updatedOutputs={updatedOutputs}
-        playerName={playerName}
-        allCards={cards}
-      />
+      <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+        <PlaygroundOverview
+          deeds={updatedDeeds}
+          originalOutputs={originalOutputs}
+          updatedOutputs={updatedOutputs}
+          playerName={playerName}
+          allCards={cards}
+        />
+      </Box>
 
       {/* Export Buttons */}
-      <Box sx={{ mb: 2, display: "flex", gap: 2 }}>
+      <Box sx={{ mb: 2, display: "flex", gap: 2, maxWidth: "100%" }}>
         <Button
           variant="outlined"
           startIcon={<DownloadIcon />}
@@ -197,14 +217,23 @@ export default function PlaygroundDeedGrid({
       </Box>
 
       {/* Filter */}
-      <PlaygroundFilter
-        deeds={deeds}
-        filterOptions={filterOptions}
-        onFilterChange={setFilterOptions}
-      />
+      <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+        <PlaygroundFilter
+          deeds={deeds}
+          filterOptions={filterOptions}
+          onFilterChange={setFilterOptions}
+        />
+      </Box>
 
       {/* Pagination */}
-      <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          my: 2,
+          maxWidth: "100%",
+        }}
+      >
         <Pagination
           count={totalPages}
           page={currentPage + 1}
@@ -213,10 +242,10 @@ export default function PlaygroundDeedGrid({
         />
       </Box>
 
-      {/* Grid */}
-      <Paper sx={{ width: "100%", overflow: "hidden" }}>
-        <Box sx={{ overflowX: "auto" }}>
-          <Box sx={{ minWidth: 2100 }}>
+      {/* Grid with horizontal scroll */}
+      <Box sx={{ overflowX: "auto", width: "100%" }}>
+        <Paper sx={{ minWidth: 2100 }}>
+          <Box>
             {/* Header */}
             <Box
               sx={{
@@ -261,8 +290,8 @@ export default function PlaygroundDeedGrid({
               />
             ))}
           </Box>
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
 
       {/* Bottom Pagination */}
       <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
@@ -338,7 +367,11 @@ function applyChangesToDeeds(
   });
 }
 
-function calculateSummary(deeds: PlaygroundDeed[]): PlaygroundSummary {
+function calculateSummary(
+  deeds: PlaygroundDeed[],
+  pricesData: Prices | null,
+  spsRatio: number
+): PlaygroundSummary {
   const perResource: Record<
     string,
     { pp: number; produced: number; consumed: number; net: number }
@@ -348,14 +381,14 @@ function calculateSummary(deeds: PlaygroundDeed[]): PlaygroundSummary {
   let totalNetDEC = 0;
 
   const prices = {
-    dec: 0,
-    sps: 0,
-    grain: 0,
-    stone: 0,
-    wood: 0,
-    essence: 0,
-    research: 0,
-    totems: 0,
+    dec: pricesData?.dec || 0,
+    sps: pricesData?.sps || 0,
+    grain: pricesData?.grain || 0,
+    stone: pricesData?.stone || 0,
+    wood: pricesData?.wood || 0,
+    essence: pricesData?.essence || 0,
+    research: pricesData?.research || 0,
+    totems: pricesData?.totems || 0,
   };
 
   deeds.forEach((deed) => {
@@ -389,7 +422,7 @@ function calculateSummary(deeds: PlaygroundDeed[]): PlaygroundSummary {
       boostedPP,
       plotData,
       prices,
-      0,
+      spsRatio,
       null,
       null
     );

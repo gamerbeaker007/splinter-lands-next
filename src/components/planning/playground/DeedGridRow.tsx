@@ -220,7 +220,7 @@ export default function DeedGridRow({
         alt={rarity}
         width={24}
         height={24}
-        style={{ objectFit: "contain" }}
+        style={{ objectFit: "contain", width: "auto", height: "auto" }}
       />
     );
   };
@@ -239,7 +239,7 @@ export default function DeedGridRow({
           alt={deedType}
           width={24}
           height={24}
-          style={{ objectFit: "contain" }}
+          style={{ objectFit: "contain", width: "auto", height: "auto" }}
         />
       </Tooltip>
     );
@@ -256,7 +256,7 @@ export default function DeedGridRow({
           alt={plotStatus}
           width={24}
           height={24}
-          style={{ objectFit: "contain" }}
+          style={{ objectFit: "contain", width: "auto", height: "auto" }}
         />
       </Tooltip>
     );
@@ -293,7 +293,11 @@ export default function DeedGridRow({
                   alt={element}
                   width={16}
                   height={16}
-                  style={{ objectFit: "contain" }}
+                  style={{
+                    objectFit: "contain",
+                    width: "auto",
+                    height: "auto",
+                  }}
                 />
                 <Typography variant="caption" fontSize="0.65rem">
                   {percentage}

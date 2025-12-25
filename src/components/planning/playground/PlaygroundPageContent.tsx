@@ -85,7 +85,7 @@ export default function PlaygroundPageContent() {
     <Box sx={{ p: 2 }}>
       <Typography variant="h4" gutterBottom>
         <WarningAmber sx={{ verticalAlign: "middle", mr: 1 }} />
-        THIS IS A PLAYGROUND TOOL FOR TESTING PURPOSES ONLY FOR NOW
+        THIS IS A EXPERIMENTAL FEATURE USE WITH CAUTION
         <WarningAmber sx={{ verticalAlign: "middle", mr: 1 }} />
       </Typography>
       <PlayerInput />

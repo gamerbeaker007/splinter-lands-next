@@ -96,14 +96,14 @@ export default function WorkerSelector({
               alt="element"
               width={14}
               height={14}
-              style={{ objectFit: "contain" }}
+              style={{ objectFit: "contain", width: "auto", height: "auto" }}
             />
             <Image
               src={rarityIcon}
               alt="rarity"
               width={14}
               height={14}
-              style={{ objectFit: "contain" }}
+              style={{ objectFit: "contain", width: "auto", height: "auto" }}
             />
             <Typography variant="caption" noWrap sx={{ maxWidth: 100 }}>
               {card.name}
@@ -142,7 +142,7 @@ export default function WorkerSelector({
                 alt="element"
                 width={16}
                 height={16}
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: "contain", width: "auto", height: "auto" }}
               />
               {/* Rarity Icon */}
               <Image
@@ -150,7 +150,7 @@ export default function WorkerSelector({
                 alt="rarity"
                 width={16}
                 height={16}
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: "contain", width: "auto", height: "auto" }}
               />
               {/* Name and PP */}
               <Box sx={{ flex: 1 }}>
