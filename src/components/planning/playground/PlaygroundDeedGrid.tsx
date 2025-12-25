@@ -85,7 +85,7 @@ export default function PlaygroundDeedGrid({
   }, [cards, allDeeds, changes]);
 
   const girdColumnsSizes =
-    "120px 80px 80px 80px 120px 120px 100px 100px 100px 190px 190px 190px 190px 190px 250px";
+    "120px 50px 50px 80px 50px 100px 90px 90px 90px 90px 190px 190px 190px 190px 190px 250px";
 
   return (
     <Paper sx={{ width: "100%", overflow: "hidden" }}>
@@ -105,6 +105,7 @@ export default function PlaygroundDeedGrid({
             }}
           >
             <div>Tract/Region/Plot</div>
+            <div>Link</div>
             <div>Rarity</div>
             <div>Geography</div>
             <div>Status</div>

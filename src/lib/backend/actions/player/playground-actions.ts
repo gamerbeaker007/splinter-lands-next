@@ -7,7 +7,11 @@ import {
   getCachedPlayerCardCollection,
   getCachedPlayerData,
 } from "@/lib/backend/services/playerService";
-import { determineBcxCap, determineCardInfo } from "@/lib/utils/cardUtil";
+import {
+  determineBcxCap,
+  determineCardInfo,
+  determineLandBoosts,
+} from "@/lib/utils/cardUtil";
 import {
   CardSetName,
   CardSetNameLandValid,
@@ -135,7 +139,7 @@ export async function getPlaygroundData(
       const element = cardElementColorMap[color];
       const bcx = determineBcxCap(setName, rarity, card.foil, card.bcx);
       const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
-
+      const landBoosts = determineLandBoosts(rarity, foil, bcx, splCard);
       return {
         id: 0, // Will be overridden by slot index
         set: setName as CardSetNameLandValid,
@@ -144,6 +148,7 @@ export async function getPlaygroundData(
         foil,
         element,
         bloodline,
+        landBoosts,
         uid, // Store the card UID for tracking
       };
     };
@@ -153,6 +158,7 @@ export async function getPlaygroundData(
       region_number: deed.region_number,
       tract_number: deed.tract_number,
       plot_number: deed.plot_number,
+      plot_id: deed.plot_id,
       rarity: (deed.rarity || "") as PlotRarity,
       plotStatus: (deed.plot_status || "natural") as PlotStatus,
       magicType: (deed.magic_type || null) as MagicType,
@@ -182,7 +188,8 @@ export async function getPlaygroundData(
       const basePP = card.land_base_pp;
 
       const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
-
+      const foil = cardFoilOptions[card.foil] || "regular";
+      const landBoost = determineLandBoosts(rarity, foil, card.bcx, splCard);
       return {
         uid: card.uid,
         card_detail_id: card.card_detail_id,
@@ -198,8 +205,9 @@ export async function getPlaygroundData(
         land_base_pp: basePP,
         last_used_date: card.last_used_date || null,
         bcx: card.bcx,
-        foil: cardFoilOptions[card.foil] || "regular",
+        foil: foil,
         level: card.level,
+        landBoost,
       };
     })
     .sort((a, b) => b.land_base_pp - a.land_base_pp); // Highest PP first

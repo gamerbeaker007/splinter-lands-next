@@ -7,6 +7,7 @@ import {
   CardFoil,
   CardRarity,
   DeedType,
+  LandBoost,
   MagicType,
   PlotRarity,
   PlotStatus,
@@ -22,6 +23,7 @@ export type PlaygroundDeed = {
   region_number: number;
   tract_number: number;
   plot_number: number;
+  plot_id: number;
   rarity: PlotRarity;
   plotStatus: PlotStatus;
   magicType: MagicType | null;
@@ -53,6 +55,7 @@ export type PlaygroundCard = {
   bcx: number;
   foil: CardFoil;
   level: number;
+  landBoost: LandBoost | null;
 };
 
 export type PlaygroundData = {
