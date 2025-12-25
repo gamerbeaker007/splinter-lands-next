@@ -97,7 +97,11 @@ export default function SlotEditor({
             onChange({ ...plot.cardInput[index], landBoosts: boost });
           }}
         />
-        <CardPPInfo basePP={computed.basePP} boostedPP={computed.boostedPP} />
+        <CardPPInfo
+          basePP={computed.basePP}
+          boostedPP={computed.boostedPP}
+          isCapped={computed.isCapped}
+        />
       </Box>
     </Box>
   );

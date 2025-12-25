@@ -87,7 +87,24 @@ export function computeSlot(
   slot: SlotInput,
   plot: PlotPlannerData
 ): SlotComputedPP {
-  const basePP = calcBasePP(slot);
+  const rawBasePP = calcBasePP(slot);
+
+  // Calculate capped base PP based on slots before this one
+  let basePP = rawBasePP;
+  let isCapped = false;
+
+  // Calculate cumulative base PP of all slots BEFORE this one (by id order)
+  const slotsBeforeThisOne = plot.cardInput
+    .filter((s) => s.id < slot.id)
+    .reduce((sum, s) => sum + calcBasePP(s), 0);
+
+  // Check if adding this slot would exceed the cap
+  if (slotsBeforeThisOne + rawBasePP > 100_000) {
+    // Cap this slot's base PP to what's available
+    const availablePP = Math.max(0, 100_000 - slotsBeforeThisOne);
+    basePP = Math.min(rawBasePP, availablePP);
+    isCapped = basePP < rawBasePP;
+  }
 
   const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
   const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
@@ -95,6 +112,7 @@ export function computeSlot(
   return {
     basePP,
     boostedPP,
+    isCapped,
   };
 }
 
@@ -118,33 +136,34 @@ function calcBasePP(slot: SlotInput) {
 }
 
 export function calcTotalPP(plotPlannerData: PlotPlannerData) {
-  const { sumBasePP, sumBoostedPP } = plotPlannerData.cardInput.reduce(
-    (acc, slot) => {
-      const { basePP, boostedPP } = computeSlot(slot, plotPlannerData);
-      acc.sumBasePP += basePP;
-      acc.sumBoostedPP += boostedPP;
-      return acc;
-    },
-    { sumBasePP: 0, sumBoostedPP: 0 }
+  // Step 1: Calculate raw base PP for all slots
+  const rawBasePPs = plotPlannerData.cardInput.map((slot) => calcBasePP(slot));
+  const sumRawBasePP = rawBasePPs.reduce((sum, pp) => sum + pp, 0);
+
+  // Step 2: Apply 100K cap to base PP only
+  let sumBasePP = sumRawBasePP;
+  let capped = false;
+  if (sumRawBasePP > 100_000) {
+    sumBasePP = 100_000;
+    capped = true;
+  }
+
+  // Step 3: Calculate boosted PP with capped base PP
+  // We need to compute each slot with the capped base PP
+  const cappedSlotsData = plotPlannerData.cardInput.map((slot) =>
+    computeSlot(slot, plotPlannerData)
+  );
+  const sumBoostedPP = cappedSlotsData.reduce(
+    (sum, slot) => sum + slot.boostedPP,
+    0
   );
 
+  // Step 4: Add runi after all calculations
   const runiBasePP = RUNI_FLAT_ADD[plotPlannerData.runi];
   const runiBoostedPP = calcBoostedPP(runiBasePP, plotPlannerData, 0);
 
-  let totalBasePP = sumBasePP;
-  let totalBoostedPP = sumBoostedPP;
-  let capped = false;
-  if (sumBasePP > 100_000) {
-    totalBasePP = 100_000;
-    capped = true;
-  } else {
-    // Strange case: if basePP is under 100k, add runi boosted PP to total boosted PP
-    //This seems to be inline with the raw data of a actual plot.
-    totalBoostedPP += runiBoostedPP;
-  }
-
-  // Always add runi base PP
-  totalBasePP += runiBasePP;
+  const totalBasePP = sumBasePP + runiBasePP;
+  const totalBoostedPP = sumBoostedPP + runiBoostedPP;
 
   return { totalBasePP, totalBoostedPP, capped };
 }

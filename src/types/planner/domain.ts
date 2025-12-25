@@ -53,4 +53,5 @@ export interface LandBoost {
 export interface SlotComputedPP {
   basePP: number;
   boostedPP: number;
+  isCapped?: boolean;
 }

@@ -11,7 +11,7 @@ export default function PPWarning() {
           </Typography>
           <Typography variant="body2">
             Your current selection exceeds the maximum allowed base PP. SPL caps
-            base PP at 100,000. Calclation based on the 100,000 cap.
+            base PP at 100,000.
           </Typography>
         </Box>
       }
