@@ -51,31 +51,11 @@ export default function PlaygroundPageContent() {
     );
   }
 
-  if (!selectedPlayer) {
-    return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <Typography variant="h6" color="text.secondary">
-          Please select a player to view playground data
-        </Typography>
-      </Box>
-    );
-  }
-
   if (error) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h6" color="error">
           {error}
-        </Typography>
-      </Box>
-    );
-  }
-
-  if (!data) {
-    return (
-      <Box sx={{ p: 4, textAlign: "center" }}>
-        <Typography variant="h6" color="text.secondary">
-          No data available
         </Typography>
       </Box>
     );
@@ -90,13 +70,18 @@ export default function PlaygroundPageContent() {
       </Typography>
       <PlayerInput />
 
-      {/* DeedGrid handles all deed-related UI and logic */}
-      <PlaygroundDeedGrid
-        deeds={data.deeds}
-        cards={data.cards}
-        cardDetails={cardDetails}
-        playerName={selectedPlayer}
-      />
+      {!selectedPlayer ? (
+        <Typography mt={2} variant="h6" color="text.secondary">
+          Please enter a username to view playground data
+        </Typography>
+      ) : data ? (
+        <PlaygroundDeedGrid
+          deeds={data.deeds}
+          cards={data.cards}
+          cardDetails={cardDetails}
+          playerName={selectedPlayer}
+        />
+      ) : null}
     </Box>
   );
 }

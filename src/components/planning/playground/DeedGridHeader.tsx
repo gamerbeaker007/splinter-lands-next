@@ -1,0 +1,96 @@
+"use client";
+
+import { Box } from "@mui/material";
+import { useEffect, useRef } from "react";
+import { COLUMN_WIDTHS, TOTAL_MIN_WIDTH } from "./gridConstants";
+
+export default function DeedGridHeader() {
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (boxRef.current) {
+      console.log("🔵 DeedGridHeader Debug:");
+      console.log("  - TOTAL_MIN_WIDTH constant:", TOTAL_MIN_WIDTH);
+      console.log(
+        "  - Actual rendered width:",
+        boxRef.current.offsetWidth,
+        "px"
+      );
+      console.log("  - Scroll width:", boxRef.current.scrollWidth, "px");
+      console.log(
+        "  - Parent width:",
+        boxRef.current.parentElement?.offsetWidth,
+        "px"
+      );
+      console.log("  - Window width:", window.innerWidth, "px");
+    }
+  }, []);
+
+  return (
+    <Box
+      ref={boxRef}
+      sx={{
+        display: "flex",
+        minWidth: TOTAL_MIN_WIDTH,
+        bgcolor: "action.hover",
+        p: 1,
+        fontWeight: "bold",
+        borderBottom: 1,
+        borderColor: "divider",
+        fontSize: "0.75rem",
+        position: "sticky",
+        top: 0,
+        zIndex: 10,
+      }}
+    >
+      <Box width={COLUMN_WIDTHS.MEDIUM} flexShrink={0}>
+        Tract/Region/Plot
+      </Box>
+      <Box width={COLUMN_WIDTHS.SMALL} flexShrink={0}>
+        Link
+      </Box>
+      <Box width={COLUMN_WIDTHS.SMALL} flexShrink={0}>
+        Rarity
+      </Box>
+      <Box width={COLUMN_WIDTHS.MEDIUM_PLUS} flexShrink={0}>
+        Geography
+      </Box>
+      <Box width={COLUMN_WIDTHS.SMALL} flexShrink={0}>
+        Status
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE_MINUS} flexShrink={0}>
+        Terrain Boosts
+      </Box>
+      <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+        Worksite
+      </Box>
+      <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+        Runi
+      </Box>
+      <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+        Title
+      </Box>
+      <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+        Totem
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+        Worker 1
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+        Worker 2
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+        Worker 3
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+        Worker 4
+      </Box>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+        Worker 5
+      </Box>
+      <Box width={COLUMN_WIDTHS.EXTRA_LARGE} flexShrink={0}>
+        Output (Produce/Consume)
+      </Box>
+    </Box>
+  );
+}

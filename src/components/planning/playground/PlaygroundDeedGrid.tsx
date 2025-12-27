@@ -16,10 +16,11 @@ import {
 import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
-import DownloadIcon from "@mui/icons-material/Download";
-import { Box, Button, Pagination, Paper, Typography } from "@mui/material";
+import { Box, Pagination, Paper, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
+import ExportButtons from "./ExportButtons";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
 
@@ -47,6 +48,14 @@ export default function PlaygroundDeedGrid({
   });
   const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
+
+  // Debug viewport and container
+  useEffect(() => {
+    console.log("🔴 PlaygroundDeedGrid Debug:");
+    console.log("  - Window viewport width:", window.innerWidth, "px");
+    console.log("  - Expected content width: 2060px");
+    console.log("  - Should show scrollbar:", window.innerWidth < 2060);
+  }, []);
 
   // Fetch SPS ratio on mount
   useEffect(() => {
@@ -174,11 +183,9 @@ export default function PlaygroundDeedGrid({
     const csvContent = generateDeedCSV(updatedDeeds);
     downloadCSV(csvContent, "updated_deeds.csv");
   };
-  const girdColumnsSizes =
-    "120px 50px 50px 80px 50px 100px 90px 90px 90px 90px 190px 190px 190px 190px 190px 250px";
 
   return (
-    <Box>
+    <Box mt={2} sx={{ maxWidth: "100vw", overflowX: "hidden" }}>
       {/* Overview */}
       <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
         <PlaygroundOverview
@@ -191,30 +198,12 @@ export default function PlaygroundDeedGrid({
       </Box>
 
       {/* Export Buttons */}
-      <Box sx={{ mb: 2, display: "flex", gap: 2, maxWidth: "100%" }}>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportOriginal}
-        >
-          Export Original
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportChanges}
-          disabled={changes.length === 0}
-        >
-          Export Changes ({changes.length})
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<DownloadIcon />}
-          onClick={handleExportNew}
-        >
-          Export Updated
-        </Button>
-      </Box>
+      <ExportButtons
+        onExportOriginal={handleExportOriginal}
+        onExportChanges={handleExportChanges}
+        onExportNew={handleExportNew}
+        changesCount={changes.length}
+      />
 
       {/* Filter */}
       <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
@@ -243,39 +232,18 @@ export default function PlaygroundDeedGrid({
       </Box>
 
       {/* Grid with horizontal scroll */}
-      <Box sx={{ overflowX: "auto", width: "100%" }}>
-        <Paper sx={{ minWidth: 2100 }}>
+      <Box
+        sx={{
+          overflowX: "auto",
+          width: "90%",
+          maxWidth: "90%",
+          maxHeight: "70vh",
+        }}
+      >
+        <Paper sx={{ width: "fit-content" }}>
           <Box>
             {/* Header */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: girdColumnsSizes,
-                bgcolor: "action.hover",
-                p: 1,
-                fontWeight: "bold",
-                borderBottom: 1,
-                borderColor: "divider",
-                fontSize: "0.75rem",
-              }}
-            >
-              <div>Tract/Region/Plot</div>
-              <div>Link</div>
-              <div>Rarity</div>
-              <div>Geography</div>
-              <div>Status</div>
-              <div>Terrain Boosts</div>
-              <div>Worksite</div>
-              <div>Runi</div>
-              <div>Title</div>
-              <div>Totem</div>
-              <div>Worker 1</div>
-              <div>Worker 2</div>
-              <div>Worker 3</div>
-              <div>Worker 4</div>
-              <div>Worker 5</div>
-              <div>Output (Produce/Consume)</div>
-            </Box>
+            <DeedGridHeader />
 
             {/* Rows */}
             {paginatedDeeds.map((deed) => (
@@ -286,7 +254,6 @@ export default function PlaygroundDeedGrid({
                 allCards={cards}
                 cardDetails={cardDetails}
                 onChange={handleDeedChange}
-                girdColumnsSizes={girdColumnsSizes}
               />
             ))}
           </Box>

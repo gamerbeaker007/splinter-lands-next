@@ -25,6 +25,7 @@ type Props = {
   selectedTitle: TitleTier | null;
   selectedTotem: TotemTier | null;
   selectedWorkers: (SlotInput | null)[]; // Changed from string UIDs to SlotInput
+  width?: string;
 };
 
 export default function DeedOutputDisplay({
@@ -34,6 +35,7 @@ export default function DeedOutputDisplay({
   selectedTitle,
   selectedTotem,
   selectedWorkers,
+  width,
 }: Props) {
   const output = useMemo(() => {
     const resource =
@@ -127,22 +129,24 @@ export default function DeedOutputDisplay({
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
   return (
-    <Box>
-      {output.capped && (
-        <Typography variant="body2" fontSize="0.65rem" color="warning.main">
-          <WarningAmber />
-          BASE PP capped at 100,000
+    <Box width={width} flexShrink={0}>
+      <Box>
+        {output.capped && (
+          <Typography variant="body2" fontSize="0.65rem" color="warning.main">
+            <WarningAmber />
+            BASE PP capped at 100,000
+          </Typography>
+        )}
+        <Typography variant="body2" fontSize="0.7rem">
+          PP: {fmt(output.boostedPP)}
         </Typography>
-      )}
-      <Typography variant="body2" fontSize="0.7rem">
-        PP: {fmt(output.boostedPP)}
-      </Typography>
-      <Typography variant="body2" fontSize="0.65rem" color="success.main">
-        ▲ {output.produce}
-      </Typography>
-      <Typography variant="body2" fontSize="0.65rem" color="error.main">
-        ▼ {output.consume}
-      </Typography>
+        <Typography variant="body2" fontSize="0.65rem" color="success.main">
+          ▲ {output.produce}
+        </Typography>
+        <Typography variant="body2" fontSize="0.65rem" color="error.main">
+          ▼ {output.consume}
+        </Typography>
+      </Box>
     </Box>
   );
 }

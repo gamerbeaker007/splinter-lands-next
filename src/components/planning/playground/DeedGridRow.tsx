@@ -1,27 +1,25 @@
 "use client";
 
-import { ManageLink } from "@/components/player-overview/deed-overview/land-deed-card/link-components/ManageLink";
-import {
-  land_default_element_icon_url_placeholder,
-  land_default_off_icon_url_placeholder,
-  land_mythic_icon_url,
-  land_under_construction_icon_url,
-} from "@/lib/shared/statics_icon_urls";
 import { SlotInput } from "@/types/planner";
 import {
   CardBloodline,
   RuniTier,
-  TERRAIN_BONUS,
   TitleTier,
   TotemTier,
   WorksiteType,
 } from "@/types/planner/primitives";
 import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box, Tooltip, Typography } from "@mui/material";
-import Image from "next/image";
-import { useMemo, useState } from "react";
+import { Box } from "@mui/material";
+import { useEffect, useMemo, useRef, useState } from "react";
+import GeographyColumn from "./columns/GeographyColumn";
+import LinkColumn from "./columns/LinkColumn";
+import RarityColumn from "./columns/RarityColumn";
+import StatusColumn from "./columns/StatusColumn";
+import TerrainBoostsColumn from "./columns/TerrainBoostsColumn";
+import TractRegionPlotColumn from "./columns/TractRegionPlotColumn";
 import DeedOutputDisplay from "./DeedOutputDisplay";
+import { COLUMN_WIDTHS, TOTAL_MIN_WIDTH } from "./gridConstants";
 import { RuniIconSelector } from "./RuniIconSelector";
 import { TitleIconSelector } from "./TitleIconSelector";
 import { TotemIconSelector } from "./TotemIconSelector";
@@ -34,14 +32,6 @@ type Props = {
   allCards: PlaygroundCard[];
   cardDetails: SplCardDetails[];
   onChange: (change: DeedChange) => void;
-  girdColumnsSizes: string;
-};
-
-// Status icon mapping
-const statusIconMap: Record<string, string> = {
-  natural: land_default_off_icon_url_placeholder.replace("__NAME__", "natural"),
-  magical: land_default_off_icon_url_placeholder.replace("__NAME__", "magical"),
-  construction: land_under_construction_icon_url,
 };
 
 export default function DeedGridRow({
@@ -50,7 +40,6 @@ export default function DeedGridRow({
   allCards,
   cardDetails,
   onChange,
-  girdColumnsSizes,
 }: Props) {
   const [selectedWorksite, setSelectedWorksite] = useState(
     deed.worksiteType || ""
@@ -205,116 +194,39 @@ export default function DeedGridRow({
     });
   }, [selectedWorkers, deed, allCards, cardDetails]);
 
-  const getRarityIcon = (rarity: string | null) => {
-    if (!rarity) return null;
-    const icon =
-      rarity === "mythic"
-        ? land_mythic_icon_url
-        : land_default_off_icon_url_placeholder.replace(
-            "__NAME__",
-            rarity.toLowerCase()
-          );
-    return (
-      <Image
-        src={icon}
-        alt={rarity}
-        width={24}
-        height={24}
-        style={{ objectFit: "contain", width: "auto", height: "auto" }}
-      />
-    );
-  };
+  const rowRef = useRef<HTMLDivElement>(null);
 
-  const getGeographyIcon = (deedType: string | null) => {
-    if (!deedType) return "-";
-    const icon = land_default_off_icon_url_placeholder.replace(
-      "__NAME__",
-      deedType.toLowerCase()
-    );
-    if (!icon) return deedType;
-    return (
-      <Tooltip title={deedType}>
-        <Image
-          src={icon}
-          alt={deedType}
-          width={24}
-          height={24}
-          style={{ objectFit: "contain", width: "auto", height: "auto" }}
-        />
-      </Tooltip>
-    );
-  };
-
-  const getStatusIcon = (plotStatus: string | null) => {
-    if (!plotStatus) return "-";
-    const icon = statusIconMap[plotStatus.toLowerCase()];
-    if (!icon) return plotStatus;
-    return (
-      <Tooltip title={plotStatus}>
-        <Image
-          src={icon}
-          alt={plotStatus}
-          width={24}
-          height={24}
-          style={{ objectFit: "contain", width: "auto", height: "auto" }}
-        />
-      </Tooltip>
-    );
-  };
-
-  const getTerrainBoosts = () => {
-    const deedType = deed.deedType?.toLowerCase() as keyof typeof TERRAIN_BONUS;
-    if (!deedType || !TERRAIN_BONUS[deedType])
-      return <Typography variant="body2">-</Typography>;
-
-    const boosts = TERRAIN_BONUS[deedType];
-    return (
-      <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-        {Object.entries(boosts).map(([element, boost]) => {
-          if (boost === undefined) return null;
-          const icon = land_default_element_icon_url_placeholder.replace(
-            "__NAME__",
-            element.toLowerCase()
-          );
-          if (!icon || boost > 0) return null;
-          const percentage = `+${(boost * 100).toFixed(0)}%`;
-          return (
-            <Tooltip key={element} title={`${element}: ${percentage}`}>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 0.25,
-                }}
-              >
-                <Image
-                  src={icon}
-                  alt={element}
-                  width={16}
-                  height={16}
-                  style={{
-                    objectFit: "contain",
-                    width: "auto",
-                    height: "auto",
-                  }}
-                />
-                <Typography variant="caption" fontSize="0.65rem">
-                  {percentage}
-                </Typography>
-              </Box>
-            </Tooltip>
-          );
-        })}
-      </Box>
-    );
-  };
+  useEffect(() => {
+    if (rowRef.current) {
+      const isFirstRow = deed.plot_number === 1;
+      if (isFirstRow) {
+        console.log("🟢 DeedGridRow Debug (first row):");
+        console.log("  - TOTAL_MIN_WIDTH constant:", TOTAL_MIN_WIDTH);
+        console.log(
+          "  - Actual rendered width:",
+          rowRef.current.offsetWidth,
+          "px"
+        );
+        console.log("  - Scroll width:", rowRef.current.scrollWidth, "px");
+        console.log(
+          "  - Parent width:",
+          rowRef.current.parentElement?.offsetWidth,
+          "px"
+        );
+        console.log(
+          "  - Computed minWidth:",
+          window.getComputedStyle(rowRef.current).minWidth
+        );
+      }
+    }
+  }, [deed.plot_number]);
 
   return (
     <Box
+      ref={rowRef}
       sx={{
-        display: "grid",
-        gridTemplateColumns: girdColumnsSizes,
+        display: "flex",
+        minWidth: TOTAL_MIN_WIDTH,
         p: 1,
         borderBottom: 1,
         borderColor: "divider",
@@ -326,50 +238,43 @@ export default function DeedGridRow({
       }}
     >
       {/* Tract/Region/Plot */}
-      <Typography variant="body2" fontSize="0.75rem">
-        R{deed.region_number} T{deed.tract_number} P{deed.plot_number}
-      </Typography>
+      <TractRegionPlotColumn
+        regionNumber={deed.region_number}
+        tractNumber={deed.tract_number}
+        plotNumber={deed.plot_number}
+      />
 
-      <Box>
-        <ManageLink regionNumber={deed.region_number} plotId={deed.plot_id} />
-      </Box>
+      {/* Link */}
+      <LinkColumn regionNumber={deed.region_number} plotId={deed.plot_id} />
 
       {/* Rarity */}
-      <Box>{getRarityIcon(deed.rarity)}</Box>
+      <RarityColumn rarity={deed.rarity} />
 
       {/* Geography (deedType) */}
-      <Box>{getGeographyIcon(deed.deedType)}</Box>
+      <GeographyColumn deedType={deed.deedType} />
 
       {/* Status */}
-      <Box>{getStatusIcon(deed.plotStatus)}</Box>
+      <StatusColumn plotStatus={deed.plotStatus} />
 
       {/* Terrain Boosts */}
-      <Box>{getTerrainBoosts()}</Box>
+      <TerrainBoostsColumn deedType={deed.deedType} />
 
       {/* Worksite */}
-      <Box>
-        <WorksiteIconSelector
-          value={selectedWorksite as WorksiteType}
-          deedType={deed.deedType ?? "natural"}
-          plotStatus={deed.plotStatus ?? "fire"}
-          onChange={handleWorksiteChange}
-        />
-      </Box>
+      <WorksiteIconSelector
+        value={selectedWorksite as WorksiteType}
+        deedType={deed.deedType ?? "natural"}
+        plotStatus={deed.plotStatus ?? "fire"}
+        onChange={handleWorksiteChange}
+      />
 
       {/* Runi */}
-      <Box>
-        <RuniIconSelector value={selectedRuni} onChange={handleRuniChange} />
-      </Box>
+      <RuniIconSelector value={selectedRuni} onChange={handleRuniChange} />
 
       {/* Title */}
-      <Box>
-        <TitleIconSelector value={selectedTitle} onChange={handleTitleChange} />
-      </Box>
+      <TitleIconSelector value={selectedTitle} onChange={handleTitleChange} />
 
       {/* Totem */}
-      <Box>
-        <TotemIconSelector value={selectedTotem} onChange={handleTotemChange} />
-      </Box>
+      <TotemIconSelector value={selectedTotem} onChange={handleTotemChange} />
 
       {/* Workers 1-5 */}
       {[0, 1, 2, 3, 4].map((slotIndex) => (
@@ -394,6 +299,7 @@ export default function DeedGridRow({
         selectedTitle={selectedTitle}
         selectedTotem={selectedTotem}
         selectedWorkers={selectedWorkerSlots}
+        width={COLUMN_WIDTHS.EXTRA_LARGE}
       />
     </Box>
   );

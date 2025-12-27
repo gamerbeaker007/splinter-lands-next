@@ -19,6 +19,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { COLUMN_WIDTHS } from "./gridConstants";
 
 export type Props = {
   value: WorksiteType;
@@ -83,40 +84,41 @@ export function WorksiteIconSelector({
   );
 
   return (
-    <Select<WorksiteType>
-      value={value}
-      onChange={handleChange}
-      renderValue={(val) => {
-        const v = (val as WorksiteType) ?? value;
-        return (
-          <Tooltip title={capitalize(v)}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              {renderIcon(v, 40)}
-            </Box>
-          </Tooltip>
-        );
-      }}
-      size="small"
-      sx={{
-        ".MuiOutlinedInput-notchedOutline": { border: "none" },
-        minWidth: "auto",
-        width: "fit-content",
-      }}
-    >
-      {worksiteTypeOptions.map((v) => {
-        const allowed = isAllowed(v, deedType, plotStatus);
+    <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+      <Select<WorksiteType>
+        value={value}
+        onChange={handleChange}
+        renderValue={(val) => {
+          const v = (val as WorksiteType) ?? value;
+          return (
+            <Tooltip title={capitalize(v)}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                {renderIcon(v, 40)}
+              </Box>
+            </Tooltip>
+          );
+        }}
+        size="small"
+        sx={{
+          ".MuiOutlinedInput-notchedOutline": { border: "none" },
+          width: "100%",
+        }}
+      >
+        {worksiteTypeOptions.map((v) => {
+          const allowed = isAllowed(v, deedType, plotStatus);
 
-        return (
-          <MenuItem key={v} value={v} disabled={!allowed}>
-            <ListItemIcon sx={{ minWidth: 28 }}>
-              {renderIcon(v, 32)}
-            </ListItemIcon>
-            <Typography variant="body2" sx={{ flexGrow: 1 }} ml={1}>
-              {capitalize(v)}
-            </Typography>
-          </MenuItem>
-        );
-      })}
-    </Select>
+          return (
+            <MenuItem key={v} value={v} disabled={!allowed}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                {renderIcon(v, 32)}
+              </ListItemIcon>
+              <Typography variant="body2" sx={{ flexGrow: 1 }} ml={1}>
+                {capitalize(v)}
+              </Typography>
+            </MenuItem>
+          );
+        })}
+      </Select>
+    </Box>
   );
 }

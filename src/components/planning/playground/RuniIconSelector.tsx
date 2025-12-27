@@ -18,6 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { COLUMN_WIDTHS } from "./gridConstants";
 
 const ICONS: Record<RuniTier, string> = {
   none: land_runi_power_core_icon_url,
@@ -54,42 +55,43 @@ export function RuniIconSelector({ value, onChange }: Props) {
   const displayValue = value || "none";
 
   return (
-    <Select<string>
-      value={displayValue}
-      onChange={handleChange}
-      renderValue={(val) => {
-        const v = (val as RuniTier) || "none";
-        return (
-          <Tooltip title={capitalize(v)}>
-            <Box sx={{ display: "flex", alignItems: "center" }}>
-              {renderIcon(v === "none" ? null : v, 50)}
-            </Box>
-          </Tooltip>
-        );
-      }}
-      size="small"
-      sx={{
-        ".MuiOutlinedInput-notchedOutline": { border: "none" },
-        minWidth: "auto",
-        width: "fit-content",
-      }}
-    >
-      <MenuItem value="none">
-        <ListItemIcon>
-          <BlockIcon fontSize="small" />
-        </ListItemIcon>
-        <Typography variant="body2">None</Typography>
-      </MenuItem>
-      {runiOptions
-        .filter((r) => r !== "none")
-        .map((tier) => (
-          <MenuItem key={tier} value={tier}>
-            <ListItemIcon sx={{ minWidth: 28 }}>
-              {renderIcon(tier, 24)}
-            </ListItemIcon>
-            <Typography variant="body2">{capitalize(tier)}</Typography>
-          </MenuItem>
-        ))}
-    </Select>
+    <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+      <Select<string>
+        value={displayValue}
+        onChange={handleChange}
+        renderValue={(val) => {
+          const v = (val as RuniTier) || "none";
+          return (
+            <Tooltip title={capitalize(v)}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                {renderIcon(v === "none" ? null : v, 50)}
+              </Box>
+            </Tooltip>
+          );
+        }}
+        size="small"
+        sx={{
+          ".MuiOutlinedInput-notchedOutline": { border: "none" },
+          width: "100%",
+        }}
+      >
+        <MenuItem value="none">
+          <ListItemIcon>
+            <BlockIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">None</Typography>
+        </MenuItem>
+        {runiOptions
+          .filter((r) => r !== "none")
+          .map((tier) => (
+            <MenuItem key={tier} value={tier}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                {renderIcon(tier, 24)}
+              </ListItemIcon>
+              <Typography variant="body2">{capitalize(tier)}</Typography>
+            </MenuItem>
+          ))}
+      </Select>
+    </Box>
   );
 }
