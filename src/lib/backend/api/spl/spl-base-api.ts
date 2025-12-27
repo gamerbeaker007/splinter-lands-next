@@ -205,7 +205,9 @@ export async function fetchBurnedBalances(): Promise<SplBalance[]> {
   return data;
 }
 
-export async function fetchPlayerInventory(player: string): Promise<SplInventory[]> {
+export async function fetchPlayerInventory(
+  player: string
+): Promise<SplInventory[]> {
   const url = "/players/inventory";
   logger.info(`Fetch player inventory`);
 
