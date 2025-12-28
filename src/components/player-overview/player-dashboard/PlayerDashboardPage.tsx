@@ -30,6 +30,14 @@ export default function PlayerDashboardPage() {
     fetchPlayerData(true); // Pass force as true to refetch data
   }
 
+  if (!selectedPlayer) {
+    return (
+      <Typography variant="body1" sx={{ mt: 2 }}>
+        Please enter a username to view the dashboard.
+      </Typography>
+    );
+  }
+
   return (
     <>
       {loadingText ? (

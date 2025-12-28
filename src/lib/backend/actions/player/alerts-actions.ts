@@ -89,15 +89,20 @@ export async function getPlayerCardAlerts(
       ) ?? 0;
 
     // Analyze all alerts in a single pass through deeds
-    const {
-      countAlerts,
-      negativeAlerts,
-      powerSourceAlerts,
-      missingBloodLineBoost,
-    } = analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
+    const { countAlerts, negativeAlerts, powerSourceAlerts } = analyzeAllDeeds(
+      enrichedPlayerData,
+      ownedPowerCores
+    );
 
     // Analyze cards for terrain bonuses
     const terrainBoostAlerts = analyzeTerrainBonuses(
+      playerCardCollection,
+      enrichedPlayerData,
+      cardDetails
+    );
+
+    const missingBloodLineBoost = analyzeMissingBloodLineBoost(
+      player,
       playerCardCollection,
       enrichedPlayerData,
       cardDetails
@@ -123,6 +128,83 @@ export async function getPlayerCardAlerts(
 }
 
 /**
+ * Find missing bloodline based on player cards
+ * When there is a card with bloodline boost staked to a deed
+ * but there is no other bloodline on the same deed, it will raise an alert
+ */
+function analyzeMissingBloodLineBoost(
+  player: string,
+  cards: SplPlayerCardCollection[],
+  deeds: DeedComplete[],
+  splCardDetails: SplCardDetails[]
+): DeedInfo[] {
+  const now = new Date();
+  const alertedDeedUids = new Set<string>();
+
+  // Helper to extract bloodline from card
+  const getBloodline = (cardDetailId: number, level: number): string | null => {
+    const splCard = splCardDetails.find((cd) => cd.id === cardDetailId);
+    const landAbilities = splCard?.stats?.land_abilities[level];
+    const bloodlineAbility = landAbilities?.find(
+      (ability) => ability[0] === "BLOODLINE"
+    );
+    return bloodlineAbility ? (bloodlineAbility[2] as string) : null;
+  };
+
+  // Group ALL cards by stake_ref_uid for efficient lookup
+  const cardsByStakeRef = new Map<string, SplPlayerCardCollection[]>();
+  for (const card of cards) {
+    // Include all staked cards, regardless of card_set
+    const isStaked =
+      card.stake_ref_uid !== null &&
+      (!card.stake_end_date || new Date(card.stake_end_date) > now) &&
+      (!card.delegated_to || card.delegated_to === player);
+
+    if (!isStaked) continue;
+
+    const stakeRef = card.stake_ref_uid!;
+    if (!cardsByStakeRef.has(stakeRef)) {
+      cardsByStakeRef.set(stakeRef, []);
+    }
+    cardsByStakeRef.get(stakeRef)!.push(card);
+  }
+
+  // Check each land card with bloodline ability
+  for (const card of cards) {
+    const isStakedOnLand =
+      card.stake_ref_uid !== null &&
+      (!card.stake_end_date || new Date(card.stake_end_date) > now);
+    const isLandSet = card.card_set === "land";
+    const isStakedToPlayer = !card.delegated_to || card.delegated_to === player;
+
+    if (!isStakedOnLand || !isLandSet || !isStakedToPlayer) continue;
+
+    const bloodline = getBloodline(card.card_detail_id, card.level);
+    if (!bloodline) continue;
+
+    // Count cards with matching bloodline on the same deed
+    const cardsOnSameDeed = cardsByStakeRef.get(card.stake_ref_uid!) || [];
+    const bloodlineCount = cardsOnSameDeed.filter((otherCard) => {
+      const otherSplCard = splCardDetails.find(
+        (cd) => cd.id === otherCard.card_detail_id
+      );
+      return otherSplCard?.sub_type === bloodline;
+    }).length;
+
+    // Need at least 2 cards with the bloodline (the card itself + another)
+    if (bloodlineCount < 2 && !alertedDeedUids.has(card.stake_ref_uid!)) {
+      alertedDeedUids.add(card.stake_ref_uid!);
+    }
+  }
+
+  // Convert deed UIDs to DeedInfo objects
+  return Array.from(alertedDeedUids)
+    .map((deedUid) => deeds.find((d) => d.deed_uid === deedUid))
+    .filter((deed): deed is DeedComplete => deed !== undefined)
+    .map(createDeedInfo);
+}
+
+/**
  * Single-pass analysis of all deeds to extract multiple alert types
  * Much more efficient than looping over deeds multiple times
  */
@@ -141,7 +223,6 @@ function analyzeAllDeeds(
     noPowerSource: DeedInfo[];
     powerCoreWhileEnergized: DeedInfo[];
   };
-  missingBloodLineBoost: DeedInfo[];
 } {
   const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
@@ -150,7 +231,6 @@ function analyzeAllDeeds(
   const noPowerSource: DeedInfo[] = [];
   const powerCoreWhileEnergized: DeedInfo[] = [];
   let numberOfPowerCores = ownedPowerCores;
-  const missingBloodLineBoost: DeedInfo[] = [];
 
   // Single loop through all deeds
   for (const deed of deeds) {
@@ -191,8 +271,6 @@ function analyzeAllDeeds(
     const isEnergized = deed.stakingDetail?.is_energized ?? false;
     const isPowered = deed.stakingDetail?.is_powered ?? false;
     const isPowerCoreStaked = deed.stakingDetail?.is_power_core_staked ?? false;
-    const hasBloodLineBoost =
-      (deed.stakingDetail?.card_bloodlines_boost ?? 0) > 0;
 
     if (isPowerCoreStaked && isEnergized) {
       powerCoreWhileEnergized.push(deedInfo);
@@ -202,13 +280,6 @@ function analyzeAllDeeds(
     }
     if (isPowerCoreStaked) {
       numberOfPowerCores--;
-    }
-
-    if (
-      hasBloodLineBoost &&
-      (deed.stakingDetail?.total_card_bloodlines_boost_pp ?? 0) === 0
-    ) {
-      missingBloodLineBoost.push(deedInfo);
     }
   }
 
@@ -224,7 +295,6 @@ function analyzeAllDeeds(
       noPowerSource,
       powerCoreWhileEnergized,
     },
-    missingBloodLineBoost,
   };
 }
 

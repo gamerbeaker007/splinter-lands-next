@@ -1,17 +1,23 @@
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
-import { Box, Typography } from "@mui/material";
+import WarningIcon from "@mui/icons-material/Warning";
+import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 
 type Props = {
   basePP: number;
   boostedPP: number;
+  isCapped?: boolean;
 };
 
 const sizeHammerIcon = 15;
 const fontSize = 10;
 
-export const CardPPInfo: React.FC<Props> = ({ basePP, boostedPP }) => {
+export const CardPPInfo: React.FC<Props> = ({
+  basePP,
+  boostedPP,
+  isCapped,
+}) => {
   const fontColor = "common.white";
 
   return (
@@ -24,13 +30,29 @@ export const CardPPInfo: React.FC<Props> = ({ basePP, boostedPP }) => {
           height={sizeHammerIcon}
           style={{ display: "block" }}
         />
-        <Box display="flex" justifyContent="space-between" flex={1}>
+        <Box
+          display="flex"
+          justifyContent="space-between"
+          flex={1}
+          alignItems="center"
+        >
           <Typography fontSize={fontSize} color={fontColor}>
             Base PP:
           </Typography>
-          <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
-            {basePP.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-          </Typography>
+          <Box display="flex" alignItems="center" gap={0.5}>
+            <Typography
+              fontSize={fontSize}
+              fontWeight="bold"
+              color={isCapped ? "warning.main" : fontColor}
+            >
+              {basePP.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            </Typography>
+            {isCapped && (
+              <Tooltip title="This slot's base PP is capped due to the 100K total limit">
+                <WarningIcon sx={{ fontSize: 12, color: "warning.main" }} />
+              </Tooltip>
+            )}
+          </Box>
         </Box>
       </Box>
 

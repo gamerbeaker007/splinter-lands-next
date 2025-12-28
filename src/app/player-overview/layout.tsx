@@ -58,11 +58,9 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
           <PlayerInput />
         </Box>
 
-        {selectedPlayer && (
-          <Box mt={4} mb={4}>
-            {children}
-          </Box>
-        )}
+        <Box mt={4} mb={4}>
+          {children}
+        </Box>
       </Container>
     </>
   );

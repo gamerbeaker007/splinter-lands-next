@@ -1,9 +1,8 @@
 "use client";
+import { runiIconMap } from "@/lib/shared/statics";
 import {
   land_hammer_icon_url,
-  land_runi_gold_icon_url,
   land_runi_power_core_icon_url,
-  land_runi_regular_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
 import {
@@ -26,12 +25,6 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { calcBoostedPP } from "../../../lib/frontend/utils/plannerCalcs";
-
-const ICONS: Record<RuniTier, string> = {
-  none: land_runi_power_core_icon_url,
-  regular: land_runi_regular_icon_url,
-  gold: land_runi_gold_icon_url,
-};
 
 const fontColor = "common.white";
 
@@ -72,7 +65,7 @@ const renderBoost = (value: RuniTier, plot: PlotPlannerData, size = 15) => {
 };
 
 const renderIcon = (tier: RuniTier, runiImgUrl: string | null, size = 50) => {
-  const icon = runiImgUrl ?? ICONS[tier];
+  const icon = runiImgUrl ?? runiIconMap[tier];
   const isPowerCore = icon === land_runi_power_core_icon_url;
 
   const isGold = icon.includes("gold");

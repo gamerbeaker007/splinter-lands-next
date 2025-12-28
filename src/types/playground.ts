@@ -1,0 +1,88 @@
+// Optimized types for playground to reduce data transfer
+
+import { Resource } from "@/constants/resource/resource";
+import { CardSetName } from "./editions";
+import {
+  CardElement,
+  CardFoil,
+  CardRarity,
+  DeedType,
+  LandBoost,
+  MagicType,
+  PlotRarity,
+  PlotStatus,
+  RuniTier,
+  SlotInput,
+  TitleTier,
+  TotemTier,
+  WorksiteType,
+} from "./planner";
+
+export type PlaygroundDeed = {
+  deed_uid: string;
+  region_number: number;
+  tract_number: number;
+  plot_number: number;
+  plot_id: number;
+  rarity: PlotRarity;
+  plotStatus: PlotStatus;
+  magicType: MagicType | null;
+  resource: Resource;
+  deedType: DeedType;
+  worksiteType: WorksiteType;
+  basePP: number;
+  boostedPP: number;
+  runi: RuniTier | null;
+  titleTier: TitleTier | null;
+  totemTier: TotemTier | null;
+  worker1Uid: SlotInput | null;
+  worker2Uid: SlotInput | null;
+  worker3Uid: SlotInput | null;
+  worker4Uid: SlotInput | null;
+  worker5Uid: SlotInput | null;
+};
+
+export type PlaygroundCard = {
+  uid: string;
+  card_detail_id: number;
+  name: string;
+  set: CardSetName;
+  rarity: CardRarity;
+  element: CardElement;
+  subElement: CardElement;
+  land_base_pp: number;
+  last_used_date: string | null;
+  bcx: number;
+  foil: CardFoil;
+  level: number;
+  landBoost: LandBoost | null;
+};
+
+export type PlaygroundData = {
+  deeds: PlaygroundDeed[];
+  cards: PlaygroundCard[];
+  totalBoostedPP: number;
+};
+
+export type DeedChange = {
+  deed_uid: string;
+  field:
+    | "worksite"
+    | "runi"
+    | "title"
+    | "totem"
+    | "worker1"
+    | "worker2"
+    | "worker3"
+    | "worker4"
+    | "worker5";
+  oldValue: number | string | SlotInput | null;
+  newValue: number | string | SlotInput | null;
+  timestamp: Date;
+};
+
+export type DeedFilterOptions = {
+  regions: number[];
+  tracts: number[];
+  plots: number[];
+};

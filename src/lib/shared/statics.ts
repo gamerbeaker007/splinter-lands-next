@@ -3,14 +3,24 @@ import {
   dec_icon_url,
   land_aura_lab_icon_url,
   land_castle_icon_url,
+  land_common_totem_icon_url,
+  land_epic_totem_icon_url,
   land_grain_farm_icon_url,
   land_hammer_icon_url,
   land_keep_icon_url,
+  land_legendary_totem_icon_url,
   land_logging_camp_icon_url,
   land_ore_mine_icon_url,
   land_quarry_icon_url,
+  land_rare_totem_icon_url,
   land_research_hut_icon_url,
+  land_runi_gold_icon_url,
+  land_runi_power_core_icon_url,
+  land_runi_regular_icon_url,
   land_shard_mine_icon_url,
+  land_title_epic_icon_url,
+  land_title_legendary_icon_url,
+  land_title_rare_icon_url,
   land_under_construction_icon_url,
   resource_auction_mark_icon_url,
   resource_aura_icon_url,
@@ -32,6 +42,7 @@ import {
   resource_wood_icon_url,
   sps_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { RuniTier, TitleTier, TotemTier } from "@/types/planner";
 
 export const NATURAL_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON"];
 export const PRODUCING_RESOURCES = [
@@ -146,4 +157,23 @@ export const worksiteTypeMapping: Record<string, string> = {
   KEEP: land_keep_icon_url,
   CASTLE: land_castle_icon_url,
   Undeveloped: land_under_construction_icon_url,
+};
+
+export const totemIconMap: Record<Exclude<TotemTier, "none">, string> = {
+  common: land_common_totem_icon_url,
+  rare: land_rare_totem_icon_url,
+  epic: land_epic_totem_icon_url,
+  legendary: land_legendary_totem_icon_url,
+};
+
+export const titleIconMap: Record<Exclude<TitleTier, "none">, string> = {
+  rare: land_title_rare_icon_url,
+  epic: land_title_epic_icon_url,
+  legendary: land_title_legendary_icon_url,
+};
+
+export const runiIconMap: Record<RuniTier, string> = {
+  none: land_runi_power_core_icon_url,
+  regular: land_runi_regular_icon_url,
+  gold: land_runi_gold_icon_url,
 };

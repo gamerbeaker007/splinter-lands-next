@@ -12,6 +12,7 @@ import { FaPercent } from "react-icons/fa";
 type Props = {
   totalBasePP: number;
   totalBoostPP: number;
+  capped: boolean;
   captureRate?: number;
   totemChance?: number;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
@@ -23,6 +24,7 @@ const fontSize = "1.0rem";
 export const ProductionOutput: React.FC<Props> = ({
   totalBasePP,
   totalBoostPP,
+  capped,
   captureRate,
   totemChance,
   pos,
@@ -50,7 +52,7 @@ export const ProductionOutput: React.FC<Props> = ({
           color={fontColor}
           mb={0.5}
         >
-          Production: {totalBasePP > 100_000 && <PPWarning />}
+          Production: {capped && <PPWarning />}
         </Typography>
 
         {/* Base PP */}

@@ -1,0 +1,99 @@
+"use client";
+
+import {
+  land_common_totem_icon_url,
+  land_epic_totem_icon_url,
+  land_legendary_totem_icon_url,
+  land_rare_totem_icon_url,
+} from "@/lib/shared/statics_icon_urls";
+import { totemOptions, TotemTier } from "@/types/planner";
+import BlockIcon from "@mui/icons-material/Block";
+import {
+  Box,
+  capitalize,
+  ListItemIcon,
+  MenuItem,
+  Select,
+  SelectChangeEvent,
+  Tooltip,
+  Typography,
+} from "@mui/material";
+import Image from "next/image";
+import { COLUMN_WIDTHS } from "./gridConstants";
+
+const ICONS: Record<Exclude<TotemTier, "none">, string> = {
+  common: land_common_totem_icon_url,
+  rare: land_rare_totem_icon_url,
+  epic: land_epic_totem_icon_url,
+  legendary: land_legendary_totem_icon_url,
+};
+
+export type Props = {
+  value: TotemTier | null;
+  onChange: (tier: TotemTier | null) => void;
+};
+
+export function TotemIconSelector({ value, onChange }: Props) {
+  const handleChange = (e: SelectChangeEvent<string>) => {
+    const val = e.target.value;
+    onChange(val === "none" ? null : (val as TotemTier));
+  };
+
+  const renderIcon = (tier: TotemTier | null, size = 24) => {
+    if (!tier || tier === "none") {
+      return <Typography variant="body2">-</Typography>;
+    }
+    return (
+      <Image
+        src={ICONS[tier]}
+        alt={`${tier} Totem`}
+        width={size}
+        height={size}
+        style={{ display: "block", objectFit: "contain" }}
+      />
+    );
+  };
+
+  const displayValue = value || "none";
+
+  return (
+    <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
+      <Select<string>
+        value={displayValue}
+        onChange={handleChange}
+        renderValue={(val) => {
+          const v = (val as TotemTier) || "none";
+          return (
+            <Tooltip title={capitalize(v)}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                {renderIcon(v === "none" ? null : v, 24)}
+              </Box>
+            </Tooltip>
+          );
+        }}
+        size="small"
+        sx={{
+          ".MuiOutlinedInput-notchedOutline": { border: "none" },
+          width: "100%",
+        }}
+      >
+        <MenuItem value="none">
+          <ListItemIcon>
+            <BlockIcon fontSize="small" />
+          </ListItemIcon>
+          <Typography variant="body2">None</Typography>
+        </MenuItem>
+        {totemOptions
+          .filter((t) => t !== "none")
+          .map((tier) => (
+            <MenuItem key={tier} value={tier}>
+              <ListItemIcon sx={{ minWidth: 28 }}>
+                {renderIcon(tier, 24)}
+              </ListItemIcon>
+              <Typography variant="body2">{capitalize(tier)}</Typography>
+            </MenuItem>
+          ))}
+      </Select>
+    </Box>
+  );
+}

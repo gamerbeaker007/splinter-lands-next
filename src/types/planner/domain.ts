@@ -38,6 +38,7 @@ export interface SlotInput {
   element: CardElement;
   bloodline: CardBloodline;
   landBoosts?: LandBoost;
+  uid?: string; // Optional: card UID for playground tracking
 }
 
 export interface LandBoost {
@@ -52,4 +53,5 @@ export interface LandBoost {
 export interface SlotComputedPP {
   basePP: number;
   boostedPP: number;
+  isCapped?: boolean;
 }
