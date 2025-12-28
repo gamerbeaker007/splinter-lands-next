@@ -17,6 +17,7 @@ import { PlaygroundDeed } from "@/types/playground";
 import { WarningAmber } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import { useMemo } from "react";
+import { COLUMN_WIDTHS } from "./gridConstants";
 
 type Props = {
   deed: PlaygroundDeed;
@@ -25,7 +26,6 @@ type Props = {
   selectedTitle: TitleTier | null;
   selectedTotem: TotemTier | null;
   selectedWorkers: (SlotInput | null)[]; // Changed from string UIDs to SlotInput
-  width?: string;
 };
 
 export default function DeedOutputDisplay({
@@ -35,7 +35,6 @@ export default function DeedOutputDisplay({
   selectedTitle,
   selectedTotem,
   selectedWorkers,
-  width,
 }: Props) {
   const output = useMemo(() => {
     const resource =
@@ -129,7 +128,7 @@ export default function DeedOutputDisplay({
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
   return (
-    <Box width={width} flexShrink={0}>
+    <Box width={COLUMN_WIDTHS.EXTRA_LARGE} flexShrink={0}>
       <Box>
         {output.capped && (
           <Typography variant="body2" fontSize="0.65rem" color="warning.main">

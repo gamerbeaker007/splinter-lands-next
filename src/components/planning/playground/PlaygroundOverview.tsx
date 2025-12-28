@@ -25,7 +25,7 @@ export default function PlaygroundOverview({
   const { inventory, loadingInventory } = usePlayerInventory(playerName);
 
   return (
-    <Box sx={{ mb: 2 }} maxWidth={1200} gap={2}>
+    <Box sx={{ mb: 2 }} gap={2}>
       <InventoryOverviewOutput
         deeds={deeds}
         inventory={inventory}

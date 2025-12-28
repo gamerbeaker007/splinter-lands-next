@@ -19,7 +19,6 @@ import StatusColumn from "./columns/StatusColumn";
 import TerrainBoostsColumn from "./columns/TerrainBoostsColumn";
 import TractRegionPlotColumn from "./columns/TractRegionPlotColumn";
 import DeedOutputDisplay from "./DeedOutputDisplay";
-import { COLUMN_WIDTHS, TOTAL_MIN_WIDTH } from "./gridConstants";
 import { RuniIconSelector } from "./RuniIconSelector";
 import { TitleIconSelector } from "./TitleIconSelector";
 import { TotemIconSelector } from "./TotemIconSelector";
@@ -203,9 +202,8 @@ export default function DeedGridRow({
       ref={rowRef}
       sx={{
         display: "flex",
-        minWidth: TOTAL_MIN_WIDTH,
-        p: 1,
         borderBottom: 1,
+        p: 1,
         borderColor: "divider",
         alignItems: "center",
         fontSize: "0.8rem",
@@ -276,7 +274,6 @@ export default function DeedGridRow({
         selectedTitle={selectedTitle}
         selectedTotem={selectedTotem}
         selectedWorkers={selectedWorkerSlots}
-        width={COLUMN_WIDTHS.EXTRA_LARGE}
       />
     </Box>
   );

@@ -2,7 +2,7 @@
 
 import { Box } from "@mui/material";
 import { useRef } from "react";
-import { COLUMN_WIDTHS, TOTAL_MIN_WIDTH } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./gridConstants";
 
 export default function DeedGridHeader() {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -12,7 +12,6 @@ export default function DeedGridHeader() {
       ref={boxRef}
       sx={{
         display: "flex",
-        minWidth: TOTAL_MIN_WIDTH,
         bgcolor: "action.hover",
         p: 1,
         fontWeight: "bold",
@@ -54,19 +53,19 @@ export default function DeedGridHeader() {
       <Box width={COLUMN_WIDTHS.MEDIUM_MINUS} flexShrink={0}>
         Totem
       </Box>
-      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0} ml={1} mr={1}>
         Worker 1
       </Box>
-      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0} ml={1} mr={1}>
         Worker 2
       </Box>
-      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0} ml={1} mr={1}>
         Worker 3
       </Box>
-      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0} ml={1} mr={1}>
         Worker 4
       </Box>
-      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0}>
+      <Box width={COLUMN_WIDTHS.LARGE} flexShrink={0} ml={1} mr={1}>
         Worker 5
       </Box>
       <Box width={COLUMN_WIDTHS.EXTRA_LARGE} flexShrink={0}>

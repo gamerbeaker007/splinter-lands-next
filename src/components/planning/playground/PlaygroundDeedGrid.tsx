@@ -17,7 +17,7 @@ import {
 import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box, Pagination, Paper, Typography } from "@mui/material";
+import { Box, Pagination, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
@@ -192,9 +192,9 @@ export default function PlaygroundDeedGrid({
   };
 
   return (
-    <Box mt={2} sx={{ maxWidth: "100vw", overflowX: "hidden" }}>
+    <Box mt={2} sx={{ width: "100%" }}>
       {/* Overview */}
-      <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+      <Box sx={{ width: "100%" }}>
         <PlaygroundOverview
           deeds={updatedDeeds}
           originalOutputs={originalOutputs}
@@ -213,7 +213,7 @@ export default function PlaygroundDeedGrid({
       />
 
       {/* Filter */}
-      <Box maxWidth={1200} sx={{ overflow: "hidden" }}>
+      <Box width={"100%"}>
         <PlaygroundFilter
           deeds={deeds}
           filterOptions={filterOptions}
@@ -227,7 +227,7 @@ export default function PlaygroundDeedGrid({
           display: "flex",
           justifyContent: "center",
           my: 2,
-          maxWidth: "100%",
+          maxWidth: "80%",
         }}
       >
         <Pagination
@@ -242,29 +242,34 @@ export default function PlaygroundDeedGrid({
       <Box
         sx={{
           overflowX: "auto",
-          width: "90%",
-          maxWidth: "90%",
+          width: "100%",
+          maxWidth: "100%",
           maxHeight: "70vh",
+          borderRadius: 1,
+          backgroundColor: "background.paper",
         }}
       >
-        <Paper sx={{ width: "fit-content" }}>
-          <Box>
-            {/* Header */}
-            <DeedGridHeader />
+        <Box
+          sx={{
+            minWidth: "100%",
+            maxWidth: "1200px",
+          }}
+        >
+          {/* Header */}
+          <DeedGridHeader />
 
-            {/* Rows */}
-            {paginatedDeeds.map((deed) => (
-              <DeedGridRow
-                key={deed.deed_uid}
-                deed={deed}
-                availableCards={availableCards.slice(0, 20)}
-                allCards={cards}
-                cardDetails={cardDetails}
-                onChange={handleDeedChange}
-              />
-            ))}
-          </Box>
-        </Paper>
+          {/* Rows */}
+          {paginatedDeeds.map((deed) => (
+            <DeedGridRow
+              key={deed.deed_uid}
+              deed={deed}
+              availableCards={availableCards.slice(0, 20)}
+              allCards={cards}
+              cardDetails={cardDetails}
+              onChange={handleDeedChange}
+            />
+          ))}
+        </Box>
       </Box>
 
       {/* Bottom Pagination */}
