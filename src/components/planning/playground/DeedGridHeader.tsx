@@ -1,30 +1,11 @@
 "use client";
 
 import { Box } from "@mui/material";
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import { COLUMN_WIDTHS, TOTAL_MIN_WIDTH } from "./gridConstants";
 
 export default function DeedGridHeader() {
   const boxRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (boxRef.current) {
-      console.log("🔵 DeedGridHeader Debug:");
-      console.log("  - TOTAL_MIN_WIDTH constant:", TOTAL_MIN_WIDTH);
-      console.log(
-        "  - Actual rendered width:",
-        boxRef.current.offsetWidth,
-        "px"
-      );
-      console.log("  - Scroll width:", boxRef.current.scrollWidth, "px");
-      console.log(
-        "  - Parent width:",
-        boxRef.current.parentElement?.offsetWidth,
-        "px"
-      );
-      console.log("  - Window width:", window.innerWidth, "px");
-    }
-  }, []);
 
   return (
     <Box

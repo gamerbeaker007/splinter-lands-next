@@ -42,13 +42,29 @@ export function RuniIconSelector({ value, onChange }: Props) {
       return <Typography variant="body2">-</Typography>;
     }
     return (
-      <Image
-        src={ICONS[tier]}
-        alt={`${tier} Runi`}
-        width={size}
-        height={size}
-        style={{ display: "block", objectFit: "contain" }}
-      />
+      <Box
+        sx={{
+          width: size,
+          height: size,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Image
+          src={ICONS[tier]}
+          alt={`${tier} Runi`}
+          width={size}
+          height={size}
+          style={{
+            width: size,
+            height: "auto",
+            maxWidth: size,
+            maxHeight: size,
+            objectFit: "contain",
+          }}
+        />
+      </Box>
     );
   };
 

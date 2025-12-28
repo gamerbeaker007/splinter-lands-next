@@ -11,7 +11,7 @@ import {
 import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import GeographyColumn from "./columns/GeographyColumn";
 import LinkColumn from "./columns/LinkColumn";
 import RarityColumn from "./columns/RarityColumn";
@@ -100,6 +100,8 @@ export default function DeedGridRow({
   };
 
   const handleWorkerChange = (slotIndex: number, cardUid: string) => {
+    const oldWorkerUid = selectedWorkers[slotIndex];
+
     const newWorkers = [...selectedWorkers];
     newWorkers[slotIndex] = cardUid || null;
     setSelectedWorkers(newWorkers);
@@ -151,7 +153,7 @@ export default function DeedGridRow({
     onChange({
       deed_uid: deed.deed_uid,
       field: workerField,
-      oldValue: selectedWorkers[slotIndex],
+      oldValue: oldWorkerUid,
       newValue: newSlotInput,
       timestamp: new Date(),
     });
@@ -195,31 +197,6 @@ export default function DeedGridRow({
   }, [selectedWorkers, deed, allCards, cardDetails]);
 
   const rowRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (rowRef.current) {
-      const isFirstRow = deed.plot_number === 1;
-      if (isFirstRow) {
-        console.log("🟢 DeedGridRow Debug (first row):");
-        console.log("  - TOTAL_MIN_WIDTH constant:", TOTAL_MIN_WIDTH);
-        console.log(
-          "  - Actual rendered width:",
-          rowRef.current.offsetWidth,
-          "px"
-        );
-        console.log("  - Scroll width:", rowRef.current.scrollWidth, "px");
-        console.log(
-          "  - Parent width:",
-          rowRef.current.parentElement?.offsetWidth,
-          "px"
-        );
-        console.log(
-          "  - Computed minWidth:",
-          window.getComputedStyle(rowRef.current).minWidth
-        );
-      }
-    }
-  }, [deed.plot_number]);
 
   return (
     <Box

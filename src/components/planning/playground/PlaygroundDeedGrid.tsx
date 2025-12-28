@@ -6,6 +6,7 @@ import {
   calcProductionInfo,
   calcTotalPP,
 } from "@/lib/frontend/utils/plannerCalcs";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { PlotPlannerData, SlotInput } from "@/types/planner";
 import {
   DeedChange,
@@ -48,14 +49,6 @@ export default function PlaygroundDeedGrid({
   });
   const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
-
-  // Debug viewport and container
-  useEffect(() => {
-    console.log("🔴 PlaygroundDeedGrid Debug:");
-    console.log("  - Window viewport width:", window.innerWidth, "px");
-    console.log("  - Expected content width: 2060px");
-    console.log("  - Should show scrollbar:", window.innerWidth < 2060);
-  }, []);
 
   // Fetch SPS ratio on mount
   useEffect(() => {
@@ -149,11 +142,25 @@ export default function PlaygroundDeedGrid({
       if (change.field.startsWith("worker")) {
         const workers = deedWorkers.get(change.deed_uid);
         if (workers) {
-          if (change.oldValue && typeof change.oldValue === "string") {
-            workers.delete(change.oldValue);
+          // Handle oldValue - remove the old card from assigned set
+          if (change.oldValue) {
+            const oldUid =
+              typeof change.oldValue === "string"
+                ? change.oldValue
+                : (change.oldValue as SlotInput).uid;
+            if (oldUid) {
+              workers.delete(oldUid);
+            }
           }
-          if (change.newValue && typeof change.newValue === "string") {
-            workers.add(change.newValue);
+          // Handle newValue - add the new card to assigned set
+          if (change.newValue) {
+            const newUid =
+              typeof change.newValue === "string"
+                ? change.newValue
+                : (change.newValue as SlotInput).uid;
+            if (newUid) {
+              workers.add(newUid);
+            }
           }
         }
       }
@@ -206,7 +213,7 @@ export default function PlaygroundDeedGrid({
       />
 
       {/* Filter */}
-      <Box sx={{ maxWidth: "100%", overflow: "hidden" }}>
+      <Box maxWidth={1200} sx={{ overflow: "hidden" }}>
         <PlaygroundFilter
           deeds={deeds}
           filterOptions={filterOptions}
@@ -358,6 +365,16 @@ function calculateSummary(
     totems: pricesData?.totems || 0,
   };
 
+  // Initialize all producing resources
+  PRODUCING_RESOURCES.forEach((res) => {
+    perResource[res] = {
+      pp: 0,
+      produced: 0,
+      consumed: 0,
+      net: 0,
+    };
+  });
+
   deeds.forEach((deed) => {
     const plotData: PlotPlannerData = {
       regionNumber: deed.region_number,
@@ -379,6 +396,10 @@ function calculateSummary(
       totem: deed.totemTier || "none",
     };
 
+    //Skip CASTLE and KEEPS
+    if (deed.worksiteType === "CASTLE" || deed.worksiteType === "KEEP") {
+      return;
+    }
     const { totalBasePP: basePP, totalBoostedPP: boostedPP } =
       calcTotalPP(plotData);
     totalBasePP += basePP;
@@ -390,34 +411,37 @@ function calculateSummary(
       plotData,
       prices,
       spsRatio,
-      null,
-      null
+      null, // extra regionTax
+      null // extra captureRate
     );
 
     totalNetDEC += productionInfo.netDEC;
 
     const resource = productionInfo.resource;
-    if (!perResource[resource]) {
-      perResource[resource] = {
-        pp: 0,
-        produced: 0,
-        consumed: 0,
-        net: 0,
-      };
+    // Add PP to the producing resource
+    if (perResource[resource]) {
+      perResource[resource].pp += boostedPP;
     }
 
-    perResource[resource].pp += boostedPP;
-    perResource[resource].produced += productionInfo.produce.reduce(
-      (sum, p) => sum + p.amount,
-      0
-    );
-    perResource[resource].consumed += productionInfo.consume.reduce(
-      (sum, c) => sum + c.amount,
-      0
-    );
-    perResource[resource].net +=
-      productionInfo.produce.reduce((sum, p) => sum + p.amount, 0) -
-      productionInfo.consume.reduce((sum, c) => sum + c.amount, 0);
+    // Track consumed resources - each consume adds to that resource's consumed total
+    productionInfo.consume?.forEach((c) => {
+      if (c?.resource && perResource[c.resource]) {
+        perResource[c.resource].consumed += c.amount ?? 0;
+      }
+    });
+
+    // Track produced resources - each produce adds to that resource's produced total
+    productionInfo.produce?.forEach((p) => {
+      if (p?.resource && perResource[p.resource]) {
+        perResource[p.resource].produced += p.amount ?? 0;
+      }
+    });
+  });
+
+  // Calculate net for each resource
+  PRODUCING_RESOURCES.forEach((res) => {
+    perResource[res].net =
+      perResource[res].produced - perResource[res].consumed;
   });
 
   return {
