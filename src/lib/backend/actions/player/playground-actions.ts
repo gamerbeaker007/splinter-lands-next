@@ -79,7 +79,7 @@ export async function getPlaygroundData(
   const filteredCardCollection = filterCardCollection(
     cardCollection,
     cardDetails,
-    player,
+    player
   );
 
   filteredCardCollection.forEach((card) => {

@@ -7,18 +7,29 @@ import { CardSetNameLandValid, landCardSet } from "@/types/editions";
 import {
   CardElement,
   cardElementOptions,
+  CardFoil,
+  cardFoilOptions,
   cardIconMap,
   CardRarity,
   cardRarityOptions,
   cardSetIconMap,
 } from "@/types/planner";
 import { PlaygroundCard } from "@/types/playground";
-import { Box, Button, Paper, TextField, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from "@mui/material";
 import { useMemo } from "react";
+import { TbCardsFilled } from "react-icons/tb";
 
 type PlaygroundCardFilterProps = {
   cards: PlaygroundCard[];
   filteresCardCount?: number;
+  assingesCardCount?: number;
   filterOptions: CardFilterOptions;
   onFilterChange: (newFilters: CardFilterOptions) => void;
 };
@@ -26,6 +37,7 @@ type PlaygroundCardFilterProps = {
 export default function PlaygroundCardFilter({
   cards,
   filteresCardCount,
+  assingesCardCount,
   filterOptions,
   onFilterChange,
 }: PlaygroundCardFilterProps) {
@@ -58,8 +70,80 @@ export default function PlaygroundCardFilter({
     onFilterChange({ ...filterOptions, elements: updated });
   };
 
+  const handleFoilToggle = (foil: CardFoil) => {
+    const updated = filterOptions.foils.includes(foil)
+      ? filterOptions.foils.filter((f) => f !== foil)
+      : [...filterOptions.foils, foil];
+    onFilterChange({ ...filterOptions, foils: updated });
+  };
+
   const handleMinPPChange = (value: number) => {
     onFilterChange({ ...filterOptions, minPP: Math.max(0, value) });
+  };
+
+  const renderFoilIcon = (foil: CardFoil, size = 35) => {
+    const foilStyle: Record<
+      CardFoil,
+      { iconColor: string; badgeText?: string; badgeColor?: string }
+    > = {
+      regular: { iconColor: "gray" },
+      gold: { iconColor: "gold" },
+      "gold arcane": {
+        iconColor: "gold",
+        badgeText: "GV",
+        badgeColor: "black",
+      },
+      black: { iconColor: "black" },
+      "black arcane": {
+        iconColor: "black",
+        badgeText: "BV",
+        badgeColor: "white",
+      },
+    };
+
+    const { iconColor, badgeText, badgeColor } =
+      foilStyle[foil] ?? foilStyle.regular;
+    const badgeFont = Math.max(10, Math.floor(size * 0.6));
+
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: size,
+          height: size,
+          display: "inline-block",
+          lineHeight: 0,
+        }}
+      >
+        <TbCardsFilled
+          size={size}
+          color={iconColor}
+          style={{ display: "block" }}
+        />
+        {badgeText && (
+          <Typography
+            component="span"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "grid",
+              placeItems: "center",
+              fontSize: badgeFont,
+              fontWeight: 900,
+              color: badgeColor,
+              letterSpacing: 0.5,
+              userSelect: "none",
+              textShadow:
+                badgeColor === "black"
+                  ? "0 0 2px rgba(255,255,255,0.9)"
+                  : "0 0 2px rgba(0,0,0,0.8)",
+            }}
+          >
+            {badgeText}
+          </Typography>
+        )}
+      </Box>
+    );
   };
 
   const getElementIcon = (element: string) => {
@@ -69,13 +153,29 @@ export default function PlaygroundCardFilter({
     );
   };
 
+  const runiCount = cards.filter((card) => card.cardDetailId === 505).length;
+
   const fontSizeSmall = "0.8rem";
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Card Filters ({filteresCardCount} of {cards.length})
+        Card Filters
       </Typography>
+      <Stack>
+        <Typography variant="caption" gutterBottom>
+          Total Worker Cards: {cards.length}
+        </Typography>
+        <Typography variant="caption" gutterBottom>
+          Runi(s): {runiCount}
+        </Typography>
+        <Typography variant="caption" gutterBottom>
+          Assigned Cards: {assingesCardCount}
+        </Typography>
+        <Typography variant="caption" gutterBottom>
+          Filtered Cards: {filteresCardCount}
+        </Typography>
+      </Stack>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* Boolean Filters */}
@@ -224,6 +324,36 @@ export default function PlaygroundCardFilter({
                 image={cardSetIconMap[set]}
                 onChange={() => handleSetToggle(set)}
               />
+            ))}
+          </Box>
+        </Box>
+
+        {/* Foil Filter */}
+        <Box>
+          <Typography variant="body2" gutterBottom>
+            Foil:
+          </Typography>
+          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+            {cardFoilOptions.map((foil) => (
+              <Box
+                key={foil}
+                onClick={() => handleFoilToggle(foil)}
+                sx={{
+                  border: "3px solid",
+                  borderColor: filterOptions.foils.includes(foil)
+                    ? "secondary.main"
+                    : "grey.400",
+                  borderRadius: 1,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  display: "inline-block",
+                  padding: "2px",
+                  margin: "5px",
+                }}
+                title={foil}
+              >
+                {renderFoilIcon(foil)}
+              </Box>
             ))}
           </Box>
         </Box>

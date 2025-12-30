@@ -1,5 +1,5 @@
 import { CardSetNameLandValid } from "./editions";
-import { CardElement, CardRarity } from "./planner";
+import { CardElement, CardFoil, CardRarity } from "./planner";
 
 export type CardFilterOptions = {
   onWagon?: boolean;
@@ -7,5 +7,6 @@ export type CardFilterOptions = {
   rarities: CardRarity[];
   sets: CardSetNameLandValid[];
   elements: CardElement[];
+  foils: CardFoil[];
   minPP: number;
 };

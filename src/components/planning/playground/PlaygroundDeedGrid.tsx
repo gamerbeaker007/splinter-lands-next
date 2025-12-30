@@ -48,6 +48,10 @@ export default function PlaygroundDeedGrid({
     regions: [],
     tracts: [],
     plots: [],
+    rarities: [],
+    statuses: [],
+    terrains: [],
+    worksites: [],
   });
   const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
     {
@@ -56,6 +60,7 @@ export default function PlaygroundDeedGrid({
       rarities: [],
       sets: [],
       elements: [],
+      foils: [],
       minPP: 0,
     }
   );
@@ -91,6 +96,30 @@ export default function PlaygroundDeedGrid({
       if (
         filterOptions.plots.length > 0 &&
         !filterOptions.plots.includes(deed.plot_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.rarities.length > 0 &&
+        !filterOptions.rarities.includes(deed.rarity)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.statuses.length > 0 &&
+        !filterOptions.statuses.includes(deed.plotStatus)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.terrains.length > 0 &&
+        !filterOptions.terrains.includes(deed.deedType)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.worksites.length > 0 &&
+        !filterOptions.worksites.includes(deed.worksiteType)
       ) {
         return false;
       }
@@ -216,6 +245,12 @@ export default function PlaygroundDeedGrid({
       );
     }
 
+    if (cardFilterOptions.foils.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.foils.includes(card.foil)
+      );
+    }
+
     if (cardFilterOptions.minPP > 0) {
       filtered = filtered.filter(
         (card) => card.landBasePP >= cardFilterOptions.minPP
@@ -275,7 +310,8 @@ export default function PlaygroundDeedGrid({
         />
         <PlaygroundCardFilter
           cards={cards}
-          filteresCardCount={availableCards.length + assignedCardCount}
+          filteresCardCount={availableCards.length}
+          assingesCardCount={assignedCardCount}
           filterOptions={cardFilterOptions}
           onFilterChange={setCardFilterOptions}
         />

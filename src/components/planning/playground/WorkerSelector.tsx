@@ -1,10 +1,15 @@
 "use client";
 
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { cardIconMap, cardSetIconMap } from "@/types/planner/primitives";
+import {
+  CardFoil,
+  cardIconMap,
+  cardSetIconMap,
+} from "@/types/planner/primitives";
 import { PlaygroundCard } from "@/types/playground";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
+import { TbCardsFilled } from "react-icons/tb";
 import { COLUMN_WIDTHS } from "./gridConstants";
 
 type Props = {
@@ -33,6 +38,71 @@ export default function WorkerSelector({
     return land_default_element_icon_url_placeholder.replace(
       "__NAME__",
       card.element.toLowerCase()
+    );
+  };
+
+  const renderFoilIcon = (foil: CardFoil, size = 14) => {
+    const foilStyle: Record<
+      CardFoil,
+      { iconColor: string; badgeText?: string; badgeColor?: string }
+    > = {
+      regular: { iconColor: "gray" },
+      gold: { iconColor: "gold" },
+      "gold arcane": {
+        iconColor: "gold",
+        badgeText: "GV",
+        badgeColor: "black",
+      },
+      black: { iconColor: "black" },
+      "black arcane": {
+        iconColor: "black",
+        badgeText: "BV",
+        badgeColor: "white",
+      },
+    };
+
+    const { iconColor, badgeText, badgeColor } =
+      foilStyle[foil] ?? foilStyle.regular;
+    const badgeFont = Math.max(6, Math.floor(size * 0.5));
+
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: size,
+          height: size,
+          display: "inline-block",
+          lineHeight: 0,
+        }}
+      >
+        <TbCardsFilled
+          size={size}
+          color={iconColor}
+          style={{ display: "block" }}
+        />
+        {badgeText && (
+          <Typography
+            component="span"
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "grid",
+              placeItems: "center",
+              fontSize: badgeFont,
+              fontWeight: 900,
+              color: badgeColor,
+              letterSpacing: 0.3,
+              userSelect: "none",
+              textShadow:
+                badgeColor === "black"
+                  ? "0 0 1px rgba(255,255,255,0.9)"
+                  : "0 0 1px rgba(0,0,0,0.8)",
+            }}
+          >
+            {badgeText}
+          </Typography>
+        )}
+      </Box>
     );
   };
 
@@ -107,6 +177,7 @@ export default function WorkerSelector({
                   }}
                 />
               </Box>
+              {renderFoilIcon(card.foil, 20)}
               <Typography variant="caption" noWrap sx={{ maxWidth: 100 }}>
                 {card.name}
               </Typography>
@@ -177,6 +248,8 @@ export default function WorkerSelector({
                     }}
                   />
                 </Box>
+                {/* Foil Icon */}
+                {renderFoilIcon(card.foil, 20)}
                 {/* Name and PP */}
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" display="block">

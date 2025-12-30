@@ -89,4 +89,8 @@ export type DeedFilterOptions = {
   regions: number[];
   tracts: number[];
   plots: number[];
+  rarities: PlotRarity[];
+  statuses: PlotStatus[];
+  terrains: DeedType[];
+  worksites: WorksiteType[];
 };
