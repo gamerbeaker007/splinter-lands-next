@@ -1,6 +1,10 @@
 import {
   cinder_icon_url,
+  death_element_icon_url,
   dec_icon_url,
+  dragon_element_icon_url,
+  earth_element_icon_url,
+  fire_element_icon_url,
   land_aura_lab_icon_url,
   land_castle_icon_url,
   land_common_totem_icon_url,
@@ -22,6 +26,8 @@ import {
   land_title_legendary_icon_url,
   land_title_rare_icon_url,
   land_under_construction_icon_url,
+  life_element_icon_url,
+  neutral_element_icon_url,
   resource_auction_mark_icon_url,
   resource_aura_icon_url,
   resource_capacity_flux_icon_url,
@@ -41,8 +47,9 @@ import {
   resource_wagon_kit_icon_url,
   resource_wood_icon_url,
   sps_icon_url,
+  water_element_icon_url,
 } from "@/lib/shared/statics_icon_urls";
-import { RuniTier, TitleTier, TotemTier } from "@/types/planner";
+import { CardElement, RuniTier, TitleTier, TotemTier } from "@/types/planner";
 
 export const NATURAL_RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON"];
 export const PRODUCING_RESOURCES = [
@@ -176,4 +183,14 @@ export const runiIconMap: Record<RuniTier, string> = {
   none: land_runi_power_core_icon_url,
   regular: land_runi_regular_icon_url,
   gold: land_runi_gold_icon_url,
+};
+
+export const cardElementIconMap: Record<CardElement, string> = {
+  fire: fire_element_icon_url,
+  water: water_element_icon_url,
+  death: death_element_icon_url,
+  life: life_element_icon_url,
+  earth: earth_element_icon_url,
+  dragon: dragon_element_icon_url,
+  neutral: neutral_element_icon_url,
 };

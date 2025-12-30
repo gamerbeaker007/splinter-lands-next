@@ -7,6 +7,7 @@ import {
   calcTotalPP,
 } from "@/lib/frontend/utils/plannerCalcs";
 import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import { CardFilterOptions } from "@/types/cardFilter";
 import { PlotPlannerData, SlotInput } from "@/types/planner";
 import {
   DeedChange,
@@ -22,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
 import ExportButtons from "./ExportButtons";
+import PlaygroundCardFilter from "./PlaygroundCardFilter";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
 
@@ -47,6 +49,16 @@ export default function PlaygroundDeedGrid({
     tracts: [],
     plots: [],
   });
+  const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
+    {
+      onWagon: undefined,
+      inSet: undefined,
+      rarities: [],
+      sets: [],
+      elements: [],
+      minPP: 0,
+    }
+  );
   const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
 
@@ -165,8 +177,48 @@ export default function PlaygroundDeedGrid({
       workers.forEach((uid) => assignedCardIds.add(uid));
     });
 
-    return cards.filter((card) => !assignedCardIds.has(card.uid));
-  }, [cards, deeds, changes]);
+    // Filter out assigned cards
+    let filtered = cards.filter((card) => !assignedCardIds.has(card.uid));
+
+    // Apply card filters
+    if (cardFilterOptions.onWagon !== undefined) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.onWagon ? card.onWagon : !card.onWagon
+      );
+    }
+
+    if (cardFilterOptions.inSet !== undefined) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.inSet ? card.inSet : !card.inSet
+      );
+    }
+
+    if (cardFilterOptions.rarities.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.rarities.includes(card.rarity)
+      );
+    }
+
+    if (cardFilterOptions.sets.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.sets.includes(card.set)
+      );
+    }
+
+    if (cardFilterOptions.elements.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.elements.includes(card.element)
+      );
+    }
+
+    if (cardFilterOptions.minPP > 0) {
+      filtered = filtered.filter(
+        (card) => card.land_base_pp >= cardFilterOptions.minPP
+      );
+    }
+
+    return filtered;
+  }, [cards, deeds, changes, cardFilterOptions]);
 
   const totalPages = Math.ceil(filteredDeeds.length / ITEMS_PER_PAGE);
 
@@ -206,12 +258,17 @@ export default function PlaygroundDeedGrid({
         changesCount={changes.length}
       />
 
-      {/* Filter */}
+      {/* Filters */}
       <Box width={"100%"}>
         <PlaygroundFilter
           deeds={deeds}
           filterOptions={filterOptions}
           onFilterChange={setFilterOptions}
+        />
+        <PlaygroundCardFilter
+          cards={cards}
+          filterOptions={cardFilterOptions}
+          onFilterChange={setCardFilterOptions}
         />
       </Box>
 
@@ -310,16 +367,13 @@ function applyChangesToDeeds(
       worker5: "worker5Uid",
     };
 
-    const updates = deedChanges.reduce(
-      (acc, change) => {
-        const deedField = fieldMap[change.field];
-        if (deedField) {
-          acc[deedField] = change.newValue as never;
-        }
-        return acc;
-      },
-      {} as Partial<PlaygroundDeed>
-    );
+    const updates = deedChanges.reduce((acc, change) => {
+      const deedField = fieldMap[change.field];
+      if (deedField) {
+        acc[deedField] = change.newValue as never;
+      }
+      return acc;
+    }, {} as Partial<PlaygroundDeed>);
 
     return { ...deed, ...updates };
   });
@@ -450,7 +504,7 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     "Title",
     "Totem",
   ];
-  
+
   const rows = deeds.map((deed) => [
     deed.deed_uid,
     deed.region_number,

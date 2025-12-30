@@ -56,6 +56,8 @@ export type PlaygroundCard = {
   foil: CardFoil;
   level: number;
   landBoost: LandBoost | null;
+  inSet: boolean;
+  onWagon: boolean;
 };
 
 export type PlaygroundData = {

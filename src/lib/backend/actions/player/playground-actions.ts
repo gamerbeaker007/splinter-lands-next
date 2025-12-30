@@ -208,6 +208,8 @@ export async function getPlaygroundData(
         foil: foil,
         level: card.level,
         landBoost,
+        inSet: card.set_id !== null,
+        onWagon: card.wagon_uid !== null,
       };
     })
     .sort((a, b) => b.land_base_pp - a.land_base_pp); // Highest PP first
