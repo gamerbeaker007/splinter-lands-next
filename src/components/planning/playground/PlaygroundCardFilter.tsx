@@ -1,7 +1,7 @@
 "use client";
 
 import FilterIcon from "@/components/filter/FilterIcon";
-import { cardElementIconMap } from "@/lib/shared/statics";
+import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { CardSetNameLandValid, landCardSet } from "@/types/editions";
 import {
@@ -18,19 +18,21 @@ import { useMemo } from "react";
 
 type PlaygroundCardFilterProps = {
   cards: PlaygroundCard[];
+  filteresCardCount?: number;
   filterOptions: CardFilterOptions;
   onFilterChange: (newFilters: CardFilterOptions) => void;
 };
 
 export default function PlaygroundCardFilter({
   cards,
+  filteresCardCount,
   filterOptions,
   onFilterChange,
 }: PlaygroundCardFilterProps) {
   const availableStats = useMemo(() => {
     const onWagonCount = cards.filter((c) => c.onWagon).length;
     const inSetCount = cards.filter((c) => c.inSet).length;
-    const maxPP = Math.max(...cards.map((c) => c.land_base_pp), 0);
+    const maxPP = Math.max(...cards.map((c) => c.landBasePP), 0);
 
     return { onWagonCount, inSetCount, maxPP };
   }, [cards]);
@@ -60,12 +62,19 @@ export default function PlaygroundCardFilter({
     onFilterChange({ ...filterOptions, minPP: Math.max(0, value) });
   };
 
+  const getElementIcon = (element: string) => {
+    return land_default_element_icon_url_placeholder.replace(
+      "__NAME__",
+      element.toLowerCase()
+    );
+  };
+
   const fontSizeSmall = "0.8rem";
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" gutterBottom>
-        Card Filters ({cards.length})
+        Card Filters ({filteresCardCount} of {cards.length})
       </Typography>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
@@ -230,7 +239,7 @@ export default function PlaygroundCardFilter({
                 key={element}
                 name={element}
                 isActive={filterOptions.elements.includes(element)}
-                image={cardElementIconMap[element]}
+                image={getElementIcon(element)}
                 onChange={() => handleElementToggle(element)}
               />
             ))}

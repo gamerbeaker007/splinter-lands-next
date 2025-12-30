@@ -2,6 +2,7 @@
 
 import TaxSimulationWarning from "@/components/planning/output/TaxSimulationWarning";
 import { Resource, RESOURCES } from "@/constants/resource/resource";
+import { formatNumberWithSuffix } from "@/lib/formatters";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography } from "@mui/material";
@@ -12,9 +13,6 @@ type ResultProps = { items: ProductionInfo[] };
 
 const makeZeroMap = (): Record<Resource, number> =>
   Object.fromEntries(RESOURCES.map((r) => [r, 0])) as Record<Resource, number>;
-
-const fmt = (n: number) =>
-  new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
 export function SimulationResult({ items }: ResultProps) {
   const consumed: Record<Resource, number> = makeZeroMap();
@@ -144,7 +142,7 @@ export function SimulationResult({ items }: ResultProps) {
                       : { textAlign: "left" }
                   }
                 >
-                  {fmt(value)}
+                  {formatNumberWithSuffix(value)}
                 </Box>
               );
             })}
@@ -156,7 +154,7 @@ export function SimulationResult({ items }: ResultProps) {
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           Total Net DEC:&nbsp;
           <Box component="span" sx={{ color: netColor(totalNetDEC) }}>
-            {fmt(totalNetDEC)}
+            {formatNumberWithSuffix(totalNetDEC)}
           </Box>
         </Typography>
         <Image

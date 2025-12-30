@@ -184,13 +184,3 @@ export const runiIconMap: Record<RuniTier, string> = {
   regular: land_runi_regular_icon_url,
   gold: land_runi_gold_icon_url,
 };
-
-export const cardElementIconMap: Record<CardElement, string> = {
-  fire: fire_element_icon_url,
-  water: water_element_icon_url,
-  death: death_element_icon_url,
-  life: life_element_icon_url,
-  earth: earth_element_icon_url,
-  dragon: dragon_element_icon_url,
-  neutral: neutral_element_icon_url,
-};

@@ -2,7 +2,7 @@
 export const COLUMN_WIDTHS = {
   MEDIUM: "120px",
   SMALL: "50px",
-  LARGE: "240px",
+  LARGE: "280px",
   EXTRA_LARGE: "350px",
   MEDIUM_PLUS: "80px",
   LARGE_MINUS: "100px",

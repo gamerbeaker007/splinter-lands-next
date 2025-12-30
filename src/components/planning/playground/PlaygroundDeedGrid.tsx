@@ -123,7 +123,7 @@ export default function PlaygroundDeedGrid({
   }, [filteredDeeds, currentPage]);
 
   // Get available cards (not currently assigned to any deed)
-  const availableCards = useMemo(() => {
+  const { availableCards, assignedCardCount } = useMemo(() => {
     const deedWorkers = new Map<string, Set<string>>();
 
     // Initialize with persisted deed assignments from ALL deeds
@@ -180,6 +180,9 @@ export default function PlaygroundDeedGrid({
     // Filter out assigned cards
     let filtered = cards.filter((card) => !assignedCardIds.has(card.uid));
 
+    //Filter out Runi (no workers)
+    filtered = filtered.filter((card) => card.cardDetailId !== 505);
+
     // Apply card filters
     if (cardFilterOptions.onWagon !== undefined) {
       filtered = filtered.filter((card) =>
@@ -200,9 +203,11 @@ export default function PlaygroundDeedGrid({
     }
 
     if (cardFilterOptions.sets.length > 0) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.sets.includes(card.set)
-      );
+      filtered = filtered.filter((card) => {
+        if (card.name.startsWith("Venari"))
+          console.log("VENARI FOUND:" + card.set);
+        return cardFilterOptions.sets.includes(card.set);
+      });
     }
 
     if (cardFilterOptions.elements.length > 0) {
@@ -213,11 +218,14 @@ export default function PlaygroundDeedGrid({
 
     if (cardFilterOptions.minPP > 0) {
       filtered = filtered.filter(
-        (card) => card.land_base_pp >= cardFilterOptions.minPP
+        (card) => card.landBasePP >= cardFilterOptions.minPP
       );
     }
 
-    return filtered;
+    return {
+      availableCards: filtered,
+      assignedCardCount: assignedCardIds.size,
+    };
   }, [cards, deeds, changes, cardFilterOptions]);
 
   const totalPages = Math.ceil(filteredDeeds.length / ITEMS_PER_PAGE);
@@ -259,7 +267,7 @@ export default function PlaygroundDeedGrid({
       />
 
       {/* Filters */}
-      <Box width={"100%"}>
+      <Box width={"100%"} display={"flex"} flexDirection={"row"} gap={2} mb={2}>
         <PlaygroundFilter
           deeds={deeds}
           filterOptions={filterOptions}
@@ -267,6 +275,7 @@ export default function PlaygroundDeedGrid({
         />
         <PlaygroundCardFilter
           cards={cards}
+          filteresCardCount={availableCards.length + assignedCardCount}
           filterOptions={cardFilterOptions}
           onFilterChange={setCardFilterOptions}
         />

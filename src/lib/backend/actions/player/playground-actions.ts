@@ -12,11 +12,7 @@ import {
   determineCardInfo,
   determineLandBoosts,
 } from "@/lib/utils/cardUtil";
-import {
-  CardSetName,
-  CardSetNameLandValid,
-  editionMap,
-} from "@/types/editions";
+import { CardSetName, CardSetNameLandValid } from "@/types/editions";
 import {
   CardBloodline,
   CardElement,
@@ -42,6 +38,7 @@ import {
   PlaygroundData,
   PlaygroundDeed,
 } from "@/types/playground";
+import { filterCardCollection } from "../../helpers/filterPlayerCards";
 
 /**
  * Fetch optimized player data for the playground
@@ -78,7 +75,14 @@ export async function getPlaygroundData(
   const now = new Date();
   const stakedCardsByDeed = new Map<string, string[]>();
 
-  cardCollection.forEach((card) => {
+  //First filter out all non land cards from the collection
+  const filteredCardCollection = filterCardCollection(
+    cardCollection,
+    cardDetails,
+    player,
+  );
+
+  filteredCardCollection.forEach((card) => {
     if (card.stake_ref_uid && card.card_detail_id !== 505) {
       //Exclude Runi cards
       const isStaked =
@@ -126,7 +130,7 @@ export async function getPlaygroundData(
     const createSlotInput = (uid: string | null): SlotInput | null => {
       if (!uid) return null;
 
-      const card = cardCollection.find((c) => c.uid === uid);
+      const card = filteredCardCollection.find((c) => c.uid === uid);
       if (!card) return null;
 
       const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
@@ -179,7 +183,7 @@ export async function getPlaygroundData(
   });
 
   // Map and sort cards by land_base_pp
-  const cards: PlaygroundCard[] = cardCollection
+  const cards: PlaygroundCard[] = filteredCardCollection
     .map((card) => {
       const { name, rarity } = determineCardInfo(
         card.card_detail_id,
@@ -190,11 +194,13 @@ export async function getPlaygroundData(
       const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
       const foil = cardFoilOptions[card.foil] || "regular";
       const landBoost = determineLandBoosts(rarity, foil, card.bcx, splCard);
+
       return {
         uid: card.uid,
-        card_detail_id: card.card_detail_id,
+        cardDetailId: card.card_detail_id,
         name: name,
-        set: editionMap[card.edition].setName as CardSetName,
+        edition: card.edition,
+        set: card.card_set as CardSetName,
         rarity: rarity.toLowerCase() as CardRarity,
         element: cardElementColorMap[
           splCard?.color?.toLowerCase() ?? "red"
@@ -202,9 +208,10 @@ export async function getPlaygroundData(
         subElement: cardElementColorMap[
           splCard?.secondary_color?.toLowerCase() ?? "red"
         ] as CardElement,
-        land_base_pp: basePP,
-        last_used_date: card.last_used_date || null,
+        landBasePP: basePP,
+        lastUsedDate: card.last_used_date || null,
         bcx: card.bcx,
+        bcxUnbound: card.bcx_unbound,
         foil: foil,
         level: card.level,
         landBoost,
@@ -212,7 +219,7 @@ export async function getPlaygroundData(
         onWagon: card.wagon_uid !== null,
       };
     })
-    .sort((a, b) => b.land_base_pp - a.land_base_pp); // Highest PP first
+    .sort((a, b) => b.landBasePP - a.landBasePP); // Highest PP first
 
   // Calculate total boosted PP
   const totalBoostedPP = deeds.reduce((sum, deed) => {

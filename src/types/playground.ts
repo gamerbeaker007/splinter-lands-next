@@ -44,15 +44,17 @@ export type PlaygroundDeed = {
 
 export type PlaygroundCard = {
   uid: string;
-  card_detail_id: number;
+  cardDetailId: number;
   name: string;
+  edition: number;
   set: CardSetName;
   rarity: CardRarity;
   element: CardElement;
   subElement: CardElement;
-  land_base_pp: number;
-  last_used_date: string | null;
+  landBasePP: number;
+  lastUsedDate: string | null;
   bcx: number;
+  bcxUnbound: number;
   foil: CardFoil;
   level: number;
   landBoost: LandBoost | null;

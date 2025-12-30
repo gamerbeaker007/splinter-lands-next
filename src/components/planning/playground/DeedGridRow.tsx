@@ -120,7 +120,7 @@ export default function DeedGridRow({
     const card = allCards.find((c) => c.uid === cardUid);
     if (!card) return null;
 
-    const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+    const splCard = cardDetails.find((cd) => cd.id === card.cardDetailId);
     return {
       id: 0,
       set: card.set,
@@ -227,7 +227,6 @@ export default function DeedGridRow({
           workerUid={selectedWorkers[slotIndex]}
           availableCards={availableCards}
           allCards={allCards}
-          cardDetails={cardDetails}
           selectedWorkerUids={selectedWorkers}
           onChange={handleWorkerChange}
         />
