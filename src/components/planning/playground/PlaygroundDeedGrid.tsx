@@ -52,15 +52,9 @@ export default function PlaygroundDeedGrid({
 
   // Fetch SPS ratio on mount
   useEffect(() => {
-    const fetchSpsRatio = async () => {
-      try {
-        const ratio = await getDailySPSRatio();
-        setSpsRatio(ratio);
-      } catch (err) {
-        console.error("Failed to fetch SPS ratio:", err);
-      }
-    };
-    fetchSpsRatio();
+    getDailySPSRatio()
+      .then(setSpsRatio)
+      .catch((err) => console.error("Failed to fetch SPS ratio:", err));
   }, []);
 
   const handleDeedChange = (change: DeedChange) => {
@@ -69,27 +63,27 @@ export default function PlaygroundDeedGrid({
 
   // Apply filters
   const filteredDeeds = useMemo(() => {
-    let filtered = deeds;
-
-    if (filterOptions.regions.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.regions.includes(d.region_number)
-      );
-    }
-
-    if (filterOptions.tracts.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.tracts.includes(d.tract_number)
-      );
-    }
-
-    if (filterOptions.plots.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.plots.includes(d.plot_number)
-      );
-    }
-
-    return filtered;
+    return deeds.filter((deed) => {
+      if (
+        filterOptions.regions.length > 0 &&
+        !filterOptions.regions.includes(deed.region_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.tracts.length > 0 &&
+        !filterOptions.tracts.includes(deed.tract_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.plots.length > 0 &&
+        !filterOptions.plots.includes(deed.plot_number)
+      ) {
+        return false;
+      }
+      return true;
+    });
   }, [deeds, filterOptions]);
 
   // Create updated deeds with changes applied
@@ -304,45 +298,30 @@ function applyChangesToDeeds(
     const deedChanges = changesMap.get(deed.deed_uid);
     if (!deedChanges) return deed;
 
-    let worksite = deed.worksiteType;
-    let runi = deed.runi;
-    let title = deed.titleTier;
-    let totem = deed.totemTier;
-    let worker1 = deed.worker1Uid;
-    let worker2 = deed.worker2Uid;
-    let worker3 = deed.worker3Uid;
-    let worker4 = deed.worker4Uid;
-    let worker5 = deed.worker5Uid;
-
-    deedChanges.forEach((change) => {
-      if (change.field === "worksite") worksite = change.newValue as string;
-      if (change.field === "runi") runi = change.newValue as string;
-      if (change.field === "title") title = change.newValue as string;
-      if (change.field === "totem") totem = change.newValue as string;
-      if (change.field === "worker1")
-        worker1 = change.newValue as SlotInput | null;
-      if (change.field === "worker2")
-        worker2 = change.newValue as SlotInput | null;
-      if (change.field === "worker3")
-        worker3 = change.newValue as SlotInput | null;
-      if (change.field === "worker4")
-        worker4 = change.newValue as SlotInput | null;
-      if (change.field === "worker5")
-        worker5 = change.newValue as SlotInput | null;
-    });
-
-    return {
-      ...deed,
-      worksiteType: worksite,
-      runi,
-      titleTier: title,
-      totemTier: totem,
-      worker1Uid: worker1,
-      worker2Uid: worker2,
-      worker3Uid: worker3,
-      worker4Uid: worker4,
-      worker5Uid: worker5,
+    const fieldMap: Record<string, keyof PlaygroundDeed> = {
+      worksite: "worksiteType",
+      runi: "runi",
+      title: "titleTier",
+      totem: "totemTier",
+      worker1: "worker1Uid",
+      worker2: "worker2Uid",
+      worker3: "worker3Uid",
+      worker4: "worker4Uid",
+      worker5: "worker5Uid",
     };
+
+    const updates = deedChanges.reduce(
+      (acc, change) => {
+        const deedField = fieldMap[change.field];
+        if (deedField) {
+          acc[deedField] = change.newValue as never;
+        }
+        return acc;
+      },
+      {} as Partial<PlaygroundDeed>
+    );
+
+    return { ...deed, ...updates };
   });
 }
 
@@ -471,6 +450,7 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     "Title",
     "Totem",
   ];
+  
   const rows = deeds.map((deed) => [
     deed.deed_uid,
     deed.region_number,
@@ -485,7 +465,7 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     deed.totemTier || "",
   ]);
 
-  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+  return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }
 
 function generateChangesCSV(changes: DeedChange[]): string {
