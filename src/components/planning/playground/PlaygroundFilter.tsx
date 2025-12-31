@@ -19,7 +19,15 @@ import {
   worksiteTypeOptions,
 } from "@/types/planner";
 import { DeedFilterOptions, PlaygroundDeed } from "@/types/playground";
-import { Box, Checkbox, Paper, TextField, Typography } from "@mui/material";
+import InfoIcon from "@mui/icons-material/Info";
+import {
+  Box,
+  Checkbox,
+  Paper,
+  TextField,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useMemo } from "react";
 
 type PlaygroundFilterProps = {
@@ -114,9 +122,12 @@ export default function PlaygroundFilter({
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Filters
-      </Typography>
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+        <Typography variant="h6">Deed Filters</Typography>
+        <Tooltip title="Filters apply to initially loaded deeds only">
+          <InfoIcon fontSize="small" color="action" />
+        </Tooltip>
+      </Box>
       <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         {/* Location Filters */}
         <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
