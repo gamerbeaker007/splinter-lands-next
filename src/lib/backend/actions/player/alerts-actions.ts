@@ -139,6 +139,7 @@ function analyzeMissingBloodLineBoost(
   splCardDetails: SplCardDetails[]
 ): DeedInfo[] {
   const now = new Date();
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
   const alertedDeedUids = new Set<string>();
 
   // Helper to extract bloodline from card
@@ -157,7 +158,7 @@ function analyzeMissingBloodLineBoost(
     // Include all staked cards, regardless of card_set
     const isStaked =
       card.stake_ref_uid !== null &&
-      (!card.stake_end_date || new Date(card.stake_end_date) > now) &&
+      (!card.stake_end_date || new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs) &&
       (!card.delegated_to || card.delegated_to === player);
 
     if (!isStaked) continue;
@@ -173,7 +174,7 @@ function analyzeMissingBloodLineBoost(
   for (const card of cards) {
     const isStakedOnLand =
       card.stake_ref_uid !== null &&
-      (!card.stake_end_date || new Date(card.stake_end_date) > now);
+      (!card.stake_end_date || new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs);
     const isLandSet = card.card_set === "land";
     const isStakedToPlayer = !card.delegated_to || card.delegated_to === player;
 

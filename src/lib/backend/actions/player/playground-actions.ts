@@ -73,6 +73,7 @@ export async function getPlaygroundData(
   // Group staked cards by deed_uid from card collection
   // Cards are staked if stake_end_date is null/undefined or in the future
   const now = new Date();
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
   const stakedCardsByDeed = new Map<string, string[]>();
 
   //First filter out all non land cards from the collection
@@ -86,7 +87,8 @@ export async function getPlaygroundData(
     if (card.stake_ref_uid && card.card_detail_id !== 505) {
       //Exclude Runi cards
       const isStaked =
-        !card.stake_end_date || new Date(card.stake_end_date) > now;
+        !card.stake_end_date ||
+        new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs;
       if (isStaked) {
         const deedCards = stakedCardsByDeed.get(card.stake_ref_uid) || [];
         deedCards.push(card.uid);
