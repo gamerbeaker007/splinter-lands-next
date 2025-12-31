@@ -33,6 +33,15 @@ type Props = {
   onChange: (change: DeedChange) => void;
 };
 
+// Helper to extract worker UIDs from deed
+const getWorkerUids = (deed: PlaygroundDeed): (string | null)[] => [
+  deed.worker1Uid?.uid ?? null,
+  deed.worker2Uid?.uid ?? null,
+  deed.worker3Uid?.uid ?? null,
+  deed.worker4Uid?.uid ?? null,
+  deed.worker5Uid?.uid ?? null,
+];
+
 export default function DeedGridRow({
   deed,
   availableCards,
@@ -46,13 +55,9 @@ export default function DeedGridRow({
   const [selectedRuni, setSelectedRuni] = useState(deed.runi || "none");
   const [selectedTitle, setSelectedTitle] = useState(deed.titleTier);
   const [selectedTotem, setSelectedTotem] = useState(deed.totemTier);
-  const [selectedWorkers, setSelectedWorkers] = useState<(string | null)[]>([
-    deed.worker1Uid?.uid ?? null,
-    deed.worker2Uid?.uid ?? null,
-    deed.worker3Uid?.uid ?? null,
-    deed.worker4Uid?.uid ?? null,
-    deed.worker5Uid?.uid ?? null,
-  ]);
+  const [selectedWorkers, setSelectedWorkers] = useState<(string | null)[]>(
+    () => getWorkerUids(deed)
+  );
 
   const handleWorksiteChange = (newWorksite: string) => {
     setSelectedWorksite(newWorksite);
@@ -98,50 +103,41 @@ export default function DeedGridRow({
     });
   };
 
+  // Helper to create SlotInput from card UID
+  const createSlotInput = (cardUid: string | null): SlotInput | null => {
+    if (!cardUid) return null;
+
+    const originalWorkers = [
+      deed.worker1Uid,
+      deed.worker2Uid,
+      deed.worker3Uid,
+      deed.worker4Uid,
+      deed.worker5Uid,
+    ];
+    const originalSlot = originalWorkers.find((slot) => slot?.uid === cardUid);
+    if (originalSlot) return originalSlot;
+
+    const card = allCards.find((c) => c.uid === cardUid);
+    if (!card) return null;
+
+    const splCard = cardDetails.find((cd) => cd.id === card.cardDetailId);
+    return {
+      id: 0,
+      set: card.set,
+      rarity: card.rarity,
+      bcx: card.bcx,
+      foil: card.foil,
+      element: card.element,
+      bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
+      uid: card.uid,
+    };
+  };
+
   const handleWorkerChange = (slotIndex: number, cardUid: string) => {
     const oldWorkerUid = selectedWorkers[slotIndex];
-
     const newWorkers = [...selectedWorkers];
     newWorkers[slotIndex] = cardUid || null;
     setSelectedWorkers(newWorkers);
-
-    // Create SlotInput for the change
-    let newSlotInput: SlotInput | null = null;
-    if (cardUid) {
-      // Check if this is from original deed data
-      const originalWorkers = [
-        deed.worker1Uid,
-        deed.worker2Uid,
-        deed.worker3Uid,
-        deed.worker4Uid,
-        deed.worker5Uid,
-      ];
-      const originalSlot = originalWorkers.find(
-        (slot) => slot?.uid === cardUid
-      );
-
-      if (originalSlot) {
-        newSlotInput = originalSlot;
-      } else {
-        // Create new SlotInput from card data
-        const card = allCards.find((c) => c.uid === cardUid);
-        if (card) {
-          const splCard = cardDetails.find(
-            (cd) => cd.id === card.card_detail_id
-          );
-          newSlotInput = {
-            id: 0,
-            set: card.set,
-            rarity: card.rarity,
-            bcx: card.bcx,
-            foil: card.foil,
-            element: card.element,
-            bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
-            uid: card.uid,
-          };
-        }
-      }
-    }
 
     const workerField = `worker${slotIndex + 1}` as
       | "worker1"
@@ -149,51 +145,22 @@ export default function DeedGridRow({
       | "worker3"
       | "worker4"
       | "worker5";
+
     onChange({
       deed_uid: deed.deed_uid,
       field: workerField,
-      oldValue: oldWorkerUid,
-      newValue: newSlotInput,
+      oldValue: createSlotInput(oldWorkerUid),
+      newValue: createSlotInput(cardUid),
       timestamp: new Date(),
     });
   };
 
   // Create SlotInput array for selected workers
-  const selectedWorkerSlots = useMemo(() => {
-    return selectedWorkers.map((uid) => {
-      if (!uid) return null;
-
-      // Check if this is from original deed data
-      const originalWorkers = [
-        deed.worker1Uid,
-        deed.worker2Uid,
-        deed.worker3Uid,
-        deed.worker4Uid,
-        deed.worker5Uid,
-      ];
-
-      // Find in original slots first
-      const originalSlot = originalWorkers.find((slot) => slot?.uid === uid);
-      if (originalSlot) return originalSlot;
-
-      // Otherwise, create new SlotInput from card data
-      const card = allCards.find((c) => c.uid === uid);
-      if (!card) return null;
-
-      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
-
-      return {
-        id: 0,
-        set: card.set,
-        rarity: card.rarity,
-        bcx: card.bcx,
-        foil: card.foil,
-        element: card.element,
-        bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
-        uid: card.uid,
-      };
-    });
-  }, [selectedWorkers, deed, allCards, cardDetails]);
+  const selectedWorkerSlots = useMemo(
+    () => selectedWorkers.map(createSlotInput),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedWorkers, allCards, cardDetails]
+  );
 
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -260,7 +227,6 @@ export default function DeedGridRow({
           workerUid={selectedWorkers[slotIndex]}
           availableCards={availableCards}
           allCards={allCards}
-          cardDetails={cardDetails}
           selectedWorkerUids={selectedWorkers}
           onChange={handleWorkerChange}
         />

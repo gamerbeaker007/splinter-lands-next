@@ -1,9 +1,9 @@
 "use client";
 
+import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { cardElementColorMap, cardIconMap } from "@/types/planner/primitives";
+import { cardIconMap, cardSetIconMap } from "@/types/planner/primitives";
 import { PlaygroundCard } from "@/types/playground";
-import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
 import { COLUMN_WIDTHS } from "./gridConstants";
@@ -14,7 +14,6 @@ type Props = {
   workerUid: string | null;
   availableCards: PlaygroundCard[];
   allCards: PlaygroundCard[];
-  cardDetails: SplCardDetails[];
   selectedWorkerUids: (string | null)[];
   onChange: (slotIndex: number, cardUid: string) => void;
 };
@@ -25,7 +24,6 @@ export default function WorkerSelector({
   workerUid,
   availableCards,
   allCards,
-  cardDetails,
   selectedWorkerUids,
   onChange,
 }: Props) {
@@ -33,21 +31,10 @@ export default function WorkerSelector({
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
   const getElementIcon = (card: PlaygroundCard) => {
-    const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
-    const color = splCard?.color?.toLowerCase() ?? "red";
-    const element = cardElementColorMap[color] || "fire";
     return land_default_element_icon_url_placeholder.replace(
       "__NAME__",
-      element.toLowerCase()
+      card.element.toLowerCase()
     );
-  };
-
-  const getRarityIconForCard = (card: PlaygroundCard) => {
-    const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
-    const rarityIndex = (splCard?.rarity ?? 1) - 1;
-    const rarities = ["common", "rare", "epic", "legendary"];
-    const rarity = rarities[rarityIndex] || "common";
-    return cardIconMap[rarity as keyof typeof cardIconMap];
   };
 
   // Find current card in ALL cards (including staked)
@@ -89,7 +76,8 @@ export default function WorkerSelector({
 
           // Show same format as dropdown: element icon, rarity icon, name, PP
           const elementIcon = getElementIcon(card);
-          const rarityIcon = getRarityIconForCard(card);
+          const rarityIcon = cardIconMap[card.rarity] || cardIconMap["common"];
+          const setIcon = cardSetIconMap[card.set] || cardIconMap["chaos"];
 
           return (
             <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
@@ -107,11 +95,25 @@ export default function WorkerSelector({
                 height={14}
                 style={{ objectFit: "contain", width: "auto", height: "auto" }}
               />
+              <Box sx={{ width: 25, height: 25 }}>
+                <Image
+                  src={setIcon}
+                  alt="set"
+                  width={14}
+                  height={14}
+                  style={{
+                    objectFit: "contain",
+                    width: "auto",
+                    height: "auto",
+                  }}
+                />
+              </Box>
+              <FoilIcon foil={card.foil} size={20} />
               <Typography variant="caption" noWrap sx={{ maxWidth: 100 }}>
                 {card.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                ({fmt(card.land_base_pp)})
+                ({fmt(card.landBasePP)})
               </Typography>
             </Box>
           );
@@ -123,7 +125,8 @@ export default function WorkerSelector({
         </MenuItem>
         {options.map((card) => {
           const elementIcon = getElementIcon(card);
-          const rarityIcon = getRarityIconForCard(card);
+          const rarityIcon = cardIconMap[card.rarity] || cardIconMap["common"];
+          const setIcon = cardSetIconMap[card.set] || cardIconMap["chaos"];
 
           return (
             <MenuItem
@@ -162,13 +165,29 @@ export default function WorkerSelector({
                     height: "auto",
                   }}
                 />
+                {/* Set Icon */}
+                <Box sx={{ width: 25, height: 25 }}>
+                  <Image
+                    src={setIcon}
+                    alt="set"
+                    width={16}
+                    height={16}
+                    style={{
+                      objectFit: "contain",
+                      width: "auto",
+                      height: "auto",
+                    }}
+                  />
+                </Box>
+                {/* Foil Icon */}
+                <FoilIcon foil={card.foil} size={20} />
                 {/* Name and PP */}
                 <Box sx={{ flex: 1 }}>
                   <Typography variant="caption" display="block">
                     {card.name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {fmt(card.land_base_pp)} PP
+                    {fmt(card.landBasePP)} PP
                   </Typography>
                 </Box>
               </Box>

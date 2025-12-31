@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumberWithSuffix } from "@/lib/formatters";
 import {
   calcProductionInfo,
   calcTotalPP,
@@ -124,9 +125,6 @@ export default function DeedOutputDisplay({
     selectedWorkers,
   ]);
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
-
   return (
     <Box width={COLUMN_WIDTHS.EXTRA_LARGE} flexShrink={0}>
       <Box>
@@ -137,7 +135,7 @@ export default function DeedOutputDisplay({
           </Typography>
         )}
         <Typography variant="body2" fontSize="0.7rem">
-          PP: {fmt(output.boostedPP)}
+          PP: {formatNumberWithSuffix(output.boostedPP)}
         </Typography>
         <Typography variant="body2" fontSize="0.65rem" color="success.main">
           ▲ {output.produce}

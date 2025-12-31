@@ -7,6 +7,7 @@ import {
   calcTotalPP,
 } from "@/lib/frontend/utils/plannerCalcs";
 import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import { CardFilterOptions } from "@/types/cardFilter";
 import { PlotPlannerData, SlotInput } from "@/types/planner";
 import {
   DeedChange,
@@ -22,6 +23,7 @@ import { useEffect, useMemo, useState } from "react";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
 import ExportButtons from "./ExportButtons";
+import PlaygroundCardFilter from "./PlaygroundCardFilter";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
 
@@ -46,21 +48,33 @@ export default function PlaygroundDeedGrid({
     regions: [],
     tracts: [],
     plots: [],
+    rarities: [],
+    statuses: [],
+    terrains: [],
+    worksites: [],
+    underConstruction: false,
+    developed: false,
+    maxWorkers: null,
   });
+  const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
+    {
+      onWagon: undefined,
+      inSet: undefined,
+      rarities: [],
+      sets: [],
+      elements: [],
+      foils: [],
+      minPP: 0,
+    }
+  );
   const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
 
   // Fetch SPS ratio on mount
   useEffect(() => {
-    const fetchSpsRatio = async () => {
-      try {
-        const ratio = await getDailySPSRatio();
-        setSpsRatio(ratio);
-      } catch (err) {
-        console.error("Failed to fetch SPS ratio:", err);
-      }
-    };
-    fetchSpsRatio();
+    getDailySPSRatio()
+      .then(setSpsRatio)
+      .catch((err) => console.error("Failed to fetch SPS ratio:", err));
   }, []);
 
   const handleDeedChange = (change: DeedChange) => {
@@ -69,27 +83,72 @@ export default function PlaygroundDeedGrid({
 
   // Apply filters
   const filteredDeeds = useMemo(() => {
-    let filtered = deeds;
-
-    if (filterOptions.regions.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.regions.includes(d.region_number)
-      );
-    }
-
-    if (filterOptions.tracts.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.tracts.includes(d.tract_number)
-      );
-    }
-
-    if (filterOptions.plots.length > 0) {
-      filtered = filtered.filter((d) =>
-        filterOptions.plots.includes(d.plot_number)
-      );
-    }
-
-    return filtered;
+    return deeds.filter((deed) => {
+      if (
+        filterOptions.regions.length > 0 &&
+        !filterOptions.regions.includes(deed.region_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.tracts.length > 0 &&
+        !filterOptions.tracts.includes(deed.tract_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.plots.length > 0 &&
+        !filterOptions.plots.includes(deed.plot_number)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.rarities.length > 0 &&
+        !filterOptions.rarities.includes(deed.rarity)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.statuses.length > 0 &&
+        !filterOptions.statuses.includes(deed.plotStatus)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.terrains.length > 0 &&
+        !filterOptions.terrains.includes(deed.deedType)
+      ) {
+        return false;
+      }
+      if (
+        filterOptions.worksites.length > 0 &&
+        !filterOptions.worksites.includes(deed.worksiteType)
+      ) {
+        return false;
+      }
+      // Filter by under construction status
+      if (filterOptions.underConstruction && !deed.isConstruction) {
+        return false;
+      }
+      // Filter by developed status (undeveloped means empty worksiteType)
+      if (filterOptions.developed && deed.worksiteType !== "") {
+        return false;
+      }
+      // Filter by max worker count
+      if (filterOptions.maxWorkers !== null) {
+        const workerCount = [
+          deed.worker1Uid,
+          deed.worker2Uid,
+          deed.worker3Uid,
+          deed.worker4Uid,
+          deed.worker5Uid,
+        ].filter((w) => w !== null).length;
+        if (workerCount > filterOptions.maxWorkers) {
+          return false;
+        }
+      }
+      return true;
+    });
   }, [deeds, filterOptions]);
 
   // Create updated deeds with changes applied
@@ -117,7 +176,7 @@ export default function PlaygroundDeedGrid({
   }, [filteredDeeds, currentPage]);
 
   // Get available cards (not currently assigned to any deed)
-  const availableCards = useMemo(() => {
+  const { availableCards, assignedCardCount } = useMemo(() => {
     const deedWorkers = new Map<string, Set<string>>();
 
     // Initialize with persisted deed assignments from ALL deeds
@@ -171,19 +230,68 @@ export default function PlaygroundDeedGrid({
       workers.forEach((uid) => assignedCardIds.add(uid));
     });
 
-    return cards.filter((card) => !assignedCardIds.has(card.uid));
-  }, [cards, deeds, changes]);
+    // Filter out assigned cards
+    let filtered = cards.filter((card) => !assignedCardIds.has(card.uid));
+
+    //Filter out Runi (no workers)
+    filtered = filtered.filter((card) => card.cardDetailId !== 505);
+
+    // Apply card filters
+    if (cardFilterOptions.onWagon !== undefined) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.onWagon ? card.onWagon : !card.onWagon
+      );
+    }
+
+    if (cardFilterOptions.inSet !== undefined) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.inSet ? card.inSet : !card.inSet
+      );
+    }
+
+    if (cardFilterOptions.rarities.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.rarities.includes(card.rarity)
+      );
+    }
+
+    if (cardFilterOptions.sets.length > 0) {
+      filtered = filtered.filter((card) => {
+        if (card.name.startsWith("Venari"))
+          console.log("VENARI FOUND:" + card.set);
+        return cardFilterOptions.sets.includes(card.set);
+      });
+    }
+
+    if (cardFilterOptions.elements.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.elements.includes(card.element)
+      );
+    }
+
+    if (cardFilterOptions.foils.length > 0) {
+      filtered = filtered.filter((card) =>
+        cardFilterOptions.foils.includes(card.foil)
+      );
+    }
+
+    if (cardFilterOptions.minPP > 0) {
+      filtered = filtered.filter(
+        (card) => card.landBasePP >= cardFilterOptions.minPP
+      );
+    }
+
+    return {
+      availableCards: filtered,
+      assignedCardCount: assignedCardIds.size,
+    };
+  }, [cards, deeds, changes, cardFilterOptions]);
 
   const totalPages = Math.ceil(filteredDeeds.length / ITEMS_PER_PAGE);
 
   const handleExportOriginal = () => {
     const csvContent = generateDeedCSV(deeds);
     downloadCSV(csvContent, "original_deeds.csv");
-  };
-
-  const handleExportChanges = () => {
-    const csvContent = generateChangesCSV(changes);
-    downloadCSV(csvContent, "deed_changes.csv");
   };
 
   const handleExportNew = () => {
@@ -207,17 +315,25 @@ export default function PlaygroundDeedGrid({
       {/* Export Buttons */}
       <ExportButtons
         onExportOriginal={handleExportOriginal}
-        onExportChanges={handleExportChanges}
         onExportNew={handleExportNew}
-        changesCount={changes.length}
+        changes={changes}
+        deeds={deeds}
+        allCards={cards}
       />
 
-      {/* Filter */}
-      <Box width={"100%"}>
+      {/* Filters */}
+      <Box width={"100%"} display={"flex"} flexDirection={"row"} gap={2} mb={2}>
         <PlaygroundFilter
           deeds={deeds}
           filterOptions={filterOptions}
           onFilterChange={setFilterOptions}
+        />
+        <PlaygroundCardFilter
+          cards={cards}
+          filteresCardCount={availableCards.length}
+          assingesCardCount={assignedCardCount}
+          filterOptions={cardFilterOptions}
+          onFilterChange={setCardFilterOptions}
         />
       </Box>
 
@@ -304,45 +420,27 @@ function applyChangesToDeeds(
     const deedChanges = changesMap.get(deed.deed_uid);
     if (!deedChanges) return deed;
 
-    let worksite = deed.worksiteType;
-    let runi = deed.runi;
-    let title = deed.titleTier;
-    let totem = deed.totemTier;
-    let worker1 = deed.worker1Uid;
-    let worker2 = deed.worker2Uid;
-    let worker3 = deed.worker3Uid;
-    let worker4 = deed.worker4Uid;
-    let worker5 = deed.worker5Uid;
-
-    deedChanges.forEach((change) => {
-      if (change.field === "worksite") worksite = change.newValue as string;
-      if (change.field === "runi") runi = change.newValue as string;
-      if (change.field === "title") title = change.newValue as string;
-      if (change.field === "totem") totem = change.newValue as string;
-      if (change.field === "worker1")
-        worker1 = change.newValue as SlotInput | null;
-      if (change.field === "worker2")
-        worker2 = change.newValue as SlotInput | null;
-      if (change.field === "worker3")
-        worker3 = change.newValue as SlotInput | null;
-      if (change.field === "worker4")
-        worker4 = change.newValue as SlotInput | null;
-      if (change.field === "worker5")
-        worker5 = change.newValue as SlotInput | null;
-    });
-
-    return {
-      ...deed,
-      worksiteType: worksite,
-      runi,
-      titleTier: title,
-      totemTier: totem,
-      worker1Uid: worker1,
-      worker2Uid: worker2,
-      worker3Uid: worker3,
-      worker4Uid: worker4,
-      worker5Uid: worker5,
+    const fieldMap: Record<string, keyof PlaygroundDeed> = {
+      worksite: "worksiteType",
+      runi: "runi",
+      title: "titleTier",
+      totem: "totemTier",
+      worker1: "worker1Uid",
+      worker2: "worker2Uid",
+      worker3: "worker3Uid",
+      worker4: "worker4Uid",
+      worker5: "worker5Uid",
     };
+
+    const updates = deedChanges.reduce((acc, change) => {
+      const deedField = fieldMap[change.field];
+      if (deedField) {
+        acc[deedField] = change.newValue as never;
+      }
+      return acc;
+    }, {} as Partial<PlaygroundDeed>);
+
+    return { ...deed, ...updates };
   });
 }
 
@@ -471,6 +569,7 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     "Title",
     "Totem",
   ];
+
   const rows = deeds.map((deed) => [
     deed.deed_uid,
     deed.region_number,
@@ -485,20 +584,7 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     deed.totemTier || "",
   ]);
 
-  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
-}
-
-function generateChangesCSV(changes: DeedChange[]): string {
-  const headers = ["Deed UID", "Field", "Old Value", "New Value", "Timestamp"];
-  const rows = changes.map((change) => [
-    change.deed_uid,
-    change.field,
-    String(change.oldValue || ""),
-    String(change.newValue || ""),
-    change.timestamp.toISOString(),
-  ]);
-
-  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+  return [headers, ...rows].map((row) => row.join(",")).join("\n");
 }
 
 function downloadCSV(content: string, filename: string) {
