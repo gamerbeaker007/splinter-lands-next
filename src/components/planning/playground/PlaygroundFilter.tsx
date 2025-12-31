@@ -19,7 +19,7 @@ import {
   worksiteTypeOptions,
 } from "@/types/planner";
 import { DeedFilterOptions, PlaygroundDeed } from "@/types/playground";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Checkbox, Paper, TextField, Typography } from "@mui/material";
 import { useMemo } from "react";
 
 type PlaygroundFilterProps = {
@@ -218,6 +218,65 @@ export default function PlaygroundFilter({
               />
             ))}
           </Box>
+        </Box>
+
+        {/* Under Construction Filter */}
+        <Box display={"flex"} flexDirection={"row"} gap={2}>
+          <Box>
+            <Typography variant="body2" gutterBottom>
+              Under Construction Only
+            </Typography>
+            <Checkbox
+              checked={filterOptions.underConstruction}
+              onChange={() =>
+                onFilterChange({
+                  ...filterOptions,
+                  underConstruction: !filterOptions.underConstruction,
+                })
+              }
+              size="small"
+            />
+          </Box>
+
+          {/* Undeveloped Filter */}
+          <Box>
+            <Typography variant="body2" gutterBottom>
+              Undeveloped Only
+            </Typography>
+            <Checkbox
+              checked={filterOptions.developed}
+              onChange={() =>
+                onFilterChange({
+                  ...filterOptions,
+                  developed: !filterOptions.developed,
+                })
+              }
+              size="small"
+            />
+          </Box>
+        </Box>
+
+        {/* Max Workers Filter */}
+        <Box>
+          <Typography variant="body2" gutterBottom>
+            Max Workers
+          </Typography>
+          <TextField
+            type="number"
+            size="small"
+            value={filterOptions.maxWorkers ?? ""}
+            onChange={(e) => {
+              const value =
+                e.target.value === "" ? null : Number(e.target.value);
+              onFilterChange({
+                ...filterOptions,
+                maxWorkers: value,
+              });
+            }}
+            placeholder="No limit"
+            inputProps={{ min: 0, max: 5 }}
+            sx={{ width: 120 }}
+          />
         </Box>
       </Box>
     </Paper>

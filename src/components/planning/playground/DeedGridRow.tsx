@@ -149,7 +149,7 @@ export default function DeedGridRow({
     onChange({
       deed_uid: deed.deed_uid,
       field: workerField,
-      oldValue: oldWorkerUid,
+      oldValue: createSlotInput(oldWorkerUid),
       newValue: createSlotInput(cardUid),
       timestamp: new Date(),
     });

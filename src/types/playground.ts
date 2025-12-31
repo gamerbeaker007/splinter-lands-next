@@ -32,6 +32,7 @@ export type PlaygroundDeed = {
   worksiteType: WorksiteType;
   basePP: number;
   boostedPP: number;
+  isConstruction: boolean;
   runi: RuniTier | null;
   titleTier: TitleTier | null;
   totemTier: TotemTier | null;
@@ -93,4 +94,7 @@ export type DeedFilterOptions = {
   statuses: PlotStatus[];
   terrains: DeedType[];
   worksites: WorksiteType[];
+  underConstruction: boolean;
+  developed: boolean;
+  maxWorkers: number | null;
 };

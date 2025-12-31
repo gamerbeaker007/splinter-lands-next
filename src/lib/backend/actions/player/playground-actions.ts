@@ -171,6 +171,7 @@ export async function getPlaygroundData(
       worksiteType: (deed.worksite_type || "") as WorksiteType,
       basePP: deed.stakingDetail?.total_base_pp_after_cap || 0,
       boostedPP: deed.stakingDetail?.total_boost_pp || 0,
+      isConstruction: deed.worksiteDetail?.is_construction || false,
       runi,
       titleTier,
       totemTier,

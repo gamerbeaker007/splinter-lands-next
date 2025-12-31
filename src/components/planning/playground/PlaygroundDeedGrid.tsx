@@ -52,6 +52,9 @@ export default function PlaygroundDeedGrid({
     statuses: [],
     terrains: [],
     worksites: [],
+    underConstruction: false,
+    developed: false,
+    maxWorkers: null,
   });
   const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
     {
@@ -122,6 +125,27 @@ export default function PlaygroundDeedGrid({
         !filterOptions.worksites.includes(deed.worksiteType)
       ) {
         return false;
+      }
+      // Filter by under construction status
+      if (filterOptions.underConstruction && !deed.isConstruction) {
+        return false;
+      }
+      // Filter by developed status (undeveloped means empty worksiteType)
+      if (filterOptions.developed && deed.worksiteType !== "") {
+        return false;
+      }
+      // Filter by max worker count
+      if (filterOptions.maxWorkers !== null) {
+        const workerCount = [
+          deed.worker1Uid,
+          deed.worker2Uid,
+          deed.worker3Uid,
+          deed.worker4Uid,
+          deed.worker5Uid,
+        ].filter((w) => w !== null).length;
+        if (workerCount > filterOptions.maxWorkers) {
+          return false;
+        }
       }
       return true;
     });
@@ -270,11 +294,6 @@ export default function PlaygroundDeedGrid({
     downloadCSV(csvContent, "original_deeds.csv");
   };
 
-  const handleExportChanges = () => {
-    const csvContent = generateChangesCSV(changes);
-    downloadCSV(csvContent, "deed_changes.csv");
-  };
-
   const handleExportNew = () => {
     const csvContent = generateDeedCSV(updatedDeeds);
     downloadCSV(csvContent, "updated_deeds.csv");
@@ -296,9 +315,10 @@ export default function PlaygroundDeedGrid({
       {/* Export Buttons */}
       <ExportButtons
         onExportOriginal={handleExportOriginal}
-        onExportChanges={handleExportChanges}
         onExportNew={handleExportNew}
-        changesCount={changes.length}
+        changes={changes}
+        deeds={deeds}
+        allCards={cards}
       />
 
       {/* Filters */}
@@ -565,19 +585,6 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
   ]);
 
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
-}
-
-function generateChangesCSV(changes: DeedChange[]): string {
-  const headers = ["Deed UID", "Field", "Old Value", "New Value", "Timestamp"];
-  const rows = changes.map((change) => [
-    change.deed_uid,
-    change.field,
-    String(change.oldValue || ""),
-    String(change.newValue || ""),
-    change.timestamp.toISOString(),
-  ]);
-
-  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
 }
 
 function downloadCSV(content: string, filename: string) {

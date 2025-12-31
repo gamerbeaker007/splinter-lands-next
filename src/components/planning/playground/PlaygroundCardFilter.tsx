@@ -1,6 +1,7 @@
 "use client";
 
 import FilterIcon from "@/components/filter/FilterIcon";
+import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { CardSetNameLandValid, landCardSet } from "@/types/editions";
@@ -24,7 +25,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
-import { TbCardsFilled } from "react-icons/tb";
 
 type PlaygroundCardFilterProps = {
   cards: PlaygroundCard[];
@@ -79,71 +79,6 @@ export default function PlaygroundCardFilter({
 
   const handleMinPPChange = (value: number) => {
     onFilterChange({ ...filterOptions, minPP: Math.max(0, value) });
-  };
-
-  const renderFoilIcon = (foil: CardFoil, size = 35) => {
-    const foilStyle: Record<
-      CardFoil,
-      { iconColor: string; badgeText?: string; badgeColor?: string }
-    > = {
-      regular: { iconColor: "gray" },
-      gold: { iconColor: "gold" },
-      "gold arcane": {
-        iconColor: "gold",
-        badgeText: "GV",
-        badgeColor: "black",
-      },
-      black: { iconColor: "black" },
-      "black arcane": {
-        iconColor: "black",
-        badgeText: "BV",
-        badgeColor: "white",
-      },
-    };
-
-    const { iconColor, badgeText, badgeColor } =
-      foilStyle[foil] ?? foilStyle.regular;
-    const badgeFont = Math.max(10, Math.floor(size * 0.6));
-
-    return (
-      <Box
-        sx={{
-          position: "relative",
-          width: size,
-          height: size,
-          display: "inline-block",
-          lineHeight: 0,
-        }}
-      >
-        <TbCardsFilled
-          size={size}
-          color={iconColor}
-          style={{ display: "block" }}
-        />
-        {badgeText && (
-          <Typography
-            component="span"
-            sx={{
-              position: "absolute",
-              inset: 0,
-              display: "grid",
-              placeItems: "center",
-              fontSize: badgeFont,
-              fontWeight: 900,
-              color: badgeColor,
-              letterSpacing: 0.5,
-              userSelect: "none",
-              textShadow:
-                badgeColor === "black"
-                  ? "0 0 2px rgba(255,255,255,0.9)"
-                  : "0 0 2px rgba(0,0,0,0.8)",
-            }}
-          >
-            {badgeText}
-          </Typography>
-        )}
-      </Box>
-    );
   };
 
   const getElementIcon = (element: string) => {
@@ -352,7 +287,14 @@ export default function PlaygroundCardFilter({
                 }}
                 title={foil}
               >
-                {renderFoilIcon(foil)}
+                <FoilIcon
+                  foil={foil}
+                  size={35}
+                  fontSizeRatio={0.6}
+                  fontWeight={900}
+                  letterSpacing={0.5}
+                  enhancedShadow
+                />
               </Box>
             ))}
           </Box>
