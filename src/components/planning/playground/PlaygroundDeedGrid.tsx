@@ -1,14 +1,12 @@
 "use client";
 
+import {
+  filterAvailableCards,
+  filterDeeds,
+} from "@/components/planning/playground/util/deedFilters";
 import { usePrices } from "@/hooks/usePrices";
 import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
-import {
-  calcProductionInfo,
-  calcTotalPP,
-} from "@/lib/frontend/utils/plannerCalcs";
-import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { CardFilterOptions } from "@/types/cardFilter";
-import { PlotPlannerData, SlotInput } from "@/types/planner";
 import {
   DeedChange,
   DeedFilterOptions,
@@ -16,16 +14,18 @@ import {
   PlaygroundDeed,
 } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
-import { Prices } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Pagination, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import ClearActionsPanel from "./ClearActionsPanel";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
 import ExportButtons from "./ExportButtons";
 import PlaygroundCardFilter from "./PlaygroundCardFilter";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
+import { calculateSummary } from "./util/calculatedSummary";
+import { downloadCSV } from "./util/dowload";
 
 const ITEMS_PER_PAGE = 50;
 
@@ -42,7 +42,7 @@ export default function PlaygroundDeedGrid({
   cardDetails,
   playerName,
 }: PlaygroundDeedGridProps) {
-  const [changes, setChanges] = useState<DeedChange[]>([]);
+  const [updatedDeeds, setUpdatedDeeds] = useState<PlaygroundDeed[]>(deeds);
   const [currentPage, setCurrentPage] = useState(0);
   const [filterOptions, setFilterOptions] = useState<DeedFilterOptions>({
     regions: [],
@@ -70,6 +70,11 @@ export default function PlaygroundDeedGrid({
   const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
 
+  // Reset updatedDeeds when deeds prop changes
+  useEffect(() => {
+    setUpdatedDeeds(deeds);
+  }, [deeds]);
+
   // Fetch SPS ratio on mount
   useEffect(() => {
     getDailySPSRatio()
@@ -78,83 +83,37 @@ export default function PlaygroundDeedGrid({
   }, []);
 
   const handleDeedChange = (change: DeedChange) => {
-    setChanges((prev) => [...prev, change]);
+    setUpdatedDeeds((prev) =>
+      prev.map((deed) => {
+        if (deed.deed_uid !== change.deed_uid) return deed;
+
+        const fieldMap: Record<string, keyof PlaygroundDeed> = {
+          worksite: "worksiteType",
+          runi: "runi",
+          title: "titleTier",
+          totem: "totemTier",
+          worker1: "worker1Uid",
+          worker2: "worker2Uid",
+          worker3: "worker3Uid",
+          worker4: "worker4Uid",
+          worker5: "worker5Uid",
+        };
+
+        const deedField = fieldMap[change.field];
+        if (!deedField) return deed;
+
+        return {
+          ...deed,
+          [deedField]: change.newValue,
+        };
+      })
+    );
   };
 
-  // Apply filters
+  // Apply filters to updatedDeeds
   const filteredDeeds = useMemo(() => {
-    return deeds.filter((deed) => {
-      if (
-        filterOptions.regions.length > 0 &&
-        !filterOptions.regions.includes(deed.region_number)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.tracts.length > 0 &&
-        !filterOptions.tracts.includes(deed.tract_number)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.plots.length > 0 &&
-        !filterOptions.plots.includes(deed.plot_number)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.rarities.length > 0 &&
-        !filterOptions.rarities.includes(deed.rarity)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.statuses.length > 0 &&
-        !filterOptions.statuses.includes(deed.plotStatus)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.terrains.length > 0 &&
-        !filterOptions.terrains.includes(deed.deedType)
-      ) {
-        return false;
-      }
-      if (
-        filterOptions.worksites.length > 0 &&
-        !filterOptions.worksites.includes(deed.worksiteType)
-      ) {
-        return false;
-      }
-      // Filter by under construction status
-      if (filterOptions.underConstruction && !deed.isConstruction) {
-        return false;
-      }
-      // Filter by developed status (undeveloped means empty worksiteType)
-      if (filterOptions.developed && deed.worksiteType !== "") {
-        return false;
-      }
-      // Filter by max worker count
-      if (filterOptions.maxWorkers !== null) {
-        const workerCount = [
-          deed.worker1Uid,
-          deed.worker2Uid,
-          deed.worker3Uid,
-          deed.worker4Uid,
-          deed.worker5Uid,
-        ].filter((w) => w !== null).length;
-        if (workerCount > filterOptions.maxWorkers) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, [deeds, filterOptions]);
-
-  // Create updated deeds with changes applied
-  const updatedDeeds = useMemo((): PlaygroundDeed[] => {
-    return applyChangesToDeeds(deeds, changes);
-  }, [deeds, changes]);
+    return filterDeeds(updatedDeeds, filterOptions);
+  }, [updatedDeeds, filterOptions]);
 
   // Calculate original outputs
   const originalOutputs = useMemo(
@@ -177,11 +136,10 @@ export default function PlaygroundDeedGrid({
 
   // Get available cards (not currently assigned to any deed)
   const { availableCards, assignedCardCount } = useMemo(() => {
-    const deedWorkers = new Map<string, Set<string>>();
+    // Use updatedDeeds directly - changes are already applied
+    const assignedCardIds = new Set<string>();
 
-    // Initialize with persisted deed assignments from ALL deeds
-    deeds.forEach((deed) => {
-      const workers = new Set<string>();
+    updatedDeeds.forEach((deed) => {
       [
         deed.worker1Uid,
         deed.worker2Uid,
@@ -190,102 +148,23 @@ export default function PlaygroundDeedGrid({
         deed.worker5Uid,
       ].forEach((slotInput) => {
         if (slotInput?.uid) {
-          workers.add(slotInput.uid);
+          assignedCardIds.add(slotInput.uid);
         }
       });
-      deedWorkers.set(deed.deed_uid, workers);
     });
 
-    // Apply pending changes to get final state
-    changes.forEach((change) => {
-      if (change.field.startsWith("worker")) {
-        const workers = deedWorkers.get(change.deed_uid);
-        if (workers) {
-          // Handle oldValue - remove the old card from assigned set
-          if (change.oldValue) {
-            const oldUid =
-              typeof change.oldValue === "string"
-                ? change.oldValue
-                : (change.oldValue as SlotInput).uid;
-            if (oldUid) {
-              workers.delete(oldUid);
-            }
-          }
-          // Handle newValue - add the new card to assigned set
-          if (change.newValue) {
-            const newUid =
-              typeof change.newValue === "string"
-                ? change.newValue
-                : (change.newValue as SlotInput).uid;
-            if (newUid) {
-              workers.add(newUid);
-            }
-          }
-        }
-      }
-    });
-
-    const assignedCardIds = new Set<string>();
-    deedWorkers.forEach((workers) => {
-      workers.forEach((uid) => assignedCardIds.add(uid));
-    });
-
-    // Filter out assigned cards
-    let filtered = cards.filter((card) => !assignedCardIds.has(card.uid));
-
-    //Filter out Runi (no workers)
-    filtered = filtered.filter((card) => card.cardDetailId !== 505);
-
-    // Apply card filters
-    if (cardFilterOptions.onWagon !== undefined) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.onWagon ? card.onWagon : !card.onWagon
-      );
-    }
-
-    if (cardFilterOptions.inSet !== undefined) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.inSet ? card.inSet : !card.inSet
-      );
-    }
-
-    if (cardFilterOptions.rarities.length > 0) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.rarities.includes(card.rarity)
-      );
-    }
-
-    if (cardFilterOptions.sets.length > 0) {
-      filtered = filtered.filter((card) => {
-        if (card.name.startsWith("Venari"))
-          console.log("VENARI FOUND:" + card.set);
-        return cardFilterOptions.sets.includes(card.set);
-      });
-    }
-
-    if (cardFilterOptions.elements.length > 0) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.elements.includes(card.element)
-      );
-    }
-
-    if (cardFilterOptions.foils.length > 0) {
-      filtered = filtered.filter((card) =>
-        cardFilterOptions.foils.includes(card.foil)
-      );
-    }
-
-    if (cardFilterOptions.minPP > 0) {
-      filtered = filtered.filter(
-        (card) => card.landBasePP >= cardFilterOptions.minPP
-      );
-    }
+    // Filter out assigned cards and apply card filter options
+    const filtered = filterAvailableCards(
+      cards,
+      assignedCardIds,
+      cardFilterOptions
+    );
 
     return {
       availableCards: filtered,
       assignedCardCount: assignedCardIds.size,
     };
-  }, [cards, deeds, changes, cardFilterOptions]);
+  }, [cards, updatedDeeds, cardFilterOptions]);
 
   const totalPages = Math.ceil(filteredDeeds.length / ITEMS_PER_PAGE);
 
@@ -297,6 +176,54 @@ export default function PlaygroundDeedGrid({
   const handleExportNew = () => {
     const csvContent = generateDeedCSV(updatedDeeds);
     downloadCSV(csvContent, "updated_deeds.csv");
+  };
+
+  const handleClearAllDeeds = () => {
+    setUpdatedDeeds((prev) =>
+      prev.map((deed) => ({
+        ...deed,
+        worksiteType: "",
+        runi: null,
+        titleTier: null,
+        totemTier: null,
+        worker1Uid: null,
+        worker2Uid: null,
+        worker3Uid: null,
+        worker4Uid: null,
+        worker5Uid: null,
+      }))
+    );
+  };
+
+  const handleClearFiltered = (
+    type: "all" | "worksites" | "workers" | "runi" | "titles" | "totems"
+  ) => {
+    const filteredDeedIds = new Set(filteredDeeds.map((d) => d.deed_uid));
+    setUpdatedDeeds((prev) =>
+      prev.map((deed) => {
+        if (!filteredDeedIds.has(deed.deed_uid)) return deed;
+        return {
+          ...deed,
+          worksiteType:
+            type === "all" || type === "worksites" ? "" : deed.worksiteType,
+          runi: type === "all" || type === "runi" ? null : deed.runi,
+          titleTier:
+            type === "all" || type === "titles" ? null : deed.titleTier,
+          totemTier:
+            type === "all" || type === "totems" ? null : deed.totemTier,
+          worker1Uid:
+            type === "all" || type === "workers" ? null : deed.worker1Uid,
+          worker2Uid:
+            type === "all" || type === "workers" ? null : deed.worker2Uid,
+          worker3Uid:
+            type === "all" || type === "workers" ? null : deed.worker3Uid,
+          worker4Uid:
+            type === "all" || type === "workers" ? null : deed.worker4Uid,
+          worker5Uid:
+            type === "all" || type === "workers" ? null : deed.worker5Uid,
+        };
+      })
+    );
   };
 
   return (
@@ -316,8 +243,8 @@ export default function PlaygroundDeedGrid({
       <ExportButtons
         onExportOriginal={handleExportOriginal}
         onExportNew={handleExportNew}
-        changes={changes}
-        deeds={deeds}
+        originalDeeds={deeds}
+        updatedDeeds={updatedDeeds}
         allCards={cards}
       />
 
@@ -353,6 +280,13 @@ export default function PlaygroundDeedGrid({
           color="primary"
         />
       </Box>
+
+      {/* Clear Buttons */}
+      <ClearActionsPanel
+        filteredDeedsCount={filteredDeeds.length}
+        onClearAll={handleClearAllDeeds}
+        onClearFiltered={handleClearFiltered}
+      />
 
       {/* Grid with horizontal scroll */}
       <Box
@@ -405,155 +339,6 @@ export default function PlaygroundDeedGrid({
 }
 
 // Helper functions
-function applyChangesToDeeds(
-  deeds: PlaygroundDeed[],
-  changes: DeedChange[]
-): PlaygroundDeed[] {
-  const changesMap = new Map<string, DeedChange[]>();
-  changes.forEach((change) => {
-    const existing = changesMap.get(change.deed_uid) || [];
-    existing.push(change);
-    changesMap.set(change.deed_uid, existing);
-  });
-
-  return deeds.map((deed) => {
-    const deedChanges = changesMap.get(deed.deed_uid);
-    if (!deedChanges) return deed;
-
-    const fieldMap: Record<string, keyof PlaygroundDeed> = {
-      worksite: "worksiteType",
-      runi: "runi",
-      title: "titleTier",
-      totem: "totemTier",
-      worker1: "worker1Uid",
-      worker2: "worker2Uid",
-      worker3: "worker3Uid",
-      worker4: "worker4Uid",
-      worker5: "worker5Uid",
-    };
-
-    const updates = deedChanges.reduce((acc, change) => {
-      const deedField = fieldMap[change.field];
-      if (deedField) {
-        acc[deedField] = change.newValue as never;
-      }
-      return acc;
-    }, {} as Partial<PlaygroundDeed>);
-
-    return { ...deed, ...updates };
-  });
-}
-
-function calculateSummary(
-  deeds: PlaygroundDeed[],
-  pricesData: Prices | null,
-  spsRatio: number
-): PlaygroundSummary {
-  const perResource: Record<
-    string,
-    { pp: number; produced: number; consumed: number; net: number }
-  > = {};
-  let totalBasePP = 0;
-  let totalBoostedPP = 0;
-  let totalNetDEC = 0;
-
-  const prices = {
-    dec: pricesData?.dec || 0,
-    sps: pricesData?.sps || 0,
-    grain: pricesData?.grain || 0,
-    stone: pricesData?.stone || 0,
-    wood: pricesData?.wood || 0,
-    essence: pricesData?.essence || 0,
-    research: pricesData?.research || 0,
-    totems: pricesData?.totems || 0,
-  };
-
-  // Initialize all producing resources
-  PRODUCING_RESOURCES.forEach((res) => {
-    perResource[res] = {
-      pp: 0,
-      produced: 0,
-      consumed: 0,
-      net: 0,
-    };
-  });
-
-  deeds.forEach((deed) => {
-    const plotData: PlotPlannerData = {
-      regionNumber: deed.region_number,
-      tractNumber: deed.tract_number,
-      plotStatus: deed.plotStatus,
-      plotRarity: deed.rarity,
-      magicType: deed.magicType || "",
-      deedType: deed.deedType,
-      worksiteType: deed.worksiteType,
-      cardInput: [
-        deed.worker1Uid,
-        deed.worker2Uid,
-        deed.worker3Uid,
-        deed.worker4Uid,
-        deed.worker5Uid,
-      ].filter((w): w is SlotInput => w !== null),
-      runi: deed.runi || "none",
-      title: deed.titleTier || "none",
-      totem: deed.totemTier || "none",
-    };
-
-    //Skip CASTLE and KEEPS
-    if (deed.worksiteType === "CASTLE" || deed.worksiteType === "KEEP") {
-      return;
-    }
-    const { totalBasePP: basePP, totalBoostedPP: boostedPP } =
-      calcTotalPP(plotData);
-    totalBasePP += basePP;
-    totalBoostedPP += boostedPP;
-
-    const productionInfo = calcProductionInfo(
-      basePP,
-      boostedPP,
-      plotData,
-      prices,
-      spsRatio,
-      null, // extra regionTax
-      null // extra captureRate
-    );
-
-    totalNetDEC += productionInfo.netDEC;
-
-    const resource = productionInfo.resource;
-    // Add PP to the producing resource
-    if (perResource[resource]) {
-      perResource[resource].pp += boostedPP;
-    }
-
-    // Track consumed resources - each consume adds to that resource's consumed total
-    productionInfo.consume?.forEach((c) => {
-      if (c?.resource && perResource[c.resource]) {
-        perResource[c.resource].consumed += c.amount ?? 0;
-      }
-    });
-
-    // Track produced resources - each produce adds to that resource's produced total
-    productionInfo.produce?.forEach((p) => {
-      if (p?.resource && perResource[p.resource]) {
-        perResource[p.resource].produced += p.amount ?? 0;
-      }
-    });
-  });
-
-  // Calculate net for each resource
-  PRODUCING_RESOURCES.forEach((res) => {
-    perResource[res].net =
-      perResource[res].produced - perResource[res].consumed;
-  });
-
-  return {
-    totalBasePP,
-    totalBoostedPP,
-    perResource,
-    totalNetDEC,
-  };
-}
 
 function generateDeedCSV(deeds: PlaygroundDeed[]): string {
   const headers = [
@@ -585,18 +370,4 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
   ]);
 
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
-}
-
-function downloadCSV(content: string, filename: string) {
-  const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-
-  link.setAttribute("href", url);
-  link.setAttribute("download", filename);
-  link.style.visibility = "hidden";
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
 }

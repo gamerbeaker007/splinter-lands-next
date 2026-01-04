@@ -98,3 +98,10 @@ export type DeedFilterOptions = {
   developed: boolean;
   maxWorkers: number | null;
 };
+
+export type WorkerMovement = {
+  cardUid: string;
+  fromPlot: string;
+  toPlot: string;
+  hasCooldown: boolean;
+};

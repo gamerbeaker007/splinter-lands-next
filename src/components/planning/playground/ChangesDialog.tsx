@@ -3,7 +3,12 @@
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { cardSetIconMap, SlotInput } from "@/types/planner";
-import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
+import {
+  DeedChange,
+  PlaygroundCard,
+  PlaygroundDeed,
+  WorkerMovement,
+} from "@/types/playground";
 import DownloadIcon from "@mui/icons-material/Download";
 import WarningIcon from "@mui/icons-material/Warning";
 import {
@@ -18,17 +23,13 @@ import {
   List,
   ListItem,
   ListItemIcon,
+  Pagination,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
 import { useMemo, useState } from "react";
-
-type WorkerMovement = {
-  cardUid: string;
-  fromPlot: string;
-  toPlot: string;
-  hasCooldown: boolean;
-};
+import { downloadTextFile } from "./util/dowload";
+import { generateTodoListText } from "./util/todolist";
 
 type ChangesDialogProps = {
   open: boolean;
@@ -38,6 +39,8 @@ type ChangesDialogProps = {
   allCards: PlaygroundCard[];
 };
 
+const CHANGES_PER_PAGE = 50;
+
 export default function ChangesDialog({
   open,
   onClose,
@@ -46,6 +49,7 @@ export default function ChangesDialog({
   allCards,
 }: ChangesDialogProps) {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
+  const [currentPage, setCurrentPage] = useState(0);
 
   const getElementIcon = (element: string) => {
     return land_default_element_icon_url_placeholder.replace(
@@ -58,7 +62,7 @@ export default function ChangesDialog({
     return allCards.find((c) => c.uid === uid);
   };
 
-  const { workerMovements, groupedChanges } = useMemo(() => {
+  const { workerMovements, groupedChanges, totalPages } = useMemo(() => {
     // Create a map of deed UIDs to plot identifiers
     const deedMap = new Map<string, string>();
     deeds.forEach((deed) => {
@@ -136,8 +140,22 @@ export default function ChangesDialog({
       grouped.get(plotId)!.push(change);
     });
 
-    return { workerMovements: movements, groupedChanges: grouped };
-  }, [changes, deeds]);
+    // Paginate grouped changes
+    const groupedArray = Array.from(grouped.entries());
+    const totalPages = Math.ceil(groupedArray.length / CHANGES_PER_PAGE);
+    const paginatedGroups = new Map(
+      groupedArray.slice(
+        currentPage * CHANGES_PER_PAGE,
+        (currentPage + 1) * CHANGES_PER_PAGE
+      )
+    );
+
+    return {
+      workerMovements: movements,
+      groupedChanges: paginatedGroups,
+      totalPages,
+    };
+  }, [changes, deeds, currentPage]);
 
   const handleToggle = (index: number) => {
     const newChecked = new Set(checkedItems);
@@ -265,151 +283,201 @@ export default function ChangesDialog({
         </Box>
       </DialogTitle>
       <DialogContent dividers>
-        {/* Changes List */}
-        <Typography variant="h6" gutterBottom>
-          Changes by Plot ({groupedChanges.size} plots affected)
-        </Typography>
-
-        {Array.from(groupedChanges.entries()).map(
-          ([plotId, plotChanges], plotIndex) => (
-            <Box key={plotId} sx={{ mb: 2 }}>
-              <Typography
-                variant="subtitle1"
-                fontWeight="bold"
-                color="primary"
-                gutterBottom
-              >
-                {plotId}
+        {/* Regular Changes List */}(
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6">
+              Changes by Plot ({changes.length} total changes)
+            </Typography>
+            {totalPages > 1 && (
+              <Typography variant="body2" color="text.secondary">
+                Page {currentPage + 1} of {totalPages}
               </Typography>
-              <List dense>
-                {plotChanges.map((change, changeIndex) => {
-                  const globalIndex = plotIndex * 100 + changeIndex; // Simple unique index
+            )}
+          </Box>
 
-                  // Check if this change involves a worker with cooldown
-                  const getCardUidFromValue = (
-                    value: number | string | SlotInput | null
-                  ): string | null => {
-                    if (!value) return null;
-                    if (typeof value === "string") return value;
-                    if (typeof value === "number") return String(value);
-                    const slotInput = value as SlotInput;
-                    return slotInput.uid || null;
-                  };
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage + 1}
+                onChange={(_, page) => setCurrentPage(page - 1)}
+                color="primary"
+                size="small"
+              />
+            </Box>
+          )}
 
-                  const newCardUid = getCardUidFromValue(change.newValue);
+          {/* Changes List */}
+          <Typography variant="body2" color="text.secondary" gutterBottom>
+            Showing {groupedChanges.size} plots on this page
+          </Typography>
 
-                  // Only show cooldown warning when worker is being added (To field)
-                  const hasCooldown = newCardUid
-                    ? workerMovements.some((m) => m.cardUid === newCardUid)
-                    : false;
+          {Array.from(groupedChanges.entries()).map(
+            ([plotId, plotChanges], plotIndex) => (
+              <Box key={plotId} sx={{ mb: 2 }}>
+                <Typography
+                  variant="subtitle1"
+                  fontWeight="bold"
+                  color="primary"
+                  gutterBottom
+                >
+                  {plotId}
+                </Typography>
+                <List dense>
+                  {plotChanges.map((change, changeIndex) => {
+                    const globalIndex = plotIndex * 100 + changeIndex; // Simple unique index
 
-                  return (
-                    <ListItem
-                      key={globalIndex}
-                      sx={{
-                        bgcolor: "background.default",
-                        mb: 0.5,
-                        borderRadius: 1,
-                        display: "flex",
-                        alignItems: "flex-start",
-                        gap: 1,
-                        ...(hasCooldown && {
-                          borderLeft: 3,
-                          borderColor: "warning.main",
-                        }),
-                      }}
-                    >
-                      <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {changeIndex + 1}.
-                        </Typography>
-                      </ListItemIcon>
-                      <Box sx={{ flex: 1, minWidth: 0 }}>
-                        <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                        >
-                          <Typography variant="body2" fontWeight={500}>
-                            Update {change.field}
+                    // Check if this change involves a worker with cooldown
+                    const getCardUidFromValue = (
+                      value: number | string | SlotInput | null
+                    ): string | null => {
+                      if (!value) return null;
+                      if (typeof value === "string") return value;
+                      if (typeof value === "number") return String(value);
+                      const slotInput = value as SlotInput;
+                      return slotInput.uid || null;
+                    };
+
+                    const newCardUid = getCardUidFromValue(change.newValue);
+
+                    // Only show cooldown warning when worker is being added (To field)
+                    const hasCooldown = newCardUid
+                      ? workerMovements.some((m) => m.cardUid === newCardUid)
+                      : false;
+
+                    return (
+                      <ListItem
+                        key={globalIndex}
+                        sx={{
+                          bgcolor: "background.default",
+                          mb: 0.5,
+                          borderRadius: 1,
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: 1,
+                          ...(hasCooldown && {
+                            borderLeft: 3,
+                            borderColor: "warning.main",
+                          }),
+                        }}
+                      >
+                        <ListItemIcon sx={{ minWidth: 40, mt: 0.5 }}>
+                          <Typography variant="body2" color="text.secondary">
+                            {changeIndex + 1}.
                           </Typography>
-                          {hasCooldown && (
+                        </ListItemIcon>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <Typography variant="body2" fontWeight={500}>
+                              Update {change.field}
+                            </Typography>
+                            {hasCooldown && (
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                  bgcolor: "warning.main",
+                                  color: "warning.contrastText",
+                                  px: 0.75,
+                                  py: 0.25,
+                                  borderRadius: 1,
+                                  fontSize: "0.7rem",
+                                }}
+                              >
+                                <WarningIcon sx={{ fontSize: 12 }} />
+                                <Typography variant="caption" fontSize="0.7rem">
+                                  3-day cooldown
+                                </Typography>
+                              </Box>
+                            )}
+                          </Box>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 0.5,
+                              fontSize: "0.75rem",
+                            }}
+                          >
                             <Box
                               sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 0.5,
-                                bgcolor: "warning.main",
-                                color: "warning.contrastText",
-                                px: 0.75,
-                                py: 0.25,
-                                borderRadius: 1,
-                                fontSize: "0.7rem",
+                                gap: 1,
                               }}
                             >
-                              <WarningIcon sx={{ fontSize: 12 }} />
-                              <Typography variant="caption" fontSize="0.7rem">
-                                3-day cooldown
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ minWidth: 40 }}
+                              >
+                                From:
                               </Typography>
+                              {formatValue(change.oldValue)}
                             </Box>
-                          )}
-                        </Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 0.5,
-                            fontSize: "0.75rem",
-                          }}
-                        >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ minWidth: 40 }}
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1,
+                              }}
                             >
-                              From:
-                            </Typography>
-                            {formatValue(change.oldValue)}
-                          </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                              sx={{ minWidth: 40 }}
-                            >
-                              To:
-                            </Typography>
-                            {formatValue(change.newValue)}
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ minWidth: 40 }}
+                              >
+                                To:
+                              </Typography>
+                              {formatValue(change.newValue)}
+                            </Box>
                           </Box>
                         </Box>
-                      </Box>
-                      <Checkbox
-                        edge="end"
-                        checked={checkedItems.has(globalIndex)}
-                        onChange={() => handleToggle(globalIndex)}
-                        sx={{ mt: 0.5 }}
-                      />
-                    </ListItem>
-                  );
-                })}
-              </List>
-              {plotIndex < groupedChanges.size - 1 && (
-                <Divider sx={{ my: 1 }} />
-              )}
+                        <Checkbox
+                          edge="end"
+                          checked={checkedItems.has(globalIndex)}
+                          onChange={() => handleToggle(globalIndex)}
+                          sx={{ mt: 0.5 }}
+                        />
+                      </ListItem>
+                    );
+                  })}
+                </List>
+                {plotIndex < groupedChanges.size - 1 && (
+                  <Divider sx={{ my: 1 }} />
+                )}
+              </Box>
+            )
+          )}
+
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage + 1}
+                onChange={(_, page) => setCurrentPage(page - 1)}
+                color="primary"
+                size="small"
+              />
             </Box>
-          )
-        )}
+          )}
+        </>
+        )
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="inherit">
@@ -425,78 +493,4 @@ export default function ChangesDialog({
       </DialogActions>
     </Dialog>
   );
-}
-
-function generateTodoListText(
-  groupedChanges: Map<string, DeedChange[]>,
-  workerMovements: WorkerMovement[],
-  checkedItems: Set<number>,
-  formatValue: (value: number | string | SlotInput | null) => string
-): string {
-  let content = "SPLINTERLANDS DEED CHANGES TODO LIST\n";
-  content += "=====================================\n";
-  content += `Generated: ${new Date().toLocaleString()}\n\n`;
-
-  // Add changes by plot
-  content += "CHANGES BY PLOT\n";
-  content += "===============\n\n";
-
-  let plotNumber = 1;
-  Array.from(groupedChanges.entries()).forEach(([plotId, plotChanges]) => {
-    content += `Plot ${plotNumber}: ${plotId}\n`;
-    content += "-".repeat(plotId.length + 8) + "\n";
-
-    plotChanges.forEach((change, idx) => {
-      const globalIndex = (plotNumber - 1) * 100 + idx;
-      const checkbox = checkedItems.has(globalIndex) ? "[✓]" : "[ ]";
-      const oldVal = formatValue(change.oldValue);
-      const newVal = formatValue(change.newValue);
-
-      // Check if this change involves a worker with cooldown
-      const getCardUidFromValue = (
-        value: number | string | SlotInput | null
-      ): string | null => {
-        if (!value) return null;
-        if (typeof value === "string") return value;
-        if (typeof value === "number") return String(value);
-        const slotInput = value as SlotInput;
-        return slotInput.uid || null;
-      };
-
-      const newCardUid = getCardUidFromValue(change.newValue);
-
-      // Only show cooldown warning when worker is being added (To field)
-      const hasCooldown = newCardUid
-        ? workerMovements.some((m) => m.cardUid === newCardUid)
-        : false;
-
-      const cooldownWarning = hasCooldown ? " ⚠️ [3-DAY COOLDOWN]" : "";
-
-      content += `${checkbox} ${idx + 1}. Update ${change.field}: ${oldVal} → ${newVal}${cooldownWarning}\n`;
-    });
-
-    content += "\n";
-    plotNumber++;
-  });
-
-  content += "\n";
-  content += `Total Changes: ${Array.from(groupedChanges.values()).reduce((sum, changes) => sum + changes.length, 0)}\n`;
-  content += `Completed: ${checkedItems.size}\n`;
-
-  return content;
-}
-
-function downloadTextFile(content: string, filename: string) {
-  const blob = new Blob([content], { type: "text/plain;charset=utf-8;" });
-  const link = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-
-  link.setAttribute("href", url);
-  link.setAttribute("download", filename);
-  link.style.visibility = "hidden";
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
 }
