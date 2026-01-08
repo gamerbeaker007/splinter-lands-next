@@ -183,9 +183,9 @@ export default function PlaygroundDeedGrid({
       prev.map((deed) => ({
         ...deed,
         worksiteType: "",
-        runi: null,
-        titleTier: null,
-        totemTier: null,
+        runi: "none",
+        titleTier: "none",
+        totemTier: "none",
         worker1Uid: null,
         worker2Uid: null,
         worker3Uid: null,
