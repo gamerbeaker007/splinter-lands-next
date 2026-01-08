@@ -2,7 +2,7 @@
 
 import { Box } from "@mui/material";
 import { useRef } from "react";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 export default function DeedGridHeader() {
   const boxRef = useRef<HTMLDivElement>(null);

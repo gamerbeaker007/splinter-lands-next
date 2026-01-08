@@ -19,7 +19,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 const ICONS: Record<Exclude<TotemTier, "none">, string> = {
   common: land_common_totem_icon_url,

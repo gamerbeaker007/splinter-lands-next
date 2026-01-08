@@ -2,7 +2,7 @@
 
 import { ManageLink } from "@/components/player-overview/deed-overview/land-deed-card/link-components/ManageLink";
 import { Box } from "@mui/material";
-import { COLUMN_WIDTHS } from "../gridConstants";
+import { COLUMN_WIDTHS } from "../util/gridConstants";
 
 type LinkColumnProps = {
   regionNumber: number;

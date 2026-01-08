@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 const ICONS: Record<Exclude<TitleTier, "none">, string> = {
   rare: land_title_rare_icon_url,

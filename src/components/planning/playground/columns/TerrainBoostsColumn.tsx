@@ -4,7 +4,7 @@ import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_
 import { TERRAIN_BONUS } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
-import { COLUMN_WIDTHS } from "../gridConstants";
+import { COLUMN_WIDTHS } from "../util/gridConstants";
 
 type TerrainBoostsColumnProps = {
   deedType: string | null;

@@ -18,7 +18,7 @@ import { PlaygroundDeed } from "@/types/playground";
 import { WarningAmber } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import { useMemo } from "react";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 type Props = {
   deed: PlaygroundDeed;

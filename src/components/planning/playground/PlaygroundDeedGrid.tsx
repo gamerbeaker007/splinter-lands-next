@@ -206,11 +206,11 @@ export default function PlaygroundDeedGrid({
           ...deed,
           worksiteType:
             type === "all" || type === "worksites" ? "" : deed.worksiteType,
-          runi: type === "all" || type === "runi" ? null : deed.runi,
+          runi: type === "all" || type === "runi" ? "none" : deed.runi,
           titleTier:
-            type === "all" || type === "titles" ? null : deed.titleTier,
+            type === "all" || type === "titles" ? "none" : deed.titleTier,
           totemTier:
-            type === "all" || type === "totems" ? null : deed.totemTier,
+            type === "all" || type === "totems" ? "none" : deed.totemTier,
           worker1Uid:
             type === "all" || type === "workers" ? null : deed.worker1Uid,
           worker2Uid:

@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-import { COLUMN_WIDTHS } from "../gridConstants";
+import { COLUMN_WIDTHS } from "../util/gridConstants";
 
 type TractRegionPlotColumnProps = {
   regionNumber: number;

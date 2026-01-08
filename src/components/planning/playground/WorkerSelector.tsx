@@ -6,7 +6,7 @@ import { cardIconMap, cardSetIconMap } from "@/types/planner/primitives";
 import { PlaygroundCard } from "@/types/playground";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 type Props = {
   slotIndex: number;

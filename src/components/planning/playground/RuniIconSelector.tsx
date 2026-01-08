@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { COLUMN_WIDTHS } from "./gridConstants";
+import { COLUMN_WIDTHS } from "./util/gridConstants";
 
 const ICONS: Record<RuniTier, string> = {
   none: land_runi_power_core_icon_url,
