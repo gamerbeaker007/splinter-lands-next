@@ -41,6 +41,7 @@ export default function PlaygroundOverview({
       <ResourceSimulationOutputTable
         title="Updated Output (with changes)"
         outputs={updatedOutputs}
+        comparisonOutputs={originalOutputs}
       />
     </Box>
   );

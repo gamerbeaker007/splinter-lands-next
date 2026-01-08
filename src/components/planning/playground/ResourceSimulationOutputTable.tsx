@@ -8,14 +8,28 @@ import Image from "next/image";
 type OutputTableProps = {
   title: string;
   outputs: PlaygroundSummary;
+  comparisonOutputs?: PlaygroundSummary;
 };
 
 const netColor = (v: number) =>
   v > 0 ? "success.main" : v < 0 ? "error.main" : "text.primary";
 
+const getDifferenceColor = (diff: number) => {
+  if (diff > 0) return "success.main";
+  if (diff < 0) return "error.main";
+  return "text.secondary";
+};
+
+const formatDifference = (diff: number) => {
+  if (diff === 0) return "0";
+  const sign = diff > 0 ? "+" : "";
+  return `${sign}${formatNumberWithSuffix(diff)}`;
+};
+
 export default function ResourceSimulationOutputTable({
   title,
   outputs,
+  comparisonOutputs,
 }: OutputTableProps) {
   const minColumnWidth = 80;
   const gridTemplate = `140px repeat(${PRODUCING_RESOURCES.length}, minmax(${minColumnWidth}px, 1fr))`;
@@ -105,6 +119,29 @@ export default function ResourceSimulationOutputTable({
                     : key === "consumed"
                       ? data.consumed
                       : data.net;
+
+              // Calculate difference if comparison data is provided
+              let diff: number | null = null;
+              if (comparisonOutputs) {
+                const comparisonData = comparisonOutputs.perResource[
+                  res as Resource
+                ] || {
+                  pp: 0,
+                  produced: 0,
+                  consumed: 0,
+                  net: 0,
+                };
+                const comparisonValue =
+                  key === "pp"
+                    ? comparisonData.pp
+                    : key === "produced"
+                      ? comparisonData.produced
+                      : key === "consumed"
+                        ? comparisonData.consumed
+                        : comparisonData.net;
+                diff = value - comparisonValue;
+              }
+
               return (
                 <Box
                   key={res}
@@ -114,11 +151,38 @@ export default function ResourceSimulationOutputTable({
                           color: netColor(value),
                           fontWeight: 700,
                           textAlign: "left",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.25,
                         }
-                      : { textAlign: "left" }
+                      : {
+                          textAlign: "left",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.25,
+                        }
                   }
                 >
-                  {formatNumberWithSuffix(value)}
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      fontWeight: key === "net" ? 700 : 500,
+                      color: key === "net" ? netColor(value) : "inherit",
+                    }}
+                  >
+                    {formatNumberWithSuffix(value)}
+                  </Typography>
+                  {diff !== null && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: getDifferenceColor(diff),
+                        fontWeight: 600,
+                      }}
+                    >
+                      ({formatDifference(diff)})
+                    </Typography>
+                  )}
                 </Box>
               );
             })}
@@ -129,9 +193,47 @@ export default function ResourceSimulationOutputTable({
       <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
         <Typography variant="body2">
           Total Base PP: {formatNumberWithSuffix(outputs.totalBasePP)}
+          {comparisonOutputs && (
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{
+                color: getDifferenceColor(
+                  outputs.totalBasePP - comparisonOutputs.totalBasePP
+                ),
+                fontWeight: 600,
+                ml: 0.5,
+              }}
+            >
+              (
+              {formatDifference(
+                outputs.totalBasePP - comparisonOutputs.totalBasePP
+              )}
+              )
+            </Typography>
+          )}
         </Typography>
         <Typography variant="body2">
           | Total Boosted PP: {formatNumberWithSuffix(outputs.totalBoostedPP)}
+          {comparisonOutputs && (
+            <Typography
+              component="span"
+              variant="body2"
+              sx={{
+                color: getDifferenceColor(
+                  outputs.totalBoostedPP - comparisonOutputs.totalBoostedPP
+                ),
+                fontWeight: 600,
+                ml: 0.5,
+              }}
+            >
+              (
+              {formatDifference(
+                outputs.totalBoostedPP - comparisonOutputs.totalBoostedPP
+              )}
+              )
+            </Typography>
+          )}
         </Typography>
       </Box>
     </Paper>
