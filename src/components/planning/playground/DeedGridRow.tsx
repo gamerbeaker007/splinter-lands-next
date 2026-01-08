@@ -11,7 +11,7 @@ import {
 import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/material";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import GeographyColumn from "./columns/GeographyColumn";
 import LinkColumn from "./columns/LinkColumn";
 import RarityColumn from "./columns/RarityColumn";
@@ -58,6 +58,27 @@ export default function DeedGridRow({
   const [selectedWorkers, setSelectedWorkers] = useState<(string | null)[]>(
     () => getWorkerUids(deed)
   );
+
+  // Sync local state with deed prop changes (e.g., when clear all/filtered is clicked)
+  useEffect(() => {
+    setSelectedWorksite(deed.worksiteType || "");
+  }, [deed.worksiteType]);
+
+  useEffect(() => {
+    setSelectedRuni(deed.runi || "none");
+  }, [deed.runi]);
+
+  useEffect(() => {
+    setSelectedTitle(deed.titleTier);
+  }, [deed.titleTier]);
+
+  useEffect(() => {
+    setSelectedTotem(deed.totemTier);
+  }, [deed.totemTier]);
+
+  useEffect(() => {
+    setSelectedWorkers(getWorkerUids(deed));
+  }, [deed]);
 
   const handleWorksiteChange = (newWorksite: string) => {
     setSelectedWorksite(newWorksite);

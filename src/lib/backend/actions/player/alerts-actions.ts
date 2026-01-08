@@ -158,7 +158,9 @@ function analyzeMissingBloodLineBoost(
     // Include all staked cards, regardless of card_set
     const isStaked =
       card.stake_ref_uid !== null &&
-      (!card.stake_end_date || new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs) &&
+      (!card.stake_end_date ||
+        new Date(card.stake_end_date).getTime() >
+          now.getTime() + threeDaysInMs) &&
       (!card.delegated_to || card.delegated_to === player);
 
     if (!isStaked) continue;
@@ -174,7 +176,9 @@ function analyzeMissingBloodLineBoost(
   for (const card of cards) {
     const isStakedOnLand =
       card.stake_ref_uid !== null &&
-      (!card.stake_end_date || new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs);
+      (!card.stake_end_date ||
+        new Date(card.stake_end_date).getTime() >
+          now.getTime() + threeDaysInMs);
     const isLandSet = card.card_set === "land";
     const isStakedToPlayer = !card.delegated_to || card.delegated_to === player;
 
