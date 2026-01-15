@@ -46,14 +46,10 @@ type PlayerEfficiencyLayoutProps = {
 export default function PlayerEfficiencyLayout({
   children,
 }: PlayerEfficiencyLayoutProps) {
-  const { setTitle } = usePageTitle();
+  usePageTitle("Player Efficiency");
 
   const [playerProductionSummaryData, setPlayerProductionSummaryData] =
     useState<PlayerProductionSummaryEnriched[] | null>(null);
-
-  useEffect(() => {
-    setTitle("Player Efficiency");
-  }, [setTitle]);
 
   useEffect(() => {
     (async () => {

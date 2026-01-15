@@ -5,7 +5,7 @@ import {
   filterDeeds,
 } from "@/components/planning/playground/util/deedFilters";
 import { usePrices } from "@/hooks/usePrices";
-import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
+
 import { CardFilterOptions } from "@/types/cardFilter";
 import {
   DeedChange,
@@ -14,6 +14,7 @@ import {
   PlaygroundDeed,
 } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
+import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Pagination, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -34,6 +35,8 @@ type PlaygroundDeedGridProps = {
   cards: PlaygroundCard[];
   cardDetails: SplCardDetails[];
   playerName: string | null;
+  regionTax: RegionTax[];
+  spsRatio: number;
 };
 
 export default function PlaygroundDeedGrid({
@@ -41,6 +44,8 @@ export default function PlaygroundDeedGrid({
   cards,
   cardDetails,
   playerName,
+  regionTax,
+  spsRatio,
 }: PlaygroundDeedGridProps) {
   const [updatedDeeds, setUpdatedDeeds] = useState<PlaygroundDeed[]>(deeds);
   const [currentPage, setCurrentPage] = useState(0);
@@ -67,20 +72,12 @@ export default function PlaygroundDeedGrid({
       minPP: 0,
     }
   );
-  const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
 
   // Reset updatedDeeds when deeds prop changes
   useEffect(() => {
     setUpdatedDeeds(deeds);
   }, [deeds]);
-
-  // Fetch SPS ratio on mount
-  useEffect(() => {
-    getDailySPSRatio()
-      .then(setSpsRatio)
-      .catch((err) => console.error("Failed to fetch SPS ratio:", err));
-  }, []);
 
   const handleDeedChange = (change: DeedChange) => {
     setUpdatedDeeds((prev) =>
@@ -182,7 +179,7 @@ export default function PlaygroundDeedGrid({
     setUpdatedDeeds((prev) =>
       prev.map((deed) => ({
         ...deed,
-        worksiteType: "",
+        worksiteType: deed.plotStatus === "kingdom" ? deed.worksiteType : "",
         runi: "none",
         titleTier: "none",
         totemTier: "none",
@@ -205,7 +202,11 @@ export default function PlaygroundDeedGrid({
         return {
           ...deed,
           worksiteType:
-            type === "all" || type === "worksites" ? "" : deed.worksiteType,
+            type === "all" || type === "worksites"
+              ? deed.plotStatus === "kingdom"
+                ? deed.worksiteType
+                : ""
+              : deed.worksiteType,
           runi: type === "all" || type === "runi" ? "none" : deed.runi,
           titleTier:
             type === "all" || type === "titles" ? "none" : deed.titleTier,
@@ -316,6 +317,8 @@ export default function PlaygroundDeedGrid({
               availableCards={availableCards.slice(0, 20)}
               allCards={cards}
               cardDetails={cardDetails}
+              regionTax={regionTax}
+              spsRatio={spsRatio}
               onChange={handleDeedChange}
             />
           ))}

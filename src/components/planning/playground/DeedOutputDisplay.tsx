@@ -2,6 +2,7 @@
 
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import {
+  calcCaptureRate,
   calcProductionInfo,
   calcTotalPP,
 } from "@/lib/frontend/utils/plannerCalcs";
@@ -15,6 +16,7 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import { PlaygroundDeed } from "@/types/playground";
+import { RegionTax } from "@/types/regionTax";
 import { WarningAmber } from "@mui/icons-material";
 import { Box, Typography } from "@mui/material";
 import { useMemo } from "react";
@@ -27,6 +29,8 @@ type Props = {
   selectedTitle: TitleTier | null;
   selectedTotem: TotemTier | null;
   selectedWorkers: (SlotInput | null)[]; // Changed from string UIDs to SlotInput
+  regionTax: RegionTax[] | null;
+  spsRatio: number;
 };
 
 export default function DeedOutputDisplay({
@@ -36,6 +40,8 @@ export default function DeedOutputDisplay({
   selectedTitle,
   selectedTotem,
   selectedWorkers,
+  regionTax,
+  spsRatio,
 }: Props) {
   const output = useMemo(() => {
     const resource =
@@ -80,15 +86,17 @@ export default function DeedOutputDisplay({
       totems: 0,
     };
 
+    const captureRate = calcCaptureRate(plotData.worksiteType, totalBoostedPP);
+
     try {
       const productionInfo = calcProductionInfo(
         totalBasePP,
         totalBoostedPP,
         plotData,
         prices,
-        1, // spsRatio
-        null, // regionTax
-        null // captureRate
+        spsRatio,
+        regionTax,
+        captureRate
       );
 
       // Format produce
@@ -97,8 +105,9 @@ export default function DeedOutputDisplay({
         .join(", ");
 
       // Format consume
+      const suffix = plotData.plotStatus === "kingdom" ? "" : "/hr";
       const consumeText = productionInfo.consume
-        .map((c) => `${c.resource}: ${c.amount.toFixed(4)}/hr`)
+        .map((c) => `${c.resource}: ${c.amount.toFixed(4)}${suffix}`)
         .join(", ");
 
       return {
@@ -123,6 +132,8 @@ export default function DeedOutputDisplay({
     selectedTitle,
     selectedTotem,
     selectedWorkers,
+    regionTax,
+    spsRatio,
   ]);
 
   return (

@@ -3,7 +3,7 @@
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Container } from "@mui/material";
-import { useEffect, ReactNode } from "react";
+import { ReactNode } from "react";
 
 type ResourceLayoutProps = {
   children: ReactNode;
@@ -22,11 +22,7 @@ const pages = [
 ];
 
 export default function ResourceLayout({ children }: ResourceLayoutProps) {
-  const { setTitle } = usePageTitle();
-
-  useEffect(() => {
-    setTitle("Resource Overview");
-  }, [setTitle]);
+  usePageTitle("Resource Overview");
 
   return (
     <>

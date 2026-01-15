@@ -17,7 +17,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -38,11 +38,7 @@ export default function PlanningPageContent({
   regionTax,
   marketData,
 }: PlanningPageContentProps) {
-  const { setTitle } = usePageTitle();
-
-  useEffect(() => {
-    setTitle("Land Planning");
-  }, [setTitle]);
+  usePageTitle("Land Planning");
 
   const [plans, setPlans] = useState<ProductionInfo[]>([
     {

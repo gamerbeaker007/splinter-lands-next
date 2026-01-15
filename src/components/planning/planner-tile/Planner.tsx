@@ -31,6 +31,7 @@ import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import {
+  calcCaptureRate,
   calcProductionInfo,
   calcTotalPP,
   calcTotemChancePerHour,
@@ -125,11 +126,7 @@ export default function Planner({
   );
 
   const captureRate = useMemo(() => {
-    const alpha = plot.worksiteType === "KEEP" ? 0.5 : 0.2;
-    const denom = plot.worksiteType === "KEEP" ? 5_000 : 10_000;
-    if (plot.worksiteType !== "KEEP" && plot.worksiteType !== "CASTLE")
-      return null;
-    return alpha * (totalBoostedPP / (totalBoostedPP + denom));
+    return calcCaptureRate(plot.worksiteType, totalBoostedPP);
   }, [plot.worksiteType, totalBoostedPP]);
 
   const productionInfo = useMemo(

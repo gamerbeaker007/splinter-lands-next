@@ -24,12 +24,15 @@ import { TitleIconSelector } from "./TitleIconSelector";
 import { TotemIconSelector } from "./TotemIconSelector";
 import WorkerSelector from "./WorkerSelector";
 import { WorksiteIconSelector } from "./WorksiteIconSelector";
+import { RegionTax } from "@/types/regionTax";
 
 type Props = {
   deed: PlaygroundDeed;
   availableCards: PlaygroundCard[];
   allCards: PlaygroundCard[];
   cardDetails: SplCardDetails[];
+  regionTax: RegionTax[] | null;
+  spsRatio: number;
   onChange: (change: DeedChange) => void;
 };
 
@@ -47,6 +50,8 @@ export default function DeedGridRow({
   availableCards,
   allCards,
   cardDetails,
+  regionTax,
+  spsRatio,
   onChange,
 }: Props) {
   const [selectedWorksite, setSelectedWorksite] = useState(
@@ -261,6 +266,8 @@ export default function DeedGridRow({
         selectedTitle={selectedTitle}
         selectedTotem={selectedTotem}
         selectedWorkers={selectedWorkerSlots}
+        regionTax={regionTax}
+        spsRatio={spsRatio}
       />
     </Box>
   );

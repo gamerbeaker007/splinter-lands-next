@@ -88,6 +88,7 @@ export function WorksiteIconSelector({
       <Select<WorksiteType>
         value={value}
         onChange={handleChange}
+        disabled={plotStatus === "kingdom"}
         renderValue={(val) => {
           const v = (val as WorksiteType) ?? value;
           return (
