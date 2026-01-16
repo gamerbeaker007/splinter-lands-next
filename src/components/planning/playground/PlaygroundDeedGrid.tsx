@@ -390,5 +390,5 @@ function formatWorkerSlot(workerUid: SlotInput | null): string | number {
   const bcx = `BCX: ${workerUid?.bcx ?? ""}`;
   const uid = `UID: ${workerUid?.uid ?? ""}`;
   const foil = `Foil: ${workerUid?.foil ?? ""}`;
-  return workerUid && uid ? [name, foil, bcx, uid].join("/") || "" : "none";
+  return workerUid && uid ? [name, foil, bcx, uid].join(" ") || "" : "none";
 }
