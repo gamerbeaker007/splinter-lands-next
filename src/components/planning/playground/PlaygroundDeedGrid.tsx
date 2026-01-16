@@ -7,6 +7,7 @@ import {
 import { usePrices } from "@/hooks/usePrices";
 
 import { CardFilterOptions } from "@/types/cardFilter";
+import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
   DeedFilterOptions,
@@ -356,6 +357,11 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     "Runi",
     "Title",
     "Totem",
+    "Worker 1 UID",
+    "Worker 2 UID",
+    "Worker 3 UID",
+    "Worker 4 UID",
+    "Worker 5 UID",
   ];
 
   const rows = deeds.map((deed) => [
@@ -370,7 +376,19 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     deed.runi || "",
     deed.titleTier || "",
     deed.totemTier || "",
+    formatWorkerSlot(deed.worker1Uid),
+    formatWorkerSlot(deed.worker2Uid),
+    formatWorkerSlot(deed.worker3Uid),
+    formatWorkerSlot(deed.worker4Uid),
+    formatWorkerSlot(deed.worker5Uid),
   ]);
 
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
+}
+function formatWorkerSlot(workerUid: SlotInput | null): string | number {
+  const name = `Name: ${workerUid?.name ?? ""}`;
+  const bcx = `BCX: ${workerUid?.bcx ?? ""}`;
+  const uid = `UID: ${workerUid?.uid ?? ""}`;
+  const foil = `Foil: ${workerUid?.foil ?? ""}`;
+  return workerUid && uid ? [name, foil, bcx, uid].join("/") || "" : "none";
 }
