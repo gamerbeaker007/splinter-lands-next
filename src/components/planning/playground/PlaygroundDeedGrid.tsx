@@ -5,8 +5,9 @@ import {
   filterDeeds,
 } from "@/components/planning/playground/util/deedFilters";
 import { usePrices } from "@/hooks/usePrices";
-import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
+
 import { CardFilterOptions } from "@/types/cardFilter";
+import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
   DeedFilterOptions,
@@ -14,6 +15,7 @@ import {
   PlaygroundDeed,
 } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
+import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Pagination, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
@@ -34,6 +36,8 @@ type PlaygroundDeedGridProps = {
   cards: PlaygroundCard[];
   cardDetails: SplCardDetails[];
   playerName: string | null;
+  regionTax: RegionTax[];
+  spsRatio: number;
 };
 
 export default function PlaygroundDeedGrid({
@@ -41,6 +45,8 @@ export default function PlaygroundDeedGrid({
   cards,
   cardDetails,
   playerName,
+  regionTax,
+  spsRatio,
 }: PlaygroundDeedGridProps) {
   const [updatedDeeds, setUpdatedDeeds] = useState<PlaygroundDeed[]>(deeds);
   const [currentPage, setCurrentPage] = useState(0);
@@ -67,20 +73,12 @@ export default function PlaygroundDeedGrid({
       minPP: 0,
     }
   );
-  const [spsRatio, setSpsRatio] = useState<number>(0);
   const { prices } = usePrices();
 
   // Reset updatedDeeds when deeds prop changes
   useEffect(() => {
     setUpdatedDeeds(deeds);
   }, [deeds]);
-
-  // Fetch SPS ratio on mount
-  useEffect(() => {
-    getDailySPSRatio()
-      .then(setSpsRatio)
-      .catch((err) => console.error("Failed to fetch SPS ratio:", err));
-  }, []);
 
   const handleDeedChange = (change: DeedChange) => {
     setUpdatedDeeds((prev) =>
@@ -182,7 +180,7 @@ export default function PlaygroundDeedGrid({
     setUpdatedDeeds((prev) =>
       prev.map((deed) => ({
         ...deed,
-        worksiteType: "",
+        worksiteType: deed.plotStatus === "kingdom" ? deed.worksiteType : "",
         runi: "none",
         titleTier: "none",
         totemTier: "none",
@@ -205,7 +203,11 @@ export default function PlaygroundDeedGrid({
         return {
           ...deed,
           worksiteType:
-            type === "all" || type === "worksites" ? "" : deed.worksiteType,
+            type === "all" || type === "worksites"
+              ? deed.plotStatus === "kingdom"
+                ? deed.worksiteType
+                : ""
+              : deed.worksiteType,
           runi: type === "all" || type === "runi" ? "none" : deed.runi,
           titleTier:
             type === "all" || type === "titles" ? "none" : deed.titleTier,
@@ -316,6 +318,8 @@ export default function PlaygroundDeedGrid({
               availableCards={availableCards.slice(0, 20)}
               allCards={cards}
               cardDetails={cardDetails}
+              regionTax={regionTax}
+              spsRatio={spsRatio}
               onChange={handleDeedChange}
             />
           ))}
@@ -353,6 +357,11 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     "Runi",
     "Title",
     "Totem",
+    "Worker 1 UID",
+    "Worker 2 UID",
+    "Worker 3 UID",
+    "Worker 4 UID",
+    "Worker 5 UID",
   ];
 
   const rows = deeds.map((deed) => [
@@ -367,7 +376,19 @@ function generateDeedCSV(deeds: PlaygroundDeed[]): string {
     deed.runi || "",
     deed.titleTier || "",
     deed.totemTier || "",
+    formatWorkerSlot(deed.worker1Uid),
+    formatWorkerSlot(deed.worker2Uid),
+    formatWorkerSlot(deed.worker3Uid),
+    formatWorkerSlot(deed.worker4Uid),
+    formatWorkerSlot(deed.worker5Uid),
   ]);
 
   return [headers, ...rows].map((row) => row.join(",")).join("\n");
+}
+function formatWorkerSlot(workerUid: SlotInput | null): string | number {
+  const name = `Name: ${workerUid?.name ?? ""}`;
+  const bcx = `BCX: ${workerUid?.bcx ?? ""}`;
+  const uid = `UID: ${workerUid?.uid ?? ""}`;
+  const foil = `Foil: ${workerUid?.foil ?? ""}`;
+  return workerUid && uid ? [name, foil, bcx, uid].join(" ") || "" : "none";
 }

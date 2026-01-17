@@ -6,7 +6,7 @@ import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Container } from "@mui/material";
 import { usePathname } from "next/navigation";
-import { ReactNode, useEffect, useMemo } from "react";
+import { ReactNode, useMemo } from "react";
 
 type RegionOverviewLayoutProps = {
   children: ReactNode;
@@ -69,16 +69,12 @@ const pageFilterConfigs: Record<string, FilterConfig> = {
 export default function RegionOverviewLayout({
   children,
 }: RegionOverviewLayoutProps) {
-  const { setTitle } = usePageTitle();
+  usePageTitle("Region Overview");
   const pathname = usePathname();
 
   const filterOptions = useMemo(() => {
     return pageFilterConfigs[pathname] || defaultFilterConfig;
   }, [pathname]);
-
-  useEffect(() => {
-    setTitle("Region Overview");
-  }, [setTitle]);
 
   return (
     <FilterProvider>

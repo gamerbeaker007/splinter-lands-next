@@ -402,3 +402,20 @@ export function getMaxBloodlineBoosts(cardInput: SlotInput[]) {
 
   return maxBloodlineBoosts;
 }
+
+/**
+ *  Calculates the capture rate for KEEP and CASTLE worksites based on total boosted PP.
+ * https://splinterlands.gitbook.io/phase-2-the-secret-of-praetoria/buildings-and-resources/castles-and-keeps/taxes-castles
+ * @param worksiteType
+ * @param totalBoostedPP
+ * @returns
+ */
+export function calcCaptureRate(
+  worksiteType: WorksiteType,
+  totalBoostedPP: number
+): number | null {
+  const alpha = worksiteType === "KEEP" ? 0.5 : 0.2;
+  const denom = worksiteType === "KEEP" ? 5_000 : 10_000;
+  if (worksiteType !== "KEEP" && worksiteType !== "CASTLE") return null;
+  return alpha * (totalBoostedPP / (totalBoostedPP + denom));
+}

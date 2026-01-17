@@ -1,33 +1,30 @@
 "use client";
 
 import PlayerInput from "@/components/player-overview/PlayerInput";
-import { useCardDetailsAction } from "@/hooks/useCardDetails";
 import { usePlaygroundData } from "@/hooks/usePlaygroundData";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
-import { WarningAmber } from "@mui/icons-material";
+import { RegionTax } from "@/types/regionTax";
+import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, CircularProgress, Typography } from "@mui/material";
-import { useEffect } from "react";
 import PlaygroundDeedGrid from "./PlaygroundDeedGrid";
 
-export default function PlaygroundPageContent() {
-  const { setTitle } = usePageTitle();
+interface PlaygroundPageContentProps {
+  cardDetails: SplCardDetails[];
+  regionTax: RegionTax[];
+  spsRatio: number;
+}
+
+export default function PlaygroundPageContent({
+  cardDetails,
+  regionTax,
+  spsRatio,
+}: PlaygroundPageContentProps) {
+  usePageTitle("Land Playground");
   const { selectedPlayer } = usePlayer();
   const { data, loading, error } = usePlaygroundData(selectedPlayer);
-  const {
-    cardDetails,
-    loading: loadingCards,
-    error: cardsError,
-  } = useCardDetailsAction();
 
-  useEffect(() => {
-    setTitle("Land Playground");
-  }, [setTitle]);
-
-  const isLoading = loading || loadingCards;
-  const hasError = error || cardsError;
-
-  if (isLoading) {
+  if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
         <CircularProgress />
@@ -35,11 +32,11 @@ export default function PlaygroundPageContent() {
     );
   }
 
-  if (hasError) {
+  if (error) {
     return (
       <Box sx={{ p: 4, textAlign: "center" }}>
         <Typography variant="h6" color="error">
-          {hasError}
+          {error}
         </Typography>
       </Box>
     );
@@ -47,11 +44,6 @@ export default function PlaygroundPageContent() {
 
   return (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h4" gutterBottom>
-        <WarningAmber sx={{ verticalAlign: "middle", mr: 1 }} />
-        THIS IS AN EXPERIMENTAL FEATURE
-        <WarningAmber sx={{ verticalAlign: "middle", ml: 1 }} />
-      </Typography>
       <PlayerInput />
 
       {!selectedPlayer ? (
@@ -62,8 +54,10 @@ export default function PlaygroundPageContent() {
         <PlaygroundDeedGrid
           deeds={data.deeds}
           cards={data.cards}
-          cardDetails={cardDetails}
           playerName={selectedPlayer}
+          cardDetails={cardDetails}
+          regionTax={regionTax}
+          spsRatio={spsRatio}
         />
       ) : null}
     </Box>

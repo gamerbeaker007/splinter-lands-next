@@ -36,13 +36,9 @@ type PlayerOverviewLayoutProps = {
 };
 
 function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
-  const { setTitle } = usePageTitle();
+  usePageTitle("Player Overview");
   const { resetFilters } = useFilters();
   const { selectedPlayer } = usePlayer();
-
-  useEffect(() => {
-    setTitle("Player Overview");
-  }, [setTitle]);
 
   useEffect(() => {
     if (selectedPlayer) {

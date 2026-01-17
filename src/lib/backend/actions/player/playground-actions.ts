@@ -156,6 +156,7 @@ export async function getPlaygroundData(
         bloodline,
         landBoosts,
         uid, // Store the card UID for tracking
+        name: splCard?.name ?? "Unknown",
       };
     };
 

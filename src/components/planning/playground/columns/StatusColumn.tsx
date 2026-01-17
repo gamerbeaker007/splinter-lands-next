@@ -11,6 +11,7 @@ import { COLUMN_WIDTHS } from "../util/gridConstants";
 const statusIconMap: Record<string, string> = {
   natural: land_default_off_icon_url_placeholder.replace("__NAME__", "natural"),
   magical: land_default_off_icon_url_placeholder.replace("__NAME__", "magical"),
+  kingdom: land_default_off_icon_url_placeholder.replace("__NAME__", "kingdom"),
   construction: land_under_construction_icon_url,
 };
 
