@@ -283,7 +283,7 @@ export default function ChangesDialog({
         </Box>
       </DialogTitle>
       <DialogContent dividers>
-        {/* Regular Changes List */}(
+        {/* Regular Changes List */}
         <>
           <Box
             sx={{
@@ -477,7 +477,6 @@ export default function ChangesDialog({
             </Box>
           )}
         </>
-        )
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} color="inherit">
