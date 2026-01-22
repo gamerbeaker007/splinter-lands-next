@@ -12,7 +12,7 @@ export type PlayerProduction = {
   total: number;
 };
 
-const LIMIT_TOP_PLAYERS = 50;
+const LIMIT_TOP_PLAYERS = 100;
 
 export type ResourceLeaderboard = {
   resource: Resource;
