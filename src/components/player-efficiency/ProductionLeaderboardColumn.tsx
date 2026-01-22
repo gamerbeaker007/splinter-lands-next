@@ -19,9 +19,7 @@ export default function ProductionLeaderboardColumn({
 
   // Determine if player should be added (not in top x)
   const playerNotInTop50 =
-    currentPlayer &&
-    playerInfo &&
-    !top.some((p) => p.player === currentPlayer);
+    currentPlayer && playerInfo && !top.some((p) => p.player === currentPlayer);
 
   // Build chart data - add player if not in top x
   const chartData = playerNotInTop50 ? [...top, playerInfo!] : top;
