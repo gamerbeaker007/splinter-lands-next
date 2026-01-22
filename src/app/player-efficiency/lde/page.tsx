@@ -1,10 +1,13 @@
 "use client";
 
 import LDEPage from "@/components/player-efficiency/LDEPage";
-import { usePlayerEfficiency } from "../layout";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
+import {
+  PlayerEfficiencyProvider,
+  usePlayerEfficiency,
+} from "../PlayerEfficiencyProvider";
 
-export default function LDE() {
+function LDEContent() {
   const { selectedPlayer } = usePlayer();
   const { playerProductionSummaryData } = usePlayerEfficiency();
 
@@ -13,5 +16,13 @@ export default function LDE() {
       playerSummaryData={playerProductionSummaryData}
       currentPlayer={selectedPlayer}
     />
+  );
+}
+
+export default function LDE() {
+  return (
+    <PlayerEfficiencyProvider>
+      <LDEContent />
+    </PlayerEfficiencyProvider>
   );
 }

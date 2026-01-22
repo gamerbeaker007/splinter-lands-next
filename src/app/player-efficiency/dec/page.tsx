@@ -1,10 +1,13 @@
 "use client";
 
 import DECPage from "@/components/player-efficiency/DECPage";
-import { usePlayerEfficiency } from "../layout";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
+import {
+  PlayerEfficiencyProvider,
+  usePlayerEfficiency,
+} from "../PlayerEfficiencyProvider";
 
-export default function DEC() {
+function DECContent() {
   const { selectedPlayer } = usePlayer();
   const { playerProductionSummaryData } = usePlayerEfficiency();
 
@@ -13,5 +16,13 @@ export default function DEC() {
       playerSummaryData={playerProductionSummaryData}
       currentPlayer={selectedPlayer}
     />
+  );
+}
+
+export default function DEC() {
+  return (
+    <PlayerEfficiencyProvider>
+      <DECContent />
+    </PlayerEfficiencyProvider>
   );
 }
