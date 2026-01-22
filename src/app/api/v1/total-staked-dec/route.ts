@@ -42,7 +42,7 @@ function calculateTotalStakedDEC(deeds: DeedComplete[]): number {
  * @returns {Object} JSON response with total staked DEC
  * @property {number} data.totalStakedDEC - Total DEC staked
  * @property {number} data.deedsAnalyzed - Number of deeds analyzed
- * @property {string} data.timestamp - Timestamp of the last update
+ * @property {string} data.lastUpdated - Timestamp of the last update
  * @property {Object} meta - Metadata about the API response
  * @property {string} meta.apiVersion - Version of the API
  * @throws {Error} If there is an issue fetching or calculating the data
@@ -65,7 +65,7 @@ export async function GET() {
         data: {
           totalStakedDEC,
           deedsAnalyzed: deeds.length,
-          timestamp: date.toISOString(),
+          lastUpdated: date.toISOString(),
         },
         meta: {
           apiVersion: "1.0",
