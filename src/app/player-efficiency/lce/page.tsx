@@ -1,10 +1,13 @@
 "use client";
 
 import LCEPage from "@/components/player-efficiency/LCEPage";
-import { usePlayerEfficiency } from "../layout";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
+import {
+  PlayerEfficiencyProvider,
+  usePlayerEfficiency,
+} from "../PlayerEfficiencyProvider";
 
-export default function LCE() {
+function LCEContent() {
   const { selectedPlayer } = usePlayer();
   const { playerProductionSummaryData } = usePlayerEfficiency();
 
@@ -13,5 +16,13 @@ export default function LCE() {
       playerSummaryData={playerProductionSummaryData}
       currentPlayer={selectedPlayer}
     />
+  );
+}
+
+export default function LCE() {
+  return (
+    <PlayerEfficiencyProvider>
+      <LCEContent />
+    </PlayerEfficiencyProvider>
   );
 }

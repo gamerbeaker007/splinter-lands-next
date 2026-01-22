@@ -2,9 +2,12 @@
 
 import RankingPage from "@/components/player-efficiency/RankingPage";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
-import { usePlayerEfficiency } from "../layout";
+import {
+  PlayerEfficiencyProvider,
+  usePlayerEfficiency,
+} from "../PlayerEfficiencyProvider";
 
-export default function Rankings() {
+function RankingsContent() {
   const { selectedPlayer } = usePlayer();
   const { playerProductionSummaryData } = usePlayerEfficiency();
 
@@ -13,5 +16,13 @@ export default function Rankings() {
       playerSummaryData={playerProductionSummaryData}
       currentPlayer={selectedPlayer}
     />
+  );
+}
+
+export default function Rankings() {
+  return (
+    <PlayerEfficiencyProvider>
+      <RankingsContent />
+    </PlayerEfficiencyProvider>
   );
 }

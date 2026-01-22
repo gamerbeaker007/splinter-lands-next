@@ -2,9 +2,12 @@
 
 import LPEPage from "@/components/player-efficiency/LPEPage";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
-import { usePlayerEfficiency } from "../layout";
+import {
+  PlayerEfficiencyProvider,
+  usePlayerEfficiency,
+} from "../PlayerEfficiencyProvider";
 
-export default function LPE() {
+function LPEContent() {
   const { selectedPlayer } = usePlayer();
   const { playerProductionSummaryData } = usePlayerEfficiency();
 
@@ -13,5 +16,13 @@ export default function LPE() {
       playerSummaryData={playerProductionSummaryData}
       currentPlayer={selectedPlayer}
     />
+  );
+}
+
+export default function LPE() {
+  return (
+    <PlayerEfficiencyProvider>
+      <LPEContent />
+    </PlayerEfficiencyProvider>
   );
 }
