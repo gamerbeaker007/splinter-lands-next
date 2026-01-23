@@ -6,6 +6,7 @@ interface RankedItemBoxProps {
   subValue?: string | number | undefined;
   otherSubValues?: (string | number | undefined)[];
   showDivider?: boolean;
+  highlight?: boolean;
 }
 
 export const RankedItemBox: React.FC<RankedItemBoxProps> = ({
@@ -14,6 +15,7 @@ export const RankedItemBox: React.FC<RankedItemBoxProps> = ({
   subValue,
   otherSubValues,
   showDivider = true,
+  highlight = false,
 }) => {
   // Remove undefined, then join with en dash
   const subValues = otherSubValues
@@ -21,7 +23,12 @@ export const RankedItemBox: React.FC<RankedItemBoxProps> = ({
     : "";
 
   return (
-    <Box>
+    <Box
+      sx={{
+        backgroundColor: highlight ? "rgba(239, 68, 68, 0.1)" : "transparent",
+        borderLeft: highlight ? "3px solid #ef4444" : "none",
+      }}
+    >
       <Box display="flex" alignItems="center" ml={1}>
         <Box minWidth={85} display={"flex"}>
           <Box width={30}>
@@ -34,7 +41,7 @@ export const RankedItemBox: React.FC<RankedItemBoxProps> = ({
               {rank}.
             </Typography>
           </Box>
-          <Box>
+          <Box mr={1}>
             <Typography variant="body2" fontWeight="medium" fontSize={14}>
               {value}
             </Typography>

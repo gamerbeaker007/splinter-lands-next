@@ -1,8 +1,9 @@
 "use client";
 
+import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { ResourceLeaderboard } from "@/lib/backend/actions/production-leaderboard-actions";
 import { RESOURCE_ICON_MAP, TAX_RATE } from "@/lib/shared/statics";
-import { Box, Typography } from "@mui/material";
+import { Box, Card, Typography } from "@mui/material";
 import Image from "next/image";
 import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
 
@@ -73,79 +74,92 @@ export default function ProductionLeaderboardColumn({
         />
       </Box>
 
-      {/* Player Info */}
-
-      <Box
-        sx={{
-          textAlign: "center",
-          padding: 1,
-          backgroundColor: "background.paper",
-          borderRadius: 1,
-          border: "1px solid",
-          borderColor: "divider",
-        }}
-      >
-        <Typography variant="body2" color="text.secondary">
-          {currentPlayer}
-        </Typography>
-        <Typography variant="h6" color="secondary.main">
-          {rank}
-        </Typography>
-        <Box
-          display="flex"
-          flexDirection={"column"}
-          width="fit-content"
-          alignItems="flex-start"
-          margin="0 auto"
-        >
-          <Typography variant="body2">{playerProduction}</Typography>
-          <Box display="flex" gap={1}>
-            <Typography variant="body2">{playerProductionIncTax}</Typography>
-            <Typography
-              variant="caption"
-              color="gray"
-              fontSize="0.625rem"
-              sx={{ mt: 0.25 }}
-            >
-              {"(incl. tax)"}
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
       {/* Bar Chart */}
       <Box
         sx={{
           width: "100%",
-          height: 1000,
+          height: 400,
         }}
       >
         <FullscreenPlotWrapper
           data={[
             {
               type: "bar",
-              y: players,
-              x: productions,
-              orientation: "h",
+              x: players,
+              y: productions,
               marker: { color: colors },
-              hovertemplate: "%{y}<br>%{x:.2f}/hr<extra></extra>",
+              hovertemplate: "%{x}<br>%{y:.2f}/hr<extra></extra>",
             },
           ]}
           layout={{
-            title: { text: resource },
+            title: { text: `${resource} Production` },
             xaxis: {
+              showgrid: false,
+              tickangle: -45,
+              tickfont: { size: 8 },
+            },
+            yaxis: {
               title: { text: "Production (per hour)" },
               showgrid: true,
             },
-            yaxis: {
-              autorange: "reversed",
-              showgrid: false,
-              tickfont: { size: 10 },
-            },
-            margin: { l: 100, r: 20, t: 50, b: 50 },
+            margin: { l: 50, r: 20, t: 50, b: 100 },
             showlegend: false,
           }}
         />
+      </Box>
+
+      {/* Ranking List */}
+      <Box minWidth={300}>
+        <Card sx={{ maxHeight: 500, overflowY: "auto" }}>
+          {/* Player Info */}
+          <Box
+            sx={{
+              position: "sticky",
+              top: 0,
+              backgroundColor: "background.paper",
+              zIndex: 1,
+              px: 2,
+              py: 1,
+              borderBottom: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            {playerInfo && (
+              <Box px={1}>
+                <Typography variant="body2" color="text.secondary">
+                  {currentPlayer}
+                </Typography>
+                <Typography variant="h6" color="secondary.main">
+                  {rank}
+                </Typography>
+                <Typography variant="body2">{playerProduction}</Typography>
+                <Box display="flex" gap={1}>
+                  <Typography variant="body2">
+                    {playerProductionIncTax}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="gray"
+                    fontSize="0.625rem"
+                    sx={{ mt: 0.25 }}
+                  >
+                    {"(incl. tax)"}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          {chartData.map((p) => (
+            <RankedItemBox
+              key={`ranked-box-${p.player}-${resource}`}
+              rank={p.rank}
+              value={p.production.toFixed(2)}
+              subValue={p.player}
+              highlight={p.player === currentPlayer}
+            />
+          ))}
+        </Card>
       </Box>
     </Box>
   );
