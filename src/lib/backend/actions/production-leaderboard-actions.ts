@@ -18,6 +18,7 @@ export type ResourceLeaderboard = {
   resource: Resource;
   top: PlayerProduction[];
   playerInfo?: PlayerProduction;
+  total: number;
 };
 
 /**
@@ -35,6 +36,7 @@ export async function getProductionLeaderboard(
   const productionPerPlayerPerResource: Partial<
     Record<Resource, Record<string, number>>
   > = {};
+  const totalProductionPerResource: Partial<Record<Resource, number>> = {};
 
   filteredDeeds.forEach((deed) => {
     const deedOwner = deed.player;
@@ -50,8 +52,11 @@ export async function getProductionLeaderboard(
     // Add or update player production for this resource
     if (productionPerPlayerPerResource[resource][deedOwner]) {
       productionPerPlayerPerResource[resource][deedOwner] += rewardsPerHour;
+      totalProductionPerResource[resource] =
+        (totalProductionPerResource[resource] || 0) + rewardsPerHour;
     } else {
       productionPerPlayerPerResource[resource][deedOwner] = rewardsPerHour;
+      totalProductionPerResource[resource] = rewardsPerHour;
     }
   });
 
@@ -97,6 +102,7 @@ export async function getProductionLeaderboard(
       resource: resource as Resource,
       top,
       playerInfo,
+      total: totalProductionPerResource[resource as Resource] || 0,
     });
   }
 

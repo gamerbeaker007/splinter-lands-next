@@ -2,6 +2,7 @@
 
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { ResourceLeaderboard } from "@/lib/backend/actions/production-leaderboard-actions";
+import { formatNumberWithSuffix } from "@/lib/formatters";
 import { RESOURCE_ICON_MAP, TAX_RATE } from "@/lib/shared/statics";
 import { Box, Card, Typography } from "@mui/material";
 import Image from "next/image";
@@ -99,8 +100,9 @@ export default function ProductionLeaderboardColumn({
               tickfont: { size: 8 },
             },
             yaxis: {
-              title: { text: "Production (per hour)" },
+              title: { text: "Production /hr (log)" },
               showgrid: true,
+              type: "log",
             },
             margin: { l: 50, r: 20, t: 50, b: 100 },
             showlegend: false,
@@ -125,10 +127,27 @@ export default function ProductionLeaderboardColumn({
             }}
           >
             {playerInfo && (
-              <Box px={1}>
-                <Typography variant="body2" color="text.secondary">
+              <Box
+                component="fieldset"
+                sx={{
+                  border: "1px solid",
+                  borderColor: "divider",
+                  borderRadius: 1,
+                  px: 1,
+                  py: 1,
+                  m: 0,
+                }}
+              >
+                <Box
+                  component="legend"
+                  sx={{
+                    px: 1,
+                    color: "text.secondary",
+                    fontSize: "0.875rem",
+                  }}
+                >
                   {currentPlayer}
-                </Typography>
+                </Box>
                 <Typography variant="h6" color="secondary.main">
                   {rank}
                 </Typography>
@@ -148,6 +167,14 @@ export default function ProductionLeaderboardColumn({
                 </Box>
               </Box>
             )}
+            <Typography
+              variant="body1"
+              color="primary.main"
+              fontWeight="bold"
+              fontSize={20}
+            >
+              Total: {formatNumberWithSuffix(leaderboard.total)}
+            </Typography>
           </Box>
 
           {chartData.map((p) => (

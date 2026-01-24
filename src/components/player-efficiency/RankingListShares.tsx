@@ -84,6 +84,7 @@ export default function RankingListShares({ players, currentPlayer }: Props) {
             rank={p.rank as number}
             value={((p.share ?? 0) * 100).toFixed(3)}
             subValue={p.player}
+            highlight={p.player === currentPlayer}
           />
         ))}
       </Card>

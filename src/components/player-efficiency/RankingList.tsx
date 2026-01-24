@@ -120,6 +120,7 @@ export default function RankingList({
                 ? [(p[subValueField] as number).toFixed(2)]
                 : undefined
             }
+            highlight={p.player === currentPlayer}
           />
         ))}
       </Card>

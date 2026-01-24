@@ -59,6 +59,7 @@ export function TradeHubRankingList({
             formatNumberWithSuffix(p.dec_quantity),
             formatNumberWithSuffix(p.resource_quantity),
           ]}
+          highlight={p.player === currentPlayerData?.player}
         />
       ))}
     </Card>
