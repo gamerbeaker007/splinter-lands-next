@@ -177,9 +177,9 @@ export default function ProductionLeaderboardColumn({
             </Typography>
           </Box>
 
-          {chartData.map((p) => (
+          {chartData.map((p, index) => (
             <RankedItemBox
-              key={`ranked-box-${p.player}-${resource}`}
+              key={`ranked-box-${resource}-${p.player}-${index}`}
               rank={p.rank}
               value={p.production.toFixed(2)}
               subValue={p.player}
