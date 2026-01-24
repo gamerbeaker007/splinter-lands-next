@@ -1,9 +1,9 @@
 "use server";
 
-import { FilterInput } from "@/types/filters";
+import { Resource } from "@/constants/resource/resource";
 import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { filterDeeds } from "@/lib/filters";
-import { Resource } from "@/constants/resource/resource";
+import { FilterInput } from "@/types/filters";
 
 export type PlayerProduction = {
   player: string;
@@ -52,12 +52,13 @@ export async function getProductionLeaderboard(
     // Add or update player production for this resource
     if (productionPerPlayerPerResource[resource][deedOwner]) {
       productionPerPlayerPerResource[resource][deedOwner] += rewardsPerHour;
-      totalProductionPerResource[resource] =
-        (totalProductionPerResource[resource] || 0) + rewardsPerHour;
     } else {
       productionPerPlayerPerResource[resource][deedOwner] = rewardsPerHour;
-      totalProductionPerResource[resource] = rewardsPerHour;
     }
+
+    // Always add to total production for this resource
+    totalProductionPerResource[resource] =
+      (totalProductionPerResource[resource] || 0) + rewardsPerHour;
   });
 
   // Process each resource: sort, rank, and slice top 50

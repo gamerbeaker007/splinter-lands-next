@@ -1,6 +1,11 @@
 export function formatLargeNumber(number: number) {
-  return new Intl.NumberFormat("en-US").format(number);
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 3,
+  }).format(number);
 }
+
 
 export function formatNumberWithSuffix(number: number): string {
   const abs = Math.abs(number);

@@ -2,7 +2,7 @@
 
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { ResourceLeaderboard } from "@/lib/backend/actions/production-leaderboard-actions";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatLargeNumber } from "@/lib/formatters";
 import { RESOURCE_ICON_MAP, TAX_RATE } from "@/lib/shared/statics";
 import { Box, Card, Typography } from "@mui/material";
 import Image from "next/image";
@@ -173,7 +173,7 @@ export default function ProductionLeaderboardColumn({
               fontWeight="bold"
               fontSize={20}
             >
-              Total: {formatNumberWithSuffix(leaderboard.total)}
+              Total: {formatLargeNumber(leaderboard.total)}
             </Typography>
           </Box>
 
@@ -181,7 +181,7 @@ export default function ProductionLeaderboardColumn({
             <RankedItemBox
               key={`ranked-box-${resource}-${p.player}-${index}`}
               rank={p.rank}
-              value={p.production.toFixed(2)}
+              value={formatLargeNumber(p.production)}
               subValue={p.player}
               highlight={p.player === currentPlayer}
             />
