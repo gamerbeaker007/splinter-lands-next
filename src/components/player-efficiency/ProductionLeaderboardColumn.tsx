@@ -47,6 +47,9 @@ export default function ProductionLeaderboardColumn({
     ? `Production: ${(production - production * TAX_RATE).toFixed(3)} / hr`
     : "Production: N/A";
 
+  const playerPercentageOfTotal = production
+    ? ((production / leaderboard.total) * 100).toFixed(2)
+    : "N/A";
   return (
     <Box
       sx={{
@@ -165,6 +168,7 @@ export default function ProductionLeaderboardColumn({
                     {"(incl. tax)"}
                   </Typography>
                 </Box>
+                <Typography variant="body2">{`Share: ${playerPercentageOfTotal}%`}</Typography>
               </Box>
             )}
             <Typography
