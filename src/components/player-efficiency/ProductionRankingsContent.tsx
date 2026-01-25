@@ -7,7 +7,15 @@ import {
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
+import {
+  Box,
+  CircularProgress,
+  FormControlLabel,
+  Switch,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import ProductionLeaderboardColumn from "./ProductionLeaderboardColumn";
 
@@ -16,6 +24,7 @@ export function ProductionRankingsContent() {
   const { selectedPlayer } = usePlayer();
   const [data, setData] = useState<ResourceLeaderboard[]>([]);
   const [loading, setLoading] = useState(false);
+  const [showNet, setShowNet] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -38,9 +47,45 @@ export function ProductionRankingsContent() {
 
   return (
     <Box>
-      <Typography variant="h4" gutterBottom>
-        Resource Production Leaderboard
-      </Typography>
+      <Box display="flex" flexDirection="column" gap={2} mb={2}>
+        <Typography variant="h4">Resource Production Leaderboard</Typography>
+        <FormControlLabel
+          control={
+            <Switch
+              checked={showNet}
+              onChange={(e) => setShowNet(e.target.checked)}
+              size="small"
+            />
+          }
+          label={
+            <Box display="flex" alignItems="center" gap={0.5}>
+              <Typography variant="body1">
+                Show Net Production Ranking
+              </Typography>
+              <Tooltip
+                title={
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      Net production ranking deducts each player&apos;s resource
+                      consumption from their total production. This includes
+                      grain consumed by all plots, as well as resources consumed
+                      for research/aura and SPS production.
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                      Note: cross region resource transfers are not considered
+                      in this calculation.
+                    </Typography>
+                  </Box>
+                }
+                arrow
+                placement="right"
+              >
+                <InfoOutlinedIcon fontSize="small" sx={{ cursor: "help" }} />
+              </Tooltip>
+            </Box>
+          }
+        />
+      </Box>
 
       {loading && (
         <Box display="flex" justifyContent="center" p={4}>
@@ -66,6 +111,7 @@ export function ProductionRankingsContent() {
               key={leaderboard.resource}
               leaderboard={leaderboard}
               currentPlayer={selectedPlayer}
+              showNet={showNet}
             />
           ))}
         </Box>

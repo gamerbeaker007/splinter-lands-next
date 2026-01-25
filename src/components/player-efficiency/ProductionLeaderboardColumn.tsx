@@ -3,31 +3,41 @@
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { ResourceLeaderboard } from "@/lib/backend/actions/production-leaderboard-actions";
 import { formatLargeNumber } from "@/lib/formatters";
-import { RESOURCE_ICON_MAP, TAX_RATE } from "@/lib/shared/statics";
-import { Box, Card, Typography } from "@mui/material";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { Box, Card, Divider, Typography } from "@mui/material";
 import Image from "next/image";
 import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
 
 type Props = {
   leaderboard: ResourceLeaderboard;
   currentPlayer?: string;
+  showNet: boolean;
 };
 
 export default function ProductionLeaderboardColumn({
   leaderboard,
   currentPlayer,
+  showNet,
 }: Props) {
-  const { resource, top, playerInfo } = leaderboard;
+  const { resource, top, topNet, playerInfo } = leaderboard;
+
+  // Use either top or topNet based on toggle
+  const topRankingList = showNet ? topNet : top;
 
   // Determine if player should be added (not in top x)
-  const playerNotInTop50 =
-    currentPlayer && playerInfo && !top.some((p) => p.player === currentPlayer);
+  const playerNotInTop =
+    currentPlayer &&
+    playerInfo &&
+    !topRankingList.some((p) => p.player === currentPlayer);
 
   // Build chart data - add player if not in top x
-  const chartData = playerNotInTop50 ? [...top, playerInfo!] : top;
-
+  const chartData = playerNotInTop
+    ? [...topRankingList, playerInfo!]
+    : topRankingList;
   const players = chartData.map((p) => p.player);
-  const productions = chartData.map((p) => p.production);
+  const values = chartData.map((p) =>
+    showNet ? p.netProduction : p.production
+  );
 
   // Highlight current player
   const colors = chartData.map((p) =>
@@ -35,21 +45,33 @@ export default function ProductionLeaderboardColumn({
   );
 
   const rank = playerInfo
-    ? `Rank: ${playerInfo?.rank} / ${playerInfo?.total}`
+    ? showNet
+      ? `Net Rank: ${playerInfo.netRank} / ${playerInfo.total}`
+      : `Rank: ${playerInfo.rank} / ${playerInfo.total}`
     : "Rank: N/A";
 
   const production = playerInfo?.production;
+  const consumed = playerInfo?.consumed;
+  const netProduction = playerInfo?.netProduction;
 
   const playerProduction = production
     ? `Production: ${production.toFixed(3)} / hr`
-    : "Production: N/A";
-  const playerProductionIncTax = production
-    ? `Production: ${(production - production * TAX_RATE).toFixed(3)} / hr`
-    : "Production: N/A";
+    : "Production: 0 / hr";
 
-  const playerPercentageOfTotal = production
-    ? ((production / leaderboard.total) * 100).toFixed(2)
-    : "N/A";
+  const playerConsumed =
+    consumed !== undefined
+      ? `Consumed: ${consumed.toFixed(3)} / hr`
+      : "Consumed: 0 / hr";
+  const playerNet =
+    netProduction !== undefined
+      ? `Net: ${netProduction.toFixed(3)} / hr`
+      : "Net: 0 / hr";
+
+  const playerPercentageOfTotal =
+    production && leaderboard.total
+      ? ((production / leaderboard.total) * 100).toFixed(2)
+      : "0";
+
   return (
     <Box
       sx={{
@@ -90,20 +112,22 @@ export default function ProductionLeaderboardColumn({
             {
               type: "bar",
               x: players,
-              y: productions,
+              y: values,
               marker: { color: colors },
               hovertemplate: "%{x}<br>%{y:.2f}/hr<extra></extra>",
             },
           ]}
           layout={{
-            title: { text: `${resource} Production` },
+            title: {
+              text: `${resource} ${showNet ? "Net Production" : "Production"}`,
+            },
             xaxis: {
               showgrid: false,
               tickangle: -45,
               tickfont: { size: 8 },
             },
             yaxis: {
-              title: { text: "Production /hr (log)" },
+              title: { text: `${showNet ? "Net " : ""}Production /hr (log)` },
               showgrid: true,
               type: "log",
             },
@@ -154,11 +178,8 @@ export default function ProductionLeaderboardColumn({
                 <Typography variant="h6" color="secondary.main">
                   {rank}
                 </Typography>
-                <Typography variant="body2">{playerProduction}</Typography>
                 <Box display="flex" gap={1}>
-                  <Typography variant="body2">
-                    {playerProductionIncTax}
-                  </Typography>
+                  <Typography variant="body2">{playerProduction}</Typography>
                   <Typography
                     variant="caption"
                     color="gray"
@@ -169,8 +190,24 @@ export default function ProductionLeaderboardColumn({
                   </Typography>
                 </Box>
                 <Typography variant="body2">{`Share: ${playerPercentageOfTotal}%`}</Typography>
+                <Divider />
+                <Typography variant="body2">{playerConsumed}</Typography>
+                <Typography
+                  variant="body2"
+                  fontWeight="bold"
+                  color={
+                    netProduction === undefined || netProduction === 0
+                      ? "gray"
+                      : netProduction > 0
+                        ? "success.main"
+                        : "error.main"
+                  }
+                >
+                  {playerNet}
+                </Typography>
               </Box>
             )}
+
             <Typography
               variant="body1"
               color="primary.main"
@@ -179,13 +216,28 @@ export default function ProductionLeaderboardColumn({
             >
               Total: {formatLargeNumber(leaderboard.total)}
             </Typography>
+            <Typography
+              variant="body1"
+              color="primary.main"
+              fontWeight="bold"
+              fontSize={20}
+            >
+              Total Net: {formatLargeNumber(leaderboard.totalNet ?? 0)}
+            </Typography>
+            {leaderboard.totalConsumed !== undefined && (
+              <Typography variant="body2" color="text.secondary">
+                Total Consumed: {formatLargeNumber(leaderboard.totalConsumed)}
+              </Typography>
+            )}
           </Box>
 
           {chartData.map((p, index) => (
             <RankedItemBox
               key={`ranked-box-${resource}-${p.player}-${index}`}
-              rank={p.rank}
-              value={formatLargeNumber(p.production)}
+              rank={showNet ? p.netRank : p.rank}
+              value={formatLargeNumber(
+                showNet ? p.netProduction : p.production
+              )}
               subValue={p.player}
               highlight={p.player === currentPlayer}
             />
