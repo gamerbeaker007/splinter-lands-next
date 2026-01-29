@@ -1,9 +1,9 @@
+import { Resource } from "@/constants/resource/resource";
+import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
+import { RegionSummary } from "@/types/resource";
+import { Box } from "@mui/material";
 import React from "react";
 import { RegionCard, RegionData } from "./RegionCard";
-import { RegionSummary } from "@/types/resource";
-import { PRODUCING_RESOURCES } from "@/lib/shared/statics";
-import { Resource } from "@/constants/resource/resource";
-import { Box } from "@mui/material";
 
 type Props = {
   data: RegionSummary[];
@@ -15,6 +15,8 @@ const RegionCardList: React.FC<Props> = ({ data }) => {
     resources: PRODUCING_RESOURCES.map((res) => ({
       name: String(res),
       count: Number(region.countPlots[res as Resource]) || 0,
+      countIsConstruction:
+        Number(region.countIsConstruction[res as Resource]) || 0,
       produce: Number(region.production[res as Resource]) || 0,
       consume: Number(region.consumption[res as Resource]) || 0,
       net: Number(region.netAdjustedResource[res as Resource]) || 0,

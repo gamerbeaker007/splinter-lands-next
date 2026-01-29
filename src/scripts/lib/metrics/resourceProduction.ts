@@ -38,17 +38,26 @@ async function computeAndStoreResource(
       totalRewards += worksiteDetail.rewards_per_hour ?? 0;
     }
 
-    const totalBasePPAfterEfficiency =
-      deeds.reduce((acc, deed) => {
+    const costs = deeds.reduce(
+      (acc, deed) => {
         const se = deed.worksiteDetail?.site_efficiency ?? 0;
         const pp = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
-        return acc + se * pp;
-      }, 0) || 0;
+        const isConstruction = deed.worksiteDetail?.is_construction ?? false;
+        const deedCosts = calcCostsV2(
+          pp,
+          se,
+          isConstruction,
+          determineRecipe(resource)
+        );
 
-    const costs = calcCostsV2(
-      totalBasePPAfterEfficiency,
-      1,
-      determineRecipe(resource)
+        // Accumulate costs
+        for (const [key, value] of Object.entries(deedCosts)) {
+          acc[key] = (acc[key] || 0) + value;
+        }
+
+        return acc;
+      },
+      {} as Record<string, number>
     );
 
     const data = {

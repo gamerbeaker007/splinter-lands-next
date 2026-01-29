@@ -124,6 +124,7 @@ function aggregatePlayerProduction(filteredDeeds: DeedComplete[]) {
 
     const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 0;
+    const isConstruction = deed.worksiteDetail?.is_construction ?? false;
     const recipe = deed.worksiteDetail
       ?.resource_recipe as unknown as ResourceRecipeItem[];
 
@@ -131,7 +132,12 @@ function aggregatePlayerProduction(filteredDeeds: DeedComplete[]) {
     if (!deedOwner || !resource) return;
 
     // Calculate consumed resources
-    const consumedResource = calcCostsV2(basePP, siteEfficiency, recipe);
+    const consumedResource = calcCostsV2(
+      basePP,
+      siteEfficiency,
+      isConstruction,
+      recipe
+    );
 
     // Initialize resource object if needed
     productionPerPlayerPerResource[resource] ??= {};
