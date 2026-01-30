@@ -36,6 +36,11 @@ const pages = [
     path: "/region-overview/tract-analysis",
   },
   { key: "tax", label: "Tax", path: "/region-overview/tax" },
+  {
+    key: "inactivity",
+    label: "Inactivity",
+    path: "/region-overview/inactivity",
+  },
 ];
 
 const defaultFilterConfig: FilterConfig = {
@@ -63,6 +68,14 @@ const pageFilterConfigs: Record<string, FilterConfig> = {
     attributes: true,
     player: false,
     sorting: true,
+  },
+  "/region-overview/inactivity": {
+    regions: true,
+    tracts: true,
+    plots: true,
+    attributes: true,
+    player: true,
+    sorting: false,
   },
 };
 
