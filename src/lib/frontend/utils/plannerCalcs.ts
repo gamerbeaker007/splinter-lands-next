@@ -248,6 +248,7 @@ export function calcProductionInfo(
     prices,
     1,
     determineRecipe(resource),
+    false, // in planning never under construction
     consumeGrainDiscount
   );
 

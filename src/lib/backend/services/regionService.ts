@@ -386,7 +386,8 @@ export function enrichWithProductionInfo(
           st.total_base_pp_after_cap ?? 0,
           prices,
           ws.site_efficiency ?? 0,
-          ws.resource_recipe as unknown as ResourceRecipeItem[]
+          ws.resource_recipe as unknown as ResourceRecipeItem[],
+          ws.is_construction ?? false
         );
         const totalDECConsume = consumeCosts.reduce(
           (sum, row) => sum + Number(row.sellPriceDEC || 0),

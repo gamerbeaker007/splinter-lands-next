@@ -264,11 +264,21 @@ export async function processPlayerRegionInformation(
   const totalResourceCounts: Record<Resource, number> = {} as Record<
     Resource,
     number
-  >;
+    >;
+
+  const totalResourceCountsIsConstruction: Record<Resource, number> = {} as Record<
+    Resource,
+    number
+    >;
+
   playerData.forEach((deed: DeedComplete) => {
     const resource = deed.worksiteDetail?.token_symbol as Resource;
     if (resource) {
       totalResourceCounts[resource] = (totalResourceCounts[resource] || 0) + 1;
+      if (deed.worksiteDetail?.is_construction) {
+        totalResourceCountsIsConstruction[resource] =
+          (totalResourceCountsIsConstruction[resource] || 0) + 1;
+      }
     }
   });
 
@@ -279,6 +289,7 @@ export async function processPlayerRegionInformation(
       totalDEC: total_dec,
       dec: dec_net,
       resourceCounts: totalResourceCounts,
+      resourceCountsIsConstruction: totalResourceCountsIsConstruction,
     },
   };
 }

@@ -22,12 +22,18 @@ import { ResourceWithDEC } from "@/types/productionInfo";
 export function calcCostsV2(
   basePP: number,
   siteEfficiency: number,
+  isConstruction: boolean,
   recipe?: ResourceRecipeItem[]
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
   // Always include GRAIN cost
   costs.GRAIN = basePP * DEFAULT_GRAIN_COST * siteEfficiency;
+
+  // When under construction, only GRAIN is consumed
+  if (isConstruction) {
+    return costs as Record<Resource, number>;
+  }
 
   // Calculate costs for other resources based on recipe
   if (recipe) {
@@ -44,6 +50,7 @@ export function calcConsumeCosts(
   prices: Record<string, number>,
   siteEfficiency: number,
   recipe: ResourceRecipeItem[],
+  isConstruction: boolean,
   consumeGrainDiscount?: number
 ): ResourceWithDEC[] {
   const costs: ResourceWithDEC[] = [];
@@ -64,6 +71,12 @@ export function calcConsumeCosts(
     sellPriceDEC: calcDirectDECPrice("sell", grainAmount, prices["GRAIN"] ?? 0),
   });
 
+  // When under construction, only GRAIN is consumed
+  if (isConstruction) {
+    return costs;
+  }
+
+  // Calculate other resource costs based on recipe
   if (recipe) {
     for (const item of recipe) {
       const res = item.symbol as Resource;

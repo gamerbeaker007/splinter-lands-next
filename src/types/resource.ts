@@ -6,6 +6,7 @@ export interface RegionSummary {
   totalBasePP: number;
   totalBoostedPP: number;
   countPlots: Record<Resource, number>;
+  countIsConstruction: Record<Resource, number>;
   production: Record<Resource, number>;
   consumption: Record<Resource, number>;
   netResource: Record<Resource, number>;
@@ -26,6 +27,7 @@ export interface RegionTotals {
   totalDEC: number;
   netAdjustedResource: Record<Resource, number>;
   resourceCounts: Record<Resource, number>;
+  resourceCountsIsConstruction: Record<Resource, number>;
 }
 
 export type PlayerRegionDataType = {

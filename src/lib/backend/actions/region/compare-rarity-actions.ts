@@ -33,6 +33,7 @@ export async function getRegionCompareRarity(
     const rewardsPerHour = deed.worksiteDetail?.rewards_per_hour ?? 0;
     const totalBasePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 1;
+    const isConstruction = deed.worksiteDetail?.is_construction ?? false;
     const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
       | ResourceRecipeItem[]
       | [];
@@ -41,7 +42,8 @@ export async function getRegionCompareRarity(
       totalBasePP,
       prices,
       siteEfficiency,
-      resourceRecipe
+      resourceRecipe,
+      isConstruction
     );
 
     // Initialize rarity entry if not present

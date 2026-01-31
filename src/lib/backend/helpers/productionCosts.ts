@@ -20,6 +20,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
     const resource = (deed.worksiteDetail?.token_symbol ?? "") as Resource;
     const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 0;
+    const isConstruction = deed.worksiteDetail?.is_construction ?? false;
     const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
       | ResourceRecipeItem[]
       | undefined;
@@ -33,6 +34,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
           totalBasePP: 0,
           totalBoostedPP: 0,
           countPlots: {} as Record<Resource, number>,
+          countIsConstruction: {} as Record<Resource, number>,
           production: {} as Record<Resource, number>,
           consumption: {} as Record<Resource, number>,
           netResource: {} as Record<Resource, number>,
@@ -49,9 +51,17 @@ function getRegionSummary(deeds: DeedComplete[]) {
       summaryMap[region].countPlots[resource] =
         ((summaryMap[region].countPlots[resource] as number) || 0) + 1;
 
+      // Count under construction plots
+      if (isConstruction) {
+        summaryMap[region].countIsConstruction[resource] =
+          ((summaryMap[region].countIsConstruction[resource] as number) || 0) +
+          1;
+      }
+
       const costs: Record<Resource, number> = calcCostsV2(
         basePP,
         siteEfficiency,
+        isConstruction,
         resourceRecipe
       );
 

@@ -6,7 +6,6 @@ export function formatLargeNumber(number: number) {
   }).format(number);
 }
 
-
 export function formatNumberWithSuffix(number: number): string {
   const abs = Math.abs(number);
 

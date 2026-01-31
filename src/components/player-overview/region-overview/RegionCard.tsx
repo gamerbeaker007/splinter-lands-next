@@ -1,13 +1,14 @@
-import React from "react";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
-  Card,
-  CardContent,
-  Typography,
   Avatar,
   Box,
+  Card,
+  CardContent,
   Divider,
+  Tooltip,
+  Typography,
 } from "@mui/material";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import React from "react";
 
 export type RegionData = {
   title: string;
@@ -15,6 +16,7 @@ export type RegionData = {
   resources: {
     name: string;
     count: number;
+    countIsConstruction?: number | null;
     produce: number;
     consume?: number | null;
     net: number;
@@ -57,7 +59,20 @@ export const RegionCard: React.FC<Props> = ({ data }) => {
                 />
                 <Typography variant="caption">
                   {res.name}
-                  <br />({res.count})
+                  <br />
+                  {res.countIsConstruction ? (
+                    <Tooltip
+                      title={`${res.count - (res.countIsConstruction ?? 0)} active plots / ${res.countIsConstruction} under construction`}
+                      arrow
+                    >
+                      <span>
+                        ({res.count - (res.countIsConstruction ?? 0)}/
+                        {res.countIsConstruction})
+                      </span>
+                    </Tooltip>
+                  ) : (
+                    `(${res.count})`
+                  )}
                 </Typography>
               </Box>
             ))}
