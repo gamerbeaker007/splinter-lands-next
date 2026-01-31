@@ -16,7 +16,7 @@ const TotalsCardList: React.FC<Props> = ({ regionTotals }) => {
     resources: PRODUCING_RESOURCES.map((res) => ({
       name: String(res),
       count: Number(regionTotals.resourceCounts[res as Resource]) || 0,
-      underConstruction:
+      countIsConstruction:
         Number(regionTotals.resourceCountsIsConstruction[res as Resource]) ||
         0,
       produce: Number(regionTotals.netAdjustedResource[res as Resource]) || 0,
