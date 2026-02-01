@@ -1,6 +1,8 @@
 import { Deed, PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
+import { SplDeedHarvestActionsResponse } from "@/types/deedHarvest";
+import { SplDeedProjectsResponse } from "@/types/deedProjects";
 import { Assets } from "@/types/planner/market/market";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
@@ -227,4 +229,140 @@ export async function fetchMarketLandData() {
   if (!data) throw new Error("Invalid response from Splinterlands API");
 
   return data.deeds as Deed[];
+}
+
+const DEFAULT_DEED_LIMIT = 100;
+
+/**
+ * Fetch deed projects for a specific deed UID
+ * @param deedUid The deed UID (e.g., "I-295-1aa8c0692dc15d")
+ * @param limit Number of records per request
+ * @param offset Starting position
+ */
+export async function fetchDeedProjects(
+  deedUid: string,
+  limit: number = DEFAULT_DEED_LIMIT,
+  offset: number = 0
+): Promise<SplDeedProjectsResponse> {
+  const url = `/land/projects/deed/${deedUid}/list`;
+  const res = await splLandClient.get(url, {
+    params: { limit, offset },
+  });
+
+  if (!res.data || res.data.status !== "success") {
+    throw new Error("Invalid response from Splinterlands API");
+  }
+
+  return res.data as SplDeedProjectsResponse;
+}
+
+/**
+ * Fetch all deed projects for a specific deed UID (paginated)
+ * @param deedUid The deed UID
+ * @param limit Number of records per request
+ */
+export async function fetchAllDeedProjects(
+  deedUid: string,
+  limit: number = DEFAULT_DEED_LIMIT
+): Promise<SplDeedProjectsResponse> {
+  const allProjects: SplDeedProjectsResponse["data"] = [];
+  let offset = 0;
+  let hasMore = true;
+  let iterations = 0;
+  const maxIterations = 100; // Max 100 iterations (10,000 records with default limit)
+
+  while (hasMore) {
+    const response = await fetchDeedProjects(deedUid, limit, offset);
+    allProjects.push(...response.data);
+
+    // If we received fewer records than the limit, we've reached the end
+    hasMore = response.data.length === limit;
+
+    // Use the last project ID as the offset for the next request
+    if (hasMore && response.data.length > 0) {
+      offset = response.data[response.data.length - 1].id;
+    }
+
+    iterations++;
+
+    // Safety check to prevent infinite loops
+    if (iterations >= maxIterations) {
+      logger.warn(
+        `fetchAllDeedProjects: Exceeded maximum iterations (${maxIterations}) for deed ${deedUid}, fetched ${allProjects.length} records`
+      );
+      break;
+    }
+  }
+
+  return {
+    status: "success",
+    data: allProjects,
+  };
+}
+
+/**
+ * Fetch deed harvest/reward actions for a specific deed UID
+ * @param deedUid The deed UID (e.g., "I-295-1aa8c0692dc15d")
+ * @param limit Number of records per request
+ * @param offset Starting position
+ */
+export async function fetchDeedHarvestActions(
+  deedUid: string,
+  limit: number = DEFAULT_DEED_LIMIT,
+  offset: number = 0
+): Promise<SplDeedHarvestActionsResponse> {
+  const url = `/land/resources/rewardactions/${deedUid}`;
+  const res = await splLandClient.get(url, {
+    params: { limit, offset },
+  });
+
+  if (!res.data || res.data.status !== "success") {
+    throw new Error("Invalid response from Splinterlands API");
+  }
+
+  return res.data as SplDeedHarvestActionsResponse;
+}
+
+/**
+ * Fetch all deed harvest/reward actions for a specific deed UID (paginated)
+ * @param deedUid The deed UID
+ * @param limit Number of records per request
+ */
+export async function fetchAllDeedHarvestActions(
+  deedUid: string,
+  limit: number = DEFAULT_DEED_LIMIT
+): Promise<SplDeedHarvestActionsResponse> {
+  const allActions: SplDeedHarvestActionsResponse["data"] = [];
+  let offset = 0;
+  let hasMore = true;
+  let iterations = 0;
+  const maxIterations = 100; // Max 100 iterations (10,000 records with default limit)
+
+  while (hasMore) {
+    const response = await fetchDeedHarvestActions(deedUid, limit, offset);
+    allActions.push(...response.data);
+
+    // If we received fewer records than the limit, we've reached the end
+    hasMore = response.data.length === limit;
+
+    // Use the last action ID as the offset for the next request
+    if (hasMore && response.data.length > 0) {
+      offset = response.data[response.data.length - 1].id;
+    }
+
+    iterations++;
+
+    // Safety check to prevent infinite loops
+    if (iterations >= maxIterations) {
+      logger.warn(
+        `fetchAllDeedHarvestActions: Exceeded maximum iterations (${maxIterations}) for deed ${deedUid}, fetched ${allActions.length} records`
+      );
+      break;
+    }
+  }
+
+  return {
+    status: "success",
+    data: allActions,
+  };
 }
