@@ -4,7 +4,7 @@ import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import PlayerInput from "@/components/player-overview/PlayerInput";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { Box, Container } from "@mui/material";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
 const pages = [
   { key: "rankings", label: "Rankings", path: "/player-efficiency/rankings" },
@@ -30,7 +30,9 @@ export default function PlayerEfficiencyLayout({
 
   return (
     <>
-      <PageNavTabs pages={pages} />
+      <Suspense fallback={<Box sx={{ height: 48 }} />}>
+        <PageNavTabs pages={pages} />
+      </Suspense>
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={2}>
           <PlayerInput />

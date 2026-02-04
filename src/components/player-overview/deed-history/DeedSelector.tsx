@@ -30,7 +30,7 @@ export default function DeedSelector({ currentDeedUid }: DeedSelectorProps) {
       .filter((deed) => deed.deed_uid)
       .map((deed) => ({
         deed_uid: deed.deed_uid!,
-        label: `${deed.region_name} - Plot ${deed.plot_number} (${deed.worksite_type || "Undeveloped"})`,
+        label: `R${deed.region_number} (${deed.region_name}) T${deed.tract_number} P${deed.plot_number} (${deed.worksite_type || "Undeveloped"})`,
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [deeds]);

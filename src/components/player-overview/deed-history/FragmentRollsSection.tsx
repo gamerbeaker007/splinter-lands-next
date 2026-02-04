@@ -1,6 +1,14 @@
 "use client";
 
+import { useCardDetailsAction } from "@/hooks/useCardDetails";
+import {
+  determineMaxLevelFromRarityFoil,
+  getCardImgV2,
+  parseCardUid,
+  rarityName,
+} from "@/lib/utils/cardUtil";
 import { SplDeedHarvestAction } from "@/types/deedHarvest";
+import { SplCardDetails } from "@/types/splCardDetails";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
@@ -13,8 +21,10 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { Fragment } from "react";
 
 interface FragmentRollsSectionProps {
@@ -24,34 +34,100 @@ interface FragmentRollsSectionProps {
 export default function FragmentRollsSection({
   harvests,
 }: FragmentRollsSectionProps) {
-  // Filter harvests that have fragment or labor's luck rolls
+  const { cardDetails } = useCardDetailsAction();
+
+  // Filter harvests that have fragment or labor's luck rolls and ensure unique ids.
   const rollHarvests = harvests.filter(
     (h) =>
       h.fragment_roll &&
       (h.fragment_roll.fragment_chance !== null ||
         h.fragment_roll.labors_luck_chance !== null)
   );
+  const uniqueRollHarvests = Array.from(
+    new Map(rollHarvests.map((h) => [h.trx_id, h])).values()
+  );
 
   // Calculate success statistics
-  const fragmentAttempts = rollHarvests.filter(
+  const fragmentAttempts = uniqueRollHarvests.filter(
     (h) => h.fragment_roll.fragment_chance !== null
   ).length;
-  const fragmentSuccesses = rollHarvests.filter(
+  const fragmentSuccesses = uniqueRollHarvests.filter(
     (h) => h.fragment_roll.fragment_found === true
   ).length;
   const fragmentSuccessRate =
     fragmentAttempts > 0 ? (fragmentSuccesses / fragmentAttempts) * 100 : 0;
 
-  const laborsLuckAttempts = rollHarvests.filter(
+  const laborsLuckAttempts = uniqueRollHarvests.filter(
     (h) => h.fragment_roll.labors_luck_chance !== null
   ).length;
-  const laborsLuckSuccesses = rollHarvests.filter(
+  const laborsLuckSuccesses = uniqueRollHarvests.filter(
     (h) => h.fragment_roll.labors_luck_uid !== null
   ).length;
   const laborsLuckSuccessRate =
     laborsLuckAttempts > 0
       ? (laborsLuckSuccesses / laborsLuckAttempts) * 100
       : 0;
+
+  const renderLaborsLuckReward = (
+    uid: string | null,
+    details: SplCardDetails[] | null
+  ) => {
+    if (!uid) return "-";
+    const parsed = parseCardUid(uid);
+    if (!parsed || !details) return uid;
+
+    const card = details.find((cd) => cd.id === parsed.cardDetailId);
+    if (!card) return uid;
+    const level =
+      parsed.foil === "gold"
+        ? 1
+        : determineMaxLevelFromRarityFoil(rarityName(card.rarity), parsed.foil);
+    const img = getCardImgV2(card.name, parsed.edition, parsed.foil, level);
+
+    return (
+      <Tooltip
+        title={
+          <Box width={220} height={300} position="relative">
+            <Image
+              src={img}
+              alt={card.name}
+              fill
+              sizes="220px"
+              style={{
+                objectFit: "contain",
+                objectPosition: "center",
+                borderRadius: 8,
+              }}
+            />
+          </Box>
+        }
+        placement="right"
+        arrow
+      >
+        <Box
+          width={40}
+          height={56}
+          position="relative"
+          sx={{
+            overflow: "hidden",
+            borderRadius: 0.5,
+            background: "#222",
+          }}
+        >
+          <Image
+            src={img}
+            alt={card.name}
+            fill
+            sizes="40px"
+            style={{
+              objectFit: "cover",
+              objectPosition: "top center",
+            }}
+          />
+        </Box>
+      </Tooltip>
+    );
+  };
 
   return (
     <Paper sx={{ padding: 2 }}>
@@ -65,7 +141,8 @@ export default function FragmentRollsSection({
       {/* Summary Stats */}
       <Box sx={{ mb: 2 }}>
         <Typography variant="body2">
-          <strong>Total Harvests with Rolls:</strong> {rollHarvests.length}
+          <strong>Total Harvests with Rolls:</strong>{" "}
+          {uniqueRollHarvests.length}
         </Typography>
         <Box sx={{ mt: 1 }}>
           <Typography variant="body2">
@@ -80,7 +157,7 @@ export default function FragmentRollsSection({
       </Box>
 
       {/* Roll Details Table */}
-      {rollHarvests.length > 0 ? (
+      {uniqueRollHarvests.length > 0 ? (
         <TableContainer sx={{ maxHeight: 400 }}>
           <Table size="small" stickyHeader>
             <TableHead>
@@ -88,16 +165,15 @@ export default function FragmentRollsSection({
                 <TableCell>Date</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>Chance %</TableCell>
-                <TableCell>Roll</TableCell>
                 <TableCell>Success</TableCell>
                 <TableCell>Reward</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {rollHarvests.map((harvest) => {
+              {uniqueRollHarvests.map((harvest) => {
                 const roll = harvest.fragment_roll;
                 const fragmentRow =
-                  roll.fragment_chance !== null ? (
+                  roll.fragment_chance === null ? null : (
                     <TableRow key={`${harvest.id}-fragment`}>
                       <TableCell>
                         {new Date(harvest.created_date).toLocaleDateString()}
@@ -114,9 +190,6 @@ export default function FragmentRollsSection({
                         {((roll.fragment_chance ?? 0) * 100).toFixed(4)}%
                       </TableCell>
                       <TableCell>
-                        {((roll.fragment_roll ?? 0) * 100).toFixed(4)}%
-                      </TableCell>
-                      <TableCell>
                         {roll.fragment_found ? (
                           <CheckCircleIcon color="success" fontSize="small" />
                         ) : (
@@ -129,10 +202,10 @@ export default function FragmentRollsSection({
                           : "-"}
                       </TableCell>
                     </TableRow>
-                  ) : null;
+                  );
 
                 const laborsLuckRow =
-                  roll.labors_luck_chance !== null ? (
+                  roll.labors_luck_chance === null ? null : (
                     <TableRow key={`${harvest.id}-labors`}>
                       <TableCell>
                         {new Date(harvest.created_date).toLocaleDateString()}
@@ -149,9 +222,6 @@ export default function FragmentRollsSection({
                         {((roll.labors_luck_chance ?? 0) * 100).toFixed(4)}%
                       </TableCell>
                       <TableCell>
-                        {((roll.labors_luck_roll ?? 0) * 100).toFixed(4)}%
-                      </TableCell>
-                      <TableCell>
                         {roll.labors_luck_uid ? (
                           <CheckCircleIcon color="success" fontSize="small" />
                         ) : (
@@ -159,10 +229,13 @@ export default function FragmentRollsSection({
                         )}
                       </TableCell>
                       <TableCell>
-                        {roll.labors_luck_uid ? roll.labors_luck_uid : "-"}
+                        {renderLaborsLuckReward(
+                          roll.labors_luck_uid,
+                          cardDetails
+                        )}
                       </TableCell>
                     </TableRow>
-                  ) : null;
+                  );
 
                 return (
                   <Fragment key={harvest.id}>

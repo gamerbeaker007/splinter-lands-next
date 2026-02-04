@@ -4,9 +4,9 @@ import FilterDrawer from "@/components/filter/FilterDrawer";
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
-import { Container } from "@mui/material";
+import { Container, Box } from "@mui/material";
 import { usePathname } from "next/navigation";
-import { ReactNode, useMemo } from "react";
+import { ReactNode, useMemo, Suspense } from "react";
 
 type RegionOverviewLayoutProps = {
   children: ReactNode;
@@ -93,7 +93,9 @@ export default function RegionOverviewLayout({
     <FilterProvider>
       <FilterDrawer filtersEnabled={filterOptions} />
       <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
-        <PageNavTabs pages={pages} />
+        <Suspense fallback={<Box sx={{ height: 48 }} />}>
+          <PageNavTabs pages={pages} />
+        </Suspense>
         {children}
       </Container>
     </FilterProvider>

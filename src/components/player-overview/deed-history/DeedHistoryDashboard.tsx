@@ -8,13 +8,11 @@ import HarvestSummarySection from "./HarvestSummarySection";
 import WorksiteProgressionSection from "./WorksiteProgressionSection";
 
 interface DeedHistoryDashboardProps {
-  deedUid: string;
   projects: SplDeedProject[];
   harvests: SplDeedHarvestAction[];
 }
 
 export default function DeedHistoryDashboard({
-  deedUid,
   projects,
   harvests,
 }: DeedHistoryDashboardProps) {

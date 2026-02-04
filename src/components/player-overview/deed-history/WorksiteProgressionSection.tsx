@@ -15,13 +15,14 @@ import {
 } from "@mui/material";
 
 const formatDate = (date: string) => {
-  return new Date(date).toLocaleString("en-US", {
+  return new Date(date).toLocaleString("en-GB", {
     year: "numeric",
-    month: "2-digit",
+    month: "short",
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
+    timeZone: "UTC",
   });
 };
 
@@ -75,7 +76,7 @@ export default function WorksiteProgressionSection({
               <TableCell>Resource</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Start Date</TableCell>
-              <TableCell>End Date</TableCell>
+              <TableCell>Completed Date</TableCell>
               <TableCell>PP Staked</TableCell>
               <TableCell>PP Spent</TableCell>
               <TableCell>Elapsed Hours</TableCell>

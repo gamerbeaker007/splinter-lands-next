@@ -100,6 +100,38 @@ export function getCardImgV2(
   return `${baseCardUrl}/${editionUrl}/${safeCardName}_lv${lvl}${suffix}.png`;
 }
 
+export type ParsedCardUid = {
+  foil: CardFoil;
+  edition: number;
+  cardDetailId: number;
+};
+
+const foilCodeMap: Record<string, CardFoil> = {
+  C: "regular",
+  G: "gold",
+  B: "black",
+  GA: "gold arcane",
+  BA: "black arcane",
+};
+
+export function parseCardUid(
+  cardUid: string | null | undefined
+): ParsedCardUid | null {
+  if (!cardUid) return null;
+  const match = new RegExp(/^([A-Z]+)(\d+)-(\d+)-/).exec(cardUid);
+  if (!match) return null;
+
+  const foil = foilCodeMap[match[1]];
+  const edition = Number(match[2]);
+  const cardDetailId = Number(match[3]);
+
+  if (!foil || Number.isNaN(edition) || Number.isNaN(cardDetailId)) {
+    return null;
+  }
+
+  return { foil, edition, cardDetailId };
+}
+
 export const determineCardMaxBCX = (
   cardSet: string,
   rarity: CardRarity,
@@ -114,7 +146,7 @@ export const determineCardMaxBCX = (
   return bcxMap[foilType][set][rarity];
 };
 
-function rarityName(rarity: number): CardRarity | string {
+export function rarityName(rarity: number): CardRarity | string {
   return cardRarityOptions[rarity - 1] ?? `Unknown (${rarity})`;
 }
 
@@ -248,6 +280,17 @@ export function determineLevelFromBCX(
     }
   }
   return level;
+}
+
+export function determineMaxLevelFromRarityFoil(
+  rarity: CardRarity,
+  foil: CardFoil
+): number {
+  if (foil === "regular") {
+    return combine_rates[rarity].length;
+  } else {
+    return combine_rates_gold[rarity].length;
+  }
 }
 
 export function determineLandBoosts(

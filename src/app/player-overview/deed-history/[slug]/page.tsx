@@ -9,25 +9,11 @@ interface PageProps {
 }
 
 async function DeedHistoryContent({ deedUid }: { deedUid: string }) {
-  try {
-    const { projects, harvests } = await getDeedHistory(deedUid);
+  const { projects, harvests } = await getDeedHistory(deedUid);
 
-    return (
-      <>
-        <DeedHistoryDashboard
-          deedUid={deedUid}
-          projects={projects.data}
-          harvests={harvests.data}
-        />
-      </>
-    );
-  } catch (error) {
-    return (
-      <Typography color="error" sx={{ padding: "20px" }}>
-        Error loading deed history: {(error as Error).message}
-      </Typography>
-    );
-  }
+  return (
+    <DeedHistoryDashboard projects={projects.data} harvests={harvests.data} />
+  );
 }
 
 function DeedHistoryLoading() {

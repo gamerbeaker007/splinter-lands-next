@@ -2,8 +2,8 @@
 
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
-import { Container } from "@mui/material";
-import { ReactNode } from "react";
+import { Box, Container } from "@mui/material";
+import { ReactNode, Suspense } from "react";
 
 type ResourceLayoutProps = {
   children: ReactNode;
@@ -26,7 +26,9 @@ export default function ResourceLayout({ children }: ResourceLayoutProps) {
 
   return (
     <>
-      <PageNavTabs pages={pages} />
+      <Suspense fallback={<Box sx={{ height: 48 }} />}>
+        <PageNavTabs pages={pages} />
+      </Suspense>
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         {children}
       </Container>

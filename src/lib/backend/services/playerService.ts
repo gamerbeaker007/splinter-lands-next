@@ -264,12 +264,10 @@ export async function processPlayerRegionInformation(
   const totalResourceCounts: Record<Resource, number> = {} as Record<
     Resource,
     number
-    >;
+  >;
 
-  const totalResourceCountsIsConstruction: Record<Resource, number> = {} as Record<
-    Resource,
-    number
-    >;
+  const totalResourceCountsIsConstruction: Record<Resource, number> =
+    {} as Record<Resource, number>;
 
   playerData.forEach((deed: DeedComplete) => {
     const resource = deed.worksiteDetail?.token_symbol as Resource;

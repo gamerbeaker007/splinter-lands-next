@@ -11,7 +11,7 @@ export default function InactivityPageContent() {
   const [data, setData] = useState<InactivityAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const {filters} = useFilters();
+  const { filters } = useFilters();
 
   useEffect(() => {
     if (!filters) return;

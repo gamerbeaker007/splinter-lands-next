@@ -10,7 +10,7 @@ import {
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Box, Container } from "@mui/material";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, Suspense, useEffect } from "react";
 
 const pages = [
   {
@@ -53,7 +53,9 @@ function PlayerOverviewLayoutInner({ children }: PlayerOverviewLayoutProps) {
 
   return (
     <>
-      <PageNavTabs pages={pages} />
+      <Suspense fallback={<Box sx={{ height: 48 }} />}>
+        <PageNavTabs pages={pages} />
+      </Suspense>
       <Container maxWidth={false} sx={{ px: { xs: 2, md: 6, lg: 12 } }}>
         <Box mt={2}>
           <PlayerInput />
