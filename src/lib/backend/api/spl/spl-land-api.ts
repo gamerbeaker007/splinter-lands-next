@@ -244,7 +244,7 @@ export async function fetchDeedProjects(
   limit: number = DEFAULT_DEED_LIMIT,
   offset: number = 0
 ): Promise<SplDeedProjectsResponse> {
-  const url = `/land/projects/deed/${deedUid}/list`;
+  const url = `/land/projects/deed/${encodeURIComponent(deedUid)}/list`;
   const res = await splLandClient.get(url, {
     params: { limit, offset },
   });
@@ -311,7 +311,7 @@ export async function fetchDeedHarvestActions(
   limit: number = DEFAULT_DEED_LIMIT,
   offset: number = 0
 ): Promise<SplDeedHarvestActionsResponse> {
-  const url = `/land/resources/rewardactions/${deedUid}`;
+  const url = `/land/resources/rewardactions/${encodeURIComponent(deedUid)}`;
   const res = await splLandClient.get(url, {
     params: { limit, offset },
   });
