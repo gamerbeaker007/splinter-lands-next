@@ -18,6 +18,7 @@ import { PPInfo } from "./info-sections/PPInfo";
 import { StoreInfo } from "./info-sections/StoreInfo";
 import { TotalBoostInfo } from "./info-sections/TotalBoostInfo";
 import { WorksiteInfo } from "./info-sections/WorksiteInfo";
+import { DeedHistoryLink } from "./link-components/DeedHistoryLink";
 import { HarvestLink } from "./link-components/HarvestLink";
 import { ManageLink } from "./link-components/ManageLink";
 
@@ -99,6 +100,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
           zIndex: 2,
         }}
       >
+        <DeedHistoryLink deedUid={deed.deed_uid!} />
         <ManageLink regionNumber={regionNumber} plotId={plotId} />
         <HarvestLink regionNumber={regionNumber} />
       </Stack>

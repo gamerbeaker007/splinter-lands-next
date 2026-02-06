@@ -35,7 +35,11 @@ export default function PageNavTabs({
   // Find current active tab based on pathname
   const activeIndex = pages.findIndex((page) => {
     const fullPath = basePath ? `${basePath}${page.path}` : page.path;
-    return pathname === fullPath || pathname.startsWith(`${fullPath}?`);
+    return (
+      pathname === fullPath ||
+      pathname.startsWith(`${fullPath}/`) ||
+      pathname.startsWith(`${fullPath}?`)
+    );
   });
   const value = activeIndex >= 0 ? activeIndex : 0;
 

@@ -1,8 +1,8 @@
 "use client";
 
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
-import { Container } from "@mui/material";
-import { ReactNode } from "react";
+import { Box, Container } from "@mui/material";
+import { ReactNode, Suspense } from "react";
 
 type PlanningLayoutProps = {
   children: ReactNode;
@@ -16,7 +16,9 @@ const pages = [
 export default function PlanningLayout({ children }: PlanningLayoutProps) {
   return (
     <>
-      <PageNavTabs pages={pages} />
+      <Suspense fallback={<Box sx={{ height: 48 }} />}>
+        <PageNavTabs pages={pages} />
+      </Suspense>
       <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
         {children}
       </Container>

@@ -1,0 +1,68 @@
+import DeedHistoryDashboard from "@/components/player-overview/deed-history/DeedHistoryDashboard";
+import DeedSelector from "@/components/player-overview/deed-history/DeedSelector";
+import { getDeedHistory } from "@/lib/backend/actions/deed/deed-history-actions";
+import { Alert, Box, Skeleton, Typography } from "@mui/material";
+import { Suspense } from "react";
+
+interface PageProps {
+  params: Promise<{ slug: string }>;
+}
+
+async function DeedHistoryContent({ deedUid }: { deedUid: string }) {
+  const { projects, harvests } = await getDeedHistory(deedUid);
+
+  return (
+    <DeedHistoryDashboard projects={projects.data} harvests={harvests.data} />
+  );
+}
+
+function DeedHistoryLoading() {
+  return (
+    <Box sx={{ padding: 2 }}>
+      <Skeleton variant="rectangular" height={400} sx={{ mb: 2 }} />
+      <Box sx={{ display: "flex", gap: 2 }}>
+        <Skeleton variant="rectangular" height={300} sx={{ flex: 1 }} />
+        <Skeleton variant="rectangular" height={300} sx={{ flex: 1 }} />
+      </Box>
+    </Box>
+  );
+}
+
+async function PageContent({ params }: PageProps) {
+  const { slug: deedUid } = await params;
+
+  return (
+    <Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+        }}
+      >
+        <Typography variant="h4">Deed History - {deedUid}</Typography>
+
+        <DeedSelector currentDeedUid={deedUid} />
+      </Box>
+
+      <Alert severity="info" sx={{ mb: 2 }}>
+        This history includes all data from the deed's lifetime, including
+        actions by previous owners. The API does not provide information about
+        which player harvested resources or made project changes.
+      </Alert>
+
+      <Suspense fallback={<DeedHistoryLoading />}>
+        <DeedHistoryContent deedUid={deedUid} />
+      </Suspense>
+    </Box>
+  );
+}
+
+export default function DeedHistoryPage({ params }: PageProps) {
+  return (
+    <Suspense fallback={<DeedHistoryLoading />}>
+      <PageContent params={params} />
+    </Suspense>
+  );
+}
