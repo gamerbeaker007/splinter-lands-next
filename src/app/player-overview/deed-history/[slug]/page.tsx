@@ -1,7 +1,7 @@
 import DeedHistoryDashboard from "@/components/player-overview/deed-history/DeedHistoryDashboard";
 import DeedSelector from "@/components/player-overview/deed-history/DeedSelector";
 import { getDeedHistory } from "@/lib/backend/actions/deed/deed-history-actions";
-import { Box, Skeleton, Typography } from "@mui/material";
+import { Alert, Box, Skeleton, Typography } from "@mui/material";
 import { Suspense } from "react";
 
 interface PageProps {
@@ -42,8 +42,16 @@ async function PageContent({ params }: PageProps) {
         }}
       >
         <Typography variant="h4">Deed History - {deedUid}</Typography>
+
         <DeedSelector currentDeedUid={deedUid} />
       </Box>
+
+      <Alert severity="info" sx={{ mb: 2 }}>
+        This history includes all data from the deed's lifetime, including
+        actions by previous owners. The API does not provide information about
+        which player harvested resources or made project changes.
+      </Alert>
+
       <Suspense fallback={<DeedHistoryLoading />}>
         <DeedHistoryContent deedUid={deedUid} />
       </Suspense>
