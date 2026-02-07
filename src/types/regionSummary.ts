@@ -22,6 +22,7 @@ export type RegionSummary = {
   totalBoostedPP: number;
   countEnergized: number;
   countLaborsLuck: number;
+  countLaborsLuckUniqueOwners: number;
   countAbilityBoost: Partial<Record<Resource, number>>;
   countBloodlinesBoost: number;
   countFoodDiscount: number;

@@ -40,6 +40,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalBoostedPP = 0;
   let countEnergized = 0;
   let countLaborsLuck = 0;
+  const laborsLuckOwners = new Set<string>();
   const countAbilityBoost: Partial<Record<Resource, number>> = {};
   let countBloodlinesBoost = 0;
   let countFoodDiscount = 0;
@@ -92,6 +93,9 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 
       countEnergized += staking.is_energized ? 1 : 0;
       countLaborsLuck += staking.has_labors_luck ? 1 : 0;
+      if (staking.has_labors_luck) {
+        laborsLuckOwners.add(player);
+      }
       if (staking.card_abilities_boost != null) {
         countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] =
           (countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] ??
@@ -156,6 +160,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     totalBoostedPP: totalBoostedPP,
     countEnergized: countEnergized,
     countLaborsLuck: countLaborsLuck,
+    countLaborsLuckUniqueOwners: laborsLuckOwners.size,
     countAbilityBoost: countAbilityBoost,
     countBloodlinesBoost: countBloodlinesBoost,
     countFoodDiscount: countFoodDiscount,
