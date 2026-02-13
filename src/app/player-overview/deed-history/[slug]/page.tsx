@@ -36,18 +36,21 @@ async function PageContent({ params }: PageProps) {
       <Box
         sx={{
           display: "flex",
+          flexDirection: "column",
           justifyContent: "space-between",
-          alignItems: "center",
+          gap: 1,
           mb: 2,
         }}
       >
-        <Typography variant="h4">Deed History - {deedUid}</Typography>
-
+        <Typography variant="h4">Deed History</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {deedUid}
+        </Typography>
         <DeedSelector currentDeedUid={deedUid} />
       </Box>
 
       <Alert severity="info" sx={{ mb: 2 }}>
-        This history includes all data from the deed's lifetime, including
+        This history includes all data from the deed&apos;s lifetime, including
         actions by previous owners. The API does not provide information about
         which player harvested resources or made project changes.
       </Alert>

@@ -156,3 +156,15 @@ export function getDateSortValue(
       return 0;
   }
 }
+
+export const formatDate = (date: string) => {
+  return new Date(date).toLocaleString("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+};

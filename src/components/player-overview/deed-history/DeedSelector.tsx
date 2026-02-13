@@ -45,7 +45,7 @@ export default function DeedSelector({ currentDeedUid }: DeedSelectorProps) {
   }
 
   return (
-    <FormControl sx={{ minWidth: 300 }} size="small">
+    <FormControl sx={{ minWidth: 200, mt: 2, maxWidth: 350 }} size="small">
       <InputLabel>Select Deed</InputLabel>
       <Select
         value={currentDeedUid}

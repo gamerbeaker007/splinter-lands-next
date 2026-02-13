@@ -7,6 +7,7 @@ import {
   parseCardUid,
   rarityName,
 } from "@/lib/utils/cardUtil";
+import { formatDate } from "@/lib/utils/dateColumnUtils";
 import { SplDeedHarvestAction } from "@/types/deedHarvest";
 import { SplCardDetails } from "@/types/splCardDetails";
 import CancelIcon from "@mui/icons-material/Cancel";
@@ -175,9 +176,7 @@ export default function FragmentRollsSection({
                 const fragmentRow =
                   roll.fragment_chance === null ? null : (
                     <TableRow key={`${harvest.id}-fragment`}>
-                      <TableCell>
-                        {new Date(harvest.created_date).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{formatDate(harvest.created_date)}</TableCell>
                       <TableCell>
                         <Chip
                           label="Fragment"
@@ -207,9 +206,7 @@ export default function FragmentRollsSection({
                 const laborsLuckRow =
                   roll.labors_luck_chance === null ? null : (
                     <TableRow key={`${harvest.id}-labors`}>
-                      <TableCell>
-                        {new Date(harvest.created_date).toLocaleDateString()}
-                      </TableCell>
+                      <TableCell>{formatDate(harvest.created_date)}</TableCell>
                       <TableCell>
                         <Chip
                           label="Labor's Luck"

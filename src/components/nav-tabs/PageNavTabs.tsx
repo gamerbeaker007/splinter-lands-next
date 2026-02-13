@@ -63,7 +63,7 @@ export default function PageNavTabs({
     <Box
       sx={{
         display: "flex",
-        justifyContent: "center",
+        justifyContent: compact ? "flex-start" : "center",
         position: "sticky",
         top: 0,
         zIndex: 1100,
@@ -72,16 +72,17 @@ export default function PageNavTabs({
       }}
     >
       {compact ? (
-        <Box justifyItems={"left"} width={"100%"}>
+        <Box sx={{ width: "100%", px: 1 }}>
           <Select
             value={pages[value]?.label || ""}
             onChange={handleSelectChange}
             size="small"
             sx={{
-              ml: 1,
               mt: 0.5,
               mb: 0.5,
               width: "95%",
+              minWidth: 200,
+              maxWidth: 300,
             }}
           >
             {pages.map((page) => (
