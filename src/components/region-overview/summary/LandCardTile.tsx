@@ -10,7 +10,7 @@ import {
   rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { RegionSummary } from "@/types/regionSummary";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import AbilityBoost from "./AbilityBoost";
 import BountifulPP from "./BountifulPP";
@@ -22,6 +22,7 @@ interface Props {
 export default function LandCardTile({ summary }: Props) {
   const countEnergized = summary.countEnergized || 0;
   const countLaborsLuck = summary.countLaborsLuck || 0;
+  const countLaborsLuckUniqueOwners = summary.countLaborsLuckUniqueOwners || 0;
   const countBloodlinesBoost = summary.countBloodlinesBoost || 0;
   const countFoodDiscount = summary.countFoodDiscount || 0;
   const countDecStakeDiscount = summary.countDecStakeDiscount || 0;
@@ -67,7 +68,15 @@ export default function LandCardTile({ summary }: Props) {
                 imageUrl={labors_luck_icon_url}
                 count={Number(countLaborsLuck)}
               />
-
+              <Tooltip title={`Labors Luck unique owners`}>
+                <Box>
+                  <SummaryTile
+                    type={`Labors Luck*`}
+                    imageUrl={labors_luck_icon_url}
+                    count={Number(countLaborsLuckUniqueOwners)}
+                  />
+                </Box>
+              </Tooltip>
               <SummaryTile
                 type="Rationing"
                 imageUrl={rationing_icon_url}

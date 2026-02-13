@@ -1,5 +1,6 @@
 "use client";
 
+import { formatDate } from "@/lib/utils/dateColumnUtils";
 import { SplDeedProject } from "@/types/deedProjects";
 import {
   Box,
@@ -13,18 +14,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-
-const formatDate = (date: string) => {
-  return new Date(date).toLocaleString("en-GB", {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-    timeZone: "UTC",
-  });
-};
 
 interface WorksiteProgressionSectionProps {
   projects: SplDeedProject[];
@@ -110,8 +99,12 @@ export default function WorksiteProgressionSection({
                       ? formatDate(project.destroyed_date)
                       : "-"}
                 </TableCell>
-                <TableCell>{project.pp_staked.toLocaleString()}</TableCell>
-                <TableCell>{project.pp_spent.toLocaleString()}</TableCell>
+                <TableCell>
+                  {project.pp_staked.toLocaleString("en-US")}
+                </TableCell>
+                <TableCell>
+                  {project.pp_spent.toLocaleString("en-US")}
+                </TableCell>
                 <TableCell>{project.elapsed_hours.toFixed(2)}</TableCell>
               </TableRow>
             ))}

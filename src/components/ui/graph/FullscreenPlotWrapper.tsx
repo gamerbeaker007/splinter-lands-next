@@ -1,7 +1,13 @@
 "use client";
 import theme from "@/lib/frontend/themes/themes";
 import CloseIcon from "@mui/icons-material/Close";
-import { Box, Dialog, IconButton, useColorScheme } from "@mui/material";
+import {
+  Box,
+  Dialog,
+  IconButton,
+  useColorScheme,
+  useMediaQuery,
+} from "@mui/material";
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
 
@@ -23,8 +29,12 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   noBoxWrapper = false,
 }) => {
   const { mode } = useColorScheme();
-  // Default to dark when mode is undefined (first load)
-  const effectiveMode = mode === "light" ? "light" : "dark";
+  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
+
+  // Resolve the effective mode based on system preference when mode is "system"
+  const resolvedMode =
+    mode === "system" ? (prefersDark ? "dark" : "light") : mode;
+  const effectiveMode = resolvedMode === "light" ? "light" : "dark";
 
   const activePalette =
     theme.colorSchemes?.[effectiveMode]?.palette ?? theme.palette;
