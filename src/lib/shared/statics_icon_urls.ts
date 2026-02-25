@@ -121,6 +121,7 @@ export const edition_conclave_extra_icon_url = `${WEB_URL}website/icons/icon-edi
 export const edition_conclave_rewards_icon_url = edition_reward_icon_url;
 export const edition_eternal_icon_url = `${WEB_URL}website/icons/icon-edition-eternal.svg`;
 export const edition_land_card_icon_url = `${WEB_URL}website/icons/icon-edition-land.svg`;
+export const edition_escalation_icon_url = `${WEB_URL}website/icons/icon-edition-mini-set.svg`;
 
 export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_rarity_common_new.svg`;
 export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;
