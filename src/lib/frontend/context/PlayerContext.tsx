@@ -5,6 +5,7 @@ import {
   ReactNode,
   useCallback,
   useContext,
+  useEffect,
   useState,
 } from "react";
 
@@ -31,14 +32,16 @@ type PlayerProviderProps = {
 };
 
 export function PlayerProvider({ children }: PlayerProviderProps) {
-  const [selectedPlayer, setSelectedPlayerState] = useState<string>(() => {
-    // Check if we're in the browser before accessing localStorage
-    if (typeof window === "undefined") {
-      return "";
-    }
+  const [selectedPlayer, setSelectedPlayerState] = useState<string>("");
+
+  // Restore from localStorage after mount (avoids SSR/client hydration mismatch)
+  useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    return stored || "";
-  });
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedPlayerState(stored);
+    }
+  }, []);
 
   const setSelectedPlayer = useCallback((player: string) => {
     const trimmed = player.trim().toLowerCase();

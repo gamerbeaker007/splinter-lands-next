@@ -17,6 +17,7 @@ import { Refresh } from "@mui/icons-material";
 import { Box, Button, Stack, Typography } from "@mui/material";
 import { useState } from "react";
 import AlertSection from "./alerts/AlertSection";
+import { LandCardResources } from "./LandCardResources";
 import { PlayerProductionOverview } from "./PlayerProductionOverview";
 
 export default function PlayerDashboardPage() {
@@ -135,7 +136,7 @@ export default function PlayerDashboardPage() {
                   />
                 </Box>
               </Box>
-
+              <LandCardResources playerOverview={playerOverview} />
               <Box flex={1}>
                 <PlayerProductionOverview
                   productionPoints={
