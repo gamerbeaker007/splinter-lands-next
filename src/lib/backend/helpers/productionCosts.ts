@@ -21,6 +21,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
     const basePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 0;
     const isConstruction = deed.worksiteDetail?.is_construction ?? false;
+    const rationing = deed.stakingDetail?.grain_food_discount ?? 0;
     const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
       | ResourceRecipeItem[]
       | undefined;
@@ -62,6 +63,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
         basePP,
         siteEfficiency,
         isConstruction,
+        rationing,
         resourceRecipe
       );
 

@@ -14,21 +14,23 @@ import { ResourceWithDEC } from "@/types/productionInfo";
  * This return a record that maps resource names to their costs per hour
  *
  * New method also includes the DEC conversion directly
- * @param resource
  * @param basePP
  * @param siteEfficiency
+ * @param isConstruction
+ * @param rationing grain_food_discount
  * @param recipe
  */
 export function calcCostsV2(
   basePP: number,
   siteEfficiency: number,
   isConstruction: boolean,
+  rationing: number,
   recipe?: ResourceRecipeItem[]
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
   // Always include GRAIN cost
-  costs.GRAIN = basePP * DEFAULT_GRAIN_COST * siteEfficiency;
+  costs.GRAIN = basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + rationing); // Note rationing is stored in the db as -0.1
 
   // When under construction, only GRAIN is consumed
   if (isConstruction) {

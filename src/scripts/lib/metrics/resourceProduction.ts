@@ -43,10 +43,12 @@ async function computeAndStoreResource(
         const se = deed.worksiteDetail?.site_efficiency ?? 0;
         const pp = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
         const isConstruction = deed.worksiteDetail?.is_construction ?? false;
+        const rationing = deed.stakingDetail?.grain_food_discount ?? 0;
         const deedCosts = calcCostsV2(
           pp,
           se,
           isConstruction,
+          rationing,
           determineRecipe(resource)
         );
 
