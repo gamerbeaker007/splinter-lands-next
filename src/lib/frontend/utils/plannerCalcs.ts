@@ -1,6 +1,6 @@
 import { Resource } from "@/constants/resource/resource";
 import {
-  calcConsumeCosts,
+  calcCostsWithDEC,
   calcDECPrice,
   calcProduction,
   determineRecipe,
@@ -243,7 +243,7 @@ export function calcProductionInfo(
   const consumeGrainDiscount = determineGrainConsumeReduction(
     plotPlannerData.cardInput
   );
-  const consume = calcConsumeCosts(
+  const consume = calcCostsWithDEC(
     totalBasePP,
     prices,
     1,

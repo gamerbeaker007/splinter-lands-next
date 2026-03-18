@@ -6,7 +6,7 @@ import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Alert, Box, CircularProgress, Stack, Typography } from "@mui/material";
 import PlaygroundDeedGrid from "./PlaygroundDeedGrid";
 
 interface PlaygroundPageContentProps {
@@ -26,9 +26,13 @@ export default function PlaygroundPageContent({
 
   if (loading) {
     return (
-      <Box sx={{ display: "flex", justifyContent: "center", p: 4 }}>
+      <Stack spacing={2} sx={{ p: 4 }} alignItems="center">
+        <Alert severity="warning" sx={{ width: "100%", maxWidth: 600 }}>
+          Loading all player data — this includes deeds, cards, and staking
+          details and may take a while.
+        </Alert>
         <CircularProgress />
-      </Box>
+      </Stack>
     );
   }
 

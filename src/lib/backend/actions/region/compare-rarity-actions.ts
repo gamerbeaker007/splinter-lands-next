@@ -4,7 +4,7 @@ import { Resource } from "@/constants/resource/resource";
 import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { filterDeeds } from "@/lib/filters";
-import { calcConsumeCosts } from "@/lib/shared/costCalc";
+import { calcCostsWithDEC } from "@/lib/shared/costCalc";
 import { ResourceRecipeItem } from "@/lib/shared/statics";
 import { FilterInput } from "@/types/filters";
 import { PlotRarity } from "@/types/planner";
@@ -34,16 +34,21 @@ export async function getRegionCompareRarity(
     const totalBasePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 1;
     const isConstruction = deed.worksiteDetail?.is_construction ?? false;
+    const rationing = deed.stakingDetail?.grain_food_discount ?? 0;
+    const grainReqPerHour =
+      deed.worksiteDetail?.grain_req_per_hour ?? undefined;
     const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
       | ResourceRecipeItem[]
       | [];
 
-    const consumeCost = calcConsumeCosts(
+    const consumeCost = calcCostsWithDEC(
       totalBasePP,
       prices,
       siteEfficiency,
       resourceRecipe,
-      isConstruction
+      isConstruction,
+      rationing,
+      grainReqPerHour
     );
 
     // Initialize rarity entry if not present

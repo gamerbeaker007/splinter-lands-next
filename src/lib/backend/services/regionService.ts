@@ -1,7 +1,7 @@
 import { Resource } from "@/constants/resource/resource";
 import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { calcConsumeCosts, calcDECPrice } from "@/lib/shared/costCalc";
+import { calcCostsWithDEC, calcDECPrice } from "@/lib/shared/costCalc";
 import { ResourceRecipeItem, TAX_RATE } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
@@ -387,12 +387,14 @@ export function enrichWithProductionInfo(
           prices
         );
 
-        const consumeCosts = calcConsumeCosts(
+        const consumeCosts = calcCostsWithDEC(
           st.total_base_pp_after_cap ?? 0,
           prices,
           ws.site_efficiency ?? 0,
           ws.resource_recipe as unknown as ResourceRecipeItem[],
-          ws.is_construction ?? false
+          ws.is_construction ?? false,
+          st.grain_food_discount ?? 0,
+          ws.grain_req_per_hour ?? undefined
         );
         const totalDECConsume = consumeCosts.reduce(
           (sum, row) => sum + Number(row.sellPriceDEC || 0),

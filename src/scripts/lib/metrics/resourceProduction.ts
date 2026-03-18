@@ -44,12 +44,15 @@ async function computeAndStoreResource(
         const pp = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
         const isConstruction = deed.worksiteDetail?.is_construction ?? false;
         const rationing = deed.stakingDetail?.grain_food_discount ?? 0;
+        const grainReqPerHour =
+          deed.worksiteDetail?.grain_req_per_hour ?? undefined;
         const deedCosts = calcCostsV2(
           pp,
           se,
           isConstruction,
           rationing,
-          determineRecipe(resource)
+          determineRecipe(resource),
+          grainReqPerHour
         );
 
         // Accumulate costs

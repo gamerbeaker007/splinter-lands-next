@@ -11,26 +11,36 @@ import { Prices } from "@/types/price";
 import { ResourceWithDEC } from "@/types/productionInfo";
 
 /**
- * This return a record that maps resource names to their costs per hour
+ * Returns a record mapping resource names to their costs per hour.
  *
- * New method also includes the DEC conversion directly
+ * When grainReqPerHour is provided (backend callers with deed data), it is used
+ * directly for the GRAIN cost — this correctly handles TAX plots (value = 0)
+ * and plots with a food discount already baked in by the API.
+ *
+ * When grainReqPerHour is omitted (frontend planner), the formula fallback is used:
+ *   basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + rationing)
+ * where rationing is grain_food_discount stored as a negative value (e.g. -0.1 = 10% off).
+ *
  * @param basePP
  * @param siteEfficiency
  * @param isConstruction
- * @param rationing grain_food_discount
+ * @param rationing grain_food_discount (negative = discount, used only in formula fallback)
  * @param recipe
+ * @param grainReqPerHour pre-computed grain per hour from the API (worksiteDetail)
  */
 export function calcCostsV2(
   basePP: number,
   siteEfficiency: number,
   isConstruction: boolean,
   rationing: number,
-  recipe?: ResourceRecipeItem[]
+  recipe?: ResourceRecipeItem[],
+  grainReqPerHour?: number
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
-  // Always include GRAIN cost
-  costs.GRAIN = basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + rationing); // Note rationing is stored in the db as -0.1
+  costs.GRAIN =
+    grainReqPerHour ??
+    basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + rationing);
 
   // When under construction, only GRAIN is consumed
   if (isConstruction) {
@@ -47,53 +57,38 @@ export function calcCostsV2(
   return costs;
 }
 
-export function calcConsumeCosts(
-  total_base_pp_after_cap: number,
+/**
+ * Same as calcCostsV2 but enriches each resource cost with DEC buy/sell prices.
+ *
+ * Backend callers should pass grainReqPerHour from worksiteDetail to bypass the
+ * formula and correctly handle TAX plots and food discounts.
+ * The frontend planner omits grainReqPerHour and passes rationing (consumeGrainDiscount)
+ * to use the formula fallback.
+ */
+export function calcCostsWithDEC(
+  basePP: number,
   prices: Record<string, number>,
   siteEfficiency: number,
   recipe: ResourceRecipeItem[],
   isConstruction: boolean,
-  consumeGrainDiscount?: number
+  rationing?: number,
+  grainReqPerHour?: number
 ): ResourceWithDEC[] {
-  const costs: ResourceWithDEC[] = [];
+  const costs = calcCostsV2(
+    basePP,
+    siteEfficiency,
+    isConstruction,
+    rationing ?? 0,
+    recipe,
+    grainReqPerHour
+  );
 
-  // Apply discount if any
-  const discount = consumeGrainDiscount ?? 0;
-
-  // Always calculate GRAIN cost
-  const grainAmount =
-    total_base_pp_after_cap *
-    DEFAULT_GRAIN_COST *
-    siteEfficiency *
-    (1 - discount);
-  costs.push({
-    resource: "GRAIN",
-    amount: grainAmount,
-    buyPriceDEC: calcDirectDECPrice("buy", grainAmount, prices["GRAIN"] ?? 0),
-    sellPriceDEC: calcDirectDECPrice("sell", grainAmount, prices["GRAIN"] ?? 0),
-  });
-
-  // When under construction, only GRAIN is consumed
-  if (isConstruction) {
-    return costs;
-  }
-
-  // Calculate other resource costs based on recipe
-  if (recipe) {
-    for (const item of recipe) {
-      const res = item.symbol as Resource;
-
-      // Note no discounts for non-grain resources possible at the moment
-      const amount = total_base_pp_after_cap * item.qty * siteEfficiency;
-      costs.push({
-        resource: res,
-        amount,
-        buyPriceDEC: calcDirectDECPrice("buy", amount, prices[res] ?? 0),
-        sellPriceDEC: calcDirectDECPrice("sell", amount, prices[res] ?? 0),
-      });
-    }
-  }
-  return costs;
+  return Object.entries(costs).map(([resource, amount]) => ({
+    resource: resource as Resource,
+    amount,
+    buyPriceDEC: calcDirectDECPrice("buy", amount, prices[resource] ?? 0),
+    sellPriceDEC: calcDirectDECPrice("sell", amount, prices[resource] ?? 0),
+  }));
 }
 
 export function calcProduction(

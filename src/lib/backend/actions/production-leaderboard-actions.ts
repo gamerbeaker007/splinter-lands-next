@@ -126,6 +126,8 @@ function aggregatePlayerProduction(filteredDeeds: DeedComplete[]) {
     const siteEfficiency = deed.worksiteDetail?.site_efficiency ?? 0;
     const isConstruction = deed.worksiteDetail?.is_construction ?? false;
     const rationing = deed.stakingDetail?.grain_food_discount ?? 0;
+    const grainReqPerHour =
+      deed.worksiteDetail?.grain_req_per_hour ?? undefined;
     const recipe = deed.worksiteDetail
       ?.resource_recipe as unknown as ResourceRecipeItem[];
 
@@ -138,10 +140,10 @@ function aggregatePlayerProduction(filteredDeeds: DeedComplete[]) {
       siteEfficiency,
       isConstruction,
       rationing,
-      recipe
+      recipe,
+      grainReqPerHour
     );
 
-    // Initialize resource object if needed
     productionPerPlayerPerResource[resource] ??= {};
     // Add or update player production for this resource
     if (productionPerPlayerPerResource[resource][deedOwner]) {

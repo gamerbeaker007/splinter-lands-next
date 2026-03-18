@@ -32,8 +32,12 @@ export default function PageNavTabs({
   const isShort = useMediaQuery("(max-height: 420px)");
   const compact = isMobile || isShort;
 
-  // Find current active tab based on pathname
-  const activeIndex = pages.findIndex((page) => {
+  // Find current active tab based on pathname.
+  // Sort by path length descending so more specific paths (e.g. /planning/playground)
+  // match before their parent (/planning).
+  const indexedPages = pages.map((page, i) => ({ page, i }));
+  indexedPages.sort((a, b) => b.page.path.length - a.page.path.length);
+  const match = indexedPages.find(({ page }) => {
     const fullPath = basePath ? `${basePath}${page.path}` : page.path;
     return (
       pathname === fullPath ||
@@ -41,7 +45,7 @@ export default function PageNavTabs({
       pathname.startsWith(`${fullPath}?`)
     );
   });
-  const value = activeIndex >= 0 ? activeIndex : 0;
+  const value = match?.i ?? 0;
 
   const handleSelectChange = (event: SelectChangeEvent) => {
     const page = pages.find((p) => p.label === event.target.value);
