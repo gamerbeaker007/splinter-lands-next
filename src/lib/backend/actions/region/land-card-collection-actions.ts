@@ -1,5 +1,6 @@
 "use server";
 
+import { RarityLevelCounts } from "@/types/LandcardCollection";
 import { getLandCardCollectionRawData } from "../../api/internal/land-card-collection-data";
 
 export type LandCardSetSummary = {
@@ -14,13 +15,14 @@ export type LandCardSetSummary = {
   rented: number;
   delegated: number;
   player_count: number;
-  // rarity -> level -> total count across all players
-  rarity_level_counts: Record<string, Record<string, number>>;
+  // rarity name ("common".."legendary") -> level -> foil name ("regular","gold arcane", etc.) -> total count
+  rarity_level_counts: RarityLevelCounts;
 };
 
 export type LandCardCollectionResult = {
   editionSummary: LandCardSetSummary[];
   lastUpdated: Date | null;
+  totalRows: number;
 };
 
 export async function getLandCardCollectionData(filters?: {
@@ -65,16 +67,18 @@ export async function getLandCardCollectionData(filters?: {
     agg.player_count += 1;
 
     // Merge rarity_level_counts JSON
-    const rlc = row.rarity_level_counts as Record<
-      string,
-      Record<string, number>
-    >;
+    const rlc = row.rarity_level_counts as RarityLevelCounts;
     for (const [rarity, levels] of Object.entries(rlc)) {
       if (!agg.rarity_level_counts[rarity])
         agg.rarity_level_counts[rarity] = {};
-      for (const [level, count] of Object.entries(levels)) {
-        agg.rarity_level_counts[rarity][level] =
-          (agg.rarity_level_counts[rarity][level] ?? 0) + count;
+      for (const [level, foils] of Object.entries(levels)) {
+        if (!agg.rarity_level_counts[rarity][level])
+          agg.rarity_level_counts[rarity][level] = {};
+        for (const [foilName, count] of Object.entries(foils)) {
+          agg.rarity_level_counts[rarity][level][foilName] =
+            (agg.rarity_level_counts[rarity][level][foilName] ?? 0) +
+            (count ?? 0);
+        }
       }
     }
   }
@@ -83,5 +87,5 @@ export async function getLandCardCollectionData(filters?: {
     a.card_set.localeCompare(b.card_set)
   );
 
-  return { editionSummary, lastUpdated: date };
+  return { editionSummary, lastUpdated: date, totalRows: rows.length };
 }

@@ -4,6 +4,8 @@ import {
 } from "@/lib/backend/api/spl/spl-base-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
+import { RarityLevelCounts } from "@/types/LandcardCollection";
+import { cardFoilOptions, cardRarityOptions } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import pLimit from "p-limit";
@@ -49,20 +51,15 @@ function isActiveRental(card: SplPlayerCardCollection): boolean {
   return Date.now() < end;
 }
 
-// foil index → column name (0=regular, 1=gold, 2=gold arcane, 3=black, 4=black arcane)
-const FOIL_KEYS = [
+// foil index (card.foil 0-4) → DB column name in CardSetStats
+const FOIL_COLS = [
   "foil_regular",
   "foil_gold",
   "foil_gold_arcane",
   "foil_black",
   "foil_black_arcane",
 ] as const;
-
-type FoilKey = (typeof FOIL_KEYS)[number];
-
-// rarity_level_counts: { "1": { "1": 5, "2": 10 }, "2": { "1": 3 } }
-//   outer key = rarity (1-4), inner key = level, value = card count
-type RarityLevelCounts = Record<string, Record<string, number>>;
+type FoilCol = (typeof FOIL_COLS)[number];
 
 type CardSetStats = {
   total_cards: number;
@@ -124,6 +121,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
           const cardSet = card.card_set;
           const rarity = getCardRarity(card.card_detail_id, cardDetails);
           const level = card.level;
+          const foil = card.foil;
 
           // --- Per-player card_set summary ---
           if (!cardSetMap.has(cardSet)) {
@@ -137,15 +135,15 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
               owned: 0,
               rented: 0,
               delegated: 0,
-              rarity_level_counts: {},
+              rarity_level_counts: {} as RarityLevelCounts,
             });
           }
 
           const stats = cardSetMap.get(cardSet)!;
           stats.total_cards++;
 
-          const foilKey: FoilKey = FOIL_KEYS[card.foil] ?? "foil_regular";
-          stats[foilKey]++;
+          const foilCol: FoilCol = FOIL_COLS[foil] ?? "foil_regular";
+          stats[foilCol]++;
 
           // Ownership: delegated_to being set means card is delegated out to someone
           if (card.delegated_to != null) {
@@ -158,12 +156,16 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
             stats.owned++;
           }
 
-          // --- Per-player rarity/level counts (stored in the row JSON) ---
+          // --- Per-player rarity/level/foil counts (stored in the row JSON) ---
+          // Keys: rarity name ("common","rare","epic","legendary"), level string, foil name ("regular","gold arcane", etc.)
           const rlc = stats.rarity_level_counts;
-          const rarityKey = String(rarity);
+          const rarityName = cardRarityOptions[rarity - 1] ?? "common";
           const levelKey = String(level);
-          if (!rlc[rarityKey]) rlc[rarityKey] = {};
-          rlc[rarityKey][levelKey] = (rlc[rarityKey][levelKey] ?? 0) + 1;
+          const foilName = cardFoilOptions[foil] ?? "regular";
+          if (!rlc[rarityName]) rlc[rarityName] = {};
+          if (!rlc[rarityName][levelKey]) rlc[rarityName][levelKey] = {};
+          rlc[rarityName][levelKey][foilName] =
+            (rlc[rarityName][levelKey][foilName] ?? 0) + 1;
         }
 
         for (const [card_set, stats] of cardSetMap) {

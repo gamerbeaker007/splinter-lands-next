@@ -1,3 +1,4 @@
+import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-card-collection-actions";
 import {
   getAllActiveData,
   invalidateActiveDataCache,
@@ -26,7 +27,6 @@ import {
 import logger from "@/lib/frontend/log/logger.client";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
-import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-card-collection-actions";
 
 /**
  * Combined API endpoint to invalidate and warm cache
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
         resourceTracking: resourceTracking.length,
         tradeHub: tradeHub.length,
         playerTradeHub: playerTradeHub.length,
-        landCard: landCardCollection.editionSummary.length,
+        landCard: landCardCollection.totalRows,
       },
       durationMs: duration,
       timestamp: new Date().toISOString(),

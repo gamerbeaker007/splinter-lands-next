@@ -316,7 +316,7 @@ model PlayerCardEditionSummary {
   owned              Int
   rented             Int
   delegated          Int
-  rarity_level_counts Json   // { "1": { "1": 5, "2": 10 }, "2": { "1": 3 } } (rarity -> level -> count)
+  rarity_level_counts Json   // { "common": { "1": { "regular": 5, "gold arcane": 2 }, "2": {} }, "rare": { ... } }
 
   @@id([date, player, card_set])
   @@map("player_card_edition_summary")
