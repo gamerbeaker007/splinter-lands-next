@@ -125,14 +125,17 @@ function assertValidPlayerId(player: string) {
 }
 
 /**
- * Fetches player card collection from Splinterlands API
- * Always includes auth headers if available for the player
+ * Fetches player card collection from Splinterlands API.
+ * Pass skipAuth=true in script/background contexts where cookies() is unavailable.
  */
-export async function fetchPlayerCardCollection(player: string) {
+export async function fetchPlayerCardCollection(
+  player: string,
+  skipAuth = false
+) {
   assertValidPlayerId(player);
   const url = `cards/collection/${encodeURIComponent(player)}`;
   logger.info(`Fetch player card collection for: ${player}`);
-  const headers = await getAuthorizationHeader(player);
+  const headers = skipAuth ? undefined : await getAuthorizationHeader(player);
 
   const res = await splBaseClient.get(url, {
     headers,

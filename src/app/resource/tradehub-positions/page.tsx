@@ -7,7 +7,7 @@ async function TradeHubPositionsContent() {
   // Make this route dynamic by accessing connection
   await headers();
 
-  const groupedPlayerTradeHubPosition = await getPlayerTradeHubPosition(false);
+  const groupedPlayerTradeHubPosition = await getPlayerTradeHubPosition();
 
   return (
     <TradeHubPositionPage

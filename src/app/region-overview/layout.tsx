@@ -41,6 +41,11 @@ const pages = [
     label: "Inactivity",
     path: "/region-overview/inactivity",
   },
+  {
+    key: "cards",
+    label: "Cards",
+    path: "/region-overview/cards",
+  },
 ];
 
 const defaultFilterConfig: FilterConfig = {
@@ -74,6 +79,14 @@ const pageFilterConfigs: Record<string, FilterConfig> = {
     tracts: true,
     plots: true,
     attributes: true,
+    player: true,
+    sorting: false,
+  },
+  "/region-overview/cards": {
+    regions: false,
+    tracts: false,
+    plots: false,
+    attributes: false,
     player: true,
     sorting: false,
   },

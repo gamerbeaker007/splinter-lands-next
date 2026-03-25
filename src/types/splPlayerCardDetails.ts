@@ -28,6 +28,8 @@ export type SplPlayerCardCollection = {
   delegated_to_display_name?: string;
   delegated_to?: string;
   last_used_date?: string;
+  rental_days?: string;
+  rental_date?: string;
 
   //unused in this app
   //  "gold": boolean,

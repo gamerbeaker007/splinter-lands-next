@@ -29,13 +29,11 @@ export type GroupedPlayerTradeHubPosition = {
 
 /**
  *
- * Get grouped player trade hub position data. from the database (cached data).
+ * Get grouped player trade hub position data. from the database.
  *
  */
-export async function getPlayerTradeHubPosition(
-  force: boolean = false
-): Promise<GroupedPlayerTradeHubPosition> {
-  const data = await getPlayerTradeHubPositionData(force);
+export async function getPlayerTradeHubPosition(): Promise<GroupedPlayerTradeHubPosition> {
+  const data = await getPlayerTradeHubPositionData();
 
   const result = groupByToken(data);
   result.date = getDate(data);
