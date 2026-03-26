@@ -313,6 +313,7 @@ model PlayerCardEditionSummary {
   foil_gold_arcane   Int      // foil type 2
   foil_black         Int      // foil type 3
   foil_black_arcane  Int      // foil type 4
+  land_base_pp       Int
   owned              Int
   rented             Int
   delegated          Int

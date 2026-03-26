@@ -68,6 +68,7 @@ type CardSetStats = {
   foil_gold_arcane: number;
   foil_black: number;
   foil_black_arcane: number;
+  land_base_pp: number;
   owned: number;
   rented: number;
   delegated: number;
@@ -85,6 +86,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
       player: { not: null },
       stakingDetail: { total_base_pp_after_cap: { gt: 0 } },
     },
+    take: 10, //just for testing
   });
   logger.info(
     `📋 playerCardCollections - Players with cards on land: ${activePlayers.length}`
@@ -132,6 +134,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
               foil_gold_arcane: 0,
               foil_black: 0,
               foil_black_arcane: 0,
+              land_base_pp: 0,
               owned: 0,
               rented: 0,
               delegated: 0,
@@ -141,6 +144,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
 
           const stats = cardSetMap.get(cardSet)!;
           stats.total_cards++;
+          stats.land_base_pp += Number(card.land_base_pp);
 
           const foilCol: FoilCol = FOIL_COLS[foil] ?? "foil_regular";
           stats[foilCol]++;

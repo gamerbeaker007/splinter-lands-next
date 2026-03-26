@@ -10,6 +10,7 @@ CREATE TABLE "player_card_edition_summary" (
     "foil_gold_arcane"    INTEGER NOT NULL,
     "foil_black"          INTEGER NOT NULL,
     "foil_black_arcane"   INTEGER NOT NULL,
+    "land_base_pp"        INTEGER NOT NULL,
     "owned"               INTEGER NOT NULL,
     "rented"              INTEGER NOT NULL,
     "delegated"           INTEGER NOT NULL,

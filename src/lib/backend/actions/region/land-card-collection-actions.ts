@@ -11,6 +11,7 @@ export type LandCardSetSummary = {
   foil_gold_arcane: number;
   foil_black: number;
   foil_black_arcane: number;
+  land_base_pp: number;
   owned: number;
   rented: number;
   delegated: number;
@@ -46,6 +47,7 @@ export async function getLandCardCollectionData(filters?: {
         foil_gold_arcane: 0,
         foil_black: 0,
         foil_black_arcane: 0,
+        land_base_pp: 0,
         owned: 0,
         rented: 0,
         delegated: 0,
@@ -61,6 +63,7 @@ export async function getLandCardCollectionData(filters?: {
     agg.foil_gold_arcane += row.foil_gold_arcane;
     agg.foil_black += row.foil_black;
     agg.foil_black_arcane += row.foil_black_arcane;
+    agg.land_base_pp += row.land_base_pp;
     agg.owned += row.owned;
     agg.rented += row.rented;
     agg.delegated += row.delegated;

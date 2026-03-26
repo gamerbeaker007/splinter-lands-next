@@ -16,7 +16,7 @@ export type SplPlayerCardCollection = {
   stake_plot: number;
   stake_region: number;
   bcx: number;
-  land_base_pp: number;
+  land_base_pp: string; // API returns this as string, but it represents a number
   land_dec_stake_needed: number;
   set_id?: string;
   bcx_unbound: number;
