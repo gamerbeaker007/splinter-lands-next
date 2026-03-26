@@ -86,7 +86,6 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
       player: { not: null },
       stakingDetail: { total_base_pp_after_cap: { gt: 0 } },
     },
-    take: 10, //just for testing
   });
   logger.info(
     `📋 playerCardCollections - Players with cards on land: ${activePlayers.length}`
