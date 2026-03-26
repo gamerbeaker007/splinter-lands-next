@@ -51,10 +51,10 @@ export type CardRarity = (typeof cardRarityOptions)[number];
 export type TotemRarity = (typeof cardRarityOptions)[number]; //same as card rarity
 
 export const RarityColor: Record<CardRarity, string> = {
-  common: "grey",
-  rare: "blue",
-  epic: "purple",
-  legendary: "gold",
+  common: "#9e9e9e",
+  rare: "#42a5f5",
+  epic: "#ab47bc",
+  legendary: "#fdd835",
 };
 
 export const cardIconMap: Record<CardRarity, string> = {

@@ -16,7 +16,7 @@ export type SplPlayerCardCollection = {
   stake_plot: number;
   stake_region: number;
   bcx: number;
-  land_base_pp: number;
+  land_base_pp: string; // API returns this as string, but it represents a number
   land_dec_stake_needed: number;
   set_id?: string;
   bcx_unbound: number;
@@ -28,6 +28,8 @@ export type SplPlayerCardCollection = {
   delegated_to_display_name?: string;
   delegated_to?: string;
   last_used_date?: string;
+  rental_days?: string;
+  rental_date?: string;
 
   //unused in this app
   //  "gold": boolean,

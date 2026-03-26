@@ -82,7 +82,7 @@ export function filterCardCollection(
     }
 
     // Exclude cards with no land base pp
-    if (c.land_base_pp == null || c.land_base_pp <= 0) return false;
+    if (c.land_base_pp == null || Number(c.land_base_pp) <= 0) return false;
 
     // Rarity (resolve once; used below)
     const rarityName = findCardRarity(cardDetails, c.card_detail_id);

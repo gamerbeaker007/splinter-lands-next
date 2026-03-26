@@ -2,6 +2,7 @@
 import PlayerInput from "@/components/player-overview/PlayerInput";
 import { GroupedPlayerTradeHubPosition } from "@/lib/backend/actions/resources/trade-hub-actions";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
+import WeeklyDataAlert from "@/components/ui/WeeklyDataAlert";
 import { Box, Typography } from "@mui/material";
 import { TradeHubTokenSection } from "./TradeHubTokenSection";
 
@@ -30,12 +31,10 @@ export default function TradeHubPositionPage({
         <PlayerInput />
       </Box>
       <Box mt={2}>
-        <Typography variant="h5">
-          Based on data retrieved from:{" "}
-          {groupedPlayerTradeHubPosition.date
-            ? groupedPlayerTradeHubPosition.date.slice(0, 10)
-            : ""}
-        </Typography>
+        <WeeklyDataAlert
+          lastUpdated={groupedPlayerTradeHubPosition.date}
+          label="Trade hub position data"
+        />
       </Box>
 
       <Box display="flex" flexDirection={"row"} flexWrap="wrap" gap={2}>

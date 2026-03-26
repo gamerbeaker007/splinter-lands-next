@@ -19,7 +19,7 @@ export function useTradeHubPositions(force: boolean = false) {
       try {
         setLoading(true);
         setError(null);
-        const data = await getPlayerTradeHubPosition(force);
+        const data = await getPlayerTradeHubPosition();
         if (mounted) {
           setGroupedPlayerTradeHubPosition(data);
         }

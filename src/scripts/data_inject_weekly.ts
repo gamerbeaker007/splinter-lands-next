@@ -1,9 +1,10 @@
-import "dotenv/config";
 import logger from "@/lib/backend/log/logger.server";
 import { logError } from "@/lib/backend/log/logUtils";
 import { getTodayAtMidnight } from "@/scripts/lib/utils/date";
-import { computeAndStorePlayerHubPosition } from "./lib/metrics/playerTradeHubPosition";
+import "dotenv/config";
 import { refreshNextCache } from "./lib/cache/refreshCache";
+import { computeAndStorePlayerCardCollections } from "./lib/metrics/playerCardCollection";
+import { computeAndStorePlayerHubPosition } from "./lib/metrics/playerTradeHubPosition";
 
 async function main() {
   logger.info("🚀 Starting weekly data inject script...");
@@ -12,6 +13,7 @@ async function main() {
   const today = getTodayAtMidnight();
 
   await computeAndStorePlayerHubPosition(today);
+  await computeAndStorePlayerCardCollections(today);
 
   // Refresh Next.js cache after data injection
   try {

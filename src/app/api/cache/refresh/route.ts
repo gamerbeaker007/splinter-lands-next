@@ -1,3 +1,4 @@
+import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-card-collection-actions";
 import {
   getAllActiveData,
   invalidateActiveDataCache,
@@ -10,10 +11,7 @@ import {
   getPlayerProductionData,
   invalidatePlayerProductionDataCache,
 } from "@/lib/backend/api/internal/player-production-data";
-import {
-  getPlayerTradeHubPositionData,
-  invalidatePlayerTradeHubDataCache,
-} from "@/lib/backend/api/internal/player-trade-hub-data";
+import { getPlayerTradeHubPositionData } from "@/lib/backend/api/internal/player-trade-hub-data";
 import {
   getAllResourceSupplyData,
   invalidateResourceSupplyDataCache,
@@ -59,7 +57,6 @@ export async function POST(request: NextRequest) {
       invalidateResourceSupplyDataCache(),
       invalidateResourceTrackingDataCache(),
       invalidateTradeHubDataCache(),
-      invalidatePlayerTradeHubDataCache(),
     ]);
 
     // Step 2: Invalidate Next.js cache tags for processed data
@@ -75,6 +72,7 @@ export async function POST(request: NextRequest) {
       resourceTracking,
       tradeHub,
       playerTradeHub,
+      landCardCollection,
     ] = await Promise.all([
       getCachedRegionDataSSR(true),
       getAllActiveData(true),
@@ -82,7 +80,8 @@ export async function POST(request: NextRequest) {
       getAllResourceSupplyData(true),
       getAllResourceTrackingdata(true),
       getAllTradeHubData(true),
-      getPlayerTradeHubPositionData(true),
+      getPlayerTradeHubPositionData(),
+      getLandCardCollectionData(),
     ]);
 
     const duration = Date.now() - startTime;
@@ -102,6 +101,7 @@ export async function POST(request: NextRequest) {
         resourceTracking: resourceTracking.length,
         tradeHub: tradeHub.length,
         playerTradeHub: playerTradeHub.length,
+        landCard: landCardCollection.totalRows,
       },
       durationMs: duration,
       timestamp: new Date().toISOString(),

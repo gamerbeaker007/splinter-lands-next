@@ -193,7 +193,7 @@ export async function getPlaygroundData(
         card.card_detail_id,
         cardDetails
       );
-      const basePP = card.land_base_pp;
+      const basePP = Number(card.land_base_pp);
 
       const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
       const foil = cardFoilOptions[card.foil] || "regular";
@@ -223,7 +223,7 @@ export async function getPlaygroundData(
         onWagon: card.wagon_uid !== null,
       };
     })
-    .sort((a, b) => b.landBasePP - a.landBasePP); // Highest PP first
+    .sort((a, b) => Number(b.landBasePP) - Number(a.landBasePP)); // Highest PP first
 
   // Calculate total boosted PP
   const totalBoostedPP = deeds.reduce((sum, deed) => {

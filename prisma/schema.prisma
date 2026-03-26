@@ -302,3 +302,23 @@ model DailyBurnedTokenBalance {
   @@id([date, player, token])
   @@map("daily_burned_token_balance")
 }
+
+model PlayerCardEditionSummary {
+  date               DateTime @db.Date
+  player             String
+  card_set           String   // e.g. "chaos", "alpha", "rebellion"
+  total_cards        Int
+  foil_regular       Int
+  foil_gold          Int      // foil type 1
+  foil_gold_arcane   Int      // foil type 2
+  foil_black         Int      // foil type 3
+  foil_black_arcane  Int      // foil type 4
+  land_base_pp       Int
+  owned              Int
+  rented             Int
+  delegated          Int
+  rarity_level_counts Json   // { "common": { "1": { "regular": 5, "gold arcane": 2 }, "2": {} }, "rare": { ... } }
+
+  @@id([date, player, card_set])
+  @@map("player_card_edition_summary")
+}

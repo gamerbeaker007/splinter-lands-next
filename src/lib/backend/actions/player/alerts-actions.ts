@@ -349,7 +349,7 @@ function analyzeTerrainBonuses(
       rarity,
       bcx: card.bcx,
       maxBcx,
-      basePP: card.land_base_pp,
+      basePP: Number(card.land_base_pp),
       deedInfo: createDeedInfo(deed),
     };
 
