@@ -187,8 +187,11 @@ export async function getCachedPlayerOverviewData(
     "AM",
     "FT",
     "POWER_CORE_PURCHASES",
+    "ALLOCATION_EARTH_C",
+    "ALLOCATION_FIRE_C",
   ]);
 
+  console.log("Balances for player", player, balances);
   //DEC Income
   const playerRegionInfo = await processPlayerRegionInformation(deeds);
   const total_dec = playerRegionInfo.totals.totalDEC;

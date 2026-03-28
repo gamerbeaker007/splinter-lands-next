@@ -20,6 +20,7 @@ import { useState } from "react";
 type LandCard = {
   name: string;
   rarity: CardRarity;
+  allocationToken: string;
   costs: Partial<Record<Resource, number>>;
 };
 
@@ -27,11 +28,13 @@ const LAND_CARDS: LandCard[] = [
   {
     name: "Thessok Clan Hunter",
     rarity: "common",
+    allocationToken: "ALLOCATION_FIRE_C",
     costs: { STONE: 2000, CINDER: 187.5 },
   },
   {
     name: "Ghostly Blacksmith",
     rarity: "common",
+    allocationToken: "ALLOCATION_EARTH_C",
     costs: { IRON: 450, CINDER: 187.5 },
   },
 ];
@@ -47,6 +50,15 @@ export function LandCardResources({ playerOverview }: Props) {
     return playerOverview.landShare?.eligible[rarity] || 0;
   };
 
+  const getAllocationRight = (card: LandCard): number => {
+    const balance =
+      playerOverview.balances.find((b) => b.token === card.allocationToken)
+        ?.balance || 0;
+    const num =
+      typeof balance === "number" ? balance : parseFloat(balance as string);
+    return Math.floor(isNaN(num) ? 0 : num);
+  };
+
   const [overrides, setOverrides] = useState<Record<string, string>>(
     Object.fromEntries(LAND_CARDS.map((c) => [c.name, ""]))
   );
@@ -57,6 +69,8 @@ export function LandCardResources({ playerOverview }: Props) {
       const parsed = parseFloat(override);
       return isNaN(parsed) ? 0 : Math.floor(parsed);
     }
+    const allocation = getAllocationRight(card);
+    if (allocation > 0) return allocation;
     return Math.floor(getEligibleCount(card.rarity));
   };
 
@@ -180,6 +194,7 @@ export function LandCardResources({ playerOverview }: Props) {
             <TableRow>
               <TableCell>Card</TableCell>
               <TableCell align="center">Eligible</TableCell>
+              <TableCell align="center">Allocation</TableCell>
               <TableCell align="center">Override</TableCell>
               {RESOURCE_ORDER.map((resource) => (
                 <TableCell key={resource} align="center">
@@ -192,13 +207,16 @@ export function LandCardResources({ playerOverview }: Props) {
           <TableBody>
             {LAND_CARDS.map((card) => {
               const eligible = Math.floor(getEligibleCount(card.rarity));
+              const allocation = getAllocationRight(card);
               const amount = getAmount(card);
+              const overridePlaceholder = allocation > 0 ? allocation.toString() : eligible.toString();
               return (
                 <TableRow key={card.name}>
                   <TableCell component="th" scope="row">
                     {card.name}
                   </TableCell>
                   <TableCell align="center">{eligible}</TableCell>
+                  <TableCell align="center">{allocation > 0 ? allocation : "-"}</TableCell>
                   <TableCell align="center">
                     <TextField
                       type="number"
@@ -207,7 +225,7 @@ export function LandCardResources({ playerOverview }: Props) {
                       onChange={(e) =>
                         handleOverrideChange(card.name, e.target.value)
                       }
-                      placeholder={eligible.toString()}
+                      placeholder={overridePlaceholder}
                       sx={{ width: "80px" }}
                       inputProps={{ min: 0, style: { textAlign: "center" } }}
                     />
@@ -295,6 +313,9 @@ export function LandCardResources({ playerOverview }: Props) {
             <TableRow>
               <TableCell component="th" scope="row" sx={{ fontWeight: "bold" }}>
                 Total
+              </TableCell>
+              <TableCell align="center" sx={{ fontWeight: "bold" }}>
+                -
               </TableCell>
               <TableCell align="center" sx={{ fontWeight: "bold" }}>
                 -
