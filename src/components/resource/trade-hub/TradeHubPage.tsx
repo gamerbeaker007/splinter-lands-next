@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
 import TradeHubQuantityHistoryChart from "./TradeHubQuantityHistoryChart";
+import TradeHubVolumeChart from "./TradeHubVolumeChart";
 
 export function TradeHubPage() {
   const [historicalTradeHubMetrics, setHistoricalTradeHubMetrics] = useState<
@@ -83,26 +84,19 @@ export function TradeHubPage() {
                 <Typography variant="h6" gutterBottom>
                   24-hour trade volume for each individual resource pool Total
                 </Typography>
-                <TradeHubLineChart
-                  data={historicalTradeHubMetrics}
-                  type="dec_volume_1"
-                />
+                <TradeHubVolumeChart data={historicalTradeHubMetrics} />
               </Box>
               <Box flex={1}>
                 <Typography variant="h6" gutterBottom>
                   DEC burned per day across all pools
                 </Typography>
-                <TradeHubLineChart
-                  data={historicalTradeHubMetrics}
-                  type="dec_burned"
-                />
+                <TradeHubLineChart data={historicalTradeHubMetrics} />
               </Box>
             </Box>
 
             <Box mt={3}>
               <Typography variant="h6" gutterBottom>
-                Pool resource &amp; DEC quantities over time (solid = resource
-                y-left, dashed = DEC y-right)
+                Pool resource &amp; DEC quantities over time
               </Typography>
               <TradeHubQuantityHistoryChart data={historicalTradeHubMetrics} />
             </Box>

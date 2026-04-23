@@ -209,14 +209,17 @@ export function LandCardResources({ playerOverview }: Props) {
               const eligible = Math.floor(getEligibleCount(card.rarity));
               const allocation = getAllocationRight(card);
               const amount = getAmount(card);
-              const overridePlaceholder = allocation > 0 ? allocation.toString() : eligible.toString();
+              const overridePlaceholder =
+                allocation > 0 ? allocation.toString() : eligible.toString();
               return (
                 <TableRow key={card.name}>
                   <TableCell component="th" scope="row">
                     {card.name}
                   </TableCell>
                   <TableCell align="center">{eligible}</TableCell>
-                  <TableCell align="center">{allocation > 0 ? allocation : "-"}</TableCell>
+                  <TableCell align="center">
+                    {allocation > 0 ? allocation : "-"}
+                  </TableCell>
                   <TableCell align="center">
                     <TextField
                       type="number"

@@ -32,8 +32,8 @@ const FOIL_COLORS = {
   regular: "#aaa",
   gold: "#fdd835",
   gold_arcane: "#ffb300",
-  black: "#0e1717",
-  black_arcane: "#320067",
+  black: "#607d8b",
+  black_arcane: "#ba68c8",
 } as const;
 
 function RarityLevelSubTable({
