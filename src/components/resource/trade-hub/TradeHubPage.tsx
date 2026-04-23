@@ -14,6 +14,7 @@ import {
 import { useEffect, useState } from "react";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
+import TradeHubQuantityHistoryChart from "./TradeHubQuantityHistoryChart";
 
 export function TradeHubPage() {
   const [historicalTradeHubMetrics, setHistoricalTradeHubMetrics] = useState<
@@ -96,6 +97,14 @@ export function TradeHubPage() {
                   type="dec_burned"
                 />
               </Box>
+            </Box>
+
+            <Box mt={3}>
+              <Typography variant="h6" gutterBottom>
+                Pool resource &amp; DEC quantities over time (solid = resource
+                y-left, dashed = DEC y-right)
+              </Typography>
+              <TradeHubQuantityHistoryChart data={historicalTradeHubMetrics} />
             </Box>
           </Box>
         </>
