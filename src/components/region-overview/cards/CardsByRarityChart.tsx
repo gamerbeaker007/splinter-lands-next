@@ -9,8 +9,8 @@ const FOIL_PLOT_COLORS: Record<string, string> = {
   regular: "#9e9e9e",
   gold: "#fdd835",
   "gold arcane": "#ffb300",
-  black: "#78909c",
-  "black arcane": "#ab47bc",
+  black: "#607d8b",
+  "black arcane": "#ba68c8",
 };
 
 export function CardsByRarityChart({

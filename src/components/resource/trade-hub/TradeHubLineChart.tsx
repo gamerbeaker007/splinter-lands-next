@@ -7,38 +7,22 @@ import React from "react";
 
 interface Props {
   data: ResourceHubMetrics[];
-  type: "dec_volume_1" | "dec_burned"; // updated types
 }
 
-const getChartTitle = (type: Props["type"]): string => {
-  switch (type) {
-    case "dec_volume_1":
-      return "24h DEC Volume";
-    case "dec_burned":
-      return "24h DEC Burned (5%)";
-    default:
-      return "Chart";
-  }
-};
-
-const TradeHubLineChart: React.FC<Props> = ({ data, type }) => {
+const TradeHubLineChart: React.FC<Props> = ({ data }) => {
   const burnRate = 0.05;
-
   const resourceMap: Record<string, { x: string[]; y: number[] }> = {};
 
   data.forEach((entry) => {
     const date = new Date(entry.date).toISOString().split("T")[0];
     const resource = entry.token_symbol;
-    const raw = Number(entry.dec_volume_1);
+    const burned = Number(entry.dec_volume_1 ?? 0) * burnRate;
 
     if (!resourceMap[resource]) {
       resourceMap[resource] = { x: [], y: [] };
     }
-
-    const yValue = type === "dec_burned" ? raw * burnRate : raw;
-
     resourceMap[resource].x.push(date);
-    resourceMap[resource].y.push(yValue);
+    resourceMap[resource].y.push(burned);
   });
 
   const traces: Partial<ScatterData>[] = Object.entries(resourceMap).map(
@@ -48,32 +32,19 @@ const TradeHubLineChart: React.FC<Props> = ({ data, type }) => {
       type: "scatter",
       mode: "lines+markers",
       name: resource,
-      line: { color: RESOURCE_COLOR_MAP[resource] || "black" },
+      line: { color: RESOURCE_COLOR_MAP[resource] || "white" },
     })
   );
 
   return (
-    <Box
-      sx={{
-        width: "100%",
-        height: 500,
-      }}
-    >
+    <Box sx={{ width: "100%", height: 500 }}>
       <FullscreenPlotWrapper
         data={traces}
         layout={{
-          title: { text: getChartTitle(type) },
-          legend: {
-            font: {
-              size: 10,
-            },
-            orientation: "v",
-          },
+          title: { text: "24h DEC Burned (5%)" },
+          legend: { font: { size: 10 }, orientation: "v" },
           xaxis: { title: { text: "Date" }, showgrid: false },
-          yaxis: {
-            title: { text: "Amount" },
-            type: "linear",
-          },
+          yaxis: { title: { text: "DEC burned" }, type: "linear" },
         }}
       />
     </Box>
