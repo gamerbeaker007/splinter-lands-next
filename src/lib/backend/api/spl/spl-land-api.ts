@@ -12,8 +12,7 @@ import { SplTaxes } from "@/types/splTaxes";
 import axios from "axios";
 import * as rax from "retry-axios";
 import { NotFoundError } from "../../error";
-import { logError } from "../../log/logUtils";
-import logger from "../../log/logger.server";
+import logger, { logError } from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
 const splLandClient = axios.create({

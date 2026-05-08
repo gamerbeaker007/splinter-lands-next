@@ -1,5 +1,4 @@
-import logger from "@/lib/backend/log/logger.server";
-import { logError } from "@/lib/backend/log/logUtils";
+import logger, { logError } from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 import { calcCostsV2, determineRecipe } from "@/lib/shared/costCalc";
 import { PRODUCING_RESOURCES } from "@/lib/shared/statics";

@@ -1,7 +1,6 @@
 import { Prisma } from "@/generated/prisma/client";
 import { fetchRegionData } from "@/lib/backend/api/spl/spl-land-api";
-import logger from "@/lib/backend/log/logger.server";
-import { logError } from "@/lib/backend/log/logUtils";
+import logger, { logError } from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 
 import DeedUncheckedCreateInput = Prisma.DeedUncheckedCreateInput;

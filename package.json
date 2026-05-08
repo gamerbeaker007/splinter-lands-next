@@ -1,21 +1,28 @@
 {
   "name": "splinter-lands-next",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "data:inject": "tsx src/scripts/data_inject.ts",
-    "data:inject-weekly": "tsx src/scripts/data_inject_weekly.ts",
-    "data:query1": "tsx src/scripts/example_query1.ts",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json}\"",
-    "format:all": "npm run format && npm run lint:fix && npx tsc --noEmit"
+    "format:all": "npm run format && npm run lint:fix && npx tsc --noEmit",
+    "worker": "tsx --tsconfig src/scripts/tsconfig.scripts.json src/scripts/worker.ts",
+    "data:query1": "tsx src/scripts/example_query1.ts",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "docker:build": "docker build -t gamerbeaker/splinter-lands-next:latest .",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f web",
+    "docker:worker-logs": "docker compose logs -f worker"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -23,8 +30,8 @@
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
     "@mui/material-nextjs": "^7.3.5",
-    "@prisma/adapter-pg": "^7.3.0",
-    "@prisma/client": "^7.3.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "js-cookie": "^3.0.5",
@@ -40,8 +47,7 @@
     "react-dom": "^19.2.1",
     "react-icons": "^5.5.0",
     "react-plotly.js": "^2.6.0",
-    "technicalindicators": "^3.1.0",
-    "winston": "^3.18.3"
+    "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^4.1.3",
@@ -63,16 +69,16 @@
     "baseline-browser-mapping": "^2.9.19",
     "dotenv": "^17.2.3",
     "eslint": "^9.39.1",
-    "eslint-config-next": "16.0.6",
+    "eslint-config-next": "16.2.0",
     "eslint-plugin-storybook": "^10.1.4",
     "playwright": "^1.57.0",
-    "prettier": "^3.7.4",
+    "prettier": "^3.8.1",
     "prettier-eslint": "^16.4.2",
-    "prisma": "^7.3.0",
+    "prisma": "^7.8.0",
     "retry-axios": "^4.0.1",
     "storybook": "^10.1.4",
     "tsx": "^4.21.0",
-    "typescript": "^5",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   }
 }
