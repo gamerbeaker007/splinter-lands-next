@@ -1,6 +1,5 @@
 import { Prisma } from "@/generated/prisma/client";
-import logger from "@/lib/backend/log/logger.server";
-import { logError } from "@/lib/backend/log/logUtils";
+import logger, { logError } from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 
 async function fetch_all_joined() {
@@ -102,7 +101,7 @@ async function fetch_harvest_stuff() {
     totalRewards += item.deed?.worksiteDetail?.rewards_per_hour ?? 0;
   }
 
-  logger.info({ totalHarvest, totalBasePP, totalRewards });
+  logger.info(JSON.stringify({ totalHarvest, totalBasePP, totalRewards }));
 
   const end = Date.now();
 
@@ -111,42 +110,42 @@ async function fetch_harvest_stuff() {
 
 async function getManagerWithProductionSummary(manager: string) {
   return await prisma.$queryRaw`
-    SELECT 
+    SELECT
       s.manager,
       s.total_dec_stake_needed,
       s.total_dec_stake_in_use,
       s.total_dec_staked,
       p.*
     FROM (
-      SELECT 
+      SELECT
           a.manager,
           a.total_dec_stake_needed,
           a.total_dec_stake_in_use,
           b.total_dec_staked
       FROM (
-          SELECT 
+          SELECT
               manager,
               SUM(total_dec_stake_needed) AS total_dec_stake_needed,
               SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
           FROM (
-              SELECT 
+              SELECT
                   manager,
                   region_uid,
                   SUM(total_dec_stake_needed) AS total_dec_stake_needed,
                   SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
-              FROM 
+              FROM
                   "StakingDetail"
-              GROUP BY 
+              GROUP BY
                   manager, region_uid
           ) AS grouped
           GROUP BY manager
       ) a
       JOIN (
-          SELECT 
+          SELECT
               manager,
               SUM(total_dec_staked) AS total_dec_staked
           FROM (
-              SELECT 
+              SELECT
                   manager,
                   region_uid,
                   SUM(total_dec_staked) AS total_dec_staked
@@ -166,35 +165,35 @@ async function getManagerWithProductionSummary(manager: string) {
 
 async function fetch_total_dec() {
   const combinedQuery = await prisma.$queryRaw`
-    SELECT 
+    SELECT
         a.manager,
         a.total_dec_stake_needed,
         a.total_dec_stake_in_use,
         b.total_dec_staked
     FROM (
-        SELECT 
+        SELECT
             manager,
             SUM(total_dec_stake_needed) AS total_dec_stake_needed,
             SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
         FROM (
-            SELECT 
+            SELECT
                 manager,
                 region_uid,
                 SUM(total_dec_stake_needed) AS total_dec_stake_needed,
                 SUM(total_dec_stake_in_use) AS total_dec_stake_in_use
-            FROM 
+            FROM
                 "StakingDetail"
-            GROUP BY 
+            GROUP BY
                 manager, region_uid
         ) AS grouped
         GROUP BY manager
     ) a
     JOIN (
-        SELECT 
+        SELECT
             manager,
             SUM(total_dec_staked) AS total_dec_staked
         FROM (
-            SELECT 
+            SELECT
                 manager,
                 region_uid,
                 SUM(total_dec_staked) AS total_dec_staked
@@ -208,7 +207,7 @@ async function fetch_total_dec() {
     ) b ON a.manager = b.manager
     WHERE a.manager = 'beaker007';
     `;
-  logger.info(combinedQuery);
+  logger.info(String(combinedQuery));
 }
 
 async function main() {
@@ -218,7 +217,7 @@ async function main() {
   await fetch_harvest_stuff();
   await fetch_total_dec();
   const res = await getManagerWithProductionSummary("beaker007");
-  logger.info(res);
+  logger.info(JSON.stringify(res));
 }
 
 main().catch((err) => {

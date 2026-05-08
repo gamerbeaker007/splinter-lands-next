@@ -1,8 +1,10 @@
 // app/admin/page.tsx
 import CacheSectionServer from "@/components/admin/CacheSectionServer";
+import DbSizeSection from "@/components/admin/DbSizeSection";
 import LogSectionServer from "@/components/admin/LogSectionServer";
 import MemorySectionServer from "@/components/admin/MemorySectionServer";
 import SignOutButton from "@/components/admin/SingOutButton";
+import WorkerStatusSection from "@/components/admin/WorkerStatusSection";
 import { authOptions } from "@/lib/backend/auth/authOptions";
 import { CircularProgress, Container, Typography } from "@mui/material";
 import { getServerSession } from "next-auth";
@@ -20,10 +22,15 @@ async function AdminContent() {
     <>
       <Typography variant="h2">Admin Dashboard</Typography>
       <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
+      <Typography variant="caption" color="text.secondary">
+        Version: {process.env.APP_VERSION ?? "dev"}
+      </Typography>
       <SignOutButton />
 
       <Suspense fallback={<CircularProgress />}>
+        <WorkerStatusSection />
         <CacheSectionServer />
+        <DbSizeSection />
         <MemorySectionServer />
         <LogSectionServer />
       </Suspense>

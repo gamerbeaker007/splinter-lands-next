@@ -1,36 +1,78 @@
 services:
   db:
-    image: postgres:17
-    container_name: db
-    restart: always
+    image: postgres:17-alpine
+    container_name: splinter-lands-postgres
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: spl
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-spl}
     ports:
       - "5432:5432"
     volumes:
-      - spl_db_data_local:/var/lib/postgresql/data
+      - spl_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: pgadmin
-    restart: always
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "8080:80"
+  # pgadmin:
+  #   image: dpage/pgadmin4
+  #   container_name: splinter-lands-pgadmin
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@admin.com}
+  #     PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+  #   ports:
+  #     - "8080:80"
+
+  migrate:
+    # Runs DB migrations once before app and worker start. Exits 0 on success.
+    image: gamerbeaker/splinter-lands-next:latest
+    container_name: splinter-lands-migrate
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+    entrypoint: ["npx", "prisma", "migrate", "deploy"]
+    restart: "no"
 
-  web:
-    build: .
-    container_name: spl-next
-    env_file: .env
-    volumes:
-      - ./cron.log:/var/log/cron.log
+  app:
+    # To pin a specific release replace 'latest' with a version tag, e.g. gamerbeaker/splinter-lands-next:v1.0.0
+    image: gamerbeaker/splinter-lands-next:latest
+    container_name: splinter-lands-app
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+      GITHUB_ID: ${GITHUB_ID}
+      GITHUB_SECRET: ${GITHUB_SECRET}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      GITHUB_ALLOWED_USERS: ${GITHUB_ALLOWED_USERS:-}
+      CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}
+    entrypoint: ["node", "server.js"]
     ports:
       - "3000:3000"
+
+  worker:
+    # To pin a specific release replace 'latest' with a version tag, e.g. gamerbeaker/splinter-lands-next:v1.0.0
+    image: gamerbeaker/splinter-lands-next:latest
+    container_name: splinter-lands-worker
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+    entrypoint: ["npx", "tsx", "--tsconfig", "src/scripts/tsconfig.scripts.json", "src/scripts/worker.ts"]
+    restart: unless-stopped
+
 volumes:
-  spl_db_data_local:
+  spl_db_data:

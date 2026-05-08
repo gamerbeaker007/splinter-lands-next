@@ -322,3 +322,27 @@ model PlayerCardEditionSummary {
   @@id([date, player, card_set])
   @@map("player_card_edition_summary")
 }
+
+model WorkerRun {
+  id          String    @id @default(cuid())
+  job_type    String    // "daily" | "weekly"
+  status      String    // "running" | "completed" | "failed"
+  started_at  DateTime  @default(now())
+  finished_at DateTime?
+  duration_ms Int?
+  error       String?
+
+  @@map("worker_run")
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  level     String   // "info" | "warn" | "error"
+  message   String
+  meta      Json?
+  created_at DateTime @default(now())
+
+  @@index([level])
+  @@index([created_at])
+  @@map("logs")
+}

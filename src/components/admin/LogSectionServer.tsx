@@ -1,8 +1,8 @@
 "use server";
-import { getApplicationLogs } from "@/lib/backend/admin/adminActions";
+import { getLogsAction } from "@/lib/backend/admin/adminActions";
 import LogViewerClient from "./LogViewerClient";
 
 export default async function LogSectionServer() {
-  const { logs } = await getApplicationLogs();
-  return <LogViewerClient initialLogs={logs} />;
+  const data = await getLogsAction(1, undefined, 100);
+  return <LogViewerClient initialData={data} />;
 }

@@ -1,12 +1,20 @@
 "use server";
 
+import { listLogs, type LogLevel } from "@/lib/backend/api/internal/log-data";
+import {
+  getLastWorkerRuns,
+  type WorkerJobType,
+} from "@/lib/backend/api/internal/worker-run-data";
 import { authOptions } from "@/lib/backend/auth/authOptions";
 import { cache, dailyCache } from "@/lib/backend/cache/cache";
-import { logError } from "@/lib/backend/log/logUtils";
-import fs from "fs/promises";
+import {
+  runDailyJob,
+  runJobWithTracking,
+  runWeeklyJob,
+} from "@/lib/backend/services/dataJobs";
+import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { revalidatePath, unstable_noStore } from "next/cache";
-import path from "path";
 
 export async function getMemoryUsage() {
   unstable_noStore();
@@ -55,17 +63,64 @@ export async function clearCache() {
   return { success: true, message: "Cache cleared" };
 }
 
-export async function getApplicationLogs() {
+export async function getLogsAction(
+  page = 1,
+  level?: LogLevel,
+  limit = 50,
+  search?: string
+) {
+  unstable_noStore();
   const session = await getServerSession(authOptions);
   if (!session) throw new Error("Unauthorized");
 
-  const filePath = path.resolve("logs/app.log");
+  const safeLimit = Math.min(Math.max(1, limit), 1000);
+  const safeSearch = search?.trim().slice(0, 200) || undefined;
+  const { logs, total } = await listLogs({
+    page,
+    limit: safeLimit,
+    level,
+    search: safeSearch,
+  });
 
-  try {
-    const contents = await fs.readFile(filePath, "utf8");
-    return { logs: contents };
-  } catch (error) {
-    logError("Failed to read log file", error);
-    throw new Error("Could not read log file");
+  return {
+    logs: logs.map((l) => ({
+      ...l,
+      created_at: l.created_at.toISOString(),
+    })),
+    total,
+    pages: Math.ceil(total / safeLimit),
+  };
+}
+
+export async function getWorkerRunStatus() {
+  unstable_noStore();
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+
+  return getLastWorkerRuns();
+}
+
+export async function triggerJobAction(
+  jobType: WorkerJobType
+): Promise<{ started: boolean; reason?: string }> {
+  const session = await getServerSession(authOptions);
+  if (!session) throw new Error("Unauthorized");
+
+  // Guard: don't start a second run if one is already active
+  const activeRun = await prisma.workerRun.findFirst({
+    where: { job_type: jobType, status: "running" },
+  });
+  if (activeRun) {
+    return { started: false, reason: "A run is already in progress" };
   }
+
+  const jobFn = jobType === "daily" ? runDailyJob : runWeeklyJob;
+
+  // Fire-and-forget: the job runs in the background;
+  // the caller gets an immediate response and can poll getWorkerRunStatus().
+  setImmediate(() => {
+    runJobWithTracking(jobType, jobFn).catch(console.error);
+  });
+
+  return { started: true };
 }

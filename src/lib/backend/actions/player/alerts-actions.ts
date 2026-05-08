@@ -323,7 +323,7 @@ function analyzeTerrainBonuses(
 
     const cardDetail = cardDetails.find((cd) => cd.id === card.card_detail_id);
     if (!cardDetail) {
-      logger.warning(
+      logger.warn(
         `Card details not found for card_detail_id: ${card.card_detail_id}`
       );
       continue;
