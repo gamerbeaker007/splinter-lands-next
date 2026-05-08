@@ -1,5 +1,5 @@
 let shutdownRequested = false;
-let sleepResolve: (() => void) | null = null;
+const sleepResolvers: Set<() => void> = new Set();
 
 export function shouldShutdown(): boolean {
   return shutdownRequested;
@@ -9,10 +9,10 @@ export function shouldShutdown(): boolean {
 export function registerShutdownHandlers() {
   const handler = () => {
     shutdownRequested = true;
-    if (sleepResolve) {
-      sleepResolve();
-      sleepResolve = null;
+    for (const resolve of sleepResolvers) {
+      resolve();
     }
+    sleepResolvers.clear();
   };
 
   process.on("SIGTERM", handler);
@@ -27,14 +27,13 @@ export function interruptibleSleep(ms: number): Promise<void> {
       return;
     }
 
-    const timer = setTimeout(() => {
-      sleepResolve = null;
-      resolve();
-    }, ms);
-
-    sleepResolve = () => {
+    const wakeUp = () => {
       clearTimeout(timer);
+      sleepResolvers.delete(wakeUp);
       resolve();
     };
+
+    const timer = setTimeout(wakeUp, ms);
+    sleepResolvers.add(wakeUp);
   });
 }

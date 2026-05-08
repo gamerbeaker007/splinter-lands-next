@@ -101,6 +101,17 @@ export async function runJobWithTracking(
   jobType: WorkerJobType,
   jobFn: () => Promise<void>
 ): Promise<void> {
+  // Guard against concurrent runs (e.g. admin trigger + scheduled worker overlap)
+  const existing = await prisma.workerRun.findFirst({
+    where: { job_type: jobType, status: "running" },
+  });
+  if (existing) {
+    logger.warn(
+      `Job: skipping ${jobType} run — a run is already in progress (id=${existing.id})`
+    );
+    return;
+  }
+
   const run = await createWorkerRun(jobType);
   logger.info(`Job: started ${jobType} run (id=${run.id})`);
 
