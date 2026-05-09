@@ -14,6 +14,23 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.0.1] - 2026-05-09
+
+### Fixes
+
+- **Worker container missing env vars** — the `worker` service in `docker-compose.yml`
+  was not passed `CACHE_INVALIDATE_TOKEN` or `NEXT_PUBLIC_BASE_URL`. As a result the
+  post-job cache-refresh HTTP call was silently skipped after every nightly run,
+  leaving the in-memory cache in the `app` container stale until the next page cold-load.
+  Both variables are now forwarded to the worker:
+  - `NEXT_PUBLIC_BASE_URL: http://app:3000` — uses the Docker Compose service name so
+    the worker can reach the app within the internal Docker network.
+  - `CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}` — passes the token through
+    from the `.env` file (already required by the `app` service).
+
+
+---
+
 ## [v1.0.0] - 2026-05-08
 
 ### Summary

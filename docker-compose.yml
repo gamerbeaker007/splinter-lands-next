@@ -71,6 +71,8 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+      NEXT_PUBLIC_BASE_URL: http://app:3000
+      CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}
     entrypoint: ["npx", "tsx", "--tsconfig", "src/scripts/tsconfig.scripts.json", "src/scripts/worker.ts"]
     restart: unless-stopped
 
