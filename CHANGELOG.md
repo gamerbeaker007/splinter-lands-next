@@ -14,6 +14,13 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.x.x] -
+
+### Fixes
+- **GFA multiplier** - For the planner the GFA is reduced from 5 to 1
+
+---
+
 ## [v1.0.1] - 2026-05-09
 
 ### Fixes

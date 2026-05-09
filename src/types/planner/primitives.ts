@@ -201,7 +201,7 @@ export type CardFoil = (typeof cardFoilOptions)[number];
 export const cardFoilModifiers: Record<CardFoil, number> = {
   regular: 1,
   gold: 1,
-  "gold arcane": 5,
+  "gold arcane": 1,
   black: 5,
   "black arcane": 5,
 };
