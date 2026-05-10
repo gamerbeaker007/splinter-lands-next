@@ -16,6 +16,7 @@ import { useState } from "react";
 import { FiDatabase, FiHome, FiMap, FiMenu, FiUsers } from "react-icons/fi";
 import { GrPlan } from "react-icons/gr";
 import { MdOutlineLeaderboard } from "react-icons/md";
+import { RiPlantLine } from "react-icons/ri";
 import Link from "../ui/LinkWrapper";
 
 const links = [
@@ -40,6 +41,11 @@ const links = [
     href: "/planning",
     label: "Land  Planning",
     icon: <GrPlan />,
+  },
+  {
+    href: "/land-manager",
+    label: "Land Manager",
+    icon: <RiPlantLine />,
   },
 ];
 

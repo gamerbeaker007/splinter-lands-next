@@ -346,3 +346,13 @@ model Log {
   @@index([created_at])
   @@map("logs")
 }
+
+model LandManagerConfig {
+  player                      String   @id
+  enabled_regions             Int[]
+  make_harvestable_strategies String[] @default(["transfer", "swap", "buy_dec"])
+  created_at                  DateTime @default(now())
+  updated_at                  DateTime @updatedAt
+
+  @@map("land_manager_config")
+}

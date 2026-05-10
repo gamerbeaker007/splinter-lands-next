@@ -43,6 +43,7 @@ A new **Land Manager** page that lets an authenticated player run automated land
 │  Actions                                             │
 │  [Action 1: Harvest All]   → result inline           │
 │  [Action 2: Make Harvestable & Harvest] → result     │
+│  [Action 2b: Harvest Castles & Keeps] → result       │
 │  [Action 3: Pay Service Fee] → result                │
 │  [Action 4: Distribute Resources] → result           │
 │  [Action 5: Rent Workers]  → result                  │
@@ -108,6 +109,13 @@ Fee exemptions are stored in config as a JSON array; region 65 / tract 3 is seed
   - Then harvest.
 - Result: what was transferred/traded/bought, what was harvested.
 
+### Action 2b — Harvest Castles & Keeps
+- For each enabled region: find all deeds with `worksite_type === "CASTLE"` (region-level) or `worksite_type === "KEEP"` (tract-level).
+- If harvestable, call the harvest API for each.
+- Runs **after Action 2** (making plots harvestable first has no bearing on castles/keeps, but sequencing keeps all harvesting grouped).
+- TAX resource harvested here follows the same Action 3 fee logic and Action 4 distribution as other resources.
+- Result: list of castle/keep harvests (deed_uid, type, TAX amount received).
+
 ### Action 3 — Pay Service Fee
 - For each harvested region (this run), calculate `amount × service_fee_pct / 100` per resource.
 - Skip if fee exemption applies.
@@ -139,7 +147,7 @@ Stored in `land_manager_run` table. Summary level per run.
 | `finished_at` | DateTime? | |
 | `status` | String | `"running" \| "completed" \| "partial" \| "failed"` |
 | `actions_run` | String[] | which actions executed |
-| `summary` | Json | `{ harvested: {GRAIN: 100, WOOD: 50, ...}, fees_paid: {...}, dec_earned: 0, hub_added: {...}, workers_rented: 0, dec_spent_renting: 0 }` |
+| `summary` | Json | `{ harvested: {GRAIN: 100, WOOD: 50, TAX: 20, ...}, fees_paid: {...}, dec_earned: 0, hub_added: {...}, workers_rented: 0, dec_spent_renting: 0 }` |
 | `error` | String? | top-level error if failed |
 
 ---
@@ -182,7 +190,7 @@ src/
   lib/backend/
     actions/land-manager/
       config-actions.ts               # Get/set player config
-      harvest-actions.ts              # Action 1 & 2
+      harvest-actions.ts              # Action 1, 2 & 2b (castles/keeps)
       fee-actions.ts                  # Action 3
       distribute-actions.ts           # Action 4
       worker-actions.ts               # Action 5

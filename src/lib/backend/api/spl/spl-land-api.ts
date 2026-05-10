@@ -3,6 +3,12 @@ import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import { DeedComplete } from "@/types/deed";
 import { SplDeedHarvestActionsResponse } from "@/types/deedHarvest";
 import { SplDeedProjectsResponse } from "@/types/deedProjects";
+import {
+  HarvestableResource,
+  PlayerResourceBalance,
+  ProductionOverviewRegion,
+  RegionResourceBalance,
+} from "@/types/landManager";
 import { Assets } from "@/types/planner/market/market";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
@@ -362,5 +368,109 @@ export async function fetchAllDeedHarvestActions(
   return {
     status: "success",
     data: allActions,
+  };
+}
+
+export async function fetchProductionOverview(
+  player: string,
+  jwtToken: string
+): Promise<ProductionOverviewRegion[]> {
+  const url = `/land/resources/production/overview`;
+  const res = await splLandClient.get(url, {
+    params: { player },
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+
+  logger.info(`SPL API - fetch production overview for: ${player}`);
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return (data.regions?.items ?? []) as ProductionOverviewRegion[];
+}
+
+export async function fetchHarvestableResources(
+  player: string,
+  regionUid: string,
+  jwtToken: string
+): Promise<HarvestableResource[]> {
+  const url = `/land/resources/production/region/harvestable`;
+  const res = await splLandClient.get(url, {
+    params: { player, region_uid: regionUid },
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+
+  const data = res.data?.data;
+  if (!data) throw new Error("Invalid response from Splinterlands API");
+
+  return Array.isArray(data) ? (data as HarvestableResource[]) : [];
+}
+
+export async function fetchPlayerResourceBalance(
+  player: string,
+  jwtToken: string
+): Promise<PlayerResourceBalance[]> {
+  const url = `/land/resources/owned`;
+  try {
+    const res = await splLandClient.get(url, {
+      params: { player },
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    const data = res.data?.data;
+    if (!data) return [];
+    return Array.isArray(data) ? (data as PlayerResourceBalance[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchRegionResourceBalance(
+  player: string,
+  regionUid: string,
+  jwtToken: string
+): Promise<RegionResourceBalance> {
+  const url = `/land/resources/production/region/overview`;
+  try {
+    const res = await splLandClient.get(url, {
+      params: { player, region_uid: regionUid },
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    const data = res.data?.data;
+    if (!data) return { grain: 0, wood: 0, stone: 0, iron: 0, aura: 0 };
+    return {
+      grain: data.grain?.regional_grain ?? 0,
+      wood: data.wood ?? 0,
+      stone: data.stone ?? 0,
+      iron: data.iron ?? 0,
+      aura: data.aura ?? 0,
+    };
+  } catch {
+    return { grain: 0, wood: 0, stone: 0, iron: 0, aura: 0 };
+  }
+}
+
+export async function fetchSwapQuote(
+  fromRegionUid: string,
+  toRegionUid: string,
+  fromSymbol: string,
+  amount: number,
+  jwtToken: string,
+  toSymbol?: string // defaults to fromSymbol (same-symbol transfer)
+): Promise<{ out_amount_1: number; out_amount_2: number }> {
+  const url = `/land/resources/swap/quote`;
+  const res = await splLandClient.get(url, {
+    params: {
+      from_region_uid: fromRegionUid,
+      to_region_uid: toRegionUid,
+      from_symbol: fromSymbol,
+      to_symbol: toSymbol ?? fromSymbol,
+      amount,
+    },
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+  const data = res.data?.data;
+  if (!data) throw new Error("No swap quote data");
+  return {
+    out_amount_1: data.out_amount_1 ?? 0,
+    out_amount_2: data.out_amount_2 ?? amount,
   };
 }
