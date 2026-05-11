@@ -8,8 +8,8 @@ import {
   LandManagerConfig,
   MAKE_HARVESTABLE_STRATEGY_LABELS,
   MakeHarvestableStrategy,
-  ProductionOverviewRegion,
 } from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import {
   Box,
@@ -33,7 +33,7 @@ interface Props {
   open: boolean;
   onClose: () => void;
   config: LandManagerConfig;
-  allRegions: ProductionOverviewRegion[];
+  allRegions: SplProductionOverviewRegion[];
   onSaved: (updated: LandManagerConfig) => void;
 }
 

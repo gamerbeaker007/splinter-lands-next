@@ -8,8 +8,8 @@ import RegionResourceSummary from "@/components/land-manager/RegionResourceSumma
 import {
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
   LandManagerConfig,
-  ProductionOverviewRegion,
 } from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Settings as SettingsIcon } from "@mui/icons-material";
 import {
   Alert,
@@ -33,7 +33,7 @@ interface AuthStatus {
 interface Props {
   auth: AuthStatus;
   config: LandManagerConfig | null;
-  allRegions: ProductionOverviewRegion[];
+  allRegions: SplProductionOverviewRegion[];
 }
 
 function NotLoggedIn() {

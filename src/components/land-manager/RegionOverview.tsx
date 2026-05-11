@@ -2,19 +2,18 @@
 
 import HarvestButton from "@/components/land-manager/HarvestButton";
 import {
-  getHarvestableResources,
+  getSplHarvestableResources,
   getRegionResourceBalance,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import {
   aggregateCosts,
-  computeEffectiveBalances,
+  effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
 import {
-  HarvestableResource,
-  RegionResourceBalance,
-  ProductionOverviewRegion,
-} from "@/types/landManager";
+  SplHarvestableResource,
+  SplProductionOverviewRegion,
+} from "@/types/spl/landManager";
 import { WarningAmber as WarnIcon } from "@mui/icons-material";
 import {
   Box,
@@ -35,13 +34,13 @@ import { useEffect, useState } from "react";
 
 interface Props {
   username: string;
-  regions: ProductionOverviewRegion[];
+  regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
 }
 
 // ── Harvestable chips ──────────────────────────────────────────────────────
 
-function ResourceChips({ resources }: { resources: HarvestableResource[] }) {
+function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   if (resources.length === 0) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -74,22 +73,25 @@ function HarvestCostsCell({
   resources,
   balances,
 }: {
-  resources: HarvestableResource[];
+  resources: SplHarvestableResource[];
   balances: Record<string, number>;
 }) {
   const costs = aggregateCosts(resources);
   if (costs.length === 0) return <Typography variant="body2">—</Typography>;
 
+  console.log("Costs: ", costs);
+  console.log("Balances: ", balances);
   return (
     <Stack spacing={0.25}>
       {costs.map(({ symbol, amount }) => {
         const balance = balances[symbol] ?? 0;
         const enough = balance >= amount;
+        const need = amount - balance;
         return (
           <Stack key={symbol} direction="row" alignItems="center" spacing={0.5}>
             {!enough && (
               <Tooltip
-                title={`Only ${balance.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${symbol} available`}
+                title={`Need ${need.toLocaleString(undefined, { maximumFractionDigits: 0 })} more ${symbol}`}
               >
                 <WarnIcon sx={{ fontSize: 14, color: "warning.main" }} />
               </Tooltip>
@@ -110,29 +112,21 @@ function HarvestCostsCell({
   );
 }
 
-// ── Effective balance ──────────────────────────────────────────────────────
-//
-// Splinterlands processes natural resources (GRAIN, WOOD, STONE, IRON) before
-// derived resources (SPS, RESEARCH, AURA). This means the amount you are about
-// to harvest for a natural resource is immediately available to cover costs
-// in that same harvest, so we add it to the current region stock.
-// computeEffectiveBalances imported from @/lib/shared/landManagerUtils
-
 // ── Region row ─────────────────────────────────────────────────────────────
 
 interface RowProps {
-  region: ProductionOverviewRegion;
+  region: SplProductionOverviewRegion;
   username: string;
 }
 
 function RegionRow({ region, username }: RowProps) {
-  const [harvestable, setHarvestable] = useState<HarvestableResource[]>([]);
-  const [regionBalance, setRegionBalance] = useState<RegionResourceBalance>({
-    grain: 0,
-    wood: 0,
-    stone: 0,
-    iron: 0,
-    aura: 0,
+  const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
+  const [regionBalance, setRegionBalance] = useState<Record<string, number>>({
+    GRAIN: 0,
+    WOOD: 0,
+    STONE: 0,
+    IRON: 0,
+    AURA: 0,
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -146,7 +140,7 @@ function RegionRow({ region, username }: RowProps) {
         setLoading(true);
         setError(null);
         const [{ data, error: err }, { balance }] = await Promise.all([
-          getHarvestableResources(region.region_uid),
+          getSplHarvestableResources(region.region_uid),
           getRegionResourceBalance(region.region_uid),
         ]);
         if (cancelled) return;
@@ -165,10 +159,7 @@ function RegionRow({ region, username }: RowProps) {
     };
   }, [region.region_uid, refreshKey]);
 
-  // Effective balances: natural resources being harvested count as available
-  // because Splinterlands processes them before SPS/RESEARCH/AURA costs.
-  const balances = computeEffectiveBalances(regionBalance, harvestable);
-
+  const balances = effectiveBalance(regionBalance, region);
   const costs = aggregateCosts(harvestable);
   const canAfford =
     !loading &&
@@ -218,6 +209,8 @@ function RegionRow({ region, username }: RowProps) {
           <HarvestButton
             username={username}
             regionUid={region.region_uid}
+            regionNumber={region.region_number}
+            regionName={region.name}
             harvestable={harvestable}
             canAfford={canAfford}
             onSuccess={() => setRefreshKey((k) => k + 1)}

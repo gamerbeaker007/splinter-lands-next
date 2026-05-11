@@ -1,18 +1,14 @@
 "use client";
 
-import { getSwapQuote } from "@/lib/backend/actions/land-manager/overview-actions";
+import { getLandPools } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   BroadcastResult,
   broadcastOperations,
-  buildFeeTransferOp,
-  buildHarvestOp,
 } from "@/lib/frontend/splBroadcast";
-import {
-  HarvestableResource,
-  SERVICE_FEE_PCT,
-  SERVICE_FEE_RECIPIENT,
-  SERVICE_FEE_RECIPIENT_REGION,
-} from "@/types/landManager";
+import { buildRegionHarvestOps } from "@/lib/frontend/harvestOps";
+import { shouldApplyFee } from "@/lib/shared/landManagerUtils";
+import { SERVICE_FEE_PCT } from "@/types/landManager";
+import { SplHarvestableResource } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
 import {
   Alert,
@@ -28,7 +24,9 @@ import { useState } from "react";
 interface Props {
   username: string;
   regionUid: string;
-  harvestable: HarvestableResource[];
+  regionNumber: number;
+  regionName: string;
+  harvestable: SplHarvestableResource[];
   canAfford: boolean;
   onSuccess: () => void;
 }
@@ -38,6 +36,8 @@ type Status = "idle" | "broadcasting" | "done" | "error";
 export default function HarvestButton({
   username,
   regionUid,
+  regionNumber,
+  regionName,
   harvestable,
   canAfford,
   onSuccess,
@@ -46,43 +46,24 @@ export default function HarvestButton({
   const [result, setResult] = useState<BroadcastResult | null>(null);
 
   const hasAnything = harvestable.length > 0;
-  // No fee if this player IS the fee recipient
-  const applyFee =
-    username.toLowerCase() !== SERVICE_FEE_RECIPIENT.toLowerCase();
+  const applyFee = shouldApplyFee(username, regionNumber);
 
   const handleHarvest = async () => {
     setStatus("broadcasting");
     setResult(null);
 
     try {
-      const ops: [string, object][] = [buildHarvestOp(username, regionUid)];
-
-      if (applyFee) {
-        for (const resource of harvestable) {
-          const feeAmount = parseFloat(
-            ((resource.amount_claimable * SERVICE_FEE_PCT) / 100).toFixed(3)
-          );
-          if (feeAmount <= 0) continue;
-
-          const { out_amount_1, out_amount_2 } = await getSwapQuote(
-            regionUid,
-            resource.token_symbol,
-            feeAmount
-          );
-
-          ops.push(
-            buildFeeTransferOp(
-              username,
-              regionUid,
-              SERVICE_FEE_RECIPIENT_REGION,
-              resource.token_symbol,
-              feeAmount,
-              out_amount_1,
-              out_amount_2
-            )
-          );
-        }
-      }
+      const { pools } = await getLandPools();
+      const { ops } = buildRegionHarvestOps(
+        username,
+        {
+          region_uid: regionUid,
+          region_number: regionNumber,
+          name: regionName,
+        },
+        harvestable,
+        pools
+      );
 
       const res = await broadcastOperations(username, ops);
       setResult(res);

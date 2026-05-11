@@ -8,28 +8,18 @@ import {
 import {
   BroadcastResult,
   broadcastOperations,
-  buildBuyWithDecOp,
-  buildFeeTransferOp,
-  buildHarvestOp,
-  buildSwapTokensOp,
 } from "@/lib/frontend/splBroadcast";
 import {
-  aggregateCosts,
   canHarvestRegion,
-  computeDecNeededForResource,
-  computeEffectiveBalances,
-  computeSwapAmounts,
-  CostEntry,
+  effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
+import { buildRegionHarvestOps } from "@/lib/frontend/harvestOps";
+import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
+import { MakeHarvestableStrategy } from "@/types/landManager";
 import {
-  MakeHarvestableStrategy,
-  ProductionOverviewRegion,
-  RegionResourceBalance,
-  SERVICE_FEE_PCT,
-  SERVICE_FEE_RECIPIENT,
-  SERVICE_FEE_RECIPIENT_REGION,
-  TRADE_HUB_FEE_PCT,
-} from "@/types/landManager";
+  SplHarvestableResource,
+  SplProductionOverviewRegion,
+} from "@/types/spl/landManager";
 import {
   Agriculture as HarvestIcon,
   CheckCircleOutline,
@@ -55,12 +45,12 @@ import {
 } from "@mui/material";
 
 import { SplLandPool } from "@/types/spl/landPools";
-import { HarvestableResource } from "@/types/landManager";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 interface Props {
   username: string;
-  regions: ProductionOverviewRegion[];
+  regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
   strategies: MakeHarvestableStrategy[];
 }
@@ -157,26 +147,24 @@ function DryRunDialog({
 
 // ── Core logic: build harvest-all ops ─────────────────────────────────────
 
-async function buildHarvestAllOps(
-  visibleRegions: ProductionOverviewRegion[],
+function buildHarvestAllOps(
+  visibleRegions: SplProductionOverviewRegion[],
   username: string,
-  harvestableMap: Record<string, HarvestableResource[]>,
-  balancesMap: Record<string, RegionResourceBalance>,
+  harvestableMap: Record<string, SplHarvestableResource[]>,
+  balancesMap: Record<string, Record<string, number>>,
   pools: SplLandPool[]
-): Promise<{ ops: [string, object][]; log: string[] }> {
+): { ops: [string, object][]; log: string[] } {
   const ops: [string, object][] = [];
   const log: string[] = [];
-  const applyFee =
-    username.toLowerCase() !== SERVICE_FEE_RECIPIENT.toLowerCase();
 
   for (const region of visibleRegions) {
     const harvestable = harvestableMap[region.region_uid] ?? [];
     const balance = balancesMap[region.region_uid] ?? {
-      grain: 0,
-      wood: 0,
-      stone: 0,
-      iron: 0,
-      aura: 0,
+      GRAIN: 0,
+      WOOD: 0,
+      STONE: 0,
+      IRON: 0,
+      AURA: 0,
     };
 
     if (!canHarvestRegion(harvestable, balance)) {
@@ -184,294 +172,20 @@ async function buildHarvestAllOps(
       continue;
     }
 
-    log.push(`[${region.name}] harvest`);
-    ops.push(buildHarvestOp(username, region.region_uid));
-
-    if (applyFee) {
-      for (const resource of harvestable) {
-        const feeAmount = parseFloat(
-          ((resource.amount_claimable * SERVICE_FEE_PCT) / 100).toFixed(3)
-        );
-        if (feeAmount <= 0) continue;
-
-        const { out_amount_1, out_amount_2 } = computeSwapAmounts(
-          pools,
-          resource.token_symbol,
-          resource.token_symbol,
-          feeAmount
-        );
-        ops.push(
-          buildFeeTransferOp(
-            username,
-            region.region_uid,
-            SERVICE_FEE_RECIPIENT_REGION,
-            resource.token_symbol,
-            feeAmount,
-            out_amount_1,
-            out_amount_2
-          )
-        );
-        log.push(
-          `  fee: ${feeAmount} ${resource.token_symbol} → ${out_amount_2} to ${SERVICE_FEE_RECIPIENT}`
-        );
-      }
-    }
+    const { ops: regionOps, log: regionLog } = buildRegionHarvestOps(
+      username,
+      region,
+      harvestable,
+      pools
+    );
+    ops.push(...regionOps);
+    log.push(...regionLog);
   }
 
   return { ops, log };
 }
 
-// ── Core logic: build make-harvestable ops ────────────────────────────────
-
-async function buildMakeHarvestableOps(
-  visibleRegions: ProductionOverviewRegion[],
-  username: string,
-  harvestableMap: Record<string, HarvestableResource[]>,
-  balancesMap: Record<string, RegionResourceBalance>,
-  strategies: MakeHarvestableStrategy[],
-  initialDecBalance: number,
-  pools: SplLandPool[]
-): Promise<{ ops: [string, object][]; log: string[] }> {
-  const ops: [string, object][] = [];
-  const log: string[] = [];
-
-  const EMPTY_BALANCE: RegionResourceBalance = {
-    grain: 0,
-    wood: 0,
-    stone: 0,
-    iron: 0,
-    aura: 0,
-  };
-
-  // Mutable working copies of effective balances per region
-  const working: Record<string, Record<string, number>> = {};
-  for (const r of visibleRegions) {
-    working[r.region_uid] = computeEffectiveBalances(
-      balancesMap[r.region_uid] ?? EMPTY_BALANCE,
-      harvestableMap[r.region_uid] ?? []
-    );
-  }
-
-  // Pre-computed costs per region
-  const costsMap: Record<string, CostEntry[]> = {};
-  for (const r of visibleRegions) {
-    costsMap[r.region_uid] = aggregateCosts(harvestableMap[r.region_uid] ?? []);
-  }
-
-  let workingDec = initialDecBalance;
-
-  for (const region of visibleRegions) {
-    const costs = costsMap[region.region_uid];
-    if (costs.length === 0) continue; // nothing to harvest
-
-    const already = costs.every(
-      ({ symbol, amount }) =>
-        (working[region.region_uid][symbol] ?? 0) >= amount
-    );
-    if (already) continue; // already harvestable
-
-    const missing = costs.filter(
-      ({ symbol, amount }) => (working[region.region_uid][symbol] ?? 0) < amount
-    );
-
-    log.push(
-      `\n[${region.name}] needs: ${missing.map((m) => `${(m.amount - (working[region.region_uid][m.symbol] ?? 0)).toFixed(0)} ${m.symbol}`).join(", ")}`
-    );
-
-    for (const cost of missing) {
-      const deficit =
-        cost.amount - (working[region.region_uid][cost.symbol] ?? 0);
-      let resolved = false;
-
-      for (const strategy of strategies) {
-        if (resolved) break;
-
-        // ── Strategy: transfer ──────────────────────────────────────────
-        if (strategy === "transfer") {
-          // Find donor region with highest surplus of the needed symbol
-          let bestDonor: ProductionOverviewRegion | null = null;
-          let bestSurplus = 0;
-
-          for (const donor of visibleRegions) {
-            if (donor.region_uid === region.region_uid) continue;
-            const donorCost =
-              costsMap[donor.region_uid].find((c) => c.symbol === cost.symbol)
-                ?.amount ?? 0;
-            const donorHas = working[donor.region_uid][cost.symbol] ?? 0;
-            const surplus = donorHas - donorCost;
-            if (surplus > bestSurplus) {
-              bestDonor = donor;
-              bestSurplus = surplus;
-            }
-          }
-
-          // Need in_amount so that after fee, receiver gets >= deficit
-          const inAmount = parseFloat(
-            (deficit / (1 - TRADE_HUB_FEE_PCT / 100)).toFixed(3)
-          );
-
-          if (bestDonor && bestSurplus >= inAmount) {
-            const { out_amount_1, out_amount_2 } = computeSwapAmounts(
-              pools,
-              cost.symbol,
-              cost.symbol,
-              inAmount
-            );
-            ops.push(
-              buildSwapTokensOp(
-                username,
-                bestDonor.region_uid,
-                region.region_uid,
-                cost.symbol,
-                cost.symbol,
-                inAmount,
-                out_amount_1,
-                out_amount_2
-              )
-            );
-            working[bestDonor.region_uid][cost.symbol] =
-              (working[bestDonor.region_uid][cost.symbol] ?? 0) - inAmount;
-            working[region.region_uid][cost.symbol] =
-              (working[region.region_uid][cost.symbol] ?? 0) + out_amount_2;
-            log.push(
-              `  ✓ Transfer: ${inAmount} ${cost.symbol} from ${bestDonor.name} → receive ${out_amount_2.toFixed(3)} in ${region.name}`
-            );
-            resolved = true;
-          } else {
-            log.push(
-              bestDonor
-                ? `  - Transfer: ${bestDonor.name} surplus ${bestSurplus.toFixed(0)} ${cost.symbol} < needed ${inAmount.toFixed(0)}`
-                : `  - Transfer: no region with surplus ${cost.symbol}`
-            );
-          }
-        }
-
-        // ── Strategy: swap ──────────────────────────────────────────────
-        else if (strategy === "swap") {
-          // Find resource with highest surplus across all enabled regions
-          let bestSource: ProductionOverviewRegion | null = null;
-          let bestSymbol = "";
-          let bestSurplus = 0;
-
-          for (const source of visibleRegions) {
-            for (const sym of ["GRAIN", "WOOD", "STONE", "IRON"]) {
-              if (sym === cost.symbol) continue;
-              const srcCost =
-                costsMap[source.region_uid].find((c) => c.symbol === sym)
-                  ?.amount ?? 0;
-              const surplus = (working[source.region_uid][sym] ?? 0) - srcCost;
-              if (surplus > bestSurplus) {
-                bestSource = source;
-                bestSymbol = sym;
-                bestSurplus = surplus;
-              }
-            }
-          }
-
-          if (bestSource && bestSymbol && bestSurplus > 0) {
-            const inAmount = parseFloat(bestSurplus.toFixed(3));
-            const { out_amount_1, out_amount_2 } = computeSwapAmounts(
-              pools,
-              bestSymbol,
-              cost.symbol,
-              inAmount
-            );
-            ops.push(
-              buildSwapTokensOp(
-                username,
-                bestSource.region_uid,
-                region.region_uid,
-                bestSymbol,
-                cost.symbol,
-                inAmount,
-                out_amount_1,
-                out_amount_2
-              )
-            );
-            working[bestSource.region_uid][bestSymbol] =
-              (working[bestSource.region_uid][bestSymbol] ?? 0) - inAmount;
-            working[region.region_uid][cost.symbol] =
-              (working[region.region_uid][cost.symbol] ?? 0) + out_amount_2;
-            if (out_amount_2 >= deficit) {
-              log.push(
-                `  ✓ Swap: ${inAmount} ${bestSymbol} from ${bestSource.name} → ${out_amount_2.toFixed(3)} ${cost.symbol} in ${region.name}`
-              );
-              resolved = true;
-            } else {
-              log.push(
-                `  ~ Swap partial: ${inAmount} ${bestSymbol} → ${out_amount_2.toFixed(3)} ${cost.symbol} (still short ${(deficit - out_amount_2).toFixed(0)})`
-              );
-            }
-          } else {
-            log.push(`  - Swap: no surplus resource found`);
-          }
-        }
-
-        // ── Strategy: buy with DEC ──────────────────────────────────────
-        else if (strategy === "buy_dec") {
-          if (workingDec <= 0) {
-            log.push(`  - Buy DEC: balance is 0`);
-            continue;
-          }
-
-          const decNeeded = computeDecNeededForResource(
-            pools,
-            cost.symbol,
-            deficit
-          );
-          if (!isFinite(decNeeded)) {
-            log.push(
-              `  - Buy DEC: pool cannot supply ${deficit.toFixed(0)} ${cost.symbol}`
-            );
-            continue;
-          }
-          const decAmount = parseFloat(
-            Math.min(workingDec, decNeeded).toFixed(3)
-          );
-          // If we can't afford the full deficit, buy what we can
-          const { out_amount_2: resourceOut } = computeSwapAmounts(
-            pools,
-            "DEC",
-            cost.symbol,
-            decAmount
-          );
-          const sharesOut = parseFloat(resourceOut.toFixed(3));
-
-          ops.push(
-            buildBuyWithDecOp(
-              username,
-              region.region_uid,
-              decAmount,
-              sharesOut,
-              cost.symbol
-            )
-          );
-          workingDec -= decAmount;
-          working[region.region_uid][cost.symbol] =
-            (working[region.region_uid][cost.symbol] ?? 0) + sharesOut;
-          if (sharesOut >= deficit) {
-            log.push(
-              `  ✓ Buy: ${decAmount} DEC → ${sharesOut} ${cost.symbol} in ${region.name}`
-            );
-            resolved = true;
-          } else {
-            log.push(
-              `  ~ Buy partial: ${decAmount} DEC → ${sharesOut} ${cost.symbol} (still short ${(deficit - sharesOut).toFixed(0)})`
-            );
-          }
-        }
-      }
-
-      if (!resolved) {
-        log.push(
-          `  ✗ Could not resolve ${deficit.toFixed(0)} ${cost.symbol} shortage with available strategies`
-        );
-      }
-    }
-  }
-
-  return { ops, log };
-}
+// buildMakeHarvestableOps lives in @/lib/frontend/makeHarvestableOps
 
 // ── Main component ─────────────────────────────────────────────────────────
 
@@ -481,6 +195,7 @@ export default function BulkActionPanel({
   enabledRegions,
   strategies,
 }: Props) {
+  const router = useRouter();
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
   const [busy, setBusy] = useState<"harvest" | "make" | null>(null);
   const [broadcastResult, setBroadcastResult] =
@@ -502,11 +217,26 @@ export default function BulkActionPanel({
         getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
         getLandPools(),
       ]);
+      const adjustedBalances = Object.fromEntries(
+        visibleRegions.map((r) => [
+          r.region_uid,
+          effectiveBalance(
+            balances[r.region_uid] ?? {
+              GRAIN: 0,
+              WOOD: 0,
+              STONE: 0,
+              IRON: 0,
+              AURA: 0,
+            },
+            r
+          ),
+        ])
+      );
       const { ops, log } = await buildHarvestAllOps(
         visibleRegions,
         username,
         harvestable,
-        balances,
+        adjustedBalances,
         pools
       );
 
@@ -517,7 +247,8 @@ export default function BulkActionPanel({
       } else {
         const res = await broadcastOperations(username, ops);
         setBroadcastResult(res);
-        if (!res.success) setBroadcastError(res.error ?? "Broadcast failed");
+        if (res.success) router.refresh();
+        else setBroadcastError(res.error ?? "Broadcast failed");
       }
     } catch (err) {
       setBroadcastError(err instanceof Error ? err.message : "Unknown error");
@@ -533,18 +264,31 @@ export default function BulkActionPanel({
     setBroadcastResult(null);
     setBroadcastError(null);
     try {
-      const [{ harvestable, balances }, { dec }, { pools }] = await Promise.all(
-        [
-          getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
-          getDecBalance(),
-          getLandPools(),
-        ]
+      const [{ harvestable, balances }, dec, { pools }] = await Promise.all([
+        getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+        getDecBalance(username),
+        getLandPools(),
+      ]);
+      const adjustedBalances = Object.fromEntries(
+        visibleRegions.map((r) => [
+          r.region_uid,
+          effectiveBalance(
+            balances[r.region_uid] ?? {
+              GRAIN: 0,
+              WOOD: 0,
+              STONE: 0,
+              IRON: 0,
+              AURA: 0,
+            },
+            r
+          ),
+        ])
       );
-      const { ops, log } = await buildMakeHarvestableOps(
+      const { ops, log } = buildMakeHarvestableOps(
         visibleRegions,
         username,
         harvestable,
-        balances,
+        adjustedBalances,
         strategies,
         dec,
         pools
@@ -559,7 +303,8 @@ export default function BulkActionPanel({
       } else {
         const res = await broadcastOperations(username, ops);
         setBroadcastResult(res);
-        if (!res.success) setBroadcastError(res.error ?? "Broadcast failed");
+        if (res.success) router.refresh();
+        else setBroadcastError(res.error ?? "Broadcast failed");
       }
     } catch (err) {
       setBroadcastError(err instanceof Error ? err.message : "Unknown error");

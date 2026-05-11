@@ -1,24 +1,21 @@
 "use server";
 
 import {
-  fetchHarvestableResources,
+  fetchSplHarvestableResources,
   fetchLandResourcesPools,
-  fetchPlayerResourceBalance,
+  fetchSplPlayerResourceBalance,
   fetchProductionOverview,
   fetchRegionResourceBalance,
-  fetchSwapQuote,
 } from "@/lib/backend/api/spl/spl-land-api";
 import {
-  HarvestableResource,
-  PlayerResourceBalance,
-  ProductionOverviewRegion,
-  RegionResourceBalance,
-  SERVICE_FEE_RECIPIENT_REGION,
-  TRADE_HUB_FEE_PCT,
-} from "@/types/landManager";
+  SplHarvestableResource,
+  SplPlayerResourceBalance,
+  SplProductionOverviewRegion,
+} from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
 import { cookies } from "next/headers";
 import { getAuthStatus } from "../auth-actions";
+import { fetchPlayerBalances } from "@/lib/backend/api/spl/spl-base-api";
 
 async function getJwtToken(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -26,7 +23,7 @@ async function getJwtToken(): Promise<string | null> {
 }
 
 export async function getProductionOverview(): Promise<{
-  regions: ProductionOverviewRegion[];
+  regions: SplProductionOverviewRegion[];
   error?: string;
 }> {
   const auth = await getAuthStatus();
@@ -45,9 +42,9 @@ export async function getProductionOverview(): Promise<{
   }
 }
 
-export async function getHarvestableResources(
+export async function getSplHarvestableResources(
   regionUid: string
-): Promise<{ data: HarvestableResource[]; error?: string }> {
+): Promise<{ data: SplHarvestableResource[]; error?: string }> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
     return { data: [], error: "Not authenticated" };
@@ -56,7 +53,11 @@ export async function getHarvestableResources(
   if (!jwt) return { data: [], error: "No session token" };
 
   try {
-    const data = await fetchHarvestableResources(auth.username, regionUid, jwt);
+    const data = await fetchSplHarvestableResources(
+      auth.username,
+      regionUid,
+      jwt
+    );
     return { data };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
@@ -64,8 +65,8 @@ export async function getHarvestableResources(
   }
 }
 
-export async function getPlayerResourceBalances(): Promise<{
-  balances: PlayerResourceBalance[];
+export async function getSplPlayerResourceBalances(): Promise<{
+  balances: SplPlayerResourceBalance[];
   error?: string;
 }> {
   const auth = await getAuthStatus();
@@ -76,7 +77,7 @@ export async function getPlayerResourceBalances(): Promise<{
   if (!jwt) return { balances: [], error: "No session token" };
 
   try {
-    const balances = await fetchPlayerResourceBalance(auth.username, jwt);
+    const balances = await fetchSplPlayerResourceBalance(auth.username, jwt);
     return { balances };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
@@ -85,15 +86,15 @@ export async function getPlayerResourceBalances(): Promise<{
 }
 
 export async function getRegionResourceBalance(regionUid: string): Promise<{
-  balance: RegionResourceBalance;
+  balance: Record<string, number>;
   error?: string;
 }> {
-  const defaultBalance: RegionResourceBalance = {
-    grain: 0,
-    wood: 0,
-    stone: 0,
-    iron: 0,
-    aura: 0,
+  const defaultBalance: Record<string, number> = {
+    GRAIN: 0,
+    WOOD: 0,
+    STONE: 0,
+    IRON: 0,
+    AURA: 0,
   };
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -115,53 +116,11 @@ export async function getRegionResourceBalance(regionUid: string): Promise<{
   }
 }
 
-export async function getSwapQuote(
-  fromRegionUid: string,
-  symbol: string,
-  amount: number
-): Promise<{ out_amount_1: number; out_amount_2: number; error?: string }> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return {
-      out_amount_1: 0,
-      out_amount_2: amount,
-      error: "Not authenticated",
-    };
-  }
-  const jwt = await getJwtToken();
-  if (!jwt)
-    return {
-      out_amount_1: 0,
-      out_amount_2: parseFloat(
-        (amount * (1 - TRADE_HUB_FEE_PCT / 100)).toFixed(3)
-      ),
-      error: "No session token",
-    };
-
-  try {
-    const quote = await fetchSwapQuote(
-      fromRegionUid,
-      SERVICE_FEE_RECIPIENT_REGION,
-      symbol,
-      amount,
-      jwt
-    );
-    return quote;
-  } catch {
-    const feeMultiplier = 1 - TRADE_HUB_FEE_PCT / 100;
-    return {
-      out_amount_1: 0,
-      out_amount_2: parseFloat((amount * feeMultiplier).toFixed(3)),
-      error: "Quote unavailable",
-    };
-  }
-}
-
 // ── Bulk region data (harvestable + balance for multiple regions) ──────────
 
 export async function getBulkRegionData(regionUids: string[]): Promise<{
-  harvestable: Record<string, HarvestableResource[]>;
-  balances: Record<string, RegionResourceBalance>;
+  harvestable: Record<string, SplHarvestableResource[]>;
+  balances: Record<string, Record<string, number>>;
   error?: string;
 }> {
   const auth = await getAuthStatus();
@@ -173,7 +132,7 @@ export async function getBulkRegionData(regionUids: string[]): Promise<{
 
   const results = await Promise.allSettled(
     regionUids.flatMap((uid) => [
-      fetchHarvestableResources(auth.username!, uid, jwt).then((d) => ({
+      fetchSplHarvestableResources(auth.username!, uid, jwt).then((d) => ({
         type: "harvestable" as const,
         uid,
         data: d,
@@ -186,77 +145,26 @@ export async function getBulkRegionData(regionUids: string[]): Promise<{
     ])
   );
 
-  const harvestable: Record<string, HarvestableResource[]> = {};
-  const balances: Record<string, RegionResourceBalance> = {};
+  const harvestable: Record<string, SplHarvestableResource[]> = {};
+  const balances: Record<string, Record<string, number>> = {};
 
   for (const r of results) {
     if (r.status !== "fulfilled") continue;
     const v = r.value;
     if (v.type === "harvestable")
-      harvestable[v.uid] = v.data as HarvestableResource[];
-    else balances[v.uid] = v.data as RegionResourceBalance;
+      harvestable[v.uid] = v.data as SplHarvestableResource[];
+    else balances[v.uid] = v.data as Record<string, number>;
   }
 
   return { harvestable, balances };
 }
 
-// ── Cross-symbol / cross-region resource quote ────────────────────────────
-
-export async function getResourceQuote(
-  fromRegionUid: string,
-  toRegionUid: string,
-  fromSymbol: string,
-  toSymbol: string,
-  amount: number
-): Promise<{ out_amount_1: number; out_amount_2: number; error?: string }> {
-  const fallback = parseFloat(
-    (amount * (1 - TRADE_HUB_FEE_PCT / 100)).toFixed(3)
-  );
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return {
-      out_amount_1: 0,
-      out_amount_2: fallback,
-      error: "Not authenticated",
-    };
-  }
-  const jwt = await getJwtToken();
-  if (!jwt)
-    return {
-      out_amount_1: 0,
-      out_amount_2: fallback,
-      error: "No session token",
-    };
-
-  try {
-    return await fetchSwapQuote(
-      fromRegionUid,
-      toRegionUid,
-      fromSymbol,
-      amount,
-      jwt,
-      toSymbol
-    );
-  } catch {
-    return {
-      out_amount_1: 0,
-      out_amount_2: fallback,
-      error: "Quote unavailable",
-    };
-  }
-}
-
 // ── DEC balance ───────────────────────────────────────────────────────────
 
-export async function getDecBalance(): Promise<{
-  dec: number;
-  error?: string;
-}> {
-  const { balances, error } = await getPlayerResourceBalances();
-  const decEntry = balances.find(
-    (b) => b.token_symbol === "DEC" || b.token_symbol === "dec"
-  );
-  return { dec: decEntry?.balance ?? 0, error };
+export async function getDecBalance(username: string): Promise<number> {
+  const balances = await fetchPlayerBalances(username, ["DEC"]);
+  const decEntry = balances.find((b) => b.token === "DEC" || b.token === "dec");
+  return Number(decEntry?.balance ?? 0);
 }
 
 // ── Land pools (public — no auth required) ────────────────────────────────

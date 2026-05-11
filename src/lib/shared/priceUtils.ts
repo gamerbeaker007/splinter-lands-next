@@ -23,12 +23,39 @@ export interface PriceImpactResult {
  * @param X - Amount of token being swapped in
  * @param totalX - Total amount of X token in pool
  * @param totalY - Total amount of Y token in pool
+ * @param applyFee - Whether to apply the trade hub fee (default true). Set to
+ *   false for intermediate hops in a multi-hop swap where the fee is already
+ *   applied on another hop.
  * @returns Price impact result with output amount after fee
  */
+/**
+ * Inverse of calculatePriceImpact: given a desired output amount, return the
+ * required input. Solves x*y=k in reverse.
+ * Returns Infinity when the pool cannot supply the desired output.
+ *
+ * @param desiredOut - Amount of output token wanted
+ * @param totalX     - Pool reserve of the INPUT token
+ * @param totalY     - Pool reserve of the OUTPUT token
+ * @param applyFee   - Whether the trade hub fee was applied on this hop
+ */
+export const calculatePriceImpactInverse = (
+  desiredOut: number,
+  totalX: number,
+  totalY: number,
+  applyFee = true
+): number => {
+  // Forward:  out = (X * totalY / (X + totalX)) * fee
+  // Inverse:  X   = (desiredOut/fee * totalX) / (totalY - desiredOut/fee)
+  const effectiveOut = applyFee ? desiredOut / TRADE_HUB_FEE : desiredOut;
+  if (effectiveOut >= totalY) return Infinity;
+  return (effectiveOut * totalX) / (totalY - effectiveOut);
+};
+
 export const calculatePriceImpact = (
   X: number,
   totalX: number,
-  totalY: number
+  totalY: number,
+  applyFee = true
 ): PriceImpactResult => {
   const constantProduct = totalX * totalY; // totalShares = k
 
@@ -36,16 +63,18 @@ export const calculatePriceImpact = (
   const newTotalX = totalX + X;
   const newTotalY = constantProduct / newTotalX;
   const outputBeforeFee = totalY - newTotalY;
-  const amountReceivedAfterTax = outputBeforeFee * TRADE_HUB_FEE;
+  const amountReceived = applyFee
+    ? outputBeforeFee * TRADE_HUB_FEE
+    : outputBeforeFee;
 
-  if (amountReceivedAfterTax <= 0) {
+  if (amountReceived <= 0) {
     return { amountReceived: 0, priceImpact: 0 };
   }
 
   const priceImpact = (1 - totalX / newTotalX) * 100;
 
   return {
-    amountReceived: amountReceivedAfterTax,
+    amountReceived,
     priceImpact,
   };
 };

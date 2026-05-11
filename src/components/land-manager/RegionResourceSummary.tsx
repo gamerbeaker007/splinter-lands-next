@@ -1,11 +1,8 @@
 "use client";
 
 import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
-import {
-  RegionResourceBalance,
-  ProductionOverviewRegion,
-} from "@/types/landManager";
+import { NATURAL_RESOURCES, RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
   CircularProgress,
   Paper,
@@ -21,23 +18,12 @@ import {
 import { useEffect, useState } from "react";
 
 interface Props {
-  regions: ProductionOverviewRegion[];
+  regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
 }
 
-const RESOURCE_COLS = ["GRAIN", "WOOD", "STONE", "IRON"] as const;
-
 function fmt(n: number) {
   return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
-}
-
-function balanceToRecord(b: RegionResourceBalance): Record<string, number> {
-  return {
-    GRAIN: b.grain,
-    WOOD: b.wood,
-    STONE: b.stone,
-    IRON: b.iron,
-  };
 }
 
 export default function RegionResourceSummary({
@@ -49,7 +35,7 @@ export default function RegionResourceSummary({
   );
 
   const [balances, setBalances] = useState<
-    Record<string, RegionResourceBalance>
+    Record<string, Record<string, number>>
   >({});
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +73,7 @@ export default function RegionResourceSummary({
                 Region
               </Typography>
             </TableCell>
-            {RESOURCE_COLS.map((sym) => (
+            {NATURAL_RESOURCES.map((sym) => (
               <TableCell key={sym} align="right">
                 <Typography
                   variant="caption"
@@ -109,8 +95,7 @@ export default function RegionResourceSummary({
             </TableRow>
           ) : (
             visibleRegions.map((region) => {
-              const b = balances[region.region_uid];
-              const rec = b ? balanceToRecord(b) : null;
+              const b = balances[region.region_uid] ?? null;
               return (
                 <TableRow key={region.region_uid}>
                   <TableCell>
@@ -120,17 +105,17 @@ export default function RegionResourceSummary({
                       </Typography>
                     </Tooltip>
                   </TableCell>
-                  {RESOURCE_COLS.map((sym) => (
+                  {NATURAL_RESOURCES.map((sym) => (
                     <TableCell key={sym} align="right">
                       <Typography
                         variant="caption"
                         sx={{
-                          color: rec
+                          color: b
                             ? (RESOURCE_COLOR_MAP[sym] ?? "text.primary")
                             : "text.disabled",
                         }}
                       >
-                        {rec ? fmt(rec[sym] ?? 0) : "—"}
+                        {b ? fmt(b[sym] ?? 0) : "—"}
                       </Typography>
                     </TableCell>
                   ))}

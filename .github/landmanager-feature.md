@@ -233,3 +233,5 @@ prisma/
 - [ ] Whether "transfer between regions" means same-account only or any region
 - [ ] Rate limiting / throttling needed for bulk VAPI calls?
 - [ ] UI for "action result" — inline expandable card per action?
+- [ ] TODO also a checkmark with harvest for the fees once time can be acnkoledge to not show anymore (Store in config)
+- [ ] Fix determine fee exemption logic now it does not include region so if in region 65 and tract 3 skip the fee.
