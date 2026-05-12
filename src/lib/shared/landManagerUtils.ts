@@ -1,4 +1,4 @@
-import { FEE_EXEMPTIONS, SERVICE_FEE_RECIPIENT } from "@/types/landManager";
+import { FEE_EXEMPT_REGIONS, SERVICE_FEE_RECIPIENT } from "@/types/landManager";
 import { SplHarvestableResource } from "@/types/spl/landManager";
 import {
   calculatePriceImpact,
@@ -114,6 +114,8 @@ export function computeResourceToDec(
 
 // Two AMM hops: resource → DEC → resource.
 // Fee is applied on hop 1 only — this is a single trade hub operation.
+// out_amount_1 = DEC received after fee; out_amount_2 = resource received.
+// These are minimum-output guarantees; the engine aborts if actual output < declared.
 export function computeResourceToResource(
   pools: SplLandPool[],
   fromSymbol: string,
@@ -124,18 +126,20 @@ export function computeResourceToResource(
   const toPool = poolFor(pools, toSymbol);
   if (!fromPool || !toPool) return ZERO_RESULT;
 
+  // Hop 1: resource → DEC (fee applied — this is what the user actually receives).
   const decOut = calculatePriceImpact(
     resourceAmount,
     Number.parseFloat(fromPool.resource_quantity),
     Number.parseFloat(fromPool.dec_quantity)
-    // applyFee defaults to true — fee taken here
+    // applyFee defaults to true
   ).amountReceived;
 
+  // Hop 2: DEC → resource (no additional fee; decOut enters this hop).
   const resourceOut = calculatePriceImpact(
     decOut,
     Number.parseFloat(toPool.dec_quantity),
     Number.parseFloat(toPool.resource_quantity),
-    false // fee already applied on hop 1
+    false
   ).amountReceived;
 
   return { out_amount_1: round3(decOut), out_amount_2: round3(resourceOut) };
@@ -161,7 +165,7 @@ export function shouldApplyFee(
 ): boolean {
   if (username.toLowerCase() === SERVICE_FEE_RECIPIENT.toLowerCase())
     return false;
-  return !FEE_EXEMPTIONS.some((e) => e.region_id === regionNumber);
+  return !FEE_EXEMPT_REGIONS.includes(regionNumber);
 }
 
 /**

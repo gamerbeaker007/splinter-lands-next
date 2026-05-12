@@ -36,6 +36,7 @@ interface Props {
   username: string;
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
+  refreshKey?: number;
 }
 
 // ── Harvestable chips ──────────────────────────────────────────────────────
@@ -79,8 +80,6 @@ function HarvestCostsCell({
   const costs = aggregateCosts(resources);
   if (costs.length === 0) return <Typography variant="body2">—</Typography>;
 
-  console.log("Costs: ", costs);
-  console.log("Balances: ", balances);
   return (
     <Stack spacing={0.25}>
       {costs.map(({ symbol, amount }) => {
@@ -117,9 +116,10 @@ function HarvestCostsCell({
 interface RowProps {
   region: SplProductionOverviewRegion;
   username: string;
+  externalRefreshKey?: number;
 }
 
-function RegionRow({ region, username }: RowProps) {
+function RegionRow({ region, username, externalRefreshKey }: RowProps) {
   const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
   const [regionBalance, setRegionBalance] = useState<Record<string, number>>({
     GRAIN: 0,
@@ -157,7 +157,7 @@ function RegionRow({ region, username }: RowProps) {
     return () => {
       cancelled = true;
     };
-  }, [region.region_uid, refreshKey]);
+  }, [region.region_uid, refreshKey, externalRefreshKey]);
 
   const balances = effectiveBalance(regionBalance, region);
   const costs = aggregateCosts(harvestable);
@@ -227,6 +227,7 @@ export default function RegionOverview({
   username,
   regions,
   enabledRegions,
+  refreshKey,
 }: Props) {
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
@@ -260,6 +261,7 @@ export default function RegionOverview({
               key={region.region_uid}
               region={region}
               username={username}
+              externalRefreshKey={refreshKey}
             />
           ))}
         </TableBody>

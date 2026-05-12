@@ -9,7 +9,9 @@ import {
   computeSwapAmounts,
   CostEntry,
 } from "@/lib/shared/landManagerUtils";
+import { calculatePriceImpact } from "@/lib/shared/priceUtils";
 import {
+  ActionSummary,
   MakeHarvestableStrategy,
   TRADE_HUB_FEE_PCT,
 } from "@/types/landManager";
@@ -38,9 +40,29 @@ interface Ctx {
   ops: [string, object][];
   log: string[];
   decBalance: number;
+  actions: ActionSummary[];
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
+
+// Returns price impact % for the first AMM hop (resource → DEC).
+// Used to warn when pool depth is genuinely low relative to trade size.
+function swapPriceImpact(
+  pools: SplLandPool[],
+  fromSymbol: string,
+  inAmount: number
+): number {
+  if (fromSymbol === "DEC") return 0;
+  const fromPool = pools.find((p) => p.token_symbol === fromSymbol);
+  if (!fromPool) return 0;
+  const { priceImpact } = calculatePriceImpact(
+    inAmount,
+    Number.parseFloat(fromPool.resource_quantity),
+    Number.parseFloat(fromPool.dec_quantity),
+    false
+  );
+  return priceImpact;
+}
 
 function commitSwap(
   ctx: Ctx,
@@ -56,6 +78,13 @@ function commitSwap(
     toSymbol,
     inAmount
   );
+
+  const impact = swapPriceImpact(ctx.pools, fromSymbol, inAmount);
+  if (impact > 2.5) {
+    ctx.log.push(
+      `  ⚠ Price impact ${impact.toFixed(1)}% on ${fromSymbol} pool exceeds 2.5% — swap may fail on-chain (pool too shallow)`
+    );
+  }
   ctx.ops.push(
     buildSwapTokensOp(
       ctx.username,
@@ -120,6 +149,15 @@ function tryTransfer(
     cost.symbol,
     inAmount
   );
+  ctx.actions.push({
+    type: "transfer",
+    from_region: bestDonor.name,
+    to_region: region.name,
+    from_symbol: cost.symbol,
+    to_symbol: cost.symbol,
+    in_amount: inAmount,
+    out_amount: received,
+  });
   ctx.log.push(
     `  ✓ Transfer: ${inAmount} ${cost.symbol} from ${bestDonor.name} → receive ${received.toFixed(3)} in ${region.name}`
   );
@@ -173,6 +211,15 @@ function trySwap(
     cost.symbol,
     inAmount
   );
+  ctx.actions.push({
+    type: "swap",
+    from_region: bestSource.name,
+    to_region: region.name,
+    from_symbol: bestSymbol,
+    to_symbol: cost.symbol,
+    in_amount: inAmount,
+    out_amount: received,
+  });
 
   if (received >= deficit) {
     ctx.log.push(
@@ -219,6 +266,15 @@ function tryBuyDec(
     decAmount
   );
   const sharesOut = Number.parseFloat(resourceOut.toFixed(3));
+  ctx.actions.push({
+    type: "buy_dec",
+    from_region: "DEC",
+    to_region: region.name,
+    from_symbol: "DEC",
+    to_symbol: cost.symbol,
+    in_amount: decAmount,
+    out_amount: sharesOut,
+  });
 
   ctx.ops.push(
     buildBuyWithDecOp(
@@ -261,7 +317,7 @@ export function buildMakeHarvestableOps(
   strategies: MakeHarvestableStrategy[],
   initialDecBalance: number,
   pools: SplLandPool[]
-): { ops: [string, object][]; log: string[] } {
+): { ops: [string, object][]; log: string[]; actions: ActionSummary[] } {
   const ctx: Ctx = {
     username,
     pools,
@@ -281,6 +337,7 @@ export function buildMakeHarvestableOps(
     ops: [],
     log: [],
     decBalance: initialDecBalance,
+    actions: [],
   };
 
   for (const region of visibleRegions) {
@@ -323,5 +380,5 @@ export function buildMakeHarvestableOps(
     }
   }
 
-  return { ops: ctx.ops, log: ctx.log };
+  return { ops: ctx.ops, log: ctx.log, actions: ctx.actions };
 }

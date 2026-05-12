@@ -67,6 +67,11 @@ export function buildFeeTransferOp(
  * Generic swap_tokens op — covers both:
  *   - Transfer: same fromSymbol/toSymbol, different regions
  *   - Swap:     different fromSymbol/toSymbol, any regions
+ *
+ * max_slippage is set high (50) because the engine checks it against the
+ * per-hub AMM pool (not the global aggregate). We compute out_amount_1/2
+ * from the global pool which accurately reflects fair value; max_slippage
+ * here only aborts if execution is worse than our declared minimums by >50%.
  */
 export function buildSwapTokensOp(
   username: string,
@@ -80,7 +85,7 @@ export function buildSwapTokensOp(
 ): [string, object] {
   return customJsonOp(username, {
     op: "swap_tokens",
-    max_slippage: 2.5,
+    max_slippage: 20,
     from_region_uid: fromRegionUid,
     to_region_uid: toRegionUid,
     in_amount: inAmount,
@@ -88,6 +93,37 @@ export function buildSwapTokensOp(
     out_amount_2: outAmount2,
     from_symbol: fromSymbol,
     to_symbol: toSymbol,
+  });
+}
+
+export function buildAddLiquidityOp(
+  username: string,
+  regionUid: string,
+  resourceSymbol: string,
+  resourceAmount: number,
+  decAmount: number
+): [string, object] {
+  return customJsonOp(username, {
+    op: "add_liquidity",
+    region_uid: regionUid,
+    resource_amount: resourceAmount,
+    dec_amount: decAmount,
+    shares_out: 0,
+    resource_symbol: resourceSymbol,
+  });
+}
+
+export function buildTaxCollectionOp(
+  username: string,
+  regionUid: string,
+  deedUid: string
+): [string, object] {
+  return customJsonOp(username, {
+    op: "tax_collection",
+    region_uid: regionUid,
+    deed_uids: [deedUid],
+    auto_buy_grain: false,
+    resource_symbol: "",
   });
 }
 

@@ -1,5 +1,14 @@
 import { LoginResponse } from "@/types/auth/auth";
 import { SplBalance } from "@/types/spl/balance";
+import { SplInventory } from "@/types/spl/inventory";
+import type {
+  AddLiquidityTrxData,
+  HarvestAllTrxData,
+  SplTrxResult,
+  SwapTokensTrxData,
+  TaxCollectionTrxData,
+  TrxLookupOutcome,
+} from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
@@ -10,7 +19,6 @@ import * as rax from "retry-axios";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
-import { SplInventory } from "@/types/spl/inventory";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -225,4 +233,107 @@ export async function fetchPlayerInventory(
     throw new Error(data?.error || "Invalid response from Splinterlands API");
   }
   return data;
+}
+
+// ── Transaction lookup ────────────────────────────────────────────────────────
+
+type Raw = Record<string, unknown>;
+
+function parseHarvestAll(d: Raw): HarvestAllTrxData {
+  return {
+    success: d.success as boolean,
+    message: (d.message as string) ?? "",
+    results: (d.results as HarvestAllTrxData["results"]) ?? [],
+    deeds: (d.deeds as HarvestAllTrxData["deeds"]) ?? [],
+    num_worksite_transitions: (d.num_worksite_transitions as number) ?? 0,
+  };
+}
+
+function parseSwapTokens(d: Raw): SwapTokensTrxData {
+  return {
+    resource: (d.resource as string) ?? "",
+    resource_amount: (d.resource_amount as number) ?? 0,
+    dec_amount: (d.dec_amount as number) ?? 0,
+    region_uid: (d.region_uid as string) ?? "",
+    region_name: (d.region_name as string) ?? "",
+    to_player: (d.to_player as string) ?? "",
+  };
+}
+
+function parseTaxCollection(d: Raw): TaxCollectionTrxData {
+  return {
+    deed_uid: (d.deed_uid as string) ?? "",
+    kingdom_type: (d.kingdom_type as string) ?? "",
+    elapsed_hours: (d.elapsed_hours as number) ?? 0,
+    tokens: ((d.tokens as { tokens?: unknown[] })?.tokens ??
+      []) as TaxCollectionTrxData["tokens"],
+    fragment_found: (d.fragment_found as boolean) ?? false,
+    fragment_chance: (d.fragment_chance as number) ?? 0,
+  };
+}
+
+function parseAddLiquidity(d: Raw): AddLiquidityTrxData {
+  return {
+    resource: (d.resource as string) ?? "",
+    resource_amount: (d.resource_amount as number) ?? 0,
+    dec_amount: (d.dec_amount as number) ?? 0,
+    region_uid: (d.region_uid as string) ?? "",
+    region_name: (d.region_name as string) ?? "",
+  };
+}
+
+export async function fetchTransactionLookup(
+  trxId: string
+): Promise<TrxLookupOutcome> {
+  try {
+    const url = "/transactions/lookup";
+    const res = await splBaseClient.get(url, { params: { trx_id: trxId } });
+    const trxInfo = res.data?.trx_info;
+
+    // Not yet on-chain — trx_info absent
+    if (!trxInfo) return { status: "pending" };
+
+    // On-chain but rejected by the game engine
+    if (trxInfo.success === false) {
+      const error: string =
+        trxInfo.error ?? trxInfo.error_code ?? "Transaction failed";
+      return { status: "failed", error };
+    }
+
+    if (!trxInfo.result) return { status: "pending" };
+
+    const outer = JSON.parse(trxInfo.result as string);
+    if (outer?.result?.success === false) {
+      const error: string =
+        outer?.result?.error ?? outer?.error ?? "Transaction failed";
+      return { status: "failed", error };
+    }
+
+    const d = outer.result.data as Raw | null;
+    if (!d) return { status: "pending" };
+
+    const opData = JSON.parse(trxInfo.data as string) as { op: string };
+    const op = opData.op;
+
+    let result: SplTrxResult | null = null;
+    switch (op) {
+      case "harvest_all":
+        result = { type: "harvest_all", data: parseHarvestAll(d) };
+        break;
+      case "swap_tokens":
+        result = { type: "swap_tokens", data: parseSwapTokens(d) };
+        break;
+      case "tax_collection":
+        result = { type: "tax_collection", data: parseTaxCollection(d) };
+        break;
+      case "add_liquidity":
+        result = { type: "add_liquidity", data: parseAddLiquidity(d) };
+        break;
+      default:
+        return { status: "pending" };
+    }
+    return { status: "success", result };
+  } catch {
+    return { status: "pending" };
+  }
 }

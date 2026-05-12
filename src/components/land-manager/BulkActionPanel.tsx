@@ -1,30 +1,25 @@
 "use client";
 
+import HarvestConfirmDialog from "@/components/land-manager/HarvestConfirmDialog";
+import MythicConfirmDialog from "@/components/land-manager/MythicConfirmDialog";
+import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
+import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
+import { useMakeHarvestableAction } from "@/hooks/useMakeHarvestableAction";
+import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import {
-  getBulkRegionData,
-  getDecBalance,
-  getLandPools,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+  DryRunResult,
+  MakeHarvestableStrategy,
+  POST_HARVEST_STRATEGY_LABELS,
+  PostHarvestStrategy,
+} from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
-  BroadcastResult,
-  broadcastOperations,
-} from "@/lib/frontend/splBroadcast";
-import {
-  canHarvestRegion,
-  effectiveBalance,
-} from "@/lib/shared/landManagerUtils";
-import { buildRegionHarvestOps } from "@/lib/frontend/harvestOps";
-import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
-import { MakeHarvestableStrategy } from "@/types/landManager";
-import {
-  SplHarvestableResource,
-  SplProductionOverviewRegion,
-} from "@/types/spl/landManager";
-import {
-  Agriculture as HarvestIcon,
   CheckCircleOutline,
   ContentCopy,
+  Agriculture as HarvestIcon,
+  AutoAwesome as MythicIcon,
   PlaylistAddCheck,
+  Savings as SavingsIcon,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -43,25 +38,22 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-
-import { SplLandPool } from "@/types/spl/landPools";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Props {
   username: string;
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
   strategies: MakeHarvestableStrategy[];
+  harvestAck: boolean;
+  postHarvestStrategy: PostHarvestStrategy;
+  mythicFeeAccepted: boolean;
+  hasMythics: boolean;
+  onSuccess?: () => void;
 }
 
-interface DryRunResult {
-  title: string;
-  log: string[];
-  ops: [string, object][];
-}
-
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Dry-run dialog ─────────────────────────────────────────────────────────
 
 function DryRunDialog({
   result,
@@ -84,7 +76,6 @@ function DryRunDialog({
     <Dialog open onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{result.title}</DialogTitle>
       <DialogContent dividers>
-        {/* Human readable log */}
         <Typography variant="subtitle2" gutterBottom>
           Plan ({result.ops.length} operation
           {result.ops.length !== 1 ? "s" : ""})
@@ -105,7 +96,6 @@ function DryRunDialog({
           {result.log.join("\n") || "(nothing to do)"}
         </Paper>
 
-        {/* Raw ops JSON */}
         <Stack
           direction="row"
           alignItems="center"
@@ -145,48 +135,6 @@ function DryRunDialog({
   );
 }
 
-// ── Core logic: build harvest-all ops ─────────────────────────────────────
-
-function buildHarvestAllOps(
-  visibleRegions: SplProductionOverviewRegion[],
-  username: string,
-  harvestableMap: Record<string, SplHarvestableResource[]>,
-  balancesMap: Record<string, Record<string, number>>,
-  pools: SplLandPool[]
-): { ops: [string, object][]; log: string[] } {
-  const ops: [string, object][] = [];
-  const log: string[] = [];
-
-  for (const region of visibleRegions) {
-    const harvestable = harvestableMap[region.region_uid] ?? [];
-    const balance = balancesMap[region.region_uid] ?? {
-      GRAIN: 0,
-      WOOD: 0,
-      STONE: 0,
-      IRON: 0,
-      AURA: 0,
-    };
-
-    if (!canHarvestRegion(harvestable, balance)) {
-      log.push(`[${region.name}] skip — cannot afford harvest`);
-      continue;
-    }
-
-    const { ops: regionOps, log: regionLog } = buildRegionHarvestOps(
-      username,
-      region,
-      harvestable,
-      pools
-    );
-    ops.push(...regionOps);
-    log.push(...regionLog);
-  }
-
-  return { ops, log };
-}
-
-// buildMakeHarvestableOps lives in @/lib/frontend/makeHarvestableOps
-
 // ── Main component ─────────────────────────────────────────────────────────
 
 export default function BulkActionPanel({
@@ -194,228 +142,304 @@ export default function BulkActionPanel({
   regions,
   enabledRegions,
   strategies,
+  harvestAck,
+  postHarvestStrategy,
+  mythicFeeAccepted,
+  hasMythics,
+  onSuccess,
 }: Props) {
   const router = useRouter();
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
-  const [busy, setBusy] = useState<"harvest" | "make" | null>(null);
-  const [broadcastResult, setBroadcastResult] =
-    useState<BroadcastResult | null>(null);
-  const [broadcastError, setBroadcastError] = useState<string | null>(null);
 
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
   );
 
-  // ── Harvest All ───────────────────────────────────────────────────────
+  const afterSuccess = useCallback(() => {
+    router.refresh();
+    onSuccess?.();
+  }, [router, onSuccess]);
 
-  const handleHarvestAll = async (isDryRun: boolean) => {
-    setBusy("harvest");
-    setBroadcastResult(null);
-    setBroadcastError(null);
-    try {
-      const [{ harvestable, balances }, { pools }] = await Promise.all([
-        getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
-        getLandPools(),
-      ]);
-      const adjustedBalances = Object.fromEntries(
-        visibleRegions.map((r) => [
-          r.region_uid,
-          effectiveBalance(
-            balances[r.region_uid] ?? {
-              GRAIN: 0,
-              WOOD: 0,
-              STONE: 0,
-              IRON: 0,
-              AURA: 0,
-            },
-            r
-          ),
-        ])
-      );
-      const { ops, log } = await buildHarvestAllOps(
-        visibleRegions,
-        username,
-        harvestable,
-        adjustedBalances,
-        pools
-      );
+  const harvest = useHarvestAllAction({
+    username,
+    visibleRegions,
+    harvestAck,
+    onSuccess: afterSuccess,
+  });
+  const makeHarvestable = useMakeHarvestableAction({
+    username,
+    visibleRegions,
+    strategies,
+    onSuccess: afterSuccess,
+  });
+  const processResources = useProcessResourcesAction({
+    username,
+    visibleRegions,
+    postHarvestStrategy,
+    onSuccess: afterSuccess,
+  });
+  const mythicHarvest = useHarvestMythicsAction({
+    username,
+    visibleRegions,
+    mythicFeeAccepted,
+    onSuccess: afterSuccess,
+  });
 
-      if (isDryRun) {
-        setDryRun({ title: "Dry Run — Harvest All", log, ops });
-      } else if (ops.length === 0) {
-        setBroadcastError("No regions are ready to harvest.");
-      } else {
-        const res = await broadcastOperations(username, ops);
-        setBroadcastResult(res);
-        if (res.success) router.refresh();
-        else setBroadcastError(res.error ?? "Broadcast failed");
-      }
-    } catch (err) {
-      setBroadcastError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setBusy(null);
-    }
-  };
+  const anyBusy =
+    harvest.busy ||
+    makeHarvestable.busy ||
+    processResources.busy ||
+    mythicHarvest.busy;
 
-  // ── Make All Harvestable ──────────────────────────────────────────────
+  const activeResult =
+    harvest.result ??
+    makeHarvestable.result ??
+    processResources.result ??
+    mythicHarvest.result;
 
-  const handleMakeHarvestable = async (isDryRun: boolean) => {
-    setBusy("make");
-    setBroadcastResult(null);
-    setBroadcastError(null);
-    try {
-      const [{ harvestable, balances }, dec, { pools }] = await Promise.all([
-        getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
-        getDecBalance(username),
-        getLandPools(),
-      ]);
-      const adjustedBalances = Object.fromEntries(
-        visibleRegions.map((r) => [
-          r.region_uid,
-          effectiveBalance(
-            balances[r.region_uid] ?? {
-              GRAIN: 0,
-              WOOD: 0,
-              STONE: 0,
-              IRON: 0,
-              AURA: 0,
-            },
-            r
-          ),
-        ])
-      );
-      const { ops, log } = buildMakeHarvestableOps(
-        visibleRegions,
-        username,
-        harvestable,
-        adjustedBalances,
-        strategies,
-        dec,
-        pools
-      );
+  const activeError =
+    harvest.error ??
+    makeHarvestable.error ??
+    processResources.error ??
+    mythicHarvest.error;
 
-      if (isDryRun) {
-        setDryRun({ title: "Dry Run — Make All Harvestable", log, ops });
-      } else if (ops.length === 0) {
-        setBroadcastError(
-          "All regions are already harvestable (or no strategies could help)."
-        );
-      } else {
-        const res = await broadcastOperations(username, ops);
-        setBroadcastResult(res);
-        if (res.success) router.refresh();
-        else setBroadcastError(res.error ?? "Broadcast failed");
-      }
-    } catch (err) {
-      setBroadcastError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setBusy(null);
-    }
-  };
+  function clearAll() {
+    harvest.clearResult();
+    harvest.clearError();
+    makeHarvestable.clearResult();
+    makeHarvestable.clearError();
+    processResources.clearResult();
+    processResources.clearError();
+    mythicHarvest.clearResult();
+    mythicHarvest.clearError();
+  }
+
+  async function run(
+    action: { execute: (d: boolean) => Promise<DryRunResult | null> },
+    isDryRun: boolean
+  ) {
+    const dr = await action.execute(isDryRun);
+    if (dr) setDryRun(dr);
+  }
 
   if (visibleRegions.length === 0) return null;
 
   return (
     <Box sx={{ mb: 3 }}>
-      {/* Action buttons */}
-      <Stack
-        direction="row"
-        gap={2}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
+      <Stack direction="column" gap={0.5} flexWrap="wrap" alignItems="left">
         {/* Harvest All */}
-        <ButtonGroup size="small" disabled={busy !== null}>
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={
-              busy === "harvest" ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <HarvestIcon fontSize="small" />
-              )
-            }
-            onClick={() => handleHarvestAll(false)}
-          >
-            Harvest All
-          </Button>
-          <Tooltip title="Show planned operations without broadcasting">
+        <Stack
+          direction="row"
+          gap={2}
+          flexWrap="wrap"
+          alignItems="center"
+          mb={1.5}
+        >
+          <ButtonGroup size="small" disabled={anyBusy}>
             <Button
-              variant="outlined"
+              variant="contained"
               color="success"
-              onClick={() => handleHarvestAll(true)}
+              startIcon={
+                harvest.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <HarvestIcon fontSize="small" />
+                )
+              }
+              onClick={() => run(harvest, false)}
             >
-              Dry Run
+              Harvest All
             </Button>
-          </Tooltip>
-        </ButtonGroup>
+            <Tooltip title="Show planned operations without broadcasting">
+              <Button
+                variant="outlined"
+                color="success"
+                onClick={() => run(harvest, true)}
+              >
+                Dry Run
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+        </Stack>
 
         {/* Make All Harvestable */}
-        <ButtonGroup size="small" disabled={busy !== null}>
-          <Button
-            variant="contained"
-            color="warning"
-            startIcon={
-              busy === "make" ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <PlaylistAddCheck fontSize="small" />
-              )
-            }
-            onClick={() => handleMakeHarvestable(false)}
-          >
-            Make All Harvestable
-          </Button>
-          <Tooltip title="Show planned operations without broadcasting">
+        <Stack
+          direction="row"
+          gap={2}
+          flexWrap="wrap"
+          alignItems="center"
+          mb={1.5}
+        >
+          <ButtonGroup size="small" disabled={anyBusy}>
             <Button
-              variant="outlined"
+              variant="contained"
               color="warning"
-              onClick={() => handleMakeHarvestable(true)}
+              startIcon={
+                makeHarvestable.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <PlaylistAddCheck fontSize="small" />
+                )
+              }
+              onClick={() => run(makeHarvestable, false)}
             >
-              Dry Run
+              Make All Harvestable
             </Button>
-          </Tooltip>
-        </ButtonGroup>
+            <Tooltip title="Show planned operations without broadcasting">
+              <Button
+                variant="outlined"
+                color="warning"
+                onClick={() => run(makeHarvestable, true)}
+              >
+                Dry Run
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
 
-        {/* Strategy indicator */}
-        <Stack direction="row" gap={0.5} flexWrap="wrap">
-          {strategies.map((s, i) => (
-            <Chip
-              key={s}
-              label={`${i + 1}. ${s}`}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: "0.7rem" }}
-            />
-          ))}
+          <Stack direction="row" gap={0.5} flexWrap="wrap">
+            {strategies.map((s, i) => (
+              <Chip
+                key={s}
+                label={`${i + 1}. ${s}`}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: "0.7rem" }}
+              />
+            ))}
+          </Stack>
+        </Stack>
+
+        {/* Process Resources (post-harvest) */}
+        <Stack
+          direction="row"
+          gap={2}
+          flexWrap="wrap"
+          alignItems="center"
+          mb={1.5}
+        >
+          <ButtonGroup
+            size="small"
+            disabled={anyBusy || postHarvestStrategy === "accumulate"}
+          >
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={
+                processResources.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <SavingsIcon fontSize="small" />
+                )
+              }
+              onClick={() => run(processResources, false)}
+            >
+              Process Resources
+            </Button>
+            <Tooltip title="Show planned operations without broadcasting">
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => run(processResources, true)}
+              >
+                Dry Run
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+
+          <Chip
+            label={POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy]}
+            size="small"
+            variant="outlined"
+            sx={{ fontSize: "0.7rem" }}
+          />
+        </Stack>
+
+        {/* Harvest Mythics (Keeps & Castles) */}
+        <Stack
+          direction="row"
+          gap={2}
+          flexWrap="wrap"
+          alignItems="center"
+          mb={1.5}
+        >
+          <ButtonGroup size="small" disabled={anyBusy || !hasMythics}>
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={
+                mythicHarvest.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <MythicIcon fontSize="small" />
+                )
+              }
+              onClick={() => run(mythicHarvest, false)}
+            >
+              Harvest Mythics
+            </Button>
+            <Tooltip title="Show planned operations without broadcasting">
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => run(mythicHarvest, true)}
+              >
+                Dry Run
+              </Button>
+            </Tooltip>
+          </ButtonGroup>
+
+          <Chip
+            label="Keeps &amp; Castles"
+            size="small"
+            variant="outlined"
+            sx={{ fontSize: "0.7rem" }}
+          />
         </Stack>
       </Stack>
-      {/* Feedback */}
-      {broadcastResult?.success && (
+
+      {mythicHarvest.isVerifying && (
         <Alert
-          severity="success"
-          onClose={() => setBroadcastResult(null)}
+          severity="info"
           sx={{ mb: 1 }}
+          icon={<CircularProgress size={16} />}
         >
-          Broadcast successful · TX: {broadcastResult.txId ?? "confirmed"}
-        </Alert>
-      )}
-      {broadcastError && (
-        <Alert
-          severity="error"
-          onClose={() => setBroadcastError(null)}
-          sx={{ mb: 1 }}
-        >
-          {broadcastError}
+          Verifying transactions on-chain… (up to 30s)
         </Alert>
       )}
 
-      {/* Dry run result dialog */}
+      {activeResult?.success && (
+        <Alert severity="success" onClose={clearAll} sx={{ mb: 1 }}>
+          Broadcast successful
+          {activeResult.txIds.length > 1
+            ? ` (${activeResult.txIds.length} transactions)`
+            : ""}{" "}
+          · TX: {activeResult.txIds.at(-1) ?? "confirmed"}
+        </Alert>
+      )}
+
+      {activeError && (
+        <Alert severity="error" onClose={clearAll} sx={{ mb: 1 }}>
+          {activeError}
+        </Alert>
+      )}
+
       {dryRun && (
         <DryRunDialog result={dryRun} onClose={() => setDryRun(null)} />
       )}
+
+      <HarvestConfirmDialog
+        open={harvest.showConfirm}
+        username={username}
+        visibleRegions={visibleRegions}
+        onConfirm={harvest.onConfirm}
+        onCancel={harvest.onCancelConfirm}
+      />
+
+      <MythicConfirmDialog
+        open={mythicHarvest.showConfirm}
+        onConfirm={mythicHarvest.onConfirm}
+        onCancel={mythicHarvest.onCancelConfirm}
+      />
     </Box>
   );
 }

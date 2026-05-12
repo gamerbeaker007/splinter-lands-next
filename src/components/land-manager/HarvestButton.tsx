@@ -73,6 +73,7 @@ export default function HarvestButton({
       setStatus("error");
       setResult({
         success: false,
+        txIds: [],
         error: err instanceof Error ? err.message : "Unknown error",
       });
     }
@@ -119,7 +120,8 @@ export default function HarvestButton({
         >
           {status === "done" ? (
             <Typography variant="caption">
-              Harvested{feeLabel} · TX: {result?.txId ?? "confirmed"}
+              Harvested{feeLabel} · TX:{" "}
+              {result?.txIds?.[result.txIds.length - 1] ?? "confirmed"}
             </Typography>
           ) : (
             <Typography variant="caption">{result?.error}</Typography>

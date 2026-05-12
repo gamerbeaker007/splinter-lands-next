@@ -6,6 +6,8 @@ import {
   fetchSplPlayerResourceBalance,
   fetchProductionOverview,
   fetchRegionResourceBalance,
+  fetchRegionDataPlayer,
+  fetchTaxes,
 } from "@/lib/backend/api/spl/spl-land-api";
 import {
   SplHarvestableResource,
@@ -15,7 +17,12 @@ import {
 import { SplLandPool } from "@/types/spl/landPools";
 import { cookies } from "next/headers";
 import { getAuthStatus } from "../auth-actions";
-import { fetchPlayerBalances } from "@/lib/backend/api/spl/spl-base-api";
+import {
+  fetchPlayerBalances,
+  fetchTransactionLookup,
+} from "@/lib/backend/api/spl/spl-base-api";
+import { MythicDeed } from "@/types/landManager";
+import type { TrxLookupOutcome } from "@/types/spl/trx";
 
 async function getJwtToken(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -180,4 +187,63 @@ export async function getLandPools(): Promise<{
     const msg = error instanceof Error ? error.message : "Unknown error";
     return { pools: [], error: msg };
   }
+}
+
+// ── Mythic deeds (Keeps & Castles) ───────────────────────────────────────────
+
+export async function getPlayerMythicDeeds(): Promise<MythicDeed[]> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) return [];
+
+  const { deeds, worksite_details } = await fetchRegionDataPlayer(
+    auth.username
+  );
+
+  const mythicDeeds = deeds.filter(
+    (d) => (d.keep ?? 0) > 0 || (d.castle ?? 0) > 0
+  );
+
+  if (mythicDeeds.length === 0) return [];
+
+  const taxResults = await Promise.allSettled(
+    mythicDeeds.map((d) => fetchTaxes(d.deed_uid))
+  );
+
+  const result: MythicDeed[] = mythicDeeds.map((deed, i) => {
+    const wsDetail = worksite_details.find((w) => w.deed_uid === deed.deed_uid);
+    const taxResult = taxResults[i];
+    const taxes =
+      taxResult.status === "fulfilled"
+        ? taxResult.value.taxes.filter((t) => t.balance > 0)
+        : [];
+    const capacity =
+      taxResult.status === "fulfilled" ? taxResult.value.capacity : 0;
+    const kingdom_type: "keep" | "castle" =
+      (deed.keep ?? 0) > 0 ? "keep" : "castle";
+
+    return {
+      deed_uid: deed.deed_uid,
+      region_uid: deed.region_uid,
+      region_number: deed.region_number,
+      kingdom_type,
+      last_action_time: wsDetail?.last_action_time ?? null,
+      estimated_totem_chance: wsDetail?.estimated_totem_chance ?? null,
+      taxes,
+      capacity,
+    };
+  });
+
+  // Keeps first, then castles
+  return result.sort((a, b) => {
+    if (a.kingdom_type === b.kingdom_type) return 0;
+    return a.kingdom_type === "keep" ? -1 : 1;
+  });
+}
+
+// ── Transaction lookup wrapper ────────────────────────────────────────────────
+
+export async function lookupTransaction(
+  trxId: string
+): Promise<TrxLookupOutcome> {
+  return fetchTransactionLookup(trxId);
 }

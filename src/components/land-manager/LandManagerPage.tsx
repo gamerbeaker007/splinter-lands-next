@@ -3,11 +3,16 @@
 import LoginComponent from "@/components/auth/LoginComponent";
 import BulkActionPanel from "@/components/land-manager/BulkActionPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
+import MythicOverview from "@/components/land-manager/MythicOverview";
 import RegionOverview from "@/components/land-manager/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/RegionResourceSummary";
+import TodayPanel from "@/components/land-manager/TodayPanel";
+import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
+  DEFAULT_POST_HARVEST_STRATEGY,
   LandManagerConfig,
+  MythicDeed,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Settings as SettingsIcon } from "@mui/icons-material";
@@ -23,7 +28,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 interface AuthStatus {
   authenticated: boolean;
@@ -67,9 +72,25 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       player: auth.username ?? "",
       enabled_regions: [],
       make_harvestable_strategies: DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
+      fee_accepted: false,
+      post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
+      mythic_fee_accepted: false,
     }
   );
   const [configOpen, setConfigOpen] = useState(false);
+  const [regionRefreshKey, setRegionRefreshKey] = useState(0);
+  const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
+    null
+  );
+
+  useEffect(() => {
+    getPlayerMythicDeeds().then(setAllMythicDeeds);
+  }, [regionRefreshKey]);
+
+  const enabledMythicDeeds =
+    allMythicDeeds?.filter((d) =>
+      currentConfig.enabled_regions.includes(d.region_number)
+    ) ?? null;
 
   if (!auth.authenticated) {
     return <NotLoggedIn />;
@@ -132,7 +153,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </Alert>
       ) : (
         <Typography variant="body2" color="text.secondary" mb={1}>
-          Showing {enabledCount} enabled region{enabledCount !== 1 ? "s" : ""}.{" "}
+          Showing {enabledCount} enabled region{enabledCount === 1 ? "" : "s"}.{" "}
           <Button
             size="small"
             onClick={() => setConfigOpen(true)}
@@ -154,13 +175,25 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         regions={allRegions}
         enabledRegions={currentConfig.enabled_regions}
         strategies={currentConfig.make_harvestable_strategies}
+        harvestAck={currentConfig.fee_accepted}
+        postHarvestStrategy={currentConfig.post_harvest_strategy}
+        mythicFeeAccepted={currentConfig.mythic_fee_accepted}
+        hasMythics={
+          enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
+        }
+        onSuccess={() => setRegionRefreshKey((k) => k + 1)}
       />
+
+      <TodayPanel refreshKey={regionRefreshKey} />
+
+      <MythicOverview deeds={enabledMythicDeeds} />
 
       {/* Per-region overview with harvestable resources */}
       <RegionOverview
         username={auth.username ?? ""}
         regions={allRegions}
         enabledRegions={currentConfig.enabled_regions}
+        refreshKey={regionRefreshKey}
       />
 
       {/* Config dialog */}

@@ -3,11 +3,15 @@
 import {
   saveLandManagerConfig,
   saveMakeHarvestableStrategies,
+  savePostHarvestStrategy,
 } from "@/lib/backend/actions/land-manager/config-actions";
 import {
   LandManagerConfig,
   MAKE_HARVESTABLE_STRATEGY_LABELS,
   MakeHarvestableStrategy,
+  PostHarvestStrategy,
+  POST_HARVEST_STRATEGY_LABELS,
+  DEFAULT_POST_HARVEST_STRATEGY,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
@@ -21,8 +25,11 @@ import {
   DialogContent,
   DialogTitle,
   Divider,
+  FormControl,
   FormControlLabel,
   IconButton,
+  Radio,
+  RadioGroup,
   Stack,
   Tooltip,
   Typography,
@@ -50,6 +57,10 @@ export default function ConfigDialog({
   const [strategies, setStrategies] = useState<MakeHarvestableStrategy[]>(
     config.make_harvestable_strategies
   );
+  const [postHarvestStrategy, setPostHarvestStrategy] =
+    useState<PostHarvestStrategy>(
+      config.post_harvest_strategy ?? DEFAULT_POST_HARVEST_STRATEGY
+    );
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,13 +97,20 @@ export default function ConfigDialog({
   const handleSave = async () => {
     setSaving(true);
     setError(null);
-    const [regionsResult, strategiesResult] = await Promise.all([
-      saveLandManagerConfig(enabledRegions),
-      saveMakeHarvestableStrategies(strategies),
-    ]);
+    const [regionsResult, strategiesResult, postHarvestResult] =
+      await Promise.all([
+        saveLandManagerConfig(enabledRegions),
+        saveMakeHarvestableStrategies(strategies),
+        savePostHarvestStrategy(postHarvestStrategy),
+      ]);
     setSaving(false);
-    const err = regionsResult.error ?? strategiesResult.error;
-    if (!regionsResult.success || !strategiesResult.success) {
+    const err =
+      regionsResult.error ?? strategiesResult.error ?? postHarvestResult.error;
+    if (
+      !regionsResult.success ||
+      !strategiesResult.success ||
+      !postHarvestResult.success
+    ) {
       setError(err ?? "Save failed");
       return;
     }
@@ -100,6 +118,7 @@ export default function ConfigDialog({
       ...config,
       enabled_regions: enabledRegions,
       make_harvestable_strategies: strategies,
+      post_harvest_strategy: postHarvestStrategy,
     });
     onClose();
   };
@@ -234,6 +253,43 @@ export default function ConfigDialog({
             </Stack>
           );
         })}
+        <Divider sx={{ my: 2 }} />
+
+        {/* Post-Harvest Strategy */}
+        <Typography variant="subtitle2" gutterBottom>
+          Post-Harvest — Resource Strategy
+        </Typography>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          mb={1}
+        >
+          What to do with resources stored in region storage after harvesting.
+        </Typography>
+        <FormControl component="fieldset">
+          <RadioGroup
+            value={postHarvestStrategy}
+            onChange={(e) =>
+              setPostHarvestStrategy(e.target.value as PostHarvestStrategy)
+            }
+          >
+            {(
+              Object.entries(POST_HARVEST_STRATEGY_LABELS) as [
+                PostHarvestStrategy,
+                string,
+              ][]
+            ).map(([value, label]) => (
+              <FormControlLabel
+                key={value}
+                value={value}
+                control={<Radio size="small" />}
+                label={<Typography variant="body2">{label}</Typography>}
+                sx={{ mb: 0.5 }}
+              />
+            ))}
+          </RadioGroup>
+        </FormControl>
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={saving}>

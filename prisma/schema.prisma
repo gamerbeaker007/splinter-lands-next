@@ -351,8 +351,60 @@ model LandManagerConfig {
   player                      String   @id
   enabled_regions             Int[]
   make_harvestable_strategies String[] @default(["transfer", "swap", "buy_dec"])
+  fee_accepted                Boolean  @default(false)
+  post_harvest_strategy       String   @default("accumulate")
+  mythic_fee_accepted         Boolean  @default(false)
   created_at                  DateTime @default(now())
   updated_at                  DateTime @updatedAt
 
   @@map("land_manager_config")
+}
+
+model LandHarvestLog {
+  date           DateTime @db.Date
+  player         String
+  runs           Int      @default(1)
+  resources_json Json     // { GRAIN: total, WOOD: total, … } summed across all runs today
+  fees_json      Json     @default("{}")  // { GRAIN: feeTotal, … }
+  transactions   String[] // one txId per successful broadcast
+  updated_at     DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_harvest_log")
+}
+
+model LandMakeHarvestableLog {
+  date         DateTime @db.Date
+  player       String
+  runs         Int      @default(1)
+  actions_json Json     // array of ActionSummary, merged/summed by (type,from_region,to_region,from_symbol,to_symbol)
+  transactions String[] // one txId per successful broadcast
+  updated_at   DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_make_harvestable_log")
+}
+
+model LandPostHarvestLog {
+  date         DateTime @db.Date
+  player       String
+  runs         Int      @default(1)
+  actions_json Json     // array of PostHarvestActionSummary, merged by (type, region_uid, symbol)
+  transactions String[]
+  updated_at   DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_post_harvest_log")
+}
+
+model LandMythicHarvestLog {
+  date         DateTime @db.Date
+  player       String
+  runs         Int      @default(1)
+  results_json Json     // array of MythicHarvestResult
+  transactions String[]
+  updated_at   DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_mythic_harvest_log")
 }
