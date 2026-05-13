@@ -7,6 +7,7 @@ export {
   buildSwapTokensOp,
   generateNonce,
 } from "./opBuilders";
+export { KeychainKeyTypes } from "keychain-sdk";
 
 export const MAX_OPS_PER_BROADCAST = 100;
 const VERIFY_POLL_MS = 3000;
@@ -73,10 +74,14 @@ function chunk<T>(arr: T[], size: number): T[][] {
  * Broadcast operations in one or more Keychain popups.
  * Operations are split into chunks of MAX_OPS_PER_BROADCAST.
  * Stops and returns failure on the first rejected chunk.
+ *
+ * `keyType` selects which Hive key Keychain prompts for. Defaults to posting
+ * for sm_land_operation flows; pass active for sm_token_transfer (SPS deposit).
  */
 export async function broadcastOperations(
   username: string,
-  operations: [string, object][]
+  operations: [string, object][],
+  keyType: KeychainKeyTypes = KeychainKeyTypes.posting
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const txIds: string[] = [];
@@ -87,7 +92,7 @@ export async function broadcastOperations(
       operations: batch as Parameters<
         typeof keychain.broadcast
       >[0]["operations"],
-      method: KeychainKeyTypes.posting,
+      method: keyType,
     });
 
     if (!result?.success) {

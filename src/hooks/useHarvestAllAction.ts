@@ -1,29 +1,35 @@
+import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   acknowledgeHarvest,
+  recordFeesLog,
   recordHarvestLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
 import {
   getBulkRegionData,
   getLandPools,
-  lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
-import { buildRegionHarvestOps } from "@/lib/frontend/harvestOps";
 import {
-  BroadcastResult,
-  broadcastOperations,
-  waitForTransactions,
-} from "@/lib/frontend/splBroadcast";
+  broadcastHarvest,
+  HarvestBroadcastResult,
+} from "@/lib/frontend/executeHarvestFlow";
+import {
+  buildFeeOps,
+  capFeesAtBalance,
+  planDesiredFees,
+  summarizeFees,
+} from "@/lib/frontend/feePayment";
+import {
+  buildRegionHarvestOnlyOp,
+  summarizeHarvestedResources,
+} from "@/lib/frontend/harvestOps";
 import {
   canHarvestRegion,
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
 import { DryRunResult } from "@/types/landManager";
-import {
-  SplHarvestableResource,
-  SplProductionOverviewRegion,
-} from "@/types/spl/landManager";
-import { SplLandPool } from "@/types/spl/landPools";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
+import { PayFeesResult, usePayFees } from "./usePayFees";
 
 interface Params {
   username: string;
@@ -32,9 +38,17 @@ interface Params {
   onSuccess?: () => void;
 }
 
+export interface HarvestAllResult {
+  success: boolean;
+  txIds: string[];
+  harvestTxIds: string[];
+  fees: PayFeesResult | null;
+  log: string[];
+}
+
 interface UseHarvestAllAction {
   busy: boolean;
-  result: BroadcastResult | null;
+  result: HarvestAllResult | null;
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
@@ -44,43 +58,13 @@ interface UseHarvestAllAction {
   execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
 }
 
-function buildHarvestAllOps(
-  visibleRegions: SplProductionOverviewRegion[],
-  username: string,
-  harvestableMap: Record<string, SplHarvestableResource[]>,
-  balancesMap: Record<string, Record<string, number>>,
-  pools: SplLandPool[]
-): { ops: [string, object][]; log: string[] } {
-  const ops: [string, object][] = [];
-  const log: string[] = [];
-
-  for (const region of visibleRegions) {
-    const harvestable = harvestableMap[region.region_uid] ?? [];
-    const balance = balancesMap[region.region_uid] ?? {
-      GRAIN: 0,
-      WOOD: 0,
-      STONE: 0,
-      IRON: 0,
-      AURA: 0,
-    };
-
-    if (!canHarvestRegion(harvestable, balance)) {
-      log.push(`[${region.name}] skip — cannot afford harvest`);
-      continue;
-    }
-
-    const { ops: regionOps, log: regionLog } = buildRegionHarvestOps(
-      username,
-      region,
-      harvestable,
-      pools
-    );
-    ops.push(...regionOps);
-    log.push(...regionLog);
-  }
-
-  return { ops, log };
-}
+const EMPTY_BALANCE: Record<string, number> = {
+  GRAIN: 0,
+  WOOD: 0,
+  STONE: 0,
+  IRON: 0,
+  AURA: 0,
+};
 
 export function useHarvestAllAction({
   username,
@@ -89,10 +73,11 @@ export function useHarvestAllAction({
   onSuccess,
 }: Params): UseHarvestAllAction {
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<BroadcastResult | null>(null);
+  const [result, setResult] = useState<HarvestAllResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingDryRun, setPendingDryRun] = useState(false);
+  const payFees = usePayFees(username);
 
   const doExecute = useCallback(
     async (isDryRun: boolean): Promise<DryRunResult | null> => {
@@ -107,46 +92,112 @@ export function useHarvestAllAction({
         const adjustedBalances = Object.fromEntries(
           visibleRegions.map((r) => [
             r.region_uid,
-            effectiveBalance(
-              balances[r.region_uid] ?? {
-                GRAIN: 0,
-                WOOD: 0,
-                STONE: 0,
-                IRON: 0,
-                AURA: 0,
-              },
-              r
-            ),
+            effectiveBalance(balances[r.region_uid] ?? EMPTY_BALANCE, r),
           ])
         );
-        const { ops, log } = buildHarvestAllOps(
-          visibleRegions,
-          username,
-          harvestable,
-          adjustedBalances,
-          pools
+
+        const eligibleRegions = visibleRegions.filter((r) =>
+          canHarvestRegion(
+            harvestable[r.region_uid] ?? [],
+            adjustedBalances[r.region_uid]
+          )
         );
 
         if (isDryRun) {
-          return { title: "Dry Run — Harvest All", log, ops };
-        } else if (ops.length === 0) {
-          setError("No regions are ready to harvest.");
-        } else {
-          const res = await broadcastOperations(username, ops);
-          if (!res.success) {
-            setError(res.error ?? "Broadcast failed");
-          } else {
-            await waitForTransactions(res.txIds, lookupTransaction);
-            await recordHarvestLog(
-              username,
-              visibleRegions,
-              harvestable,
-              res.txIds
-            ).catch(() => {});
-            setResult(res);
-            onSuccess?.();
+          const log: string[] = [];
+          const ops: [string, object][] = [];
+          for (const region of eligibleRegions) {
+            const built = buildRegionHarvestOnlyOp(username, region);
+            ops.push(...built.ops);
+            log.push(...built.log);
           }
+          const feeApplicable = new Set(
+            await getFeeApplicableRegionNumbers(
+              username,
+              eligibleRegions.map((r) => r.region_number)
+            )
+          );
+          // For preview, cap against the pre-harvest effective balance — best
+          // estimate we have without actually broadcasting.
+          const desired = planDesiredFees(eligibleRegions, harvestable, (n) =>
+            feeApplicable.has(n)
+          );
+          const capped = capFeesAtBalance(desired, adjustedBalances);
+          const {
+            postingOps,
+            activeOps,
+            log: feeLog,
+          } = buildFeeOps(username, pools, capped);
+          ops.push(...postingOps, ...activeOps);
+          log.push(...feeLog);
+          return { title: "Dry Run — Harvest All", log, ops };
         }
+
+        if (eligibleRegions.length === 0) {
+          setError("No regions are ready to harvest.");
+          return null;
+        }
+
+        // ── Phase 1: harvest ──
+        const harvestRes: HarvestBroadcastResult = await broadcastHarvest(
+          username,
+          eligibleRegions
+        );
+        if (!harvestRes.success) {
+          setError(harvestRes.error ?? "Harvest failed");
+          return null;
+        }
+        const harvestedSummary = summarizeHarvestedResources(harvestable);
+        await recordHarvestLog({
+          player: username,
+          resources: harvestedSummary,
+          txIds: harvestRes.txIds,
+        }).catch(() => {});
+
+        // ── Phase 2: fees ──
+        const feeApplicable = new Set(
+          await getFeeApplicableRegionNumbers(
+            username,
+            eligibleRegions.map((r) => r.region_number)
+          )
+        );
+        const desired = planDesiredFees(eligibleRegions, harvestable, (n) =>
+          feeApplicable.has(n)
+        );
+        let feeOutcome: PayFeesResult | null = null;
+        if (desired.length === 0) {
+          // Nothing to pay — clean run, skip the fee log entirely.
+          feeOutcome = {
+            success: true,
+            paidFees: {},
+            unpaidFees: {},
+            feeError: null,
+            txIds: [],
+            log: ["No transferrable fees to pay this run."],
+          };
+        } else {
+          feeOutcome = await payFees.execute(desired, pools);
+          // Always persist what was attempted — paid and/or unpaid plus reason.
+          await recordFeesLog({
+            player: username,
+            paidFees: feeOutcome.paidFees,
+            unpaidFees: feeOutcome.unpaidFees,
+            feeError: feeOutcome.feeError,
+            txIds: feeOutcome.txIds,
+          }).catch(() => {});
+          if (feeOutcome.feeError) setError(feeOutcome.feeError);
+        }
+
+        setResult({
+          success: feeOutcome.success,
+          txIds: [...harvestRes.txIds, ...feeOutcome.txIds],
+          harvestTxIds: harvestRes.txIds,
+          fees: feeOutcome,
+          log: [...harvestRes.log, ...feeOutcome.log],
+        });
+        onSuccess?.();
+        // Silence unused-var lint in case payFees is later replaced.
+        void summarizeFees;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -154,7 +205,7 @@ export function useHarvestAllAction({
       }
       return null;
     },
-    [username, visibleRegions, onSuccess]
+    [username, visibleRegions, onSuccess, payFees]
   );
 
   const execute = useCallback(
@@ -181,10 +232,13 @@ export function useHarvestAllAction({
   const onCancelConfirm = useCallback(() => setShowConfirm(false), []);
 
   return {
-    busy,
+    busy: busy || payFees.busy,
     result,
     error,
-    clearResult: () => setResult(null),
+    clearResult: () => {
+      setResult(null);
+      payFees.clear();
+    },
     clearError: () => setError(null),
     showConfirm,
     onConfirm,

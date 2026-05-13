@@ -1,8 +1,16 @@
+import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import { recordMythicHarvestLog } from "@/lib/backend/actions/land-manager/log-actions";
 import {
+  getBulkRegionData,
+  getLandPools,
   getPlayerMythicDeeds,
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import {
+  buildFeeOps,
+  capFeesAtBalance,
+  planMythicFees,
+} from "@/lib/frontend/feePayment";
 import { buildTaxCollectionOp } from "@/lib/frontend/opBuilders";
 import {
   BroadcastResult,
@@ -12,6 +20,7 @@ import {
 import { DryRunResult, MythicHarvestResult } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
+import { PayFeesResult, usePayFees } from "./usePayFees";
 
 interface Params {
   username: string;
@@ -46,6 +55,7 @@ export function useHarvestMythicsAction({
   const [error, setError] = useState<string | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
   const [pendingDryRun, setPendingDryRun] = useState(false);
+  const payFees = usePayFees(username);
 
   const doExecute = useCallback(
     async (isDryRun: boolean): Promise<DryRunResult | null> => {
@@ -58,8 +68,48 @@ export function useHarvestMythicsAction({
         const mythicDeeds = allDeeds.filter((d) =>
           enabledUids.has(d.region_uid)
         );
+        const regionNameMap = new Map(
+          visibleRegions.map((r) => [r.region_uid, r.name])
+        );
 
-        if (!isDryRun && !mythicDeeds.some((d) => d.taxes.length > 0)) {
+        if (isDryRun) {
+          const [{ pools }, { balances }, feeApplicableNums] =
+            await Promise.all([
+              getLandPools(),
+              getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+              getFeeApplicableRegionNumbers(username, [
+                ...new Set(mythicDeeds.map((d) => d.region_number)),
+              ]),
+            ]);
+          const feeApplicable = new Set(feeApplicableNums);
+          const ops: [string, object][] = mythicDeeds.map((deed) =>
+            buildTaxCollectionOp(username, deed.region_uid, deed.deed_uid)
+          );
+          const log = mythicDeeds.map((d) => {
+            const taxes =
+              d.taxes.map((t) => `${t.token} ${t.balance}`).join(", ") ||
+              "nothing";
+            const loc =
+              d.kingdom_type === "keep"
+                ? `region(${d.region_number}) tract(${d.tract_number})`
+                : `region(${d.region_number})`;
+            return `${d.kingdom_type} ${loc}: ${taxes}`;
+          });
+          const desired = planMythicFees(mythicDeeds, regionNameMap, (n) =>
+            feeApplicable.has(n)
+          );
+          const capped = capFeesAtBalance(desired, balances);
+          const {
+            postingOps,
+            activeOps,
+            log: feeLog,
+          } = buildFeeOps(username, pools, capped);
+          ops.push(...postingOps, ...activeOps);
+          log.push(...feeLog);
+          return { title: "Dry Run — Harvest Mythics", log, ops };
+        }
+
+        if (!mythicDeeds.some((d) => d.taxes.length > 0)) {
           setError("No mythic deeds have resources to harvest.");
           return null;
         }
@@ -67,49 +117,70 @@ export function useHarvestMythicsAction({
         const ops: [string, object][] = mythicDeeds.map((deed) =>
           buildTaxCollectionOp(username, deed.region_uid, deed.deed_uid)
         );
-
-        if (isDryRun) {
-          const log = mythicDeeds.map((d) => {
-            const taxes =
-              d.taxes.map((t) => `${t.token} ${t.balance}`).join(", ") ||
-              "nothing";
-            return `${d.kingdom_type} ${d.deed_uid}: ${taxes}`;
-          });
-          return { title: "Dry Run — Harvest Mythics", log, ops };
-        } else if (ops.length === 0) {
+        if (ops.length === 0) {
           setError("No mythic deeds found.");
-        } else {
-          const res = await broadcastOperations(username, ops);
-          if (!res.success) {
-            setError(res.error ?? "Broadcast failed");
-            return null;
-          }
-
-          setInternalBusy("verifying");
-          await waitForTransactions(res.txIds, lookupTransaction);
-
-          const harvestResults: MythicHarvestResult[] = mythicDeeds.map(
-            (d) => ({
-              deed_uid: d.deed_uid,
-              region_uid: d.region_uid,
-              kingdom_type: d.kingdom_type,
-              tokens: d.taxes.map((t) => ({
-                token: t.token,
-                received: String(t.balance),
-              })),
-              fragment_found: false,
-              fragment_chance: d.estimated_totem_chance ?? 0,
-            })
-          );
-
-          await recordMythicHarvestLog(
-            username,
-            harvestResults,
-            res.txIds
-          ).catch(() => {});
-          setResult(res);
-          onSuccess?.();
+          return null;
         }
+
+        // ── Phase 1: harvest ──
+        const res = await broadcastOperations(username, ops);
+        if (!res.success) {
+          setError(res.error ?? "Broadcast failed");
+          return null;
+        }
+
+        setInternalBusy("verifying");
+        await waitForTransactions(res.txIds, lookupTransaction);
+
+        const harvestResults: MythicHarvestResult[] = mythicDeeds.map((d) => ({
+          deed_uid: d.deed_uid,
+          region_uid: d.region_uid,
+          region_number: d.region_number,
+          tract_number: d.tract_number,
+          kingdom_type: d.kingdom_type,
+          tokens: d.taxes.map((t) => ({
+            token: t.token,
+            received: String(t.balance),
+          })),
+          fragment_found: false,
+          fragment_chance: d.estimated_totem_chance ?? 0,
+        }));
+
+        // ── Phase 2: fees ──
+        setInternalBusy("running");
+        const [{ pools }, feeApplicableNums] = await Promise.all([
+          getLandPools(),
+          getFeeApplicableRegionNumbers(username, [
+            ...new Set(mythicDeeds.map((d) => d.region_number)),
+          ]),
+        ]);
+        const feeApplicable = new Set(feeApplicableNums);
+        const desired = planMythicFees(mythicDeeds, regionNameMap, (n) =>
+          feeApplicable.has(n)
+        );
+        let feeOutcome: PayFeesResult;
+        if (desired.length === 0) {
+          feeOutcome = {
+            success: true,
+            paidFees: {},
+            unpaidFees: {},
+            feeError: null,
+            txIds: [],
+            log: ["No transferrable fees to pay."],
+          };
+        } else {
+          feeOutcome = await payFees.execute(desired, pools);
+          if (feeOutcome.feeError) setError(feeOutcome.feeError);
+        }
+
+        await recordMythicHarvestLog(username, harvestResults, res.txIds, {
+          paidFees: feeOutcome.paidFees,
+          unpaidFees: feeOutcome.unpaidFees,
+          feeError: feeOutcome.feeError,
+          feeTxIds: feeOutcome.txIds,
+        }).catch(() => {});
+        setResult(res);
+        onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -117,7 +188,7 @@ export function useHarvestMythicsAction({
       }
       return null;
     },
-    [username, visibleRegions, onSuccess]
+    [username, visibleRegions, onSuccess, payFees]
   );
 
   const execute = useCallback(

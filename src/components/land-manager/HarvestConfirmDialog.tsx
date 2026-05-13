@@ -1,7 +1,6 @@
 "use client";
 
 import { SERVICE_FEE_PCT } from "@/types/landManager";
-import { shouldApplyFee } from "@/lib/shared/landManagerUtils";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
   Button,
@@ -22,24 +21,26 @@ interface Props {
   open: boolean;
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
+  feeApplicableRegionNumbers: Set<number>;
   onConfirm: (ack: boolean) => void;
   onCancel: () => void;
 }
 
 export default function HarvestConfirmDialog({
   open,
-  username,
+  username: _username,
   visibleRegions,
+  feeApplicableRegionNumbers,
   onConfirm,
   onCancel,
 }: Props) {
   const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const exemptRegions = visibleRegions.filter(
-    (r) => !shouldApplyFee(username, r.region_number)
+    (r) => !feeApplicableRegionNumbers.has(r.region_number)
   );
   const feeRegions = visibleRegions.filter((r) =>
-    shouldApplyFee(username, r.region_number)
+    feeApplicableRegionNumbers.has(r.region_number)
   );
 
   return (

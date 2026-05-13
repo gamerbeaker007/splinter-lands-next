@@ -361,13 +361,16 @@ model LandManagerConfig {
 }
 
 model LandHarvestLog {
-  date           DateTime @db.Date
-  player         String
-  runs           Int      @default(1)
-  resources_json Json     // { GRAIN: total, WOOD: total, … } summed across all runs today
-  fees_json      Json     @default("{}")  // { GRAIN: feeTotal, … }
-  transactions   String[] // one txId per successful broadcast
-  updated_at     DateTime @updatedAt
+  date                 DateTime @db.Date
+  player               String
+  runs                 Int      @default(1)
+  resources_json       Json     // { GRAIN: total, WOOD: total, … } summed across all runs today
+  fees_json            Json     @default("{}")  // { GRAIN: feeTotal, … } fees successfully paid
+  unpaid_fees_json     Json     @default("{}")  // { GRAIN: feeTotal, … } fees that were owed but not paid (cancelled/failed)
+  fee_error            String?                  // last error or cancellation reason when unpaid_fees_json is non-empty
+  harvest_transactions String[]                 // txIds from the harvest phase
+  fee_transactions     String[] @default([])    // txIds from the fee-payment phase
+  updated_at           DateTime @updatedAt
 
   @@id([date, player])
   @@map("land_harvest_log")
@@ -398,12 +401,16 @@ model LandPostHarvestLog {
 }
 
 model LandMythicHarvestLog {
-  date         DateTime @db.Date
-  player       String
-  runs         Int      @default(1)
-  results_json Json     // array of MythicHarvestResult
-  transactions String[]
-  updated_at   DateTime @updatedAt
+  date              DateTime @db.Date
+  player            String
+  runs              Int      @default(1)
+  results_json      Json                     // array of MythicHarvestResult
+  fees_json         Json     @default("{}")  // { token: total } fees successfully paid
+  unpaid_fees_json  Json     @default("{}")  // { token: total } fees owed but not paid
+  fee_error         String?                  // last fee error or cancellation reason
+  transactions      String[]                 // txIds from tax_collection ops
+  fee_transactions  String[] @default([])    // txIds from fee-payment ops
+  updated_at        DateTime @updatedAt
 
   @@id([date, player])
   @@map("land_mythic_harvest_log")

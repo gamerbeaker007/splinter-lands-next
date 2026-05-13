@@ -1,12 +1,11 @@
-import { FEE_EXEMPT_REGIONS, SERVICE_FEE_RECIPIENT } from "@/types/landManager";
-import { SplHarvestableResource } from "@/types/spl/landManager";
+import { Resource } from "@/constants/resource/resource";
 import {
   calculatePriceImpact,
   calculatePriceImpactInverse,
 } from "@/lib/shared/priceUtils";
+import { TRADE_HUB_FEE, TRADE_HUB_FEE_PER_HOP } from "@/lib/shared/statics";
+import { SplHarvestableResource } from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
-import { TRADE_HUB_FEE } from "@/lib/shared/statics";
-import { Resource } from "@/constants/resource/resource";
 
 export interface CostEntry {
   symbol: Resource;
@@ -60,15 +59,16 @@ export function canHarvestRegion(
 // ── Pool-based AMM quote utilities ────────────────────────────────────────
 //
 // All resource↔DEC pools use a constant-product AMM: x * y = k.
-// calculatePriceImpact already applies TRADE_HUB_FEE (0.9) to the output.
-// For resource↔resource swaps we route through DEC (two hops → fee applied twice).
+// Single-hop ops (same-symbol transfer, single AMM swap) use TRADE_HUB_FEE (0.9 = 10%).
+// 2-hop resource↔resource swaps route through DEC and pay TRADE_HUB_FEE_PER_HOP (0.95 = 5%)
+// on EACH hop, for a total fee of ~9.75%.
 
 type SwapResult = { out_amount_1: number; out_amount_2: number };
 const ZERO_RESULT: SwapResult = { out_amount_1: 0, out_amount_2: 0 };
 
 const round3 = (value: number): number => Number.parseFloat(value.toFixed(3));
 
-function poolFor(
+export function poolFor(
   pools: SplLandPool[],
   symbol: string
 ): SplLandPool | undefined {
@@ -113,8 +113,8 @@ export function computeResourceToDec(
 }
 
 // Two AMM hops: resource → DEC → resource.
-// Fee is applied on hop 1 only — this is a single trade hub operation.
-// out_amount_1 = DEC received after fee; out_amount_2 = resource received.
+// Each hop pays TRADE_HUB_FEE_PER_HOP (5%). Total fee ≈ 9.75%.
+// out_amount_1 = DEC received after hop-1 fee; out_amount_2 = resource received after hop-2 fee.
 // These are minimum-output guarantees; the engine aborts if actual output < declared.
 export function computeResourceToResource(
   pools: SplLandPool[],
@@ -126,20 +126,20 @@ export function computeResourceToResource(
   const toPool = poolFor(pools, toSymbol);
   if (!fromPool || !toPool) return ZERO_RESULT;
 
-  // Hop 1: resource → DEC (fee applied — this is what the user actually receives).
+  // Hop 1: resource → DEC (5% fee).
   const decOut = calculatePriceImpact(
     resourceAmount,
     Number.parseFloat(fromPool.resource_quantity),
-    Number.parseFloat(fromPool.dec_quantity)
-    // applyFee defaults to true
+    Number.parseFloat(fromPool.dec_quantity),
+    TRADE_HUB_FEE_PER_HOP
   ).amountReceived;
 
-  // Hop 2: DEC → resource (no additional fee; decOut enters this hop).
+  // Hop 2: DEC → resource (5% fee).
   const resourceOut = calculatePriceImpact(
     decOut,
     Number.parseFloat(toPool.dec_quantity),
     Number.parseFloat(toPool.resource_quantity),
-    false
+    TRADE_HUB_FEE_PER_HOP
   ).amountReceived;
 
   return { out_amount_1: round3(decOut), out_amount_2: round3(resourceOut) };
@@ -159,15 +159,6 @@ export function computeSwapAmounts(
   return computeResourceToResource(pools, fromSymbol, toSymbol, amount);
 }
 
-export function shouldApplyFee(
-  username: string,
-  regionNumber: number
-): boolean {
-  if (username.toLowerCase() === SERVICE_FEE_RECIPIENT.toLowerCase())
-    return false;
-  return !FEE_EXEMPT_REGIONS.includes(regionNumber);
-}
-
 /**
  * Compute how much DEC is needed to purchase `deficit` units of `resourceSymbol`
  * from the trade hub pool (accounting for AMM price impact and the 10% fee).
@@ -181,17 +172,14 @@ export function computeDecNeededForResource(
 ): number {
   const pool = poolFor(pools, resourceSymbol);
   if (!pool) return Infinity;
-
-  const decReserve = Number.parseFloat(pool.dec_quantity);
-  const resourceReserve = Number.parseFloat(pool.resource_quantity);
-  // Maximum extractable output (before we'd drain the pool):  rR * TRADE_HUB_FEE
-  const maxOut = resourceReserve * TRADE_HUB_FEE;
-  if (deficit >= maxOut) return Infinity;
-
-  // Derived from: deficit = (rR - k/(dR + D)) * TRADE_HUB_FEE  →  solve for D
-  // D = dR * deficit / (maxOut - deficit)
-  const decNeeded = (decReserve * deficit) / (maxOut - deficit);
-  return Number.parseFloat(decNeeded.toFixed(3));
+  const result = calculatePriceImpactInverse(
+    deficit,
+    Number.parseFloat(pool.dec_quantity),
+    Number.parseFloat(pool.resource_quantity)
+  );
+  return Number.isFinite(result)
+    ? Number.parseFloat(result.toFixed(3))
+    : Infinity;
 }
 
 /**
@@ -199,8 +187,8 @@ export function computeDecNeededForResource(
  * input is needed. Returns Infinity when the pool cannot supply the output.
  *
  * Transfer (same symbol): invert 10% fee → in = out / TRADE_HUB_FEE
- * DEC → resource:         invert AMM + fee (hop 1 of buy_dec path)
- * resource → resource:    invert two hops — hop 2 (no fee) then hop 1 (with fee)
+ * DEC → resource:         invert AMM + 10% fee (single-hop)
+ * resource → resource:    invert two hops, each paying TRADE_HUB_FEE_PER_HOP (5%)
  */
 export function computeInputForDesiredOutput(
   pools: SplLandPool[],
@@ -229,25 +217,26 @@ export function computeInputForDesiredOutput(
       : Infinity;
   }
 
-  // resource → DEC (fee) → resource (no fee): two hops
+  // resource → DEC → resource: two hops, 5% fee on each
   const fromPool = poolFor(pools, fromSymbol);
   const toPool = poolFor(pools, toSymbol);
   if (!fromPool || !toPool) return Infinity;
 
-  // Invert hop 2 (DEC → toSymbol, no fee)
+  // Invert hop 2 (DEC → toSymbol, 5% fee)
   const decMid = calculatePriceImpactInverse(
     desiredOut,
     Number.parseFloat(toPool.dec_quantity),
     Number.parseFloat(toPool.resource_quantity),
-    false // hop 2 has no fee
+    TRADE_HUB_FEE_PER_HOP
   );
   if (!Number.isFinite(decMid)) return Infinity;
 
-  // Invert hop 1 (fromSymbol → DEC, with fee)
+  // Invert hop 1 (fromSymbol → DEC, 5% fee)
   const fromIn = calculatePriceImpactInverse(
     decMid,
     Number.parseFloat(fromPool.resource_quantity),
-    Number.parseFloat(fromPool.dec_quantity)
+    Number.parseFloat(fromPool.dec_quantity),
+    TRADE_HUB_FEE_PER_HOP
   );
   return Number.isFinite(fromIn)
     ? Number.parseFloat(fromIn.toFixed(3))

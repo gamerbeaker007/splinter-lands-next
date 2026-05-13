@@ -1,12 +1,14 @@
 "use client";
 
-import { getLandPools } from "@/lib/backend/actions/land-manager/overview-actions";
+import { usePayFees } from "@/hooks/usePayFees";
 import {
-  BroadcastResult,
-  broadcastOperations,
-} from "@/lib/frontend/splBroadcast";
-import { buildRegionHarvestOps } from "@/lib/frontend/harvestOps";
-import { shouldApplyFee } from "@/lib/shared/landManagerUtils";
+  recordFeesLog,
+  recordHarvestLog,
+} from "@/lib/backend/actions/land-manager/log-actions";
+import { getLandPools } from "@/lib/backend/actions/land-manager/overview-actions";
+import { broadcastHarvest } from "@/lib/frontend/executeHarvestFlow";
+import { planDesiredFees } from "@/lib/frontend/feePayment";
+import { summarizeHarvestedResources } from "@/lib/frontend/harvestOps";
 import { SERVICE_FEE_PCT } from "@/types/landManager";
 import { SplHarvestableResource } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
@@ -28,10 +30,15 @@ interface Props {
   regionName: string;
   harvestable: SplHarvestableResource[];
   canAfford: boolean;
+  applyFee: boolean;
   onSuccess: () => void;
 }
 
 type Status = "idle" | "broadcasting" | "done" | "error";
+
+interface RunResult {
+  txIds: string[];
+}
 
 export default function HarvestButton({
   username,
@@ -40,42 +47,72 @@ export default function HarvestButton({
   regionName,
   harvestable,
   canAfford,
+  applyFee,
   onSuccess,
 }: Props) {
   const [status, setStatus] = useState<Status>("idle");
-  const [result, setResult] = useState<BroadcastResult | null>(null);
+  const [runResult, setRunResult] = useState<RunResult | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const payFees = usePayFees(username);
 
   const hasAnything = harvestable.length > 0;
-  const applyFee = shouldApplyFee(username, regionNumber);
 
   const handleHarvest = async () => {
     setStatus("broadcasting");
-    setResult(null);
+    setRunResult(null);
+    setErrorMessage(null);
+
+    const region = {
+      region_uid: regionUid,
+      region_number: regionNumber,
+      name: regionName,
+    };
+    const harvestableMap = { [regionUid]: harvestable };
 
     try {
       const { pools } = await getLandPools();
-      const { ops } = buildRegionHarvestOps(
-        username,
-        {
-          region_uid: regionUid,
-          region_number: regionNumber,
-          name: regionName,
-        },
-        harvestable,
-        pools
-      );
 
-      const res = await broadcastOperations(username, ops);
-      setResult(res);
-      setStatus(res.success ? "done" : "error");
-      if (res.success) onSuccess();
+      // ── Phase 1: harvest ──
+      const harvestRes = await broadcastHarvest(username, [region]);
+      if (!harvestRes.success) {
+        setStatus("error");
+        setErrorMessage(harvestRes.error ?? "Harvest failed");
+        return;
+      }
+      await recordHarvestLog({
+        player: username,
+        resources: summarizeHarvestedResources(harvestableMap),
+        txIds: harvestRes.txIds,
+      }).catch(() => {});
+
+      // ── Phase 2: fees ──
+      const desired = planDesiredFees([region], harvestableMap, () => applyFee);
+      let feeTxIds: string[] = [];
+      let feeError: string | null = null;
+      if (desired.length > 0) {
+        const fee = await payFees.execute(desired, pools);
+        feeTxIds = fee.txIds;
+        feeError = fee.feeError;
+        await recordFeesLog({
+          player: username,
+          paidFees: fee.paidFees,
+          unpaidFees: fee.unpaidFees,
+          feeError: fee.feeError,
+          txIds: fee.txIds,
+        }).catch(() => {});
+      }
+
+      setRunResult({ txIds: [...harvestRes.txIds, ...feeTxIds] });
+      if (feeError) {
+        setStatus("error");
+        setErrorMessage(feeError);
+      } else {
+        setStatus("done");
+      }
+      onSuccess();
     } catch (err) {
       setStatus("error");
-      setResult({
-        success: false,
-        txIds: [],
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
+      setErrorMessage(err instanceof Error ? err.message : "Unknown error");
     }
   };
 
@@ -97,17 +134,22 @@ export default function HarvestButton({
             variant="contained"
             size="small"
             color={!canAfford && hasAnything ? "warning" : "primary"}
-            disabled={!hasAnything || !canAfford || status === "broadcasting"}
+            disabled={
+              !hasAnything ||
+              !canAfford ||
+              status === "broadcasting" ||
+              payFees.busy
+            }
             onClick={handleHarvest}
             startIcon={
-              status === "broadcasting" ? (
+              status === "broadcasting" || payFees.busy ? (
                 <CircularProgress size={14} color="inherit" />
               ) : (
                 <HarvestIcon fontSize="small" />
               )
             }
           >
-            {status === "broadcasting" ? "Sending…" : "Harvest"}
+            {status === "broadcasting" || payFees.busy ? "Sending…" : "Harvest"}
           </Button>
         </span>
       </Tooltip>
@@ -121,10 +163,12 @@ export default function HarvestButton({
           {status === "done" ? (
             <Typography variant="caption">
               Harvested{feeLabel} · TX:{" "}
-              {result?.txIds?.[result.txIds.length - 1] ?? "confirmed"}
+              {runResult?.txIds?.at(-1) ?? "confirmed"}
             </Typography>
           ) : (
-            <Typography variant="caption">{result?.error}</Typography>
+            <Typography variant="caption">
+              {errorMessage ?? "Unknown error"}
+            </Typography>
           )}
         </Alert>
       </Collapse>

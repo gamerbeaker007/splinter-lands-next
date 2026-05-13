@@ -7,7 +7,7 @@ import {
   MythicHarvestResult,
   PostHarvestActionSummary,
 } from "@/types/landManager";
-import { CheckCircle, Cancel, RadioButtonUnchecked } from "@mui/icons-material";
+import { Cancel, CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import {
   Box,
   Card,
@@ -49,10 +49,12 @@ export default function TodayPanel({
   useEffect(() => {
     if (!data) return;
     const allTxIds = [
-      ...(data.harvest?.transactions ?? []),
+      ...(data.harvest?.harvest_transactions ?? []),
+      ...(data.harvest?.fee_transactions ?? []),
       ...(data.makeHarvestable?.transactions ?? []),
       ...(data.postHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.transactions ?? []),
+      ...(data.mythicHarvest?.fee_transactions ?? []),
     ];
     const unique = [...new Set(allTxIds)];
     if (unique.length === 0) return;
@@ -176,10 +178,14 @@ export default function TodayPanel({
                     Harvest · {data.harvest.runs} run
                     {data.harvest.runs !== 1 ? "s" : ""}
                   </Typography>
-                  {anyFailed(data.harvest.transactions) && (
-                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
-                  )}
-                  {allVerified(data.harvest.transactions) && (
+                  {anyFailed([
+                    ...data.harvest.harvest_transactions,
+                    ...data.harvest.fee_transactions,
+                  ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
+                  {allVerified([
+                    ...data.harvest.harvest_transactions,
+                    ...data.harvest.fee_transactions,
+                  ]) && (
                     <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
                   )}
                 </Stack>
@@ -204,7 +210,7 @@ export default function TodayPanel({
                     display="block"
                     mt={0.5}
                   >
-                    Fees:{" "}
+                    Fees paid:{" "}
                     {Object.entries(
                       data.harvest.fees_json as Record<string, number>
                     )
@@ -212,7 +218,30 @@ export default function TodayPanel({
                       .join(", ")}
                   </Typography>
                 )}
-                {txList(data.harvest.transactions)}
+                {Object.keys(
+                  data.harvest.unpaid_fees_json as Record<string, number>
+                ).length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="error.main"
+                    display="block"
+                    mt={0.5}
+                  >
+                    Unpaid fees:{" "}
+                    {Object.entries(
+                      data.harvest.unpaid_fees_json as Record<string, number>
+                    )
+                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
+                      .join(", ")}
+                    {data.harvest.fee_error
+                      ? ` — ${data.harvest.fee_error}`
+                      : ""}
+                  </Typography>
+                )}
+                {txList([
+                  ...data.harvest.harvest_transactions,
+                  ...data.harvest.fee_transactions,
+                ])}
               </Box>
             )}
 
@@ -292,10 +321,14 @@ export default function TodayPanel({
                     Mythic Harvest · {data.mythicHarvest.runs} run
                     {data.mythicHarvest.runs !== 1 ? "s" : ""}
                   </Typography>
-                  {anyFailed(data.mythicHarvest.transactions) && (
-                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
-                  )}
-                  {allVerified(data.mythicHarvest.transactions) && (
+                  {anyFailed([
+                    ...data.mythicHarvest.transactions,
+                    ...data.mythicHarvest.fee_transactions,
+                  ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
+                  {allVerified([
+                    ...data.mythicHarvest.transactions,
+                    ...data.mythicHarvest.fee_transactions,
+                  ]) && (
                     <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
                   )}
                 </Stack>
@@ -309,7 +342,13 @@ export default function TodayPanel({
                       color="text.secondary"
                       display="block"
                     >
-                      {a.kingdom_type} {a.deed_uid}:{" "}
+                      {a.kingdom_type}{" "}
+                      {a.region_number != null
+                        ? a.kingdom_type === "keep" && a.tract_number != null
+                          ? `region(${a.region_number}) tract(${a.tract_number})`
+                          : `region(${a.region_number})`
+                        : a.deed_uid}
+                      {" : "}
                       {a.tokens
                         .map((t) => `${t.token} ${t.received}`)
                         .join(", ") || "no tokens"}
@@ -317,7 +356,50 @@ export default function TodayPanel({
                     </Typography>
                   ))}
                 </Stack>
-                {txList(data.mythicHarvest.transactions)}
+                {Object.keys(
+                  data.mythicHarvest.fees_json as Record<string, number>
+                ).length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    mt={0.5}
+                  >
+                    Fees paid:{" "}
+                    {Object.entries(
+                      data.mythicHarvest.fees_json as Record<string, number>
+                    )
+                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
+                      .join(", ")}
+                  </Typography>
+                )}
+                {Object.keys(
+                  data.mythicHarvest.unpaid_fees_json as Record<string, number>
+                ).length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="error.main"
+                    display="block"
+                    mt={0.5}
+                  >
+                    Unpaid fees:{" "}
+                    {Object.entries(
+                      data.mythicHarvest.unpaid_fees_json as Record<
+                        string,
+                        number
+                      >
+                    )
+                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
+                      .join(", ")}
+                    {data.mythicHarvest.fee_error
+                      ? ` — ${data.mythicHarvest.fee_error}`
+                      : ""}
+                  </Typography>
+                )}
+                {txList([
+                  ...data.mythicHarvest.transactions,
+                  ...data.mythicHarvest.fee_transactions,
+                ])}
               </Box>
             )}
           </Stack>

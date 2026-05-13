@@ -42,16 +42,16 @@ export function buildPostHarvestOps(
         );
         if (decOut <= 0) continue;
         ops.push(
-          buildSwapTokensOp(
+          buildSwapTokensOp({
             username,
-            region.region_uid,
-            region.region_uid,
-            symbol,
-            "DEC",
-            amount,
-            0,
-            decOut
-          )
+            fromRegionUid: region.region_uid,
+            toRegionUid: region.region_uid,
+            fromSymbol: symbol,
+            toSymbol: "DEC",
+            inAmount: amount,
+            outAmount1: 0,
+            outAmount2: decOut,
+          })
         );
         log.push(`[${region.name}] sell ${amount} ${symbol} → ${decOut} DEC`);
         actions.push({
@@ -71,16 +71,16 @@ export function buildPostHarvestOps(
         if (decOut <= 0) continue;
         // Swap half to DEC
         ops.push(
-          buildSwapTokensOp(
+          buildSwapTokensOp({
             username,
-            region.region_uid,
-            region.region_uid,
-            symbol,
-            "DEC",
-            half,
-            0,
-            decOut
-          )
+            fromRegionUid: region.region_uid,
+            toRegionUid: region.region_uid,
+            fromSymbol: symbol,
+            toSymbol: "DEC",
+            inAmount: half,
+            outAmount1: 0,
+            outAmount2: decOut,
+          })
         );
         // Add remaining half + DEC to pool
         ops.push(

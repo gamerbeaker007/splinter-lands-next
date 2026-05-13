@@ -1,28 +1,28 @@
 "use server";
 
 import {
-  fetchSplHarvestableResources,
+  fetchPlayerBalances,
+  fetchTransactionLookup,
+} from "@/lib/backend/api/spl/spl-base-api";
+import {
   fetchLandResourcesPools,
-  fetchSplPlayerResourceBalance,
   fetchProductionOverview,
-  fetchRegionResourceBalance,
   fetchRegionDataPlayer,
+  fetchRegionResourceBalance,
+  fetchSplHarvestableResources,
+  fetchSplPlayerResourceBalance,
   fetchTaxes,
 } from "@/lib/backend/api/spl/spl-land-api";
+import { MythicDeed } from "@/types/landManager";
 import {
   SplHarvestableResource,
   SplPlayerResourceBalance,
   SplProductionOverviewRegion,
 } from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
+import type { TrxLookupOutcome } from "@/types/spl/trx";
 import { cookies } from "next/headers";
 import { getAuthStatus } from "../auth-actions";
-import {
-  fetchPlayerBalances,
-  fetchTransactionLookup,
-} from "@/lib/backend/api/spl/spl-base-api";
-import { MythicDeed } from "@/types/landManager";
-import type { TrxLookupOutcome } from "@/types/spl/trx";
 
 async function getJwtToken(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -225,6 +225,7 @@ export async function getPlayerMythicDeeds(): Promise<MythicDeed[]> {
       deed_uid: deed.deed_uid,
       region_uid: deed.region_uid,
       region_number: deed.region_number,
+      tract_number: deed.tract_number,
       kingdom_type,
       last_action_time: wsDetail?.last_action_time ?? null,
       estimated_totem_chance: wsDetail?.estimated_totem_chance ?? null,

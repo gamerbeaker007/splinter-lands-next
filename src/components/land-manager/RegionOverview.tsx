@@ -1,15 +1,16 @@
 "use client";
 
 import HarvestButton from "@/components/land-manager/HarvestButton";
+import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
-  getSplHarvestableResources,
   getRegionResourceBalance,
+  getSplHarvestableResources,
 } from "@/lib/backend/actions/land-manager/overview-actions";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import {
   aggregateCosts,
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
+import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
@@ -116,10 +117,16 @@ function HarvestCostsCell({
 interface RowProps {
   region: SplProductionOverviewRegion;
   username: string;
+  applyFee: boolean;
   externalRefreshKey?: number;
 }
 
-function RegionRow({ region, username, externalRefreshKey }: RowProps) {
+function RegionRow({
+  region,
+  username,
+  applyFee,
+  externalRefreshKey,
+}: RowProps) {
   const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
   const [regionBalance, setRegionBalance] = useState<Record<string, number>>({
     GRAIN: 0,
@@ -213,6 +220,7 @@ function RegionRow({ region, username, externalRefreshKey }: RowProps) {
             regionName={region.name}
             harvestable={harvestable}
             canAfford={canAfford}
+            applyFee={applyFee}
             onSuccess={() => setRefreshKey((k) => k + 1)}
           />
         )}
@@ -232,6 +240,18 @@ export default function RegionOverview({
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
   );
+
+  const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
+    Set<number>
+  >(new Set());
+
+  useEffect(() => {
+    if (!username) return;
+    const regionNumbers = regions.map((r) => r.region_number);
+    getFeeApplicableRegionNumbers(username, regionNumbers).then((nums) =>
+      setFeeApplicableRegionNumbers(new Set(nums))
+    );
+  }, [username, regions]);
 
   if (visibleRegions.length === 0) {
     return (
@@ -261,6 +281,7 @@ export default function RegionOverview({
               key={region.region_uid}
               region={region}
               username={username}
+              applyFee={feeApplicableRegionNumbers.has(region.region_number)}
               externalRefreshKey={refreshKey}
             />
           ))}

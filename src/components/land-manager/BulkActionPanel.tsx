@@ -6,6 +6,7 @@ import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
 import { useMakeHarvestableAction } from "@/hooks/useMakeHarvestableAction";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
+import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   DryRunResult,
   MakeHarvestableStrategy,
@@ -39,7 +40,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -150,6 +151,17 @@ export default function BulkActionPanel({
 }: Props) {
   const router = useRouter();
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
+  const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
+    Set<number>
+  >(new Set());
+
+  useEffect(() => {
+    if (!username) return;
+    const regionNumbers = regions.map((r) => r.region_number);
+    getFeeApplicableRegionNumbers(username, regionNumbers).then((nums) =>
+      setFeeApplicableRegionNumbers(new Set(nums))
+    );
+  }, [username, regions]);
 
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
@@ -431,12 +443,15 @@ export default function BulkActionPanel({
         open={harvest.showConfirm}
         username={username}
         visibleRegions={visibleRegions}
+        feeApplicableRegionNumbers={feeApplicableRegionNumbers}
         onConfirm={harvest.onConfirm}
         onCancel={harvest.onCancelConfirm}
       />
 
       <MythicConfirmDialog
         open={mythicHarvest.showConfirm}
+        visibleRegions={visibleRegions}
+        feeApplicableRegionNumbers={feeApplicableRegionNumbers}
         onConfirm={mythicHarvest.onConfirm}
         onCancel={mythicHarvest.onCancelConfirm}
       />

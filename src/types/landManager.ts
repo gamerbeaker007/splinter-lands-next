@@ -11,11 +11,6 @@ export interface DryRunResult {
 export const SERVICE_FEE_PCT = 2;
 export const SERVICE_FEE_RECIPIENT = "beaker007";
 export const SERVICE_FEE_RECIPIENT_REGION = "PR-CEF-65"; // beaker007's fee collection region
-export const FEE_EXEMPT_REGIONS: number[] = [65];
-
-// Trade hub takes 10% on every transfer/swap (same-symbol transfer or cross-symbol swap).
-// When the live quote endpoint is unavailable, apply this rate as the fallback.
-export const TRADE_HUB_FEE_PCT = 10;
 
 // === Make Harvestable strategy ===
 
@@ -72,6 +67,7 @@ export interface MythicDeed {
   deed_uid: string;
   region_uid: string;
   region_number: number;
+  tract_number: number;
   kingdom_type: "keep" | "castle";
   last_action_time: Date | null;
   estimated_totem_chance: number | null;
@@ -82,6 +78,8 @@ export interface MythicDeed {
 export interface MythicHarvestResult {
   deed_uid: string;
   region_uid: string;
+  region_number?: number;
+  tract_number?: number;
   kingdom_type: "keep" | "castle";
   tokens: { token: string; received: string }[];
   fragment_found: boolean;

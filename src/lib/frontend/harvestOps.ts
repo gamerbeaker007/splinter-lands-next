@@ -1,14 +1,5 @@
-import {
-  computeSwapAmounts,
-  shouldApplyFee,
-} from "@/lib/shared/landManagerUtils";
-import { buildFeeTransferOp, buildHarvestOp } from "@/lib/frontend/opBuilders";
-import {
-  SERVICE_FEE_PCT,
-  SERVICE_FEE_RECIPIENT_REGION,
-} from "@/types/landManager";
+import { buildHarvestOp } from "@/lib/frontend/opBuilders";
 import { SplHarvestableResource } from "@/types/spl/landManager";
-import { SplLandPool } from "@/types/spl/landPools";
 
 interface HarvestRegion {
   region_uid: string;
@@ -16,47 +7,28 @@ interface HarvestRegion {
   name: string;
 }
 
-export function buildRegionHarvestOps(
+/** Build the harvest_all op for a single region. */
+export function buildRegionHarvestOnlyOp(
   username: string,
-  region: HarvestRegion,
-  harvestable: SplHarvestableResource[],
-  pools: SplLandPool[]
+  region: HarvestRegion
 ): { ops: [string, object][]; log: string[] } {
-  const ops: [string, object][] = [];
-  const log: string[] = [];
+  return {
+    ops: [buildHarvestOp(username, region.region_uid)],
+    log: [`[${region.name}] harvest`],
+  };
+}
 
-  ops.push(buildHarvestOp(username, region.region_uid));
-  log.push(`[${region.name}] harvest`);
-
-  if (shouldApplyFee(username, region.region_number)) {
-    for (const resource of harvestable) {
-      const feeAmount = Number.parseFloat(
-        ((resource.amount_claimable * SERVICE_FEE_PCT) / 100).toFixed(3)
-      );
-      if (feeAmount <= 0) continue;
-
-      const { out_amount_1, out_amount_2 } = computeSwapAmounts(
-        pools,
-        resource.token_symbol,
-        resource.token_symbol,
-        feeAmount
-      );
-      ops.push(
-        buildFeeTransferOp(
-          username,
-          region.region_uid,
-          SERVICE_FEE_RECIPIENT_REGION,
-          resource.token_symbol,
-          feeAmount,
-          out_amount_1,
-          out_amount_2
-        )
-      );
-      log.push(
-        `  fee: ${feeAmount} ${resource.token_symbol} → ${out_amount_2} to beaker007`
+/** Sum harvested amounts into a { symbol: total } map for log persistence. */
+export function summarizeHarvestedResources(
+  harvestable: Record<string, SplHarvestableResource[]>
+): Record<string, number> {
+  const totals: Record<string, number> = {};
+  for (const items of Object.values(harvestable)) {
+    for (const item of items) {
+      totals[item.token_symbol] = Number.parseFloat(
+        ((totals[item.token_symbol] ?? 0) + item.amount_claimable).toFixed(3)
       );
     }
   }
-
-  return { ops, log };
+  return totals;
 }

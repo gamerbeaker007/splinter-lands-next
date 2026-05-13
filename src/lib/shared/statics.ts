@@ -144,6 +144,9 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
 };
 
 export const TRADE_HUB_FEE = 0.9;
+// Per-hop fee multiplier for 2-hop swaps (resource → DEC → resource).
+// Each hop takes 5%, so total ≈ 9.75% (0.95 * 0.95 = 0.9025).
+export const TRADE_HUB_FEE_PER_HOP = 0.95;
 export const TAX_RATE = 0.1;
 
 export const worksiteTypeMapping: Record<string, string> = {

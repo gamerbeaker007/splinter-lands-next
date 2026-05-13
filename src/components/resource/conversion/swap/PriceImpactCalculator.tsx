@@ -3,9 +3,14 @@
 import {
   computeInputForDesiredOutput,
   computeSwapAmounts,
+  poolFor,
 } from "@/lib/shared/landManagerUtils";
 import { calculatePriceImpact } from "@/lib/shared/priceUtils";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import {
+  RESOURCE_ICON_MAP,
+  TRADE_HUB_FEE,
+  TRADE_HUB_FEE_PER_HOP,
+} from "@/lib/shared/statics";
 import { SplLandPool } from "@/types/spl/landPools";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import {
@@ -32,8 +37,8 @@ import {
 import Image from "next/image";
 import { useMemo, useState } from "react";
 
-const poolFor = (pools: SplLandPool[], sym: string) =>
-  pools.find((p) => p.token_symbol === sym);
+const SINGLE_HOP_FEE_PCT = Math.round((1 - TRADE_HUB_FEE) * 100);
+const PER_HOP_FEE_PCT = Math.round((1 - TRADE_HUB_FEE_PER_HOP) * 100);
 
 interface SwapResult {
   hops: HopDetail[];
@@ -65,7 +70,7 @@ function computeForwardHops(
       outputAmount: out_amount_2,
       outputSymbol: toSymbol,
       priceImpact: 0,
-      feeApplied: true,
+      feePct: SINGLE_HOP_FEE_PCT,
     });
     return { hops, payResult: payAmount, receiveResult: out_amount_2 };
   }
@@ -85,7 +90,7 @@ function computeForwardHops(
       outputAmount: r.amountReceived,
       outputSymbol: toSymbol,
       priceImpact: r.priceImpact,
-      feeApplied: true,
+      feePct: SINGLE_HOP_FEE_PCT,
     });
     return { hops, payResult: payAmount, receiveResult: r.amountReceived };
   }
@@ -105,43 +110,44 @@ function computeForwardHops(
       outputAmount: r.amountReceived,
       outputSymbol: "DEC",
       priceImpact: r.priceImpact,
-      feeApplied: true,
+      feePct: SINGLE_HOP_FEE_PCT,
     });
     return { hops, payResult: payAmount, receiveResult: r.amountReceived };
   }
 
-  // resource → DEC (fee) → resource (no fee)
+  // resource → DEC → resource: per-hop fee applied on each hop
   const fromPool = poolFor(pools, fromSymbol);
   const toPool = poolFor(pools, toSymbol);
   if (!fromPool || !toPool) return null;
   const hop1 = calculatePriceImpact(
     payAmount,
     Number.parseFloat(fromPool.resource_quantity),
-    Number.parseFloat(fromPool.dec_quantity)
+    Number.parseFloat(fromPool.dec_quantity),
+    TRADE_HUB_FEE_PER_HOP
   );
   hops.push({
-    label: `Hop 1: ${fromSymbol} → DEC (fee)`,
+    label: `Hop 1: ${fromSymbol} → DEC`,
     inputAmount: payAmount,
     inputSymbol: fromSymbol,
     outputAmount: hop1.amountReceived,
     outputSymbol: "DEC",
     priceImpact: hop1.priceImpact,
-    feeApplied: true,
+    feePct: PER_HOP_FEE_PCT,
   });
   const hop2 = calculatePriceImpact(
     hop1.amountReceived,
     Number.parseFloat(toPool.dec_quantity),
     Number.parseFloat(toPool.resource_quantity),
-    false
+    TRADE_HUB_FEE_PER_HOP
   );
   hops.push({
-    label: `Hop 2: DEC → ${toSymbol} (no fee)`,
+    label: `Hop 2: DEC → ${toSymbol}`,
     inputAmount: hop1.amountReceived,
     inputSymbol: "DEC",
     outputAmount: hop2.amountReceived,
     outputSymbol: toSymbol,
     priceImpact: hop2.priceImpact,
-    feeApplied: false,
+    feePct: PER_HOP_FEE_PCT,
   });
   return { hops, payResult: payAmount, receiveResult: hop2.amountReceived };
 }
@@ -160,7 +166,8 @@ interface HopDetail {
   outputAmount: number;
   outputSymbol: string;
   priceImpact: number;
-  feeApplied: boolean;
+  // Fee taken on this hop, expressed as a percent. 0 = no fee.
+  feePct: number;
 }
 
 const fmt = (n: number, d = 3) =>
@@ -257,9 +264,9 @@ function HopTable({ hops }: { hops: HopDetail[] }) {
                 </Typography>
               </TableCell>
               <TableCell>
-                {h.feeApplied ? (
+                {h.feePct > 0 ? (
                   <Chip
-                    label="10%"
+                    label={`${h.feePct}%`}
                     size="small"
                     color="warning"
                     variant="outlined"

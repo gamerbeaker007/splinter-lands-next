@@ -1,3 +1,4 @@
+import "dotenv/config"; // MUST be first — loads .env before any module reads process.env
 import {
   getLastWorkerRuns,
   markStaleWorkerRunsFailed,
@@ -8,7 +9,6 @@ import {
   runJobWithTracking,
   runWeeklyJob,
 } from "@/lib/backend/services/dataJobs";
-import "dotenv/config"; // MUST be first — loads .env before any module reads process.env
 import {
   interruptibleSleep,
   registerShutdownHandlers,

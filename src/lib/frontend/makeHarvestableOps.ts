@@ -10,11 +10,8 @@ import {
   CostEntry,
 } from "@/lib/shared/landManagerUtils";
 import { calculatePriceImpact } from "@/lib/shared/priceUtils";
-import {
-  ActionSummary,
-  MakeHarvestableStrategy,
-  TRADE_HUB_FEE_PCT,
-} from "@/types/landManager";
+import { TRADE_HUB_FEE } from "@/lib/shared/statics";
+import { ActionSummary, MakeHarvestableStrategy } from "@/types/landManager";
 import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
@@ -45,23 +42,47 @@ interface Ctx {
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
-// Returns price impact % for the first AMM hop (resource → DEC).
+// Returns the worst-case price impact % across all AMM hops for a swap.
 // Used to warn when pool depth is genuinely low relative to trade size.
 function swapPriceImpact(
   pools: SplLandPool[],
   fromSymbol: string,
-  inAmount: number
+  toSymbol: string,
+  inAmount: number,
+  decMidAmount: number
 ): number {
-  if (fromSymbol === "DEC") return 0;
+  if (fromSymbol === toSymbol) return 0;
+
+  if (fromSymbol === "DEC") {
+    const pool = pools.find((p) => p.token_symbol === toSymbol);
+    if (!pool) return 0;
+    return calculatePriceImpact(
+      inAmount,
+      Number.parseFloat(pool.dec_quantity),
+      Number.parseFloat(pool.resource_quantity)
+    ).priceImpact;
+  }
+
   const fromPool = pools.find((p) => p.token_symbol === fromSymbol);
-  if (!fromPool) return 0;
-  const { priceImpact } = calculatePriceImpact(
-    inAmount,
-    Number.parseFloat(fromPool.resource_quantity),
-    Number.parseFloat(fromPool.dec_quantity),
-    false
-  );
-  return priceImpact;
+  const impact1 = fromPool
+    ? calculatePriceImpact(
+        inAmount,
+        Number.parseFloat(fromPool.resource_quantity),
+        Number.parseFloat(fromPool.dec_quantity)
+      ).priceImpact
+    : 0;
+
+  if (toSymbol === "DEC") return impact1;
+
+  const toPool = pools.find((p) => p.token_symbol === toSymbol);
+  const impact2 = toPool
+    ? calculatePriceImpact(
+        decMidAmount,
+        Number.parseFloat(toPool.dec_quantity),
+        Number.parseFloat(toPool.resource_quantity)
+      ).priceImpact
+    : 0;
+  return Math.max(impact1, impact2);
 }
 
 function commitSwap(
@@ -79,23 +100,29 @@ function commitSwap(
     inAmount
   );
 
-  const impact = swapPriceImpact(ctx.pools, fromSymbol, inAmount);
+  const impact = swapPriceImpact(
+    ctx.pools,
+    fromSymbol,
+    toSymbol,
+    inAmount,
+    out_amount_1
+  );
   if (impact > 2.5) {
     ctx.log.push(
-      `  ⚠ Price impact ${impact.toFixed(1)}% on ${fromSymbol} pool exceeds 2.5% — swap may fail on-chain (pool too shallow)`
+      `  ⚠ Price impact ${impact.toFixed(1)}% on swap exceeds 2.5% — swap may fail on-chain (pool too shallow)`
     );
   }
   ctx.ops.push(
-    buildSwapTokensOp(
-      ctx.username,
-      fromUid,
-      toUid,
+    buildSwapTokensOp({
+      username: ctx.username,
+      fromRegionUid: fromUid,
+      toRegionUid: toUid,
       fromSymbol,
       toSymbol,
       inAmount,
-      out_amount_1,
-      out_amount_2
-    )
+      outAmount1: out_amount_1,
+      outAmount2: out_amount_2,
+    })
   );
   ctx.working[fromUid][fromSymbol] =
     (ctx.working[fromUid][fromSymbol] ?? 0) - inAmount;
@@ -129,7 +156,7 @@ function tryTransfer(
   }
 
   const inAmount = Number.parseFloat(
-    ((deficit * DEFICIT_BUFFER) / (1 - TRADE_HUB_FEE_PCT / 100)).toFixed(3)
+    ((deficit * DEFICIT_BUFFER) / TRADE_HUB_FEE).toFixed(3)
   );
 
   if (!bestDonor || bestSurplus < inAmount) {

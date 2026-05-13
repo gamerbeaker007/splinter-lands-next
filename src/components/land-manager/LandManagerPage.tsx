@@ -134,6 +134,39 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
       <Divider sx={{ mb: 3 }} />
 
+      {/* Experimental feature disclaimer */}
+      <Alert severity="warning" sx={{ mb: 2 }}>
+        <Typography variant="body2" fontWeight="bold" gutterBottom>
+          Experimental Feature
+        </Typography>
+        <Typography variant="body2">
+          The Land Manager is still experimental. Some operations may produce
+          unexpected results or errors in edge cases. A few tips to get started
+          safely:
+        </Typography>
+        <Box component="ul" sx={{ mt: 0.5, mb: 0.5, pl: 2 }}>
+          <li>
+            <Typography variant="body2">
+              Start with <strong>one or two regions</strong> before enabling all
+              of them.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              Always run <strong>Dry Run</strong> first to review exactly what
+              operations will be executed — then confirm with{" "}
+              <strong>Execute</strong>.
+            </Typography>
+          </li>
+          <li>
+            <Typography variant="body2">
+              If something does not behave as expected, please reach out to{" "}
+              <strong>beaker007</strong> with details of what happened.
+            </Typography>
+          </li>
+        </Box>
+      </Alert>
+
       {/* Region status banner */}
       {enabledCount === 0 ? (
         <Alert
