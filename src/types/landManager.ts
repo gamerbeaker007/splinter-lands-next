@@ -35,6 +35,7 @@ export const MAKE_HARVESTABLE_STRATEGY_LABELS: Record<
 
 export type PostHarvestStrategy = "accumulate" | "add_to_pool" | "sell_for_dec";
 export const DEFAULT_POST_HARVEST_STRATEGY: PostHarvestStrategy = "accumulate";
+export const DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES: string[] = [];
 export const POST_HARVEST_STRATEGY_LABELS: Record<PostHarvestStrategy, string> =
   {
     accumulate: "Accumulate (do nothing)",
@@ -58,6 +59,7 @@ export interface LandManagerConfig {
   make_harvestable_strategies: MakeHarvestableStrategy[];
   fee_accepted: boolean;
   post_harvest_strategy: PostHarvestStrategy;
+  post_harvest_excluded_resources: string[];
   mythic_fee_accepted: boolean;
 }
 

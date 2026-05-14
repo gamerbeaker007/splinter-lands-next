@@ -1,4 +1,4 @@
-import type { TrxLookupOutcome } from "@/types/spl/trx";
+import type { SplTrxResult, TrxLookupOutcome } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 export {
   buildBuyWithDecOp,
@@ -9,7 +9,12 @@ export {
 } from "./opBuilders";
 export { KeychainKeyTypes } from "keychain-sdk";
 
-export const MAX_OPS_PER_BROADCAST = 100;
+// Hive blocks allow at most 5 custom_json ops per account per block.
+// 4 keeps us safely under that limit.
+export const MAX_OPS_PER_BROADCAST = 4;
+// Hive produces a new block every ~3 seconds. Waiting this long between
+// consecutive broadcast batches guarantees they land in different blocks.
+const HIVE_BLOCK_MS = 3_000;
 const VERIFY_POLL_MS = 3000;
 const VERIFY_TIMEOUT_MS = 30_000;
 
@@ -22,13 +27,14 @@ export interface BroadcastResult {
 /**
  * Poll until all txIds resolve (success or failure) or the 30s timeout expires.
  * - Stops immediately if any tx comes back as `failed` and throws with the error message.
- * - Returns the successful result data indexed by txId position (null = not resolved).
+ * - Returns the parsed result for each txId (in the same order), or null if not resolved before timeout.
  * - Throws with a user-visible message on timeout.
  */
 export async function waitForTransactions(
   txIds: string[],
   lookup: (txId: string) => Promise<TrxLookupOutcome>
-): Promise<void> {
+): Promise<(SplTrxResult | null)[]> {
+  const results: (SplTrxResult | null)[] = txIds.map(() => null);
   const pending = new Set(txIds.map((_, i) => i));
   const deadline = Date.now() + VERIFY_TIMEOUT_MS;
 
@@ -41,6 +47,7 @@ export async function waitForTransactions(
           throw new Error(outcome.error);
         }
         if (outcome.status === "success") {
+          results[i] = outcome.result;
           pending.delete(i);
         }
       })
@@ -52,6 +59,8 @@ export async function waitForTransactions(
       "Transactions not confirmed within 30s — check your wallet."
     );
   }
+
+  return results;
 }
 
 function getKeychain(): KeychainSDK {
@@ -85,11 +94,12 @@ export async function broadcastOperations(
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const txIds: string[] = [];
+  const batches = chunk(operations, MAX_OPS_PER_BROADCAST);
 
-  for (const batch of chunk(operations, MAX_OPS_PER_BROADCAST)) {
+  for (let i = 0; i < batches.length; i++) {
     const result = await keychain.broadcast({
       username,
-      operations: batch as Parameters<
+      operations: batches[i] as Parameters<
         typeof keychain.broadcast
       >[0]["operations"],
       method: keyType,
@@ -109,6 +119,11 @@ export async function broadcastOperations(
       (result.result as unknown as { id?: string })?.id ??
       (result.result as unknown as { tx_id?: string })?.tx_id;
     if (txId) txIds.push(txId);
+
+    // Wait a full block before the next batch so all ops land in different blocks
+    if (i < batches.length - 1) {
+      await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
+    }
   }
 
   return { success: true, txIds };

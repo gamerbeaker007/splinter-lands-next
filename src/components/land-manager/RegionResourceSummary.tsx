@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 interface Props {
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
+  refreshKey?: number;
 }
 
 function fmt(n: number) {
@@ -29,6 +30,7 @@ function fmt(n: number) {
 export default function RegionResourceSummary({
   regions,
   enabledRegions,
+  refreshKey = 0,
 }: Props) {
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
@@ -59,7 +61,7 @@ export default function RegionResourceSummary({
 
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledRegions.join(",")]);
+  }, [enabledRegions.join(","), refreshKey]);
 
   if (visibleRegions.length === 0) return null;
 

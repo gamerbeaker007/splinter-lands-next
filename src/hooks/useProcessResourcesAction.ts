@@ -4,6 +4,7 @@ import {
   getLandPools,
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { buildAddLiquidityOp } from "@/lib/frontend/opBuilders";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
 import {
   BroadcastResult,
@@ -18,6 +19,7 @@ interface Params {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
   postHarvestStrategy: PostHarvestStrategy;
+  excludedResources: string[];
   onSuccess?: () => void;
 }
 
@@ -34,6 +36,7 @@ export function useProcessResourcesAction({
   username,
   visibleRegions,
   postHarvestStrategy,
+  excludedResources,
   onSuccess,
 }: Params): UseProcessResourcesAction {
   const [busy, setBusy] = useState(false);
@@ -50,31 +53,104 @@ export function useProcessResourcesAction({
           getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
           getLandPools(),
         ]);
-        const { ops, log, actions } = buildPostHarvestOps(
+        const { ops, sellOps, log, actions } = buildPostHarvestOps(
           visibleRegions,
           username,
           balances,
           pools,
-          postHarvestStrategy
+          postHarvestStrategy,
+          excludedResources
         );
 
         if (isDryRun) {
           return { title: "Dry Run — Process Resources", log, ops };
-        } else if (ops.length === 0) {
+        } else if (sellOps.length === 0) {
           setError(
             "No resources to process (all below minimum or strategy is accumulate)."
           );
         } else {
-          const res = await broadcastOperations(username, ops);
-          if (!res.success) {
-            setError(res.error ?? "Broadcast failed");
+          // Phase 1: broadcast all sell ops (all at once, accepted Keychain batching limitation).
+          const sellRes = await broadcastOperations(username, sellOps);
+          if (!sellRes.success) {
+            setError(sellRes.error ?? "Broadcast failed (sell phase)");
           } else {
-            await waitForTransactions(res.txIds, lookupTransaction);
-            await recordPostHarvestLog(username, actions, res.txIds).catch(
-              () => {}
-            );
-            setResult(res);
-            onSuccess?.();
+            await waitForTransactions(sellRes.txIds, lookupTransaction);
+
+            let allTxIds = sellRes.txIds;
+            let liqFailed = false;
+
+            if (postHarvestStrategy === "add_to_pool") {
+              // Phase 2: re-fetch pools + balances after sells confirm.
+              // Use 99% of the actual current balance (post-sell ~50%) as resource_amount
+              // so there's always enough DEC to cover the spot-price ratio.
+              const [{ pools: freshPools }, { balances: freshBalances }] =
+                await Promise.all([
+                  getLandPools(),
+                  getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+                ]);
+              const freshPoolMap = new Map(
+                freshPools.map((p) => [
+                  p.token_symbol,
+                  {
+                    decQty: parseFloat(p.dec_quantity),
+                    resourceQty: parseFloat(p.resource_quantity),
+                  },
+                ])
+              );
+
+              // Collect the region+symbol pairs that were sold from the sell ops.
+              const liquidityOps: [string, object][] = [];
+              for (const sellOp of sellOps) {
+                const envelope = sellOp[1] as { json: string };
+                const op = JSON.parse(envelope.json) as {
+                  region_uid: string;
+                  resource_symbol: string;
+                };
+                const pool = freshPoolMap.get(op.resource_symbol);
+                if (!pool || pool.resourceQty <= 0) continue;
+                const freshAmount =
+                  (freshBalances[op.region_uid]?.[op.resource_symbol] ?? 0) *
+                  0.99;
+                if (freshAmount <= 0) continue;
+                const decAmount = parseFloat(
+                  (freshAmount * (pool.decQty / pool.resourceQty)).toFixed(3)
+                );
+                if (decAmount <= 0) continue;
+                liquidityOps.push(
+                  buildAddLiquidityOp(
+                    username,
+                    op.region_uid,
+                    op.resource_symbol,
+                    parseFloat(freshAmount.toFixed(3)),
+                    decAmount
+                  )
+                );
+              }
+
+              if (liquidityOps.length > 0) {
+                const liqRes = await broadcastOperations(
+                  username,
+                  liquidityOps
+                );
+                if (!liqRes.success) {
+                  setError(
+                    liqRes.error ?? "Broadcast failed (add liquidity phase)"
+                  );
+                  liqFailed = true;
+                } else {
+                  await waitForTransactions(liqRes.txIds, lookupTransaction);
+                  allTxIds = [...allTxIds, ...liqRes.txIds];
+                }
+              }
+            }
+
+            if (!liqFailed) {
+              await recordPostHarvestLog(username, actions, allTxIds).catch(
+                () => {}
+              );
+              setResult({ success: true, txIds: allTxIds });
+              onSuccess?.();
+            }
           }
         }
       } catch (err) {
@@ -84,7 +160,13 @@ export function useProcessResourcesAction({
       }
       return null;
     },
-    [username, visibleRegions, postHarvestStrategy, onSuccess]
+    [
+      username,
+      visibleRegions,
+      postHarvestStrategy,
+      excludedResources,
+      onSuccess,
+    ]
   );
 
   return {

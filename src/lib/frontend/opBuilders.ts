@@ -8,6 +8,7 @@ export function isFeeResourceTransferrable(symbol: string): boolean {
   return !NON_TRANSFERRABLE_FEE_RESOURCES.has(symbol);
 }
 
+const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
 export function generateNonce(length = 10): string {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -29,7 +30,7 @@ function customJsonOp(
       id: "sm_land_operation",
       json: JSON.stringify({
         ...payload,
-        app: "splinterlands/0.7.177",
+        app: APP,
         n: generateNonce(),
       }),
     },
@@ -180,11 +181,30 @@ export function buildSpsFeeTransferOp(
         to: SERVICE_FEE_RECIPIENT,
         qty,
         memo: "service fee for splinter-lands tool",
-        app: "splinterlands/0.7.177",
+        app: APP,
         n: generateNonce(),
       }),
     },
   ];
+}
+
+/** Sell a resource into the trade hub in a region, receiving DEC ("on hop" sell direction). */
+export function buildSellResourceForDecOp(
+  username: string,
+  regionUid: string,
+  resourceAmount: number,
+  sharesOut: number,
+  resourceSymbol: string,
+  maxSlippage: number = 2.5
+): [string, object] {
+  return customJsonOp(username, {
+    op: "swap_tokens",
+    region_uid: regionUid,
+    resource_amount: resourceAmount,
+    shares_out: sharesOut,
+    max_slippage: maxSlippage,
+    resource_symbol: resourceSymbol,
+  });
 }
 
 /** Buy a resource by spending DEC from the trade hub in a region. */
@@ -193,14 +213,15 @@ export function buildBuyWithDecOp(
   regionUid: string,
   decAmount: number,
   sharesOut: number,
-  resourceSymbol: string
+  resourceSymbol: string,
+  maxSlippage: number = 2.5
 ): [string, object] {
   return customJsonOp(username, {
     op: "swap_tokens",
     region_uid: regionUid,
     dec_amount: decAmount,
     shares_out: sharesOut,
-    max_slippage: 2.5,
+    max_slippage: maxSlippage,
     resource_symbol: resourceSymbol,
   });
 }

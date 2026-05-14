@@ -60,6 +60,14 @@ export interface HarvestAllTrxData {
 // ── swap_tokens ───────────────────────────────────────────────────────────────
 // Covers buy-with-DEC, resource-to-DEC sell, same-symbol transfer, cross-symbol swap.
 
+/** Parsed from trx_info.data (the original broadcast op input). */
+export interface SwapTokensOpInput {
+  region_uid: string;
+  resource_amount: number; // the amount the player actually sent
+  resource_symbol: string;
+}
+
+/** Parsed from trx_info.result (what the engine confirms back). resource_amount is always 0 for sells. */
 export interface SwapTokensTrxData {
   resource: string;
   resource_amount: number;
@@ -101,7 +109,7 @@ export interface AddLiquidityTrxData {
 
 export type SplTrxResult =
   | { type: "harvest_all"; data: HarvestAllTrxData }
-  | { type: "swap_tokens"; data: SwapTokensTrxData }
+  | { type: "swap_tokens"; input: SwapTokensOpInput; data: SwapTokensTrxData }
   | { type: "tax_collection"; data: TaxCollectionTrxData }
   | { type: "add_liquidity"; data: AddLiquidityTrxData };
 

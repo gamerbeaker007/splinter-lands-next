@@ -295,20 +295,54 @@ export default function TodayPanel({
                   )}
                 </Stack>
                 <Stack gap={0.25}>
-                  {(
-                    data.postHarvest.actions_json as PostHarvestActionSummary[]
-                  ).map((a, i) => (
-                    <Typography
-                      key={i}
-                      variant="caption"
-                      color="text.secondary"
-                      display="block"
-                    >
-                      {a.type === "sell_for_dec" ? "Sold" : "Added"}{" "}
-                      {a.resource_in.toFixed(0)} {a.symbol} →{" "}
-                      {a.dec_amount.toFixed(3)} DEC
-                    </Typography>
-                  ))}
+                  {(() => {
+                    const actions = data.postHarvest
+                      .actions_json as PostHarvestActionSummary[];
+                    // Aggregate by (type, symbol)
+                    const sold: Record<
+                      string,
+                      { resource_in: number; dec_amount: number }
+                    > = {};
+                    const added: Record<
+                      string,
+                      { resource_in: number; dec_amount: number }
+                    > = {};
+                    for (const a of actions) {
+                      const bucket = a.type === "sell_for_dec" ? sold : added;
+                      if (!bucket[a.symbol])
+                        bucket[a.symbol] = { resource_in: 0, dec_amount: 0 };
+                      bucket[a.symbol].resource_in += a.resource_in;
+                      bucket[a.symbol].dec_amount += a.dec_amount;
+                    }
+                    const rows: React.ReactNode[] = [];
+                    for (const [sym, v] of Object.entries(sold)) {
+                      rows.push(
+                        <Typography
+                          key={`sold-${sym}`}
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Sold: {v.resource_in.toFixed(0)} {sym} →{" "}
+                          {v.dec_amount.toFixed(3)} DEC
+                        </Typography>
+                      );
+                    }
+                    for (const [sym, v] of Object.entries(added)) {
+                      rows.push(
+                        <Typography
+                          key={`added-${sym}`}
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          Added: {v.resource_in.toFixed(0)} {sym} |{" "}
+                          {v.dec_amount.toFixed(3)} DEC
+                        </Typography>
+                      );
+                    }
+                    return rows;
+                  })()}
                 </Stack>
                 {txList(data.postHarvest.transactions)}
               </Box>

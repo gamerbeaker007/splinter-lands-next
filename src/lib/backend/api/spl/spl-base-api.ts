@@ -5,6 +5,7 @@ import type {
   AddLiquidityTrxData,
   HarvestAllTrxData,
   SplTrxResult,
+  SwapTokensOpInput,
   SwapTokensTrxData,
   TaxCollectionTrxData,
   TrxLookupOutcome,
@@ -260,6 +261,14 @@ function parseSwapTokens(d: Raw): SwapTokensTrxData {
   };
 }
 
+function parseSwapTokensInput(opInput: Raw): SwapTokensOpInput {
+  return {
+    region_uid: (opInput.region_uid as string) ?? "",
+    resource_amount: (opInput.resource_amount as number) ?? 0,
+    resource_symbol: (opInput.resource_symbol as string) ?? "",
+  };
+}
+
 function parseTaxCollection(d: Raw): TaxCollectionTrxData {
   return {
     deed_uid: (d.deed_uid as string) ?? "",
@@ -312,7 +321,7 @@ export async function fetchTransactionLookup(
     const d = outer.result.data as Raw | null;
     if (!d) return { status: "pending" };
 
-    const opData = JSON.parse(trxInfo.data as string) as { op: string };
+    const opData = JSON.parse(trxInfo.data as string) as Raw & { op: string };
     const op = opData.op;
 
     let result: SplTrxResult | null = null;
@@ -321,7 +330,11 @@ export async function fetchTransactionLookup(
         result = { type: "harvest_all", data: parseHarvestAll(d) };
         break;
       case "swap_tokens":
-        result = { type: "swap_tokens", data: parseSwapTokens(d) };
+        result = {
+          type: "swap_tokens",
+          input: parseSwapTokensInput(opData),
+          data: parseSwapTokens(d),
+        };
         break;
       case "tax_collection":
         result = { type: "tax_collection", data: parseTaxCollection(d) };

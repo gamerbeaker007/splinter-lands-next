@@ -1,7 +1,7 @@
 "use client";
 
 import LoginComponent from "@/components/auth/LoginComponent";
-import BulkActionPanel from "@/components/land-manager/BulkActionPanel";
+import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
 import MythicOverview from "@/components/land-manager/MythicOverview";
 import RegionOverview from "@/components/land-manager/RegionOverview";
@@ -74,6 +74,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       make_harvestable_strategies: DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
       fee_accepted: false,
       post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
+      post_harvest_excluded_resources: [],
       mythic_fee_accepted: false,
     }
   );
@@ -201,6 +202,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       <RegionResourceSummary
         regions={allRegions}
         enabledRegions={currentConfig.enabled_regions}
+        refreshKey={regionRefreshKey}
       />
 
       <BulkActionPanel
@@ -210,6 +212,9 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         strategies={currentConfig.make_harvestable_strategies}
         harvestAck={currentConfig.fee_accepted}
         postHarvestStrategy={currentConfig.post_harvest_strategy}
+        postHarvestExcludedResources={
+          currentConfig.post_harvest_excluded_resources
+        }
         mythicFeeAccepted={currentConfig.mythic_fee_accepted}
         hasMythics={
           enabledMythicDeeds !== null && enabledMythicDeeds.length > 0

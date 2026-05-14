@@ -352,8 +352,9 @@ model LandManagerConfig {
   enabled_regions             Int[]
   make_harvestable_strategies String[] @default(["transfer", "swap", "buy_dec"])
   fee_accepted                Boolean  @default(false)
-  post_harvest_strategy       String   @default("accumulate")
-  mythic_fee_accepted         Boolean  @default(false)
+  post_harvest_strategy              String   @default("accumulate")
+  post_harvest_excluded_resources    String[] @default([])
+  mythic_fee_accepted                Boolean  @default(false)
   created_at                  DateTime @default(now())
   updated_at                  DateTime @updatedAt
 

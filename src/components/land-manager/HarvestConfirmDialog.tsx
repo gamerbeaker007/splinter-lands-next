@@ -19,7 +19,6 @@ import { useState } from "react";
 
 interface Props {
   open: boolean;
-  username: string;
   visibleRegions: SplProductionOverviewRegion[];
   feeApplicableRegionNumbers: Set<number>;
   onConfirm: (ack: boolean) => void;
@@ -28,7 +27,6 @@ interface Props {
 
 export default function HarvestConfirmDialog({
   open,
-  username: _username,
   visibleRegions,
   feeApplicableRegionNumbers,
   onConfirm,
