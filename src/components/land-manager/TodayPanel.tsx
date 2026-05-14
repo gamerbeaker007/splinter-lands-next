@@ -144,6 +144,42 @@ export default function TodayPanel({
   const anyFailed = (txIds: string[]) =>
     txIds.some((id) => failedTxIds.has(id));
 
+  const feeSummary = (
+    fees: Record<string, number>,
+    unpaidFees: Record<string, number>,
+    feeError: string | null | undefined
+  ) => (
+    <>
+      {Object.keys(fees).length > 0 && (
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          display="block"
+          mt={0.5}
+        >
+          Fees paid:{" "}
+          {Object.entries(fees)
+            .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
+            .join(", ")}
+        </Typography>
+      )}
+      {Object.keys(unpaidFees).length > 0 && (
+        <Typography
+          variant="caption"
+          color="error.main"
+          display="block"
+          mt={0.5}
+        >
+          Unpaid fees:{" "}
+          {Object.entries(unpaidFees)
+            .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
+            .join(", ")}
+          {feeError ? ` — ${feeError}` : ""}
+        </Typography>
+      )}
+    </>
+  );
+
   if (loading) {
     return (
       <Box sx={{ mb: 2 }}>
@@ -202,41 +238,10 @@ export default function TodayPanel({
                     />
                   ))}
                 </Stack>
-                {Object.keys(data.harvest.fees_json as Record<string, number>)
-                  .length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    mt={0.5}
-                  >
-                    Fees paid:{" "}
-                    {Object.entries(
-                      data.harvest.fees_json as Record<string, number>
-                    )
-                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
-                      .join(", ")}
-                  </Typography>
-                )}
-                {Object.keys(
-                  data.harvest.unpaid_fees_json as Record<string, number>
-                ).length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="error.main"
-                    display="block"
-                    mt={0.5}
-                  >
-                    Unpaid fees:{" "}
-                    {Object.entries(
-                      data.harvest.unpaid_fees_json as Record<string, number>
-                    )
-                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
-                      .join(", ")}
-                    {data.harvest.fee_error
-                      ? ` — ${data.harvest.fee_error}`
-                      : ""}
-                  </Typography>
+                {feeSummary(
+                  data.harvest.fees_json as Record<string, number>,
+                  data.harvest.unpaid_fees_json as Record<string, number>,
+                  data.harvest.fee_error
                 )}
                 {txList([
                   ...data.harvest.harvest_transactions,
@@ -390,45 +395,10 @@ export default function TodayPanel({
                     </Typography>
                   ))}
                 </Stack>
-                {Object.keys(
-                  data.mythicHarvest.fees_json as Record<string, number>
-                ).length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    mt={0.5}
-                  >
-                    Fees paid:{" "}
-                    {Object.entries(
-                      data.mythicHarvest.fees_json as Record<string, number>
-                    )
-                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
-                      .join(", ")}
-                  </Typography>
-                )}
-                {Object.keys(
-                  data.mythicHarvest.unpaid_fees_json as Record<string, number>
-                ).length > 0 && (
-                  <Typography
-                    variant="caption"
-                    color="error.main"
-                    display="block"
-                    mt={0.5}
-                  >
-                    Unpaid fees:{" "}
-                    {Object.entries(
-                      data.mythicHarvest.unpaid_fees_json as Record<
-                        string,
-                        number
-                      >
-                    )
-                      .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
-                      .join(", ")}
-                    {data.mythicHarvest.fee_error
-                      ? ` — ${data.mythicHarvest.fee_error}`
-                      : ""}
-                  </Typography>
+                {feeSummary(
+                  data.mythicHarvest.fees_json as Record<string, number>,
+                  data.mythicHarvest.unpaid_fees_json as Record<string, number>,
+                  data.mythicHarvest.fee_error
                 )}
                 {txList([
                   ...data.mythicHarvest.transactions,

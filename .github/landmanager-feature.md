@@ -226,12 +226,52 @@ prisma/
 
 ---
 
+## Implementation Status (May 2026)
+
+### ✅ Completed
+
+| Item | Notes |
+|---|---|
+| Auth / JWT / Hive Keychain login | HTTP-only cookie, `getAuthStatus()` |
+| Config dialog | enabled_regions, strategies, fee_accepted, post_harvest_strategy, excluded_resources, mythic_fee_accepted |
+| Region Overview table | Live harvestable/status per enabled region |
+| RegionResourceSummary | Live resource balances, refreshes after operations via `refreshKey` |
+| **Action 1: Harvest All** | `useHarvestAllAction`, `HarvestAllRow`, fee payment integrated, `HarvestConfirmDialog` |
+| **Action 2: Make Harvestable** | `useMakeHarvestableAction`, `MakeHarvestableRow`, transfer/swap/buy_dec strategies |
+| **Action 2b: Harvest Mythics** | `useHarvestMythicsAction`, `HarvestMythicsRow`, `MythicConfirmDialog`, fee payment |
+| **Action 3: Pay Service Fee** | Integrated into Harvest and MythicHarvest flows (not standalone button) |
+| **Action 4: Process Resources** | `useProcessResourcesAction`, `ProcessResourcesRow`, accumulate/sell_for_dec/add_to_pool strategies. add_to_pool: two-phase sell→re-fetch→add_liquidity with exact spot price |
+| Today Panel | Daily activity log with tx verification (harvest, make-harvestable, mythics, post-harvest) |
+| DB schema | LandManagerConfig, LandHarvestLog, LandMakeHarvestableLog, LandPostHarvestLog, LandMythicHarvestLog |
+| Dry Run dialog | Shows planned ops/log before broadcast |
+| Experimental feature warning | Alert in LandManagerPage |
+
+### ❌ Not Yet Implemented
+
+| Item | Notes |
+|---|---|
+| **Action 5: Rent Workers** | No hook, no row, no action file. Needs worker selection algorithm (biome/bloodline scoring), budget caps, VAPI endpoints |
+| Run History panel | No `RunHistory` component, no `land_manager_run` DB table (individual day-level log tables exist instead) |
+| "Run All" one-click button | Phase 2 feature |
+
+### Architecture Divergences From Original Plan
+
+- `ActionPanel.tsx` → became `BulkActionPanel.tsx` with separate `*Row.tsx` files per action
+- Action 3 (pay fee) is integrated into harvest flows, not a standalone button
+- `land_manager_run` table was not created; instead, granular per-action log tables (`land_*_log`) are used for the Today Panel
+
+### Known Issues / Open Items
+
+- [ ] Fee exemption logic: currently checks `shouldApplyFee(username, regionNumber)` but the exemption is `{region_id, tract_id}` — if in region 65 AND tract 3 only, fee should be skipped. Current logic may skip the whole region instead.
+- [ ] Harvest fee acknowledgment ("I acknowledge the fee" checkbox): `fee_accepted` is stored in config but the UX for "don't show this again" after accepting is TBD.
+- [ ] Action 5: exact VAPI worker rental endpoints (check swagger)
+- [ ] Action 5: worker selection algorithm (biome, bloodline, ability scoring)
+- [ ] Rate limiting / throttling for bulk VAPI calls at scale
+
+---
+
 ## Open Questions / TBD
 
-- [ ] Exact VAPI POST endpoints for each action (discover per implementation step)
-- [ ] Action 5: exact worker selection algorithm (biome, bloodline, ability scoring)
-- [ ] Whether "transfer between regions" means same-account only or any region
-- [ ] Rate limiting / throttling needed for bulk VAPI calls?
-- [ ] UI for "action result" — inline expandable card per action?
-- [ ] TODO also a checkmark with harvest for the fees once time can be acnkoledge to not show anymore (Store in config)
-- [ ] Fix determine fee exemption logic now it does not include region so if in region 65 and tract 3 skip the fee.
+- [ ] Action 5: exact VAPI POST endpoints for worker rental (discover when implementing)
+- [ ] Action 5: worker scoring algorithm details
+- [ ] Whether "transfer between regions" (Action 2 strategy) is same-account only — currently assumed yes
