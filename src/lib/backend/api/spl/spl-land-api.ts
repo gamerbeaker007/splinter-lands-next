@@ -255,7 +255,7 @@ export async function fetchDeedProjects(
     params: { limit, offset },
   });
 
-  if (!res.data || res.data.status !== "success") {
+  if (res.data?.status !== "success") {
     throw new Error("Invalid response from Splinterlands API");
   }
 
@@ -322,7 +322,7 @@ export async function fetchDeedHarvestActions(
     params: { limit, offset },
   });
 
-  if (!res.data || res.data.status !== "success") {
+  if (res.data?.status !== "success") {
     throw new Error("Invalid response from Splinterlands API");
   }
 

@@ -35,7 +35,7 @@ import {
   calcProductionInfo,
   calcTotalPP,
   calcTotemChancePerHour,
-} from "../../../lib/frontend/utils/plannerCalcs";
+} from "@/lib/frontend/utils/plannerCalcs";
 import SlotEditor from "../card-editor/SlotEditor";
 import { PlannerControls } from "../deed-editor/PlanningControls";
 import { DECOutput } from "../output/DECOutput";
@@ -78,7 +78,7 @@ export default function Planner({
   regionTax,
   marketData,
   onPlanChange,
-}: Props) {
+}: Readonly<Props>) {
   const [plot, setPlot] = useState<PlotPlannerData>({
     plotRarity: "common",
     plotStatus: "natural",
@@ -193,7 +193,7 @@ export default function Planner({
 
     return {
       id: idx,
-      set: setName as CardSetNameLandValid,
+      set: setName,
       rarity,
       bcx,
       foil: cardFoilOptions[foil],
@@ -262,7 +262,7 @@ export default function Planner({
     if (!totemItem) return "none";
 
     const raw = totemItem.boost;
-    const n = typeof raw === "string" ? parseFloat(raw) : Number(raw);
+    const n = typeof raw === "string" ? Number.parseFloat(raw) : Number(raw);
     if (!Number.isFinite(n)) return "none";
 
     // normalize to 2 decimals to handle "0.100" etc.
@@ -288,7 +288,7 @@ export default function Planner({
     if (!titleItem) return "none";
 
     const raw = titleItem.boost;
-    const n = typeof raw === "string" ? parseFloat(raw) : Number(raw);
+    const n = typeof raw === "string" ? Number.parseFloat(raw) : Number(raw);
     if (!Number.isFinite(n)) return "none";
 
     // normalize to 2 decimals to handle "0.100" etc.
@@ -333,10 +333,10 @@ export default function Planner({
     const importedTotem = findTotem(deed);
     const importedTitle = findTitle(deed);
     const importedRuni = findRuni(deed);
-    const importedRegionNumber = deed.region_number!;
-    const importedTractNumber = deed.tract_number!;
-    const importedPlotNumber = deed.plot_number!;
-    const importedPlotId = deed.plot_id!;
+    const importedRegionNumber = deed.region_number;
+    const importedTractNumber = deed.tract_number;
+    const importedPlotNumber = deed.plot_number;
+    const importedPlotId = deed.plot_id;
 
     // Update plot first
     updatePlot({
@@ -481,17 +481,17 @@ export default function Planner({
         }}
       >
         <TotemSelector
-          value={plot.totem as TotemTier}
+          value={plot.totem}
           onChange={onTotemChange}
           pos={{ x: "20px", y: "30px" }}
         />
         <TitleSelector
-          value={plot.title as TitleTier}
+          value={plot.title}
           onChange={onTitleChange}
           pos={{ x: "170px", y: "30px" }}
         />
         <RuniSelector
-          value={plot.runi as RuniTier}
+          value={plot.runi}
           plotPlannerData={plot}
           runiImgUrl={runiImgUrl}
           onChange={onRuniChange}
@@ -550,13 +550,13 @@ export default function Planner({
             borderRadius: 1,
           }}
         >
-          {plot.plotStatus !== "magical" ? (
+          {plot.plotStatus === "magical" ? (
             <Typography variant="caption" color={fontColor}>
-              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.deedType)} •`}
+              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.magicType)} • ${capitalize(plot.deedType)} •`}
             </Typography>
           ) : (
             <Typography variant="caption" color={fontColor}>
-              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.magicType)} • ${capitalize(plot.deedType)} •`}
+              {`${capitalize(plot.plotRarity)} • ${capitalize(plot.plotStatus)} • ${capitalize(plot.deedType)} •`}
             </Typography>
           )}
         </Box>

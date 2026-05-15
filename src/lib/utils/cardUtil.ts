@@ -259,6 +259,21 @@ const combine_rates_gold: Record<CardRarity, number[]> = {
   legendary: [0, 1, 2, 4],
 };
 
+/**
+ * BCX a card has at a given level. Levels are 1-indexed.
+ * Returns 0 if the (rarity, foil) pair is missing or level is out of range.
+ */
+export function bcxForLevel(
+  rarity: CardRarity,
+  foilId: number,
+  level: number
+): number {
+  const rates = foilId > 0 ? combine_rates_gold : combine_rates;
+  const arr = rates[rarity];
+  if (!arr || level < 1 || level > arr.length) return 0;
+  return arr[level - 1];
+}
+
 export function determineLevelFromBCX(
   cardSet: CardSetNameLandValid,
   rarity: CardRarity,

@@ -103,15 +103,51 @@ export interface AddLiquidityTrxData {
   region_name: string;
 }
 
+// ── market_rent ───────────────────────────────────────────────────────────────
+
+export interface MarketRentSellerResult {
+  seller: string;
+  items: string[];
+  total_dec: number;
+  total_fees: number;
+  market_fees: number;
+  burn_fees: number;
+  referral_cut: number;
+}
+
+export interface MarketRentTrxData {
+  success: boolean;
+  renter: string;
+  num_cards: number;
+  total_price: number;
+  total_fees_dec: number;
+  total_market_fees_dec: number;
+  total_burn_fees_dec: number;
+  total_referral_cut: number;
+  by_seller: MarketRentSellerResult[];
+}
+
+// ── stake_change ──────────────────────────────────────────────────────────────
+
+export interface StakeChangeTrxData {
+  result_code: number;
+  error_message: string;
+  harvest_data: unknown[];
+  ashes_used: number;
+  ashes_starting_balance: number;
+}
+
 // ── Discriminated union ───────────────────────────────────────────────────────
-// Keyed by data.op, not trx_info.type (which is always "land_operation").
-// Add a new member + case in parseLandOpResult when a new op needs to be parsed.
+// For sm_land_operation ops, keyed by data.op. For sm_market_rent /
+// sm_stake_change, keyed by trx_info.type (the input data has no `op` field).
 
 export type SplTrxResult =
   | { type: "harvest_all"; data: HarvestAllTrxData }
   | { type: "swap_tokens"; input: SwapTokensOpInput; data: SwapTokensTrxData }
   | { type: "tax_collection"; data: TaxCollectionTrxData }
-  | { type: "add_liquidity"; data: AddLiquidityTrxData };
+  | { type: "add_liquidity"; data: AddLiquidityTrxData }
+  | { type: "market_rent"; data: MarketRentTrxData }
+  | { type: "stake_change"; data: StakeChangeTrxData };
 
 /**
  * Outcome of a single transaction lookup.

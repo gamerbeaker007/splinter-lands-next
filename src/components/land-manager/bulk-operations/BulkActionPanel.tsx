@@ -5,11 +5,13 @@ import HarvestAllRow from "@/components/land-manager/bulk-operations/HarvestAllR
 import HarvestMythicsRow from "@/components/land-manager/bulk-operations/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
+import RentEmptyWorkersRow from "@/components/land-manager/bulk-operations/RentEmptyWorkersRow";
 import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   DryRunResult,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
+  RentalConfig,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Box, Stack } from "@mui/material";
@@ -26,6 +28,7 @@ interface Props {
   postHarvestExcludedResources: string[];
   mythicFeeAccepted: boolean;
   hasMythics: boolean;
+  rental: RentalConfig;
   onSuccess?: () => void;
 }
 
@@ -39,6 +42,7 @@ export default function BulkActionPanel({
   postHarvestExcludedResources,
   mythicFeeAccepted,
   hasMythics,
+  rental,
   onSuccess,
 }: Props) {
   const router = useRouter();
@@ -51,6 +55,7 @@ export default function BulkActionPanel({
     makeHarvestable: false,
     processResources: false,
     mythicHarvest: false,
+    rentEmptyWorkers: false,
   });
 
   useEffect(() => {
@@ -84,6 +89,10 @@ export default function BulkActionPanel({
   );
   const onProcessResourcesBusy = useCallback(
     (b: boolean) => setBusyMap((m) => ({ ...m, processResources: b })),
+    []
+  );
+  const onRentEmptyWorkersBusy = useCallback(
+    (b: boolean) => setBusyMap((m) => ({ ...m, rentEmptyWorkers: b })),
     []
   );
 
@@ -138,6 +147,15 @@ export default function BulkActionPanel({
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
           onDryRun={setDryRun}
+          onSuccess={afterSuccess}
+        />
+
+        <RentEmptyWorkersRow
+          username={username}
+          enabledRegions={enabledRegions}
+          rental={rental}
+          anyBusy={anyBusy}
+          onBusyChange={onRentEmptyWorkersBusy}
           onSuccess={afterSuccess}
         />
       </Stack>

@@ -33,7 +33,12 @@ interface Ctx {
   pools: SplLandPool[];
   regions: SplProductionOverviewRegion[];
   costsMap: Record<string, CostEntry[]>;
+  // Effective balance (stored + ready). Used to compute deficits — Splinterlands
+  // applies ready to costs before stored when harvesting.
   working: Record<string, Record<string, number>>;
+  // Stored balance only. Hard upper bound on what a region can ship out via
+  // swap/transfer (ready amounts can't move between regions until harvested).
+  stored: Record<string, Record<string, number>>;
   ops: [string, object][];
   log: string[];
   decBalance: number;
@@ -128,6 +133,12 @@ function commitSwap(
     (ctx.working[fromUid][fromSymbol] ?? 0) - inAmount;
   ctx.working[toUid][toSymbol] =
     (ctx.working[toUid][toSymbol] ?? 0) + out_amount_2;
+  // Mirror the effective movement on the stored ledger so subsequent strategy
+  // attempts in the same plan see the post-swap stored balances.
+  ctx.stored[fromUid][fromSymbol] =
+    (ctx.stored[fromUid][fromSymbol] ?? 0) - inAmount;
+  ctx.stored[toUid][toSymbol] =
+    (ctx.stored[toUid][toSymbol] ?? 0) + out_amount_2;
   return out_amount_2;
 }
 
@@ -147,8 +158,12 @@ function tryTransfer(
     const donorCost =
       ctx.costsMap[donor.region_uid].find((c) => c.symbol === cost.symbol)
         ?.amount ?? 0;
-    const surplus =
+    // Swappable surplus = how much we can ship without breaking the donor's
+    // own harvest. Capped by stored balance (ready amounts can't move).
+    const effectiveSurplus =
       (ctx.working[donor.region_uid][cost.symbol] ?? 0) - donorCost;
+    const stored = ctx.stored[donor.region_uid][cost.symbol] ?? 0;
+    const surplus = Math.min(stored, effectiveSurplus);
     if (surplus > bestSurplus) {
       bestDonor = donor;
       bestSurplus = surplus;
@@ -207,7 +222,12 @@ function trySwap(
       const srcCost =
         ctx.costsMap[source.region_uid].find((c) => c.symbol === sym)?.amount ??
         0;
-      const surplus = (ctx.working[source.region_uid][sym] ?? 0) - srcCost;
+      // Swappable surplus = how much we can ship without breaking the donor's
+      // own harvest. Capped by stored balance (ready amounts can't move).
+      const effectiveSurplus =
+        (ctx.working[source.region_uid][sym] ?? 0) - srcCost;
+      const stored = ctx.stored[source.region_uid][sym] ?? 0;
+      const surplus = Math.min(stored, effectiveSurplus);
       if (surplus > bestSurplus) {
         bestSource = source;
         bestSymbol = sym;
@@ -336,11 +356,18 @@ const STRATEGY_FN: Record<MakeHarvestableStrategy, typeof tryTransfer> = {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
+export interface RegionBalances {
+  /** Stored balance + ready-to-harvest (for deficit checks). */
+  effective: Record<string, Record<string, number>>;
+  /** Stored balance only (caps what can leave a region via swap/transfer). */
+  stored: Record<string, Record<string, number>>;
+}
+
 export function buildMakeHarvestableOps(
   visibleRegions: SplProductionOverviewRegion[],
   username: string,
   harvestableMap: Record<string, SplHarvestableResource[]>,
-  balancesMap: Record<string, Record<string, number>>,
+  balances: RegionBalances,
   strategies: MakeHarvestableStrategy[],
   initialDecBalance: number,
   pools: SplLandPool[]
@@ -358,7 +385,13 @@ export function buildMakeHarvestableOps(
     working: Object.fromEntries(
       visibleRegions.map((r) => [
         r.region_uid,
-        { ...(balancesMap[r.region_uid] ?? EMPTY_BALANCE) },
+        { ...(balances.effective[r.region_uid] ?? EMPTY_BALANCE) },
+      ])
+    ),
+    stored: Object.fromEntries(
+      visibleRegions.map((r) => [
+        r.region_uid,
+        { ...(balances.stored[r.region_uid] ?? EMPTY_BALANCE) },
       ])
     ),
     ops: [],

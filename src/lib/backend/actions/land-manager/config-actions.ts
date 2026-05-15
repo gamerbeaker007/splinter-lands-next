@@ -4,9 +4,12 @@ import {
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
   DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES,
   DEFAULT_POST_HARVEST_STRATEGY,
+  DEFAULT_RENTAL_STRATEGY,
   LandManagerConfig,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
+  RentalConfig,
+  RentalStrategy,
 } from "@/types/landManager";
 import { getAuthStatus } from "../auth-actions";
 
@@ -32,7 +35,47 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       (row?.post_harvest_excluded_resources as string[]) ??
       DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES,
     mythic_fee_accepted: row?.mythic_fee_accepted ?? false,
+    rental: {
+      strategy:
+        (row?.rental_strategy as RentalStrategy) ?? DEFAULT_RENTAL_STRATEGY,
+      max_total_dec: row?.rental_max_total_dec ?? 0,
+      max_dec_per_day_per_worker: row?.rental_max_dec_per_day_per_worker ?? 0,
+      min_land_base_pp: row?.rental_min_land_base_pp ?? 0,
+    },
   };
+}
+
+export async function saveRentalConfig(
+  rental: RentalConfig
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    await prisma.landManagerConfig.upsert({
+      where: { player: auth.username },
+      update: {
+        rental_strategy: rental.strategy,
+        rental_max_total_dec: rental.max_total_dec,
+        rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
+        rental_min_land_base_pp: rental.min_land_base_pp,
+      },
+      create: {
+        player: auth.username,
+        enabled_regions: [],
+        rental_strategy: rental.strategy,
+        rental_max_total_dec: rental.max_total_dec,
+        rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
+        rental_min_land_base_pp: rental.min_land_base_pp,
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: msg };
+  }
 }
 
 export async function saveMakeHarvestableStrategies(

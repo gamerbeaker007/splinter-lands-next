@@ -348,15 +348,19 @@ model Log {
 }
 
 model LandManagerConfig {
-  player                      String   @id
-  enabled_regions             Int[]
-  make_harvestable_strategies String[] @default(["transfer", "swap", "buy_dec"])
-  fee_accepted                Boolean  @default(false)
-  post_harvest_strategy              String   @default("accumulate")
-  post_harvest_excluded_resources    String[] @default([])
-  mythic_fee_accepted                Boolean  @default(false)
-  created_at                  DateTime @default(now())
-  updated_at                  DateTime @updatedAt
+  player                          String   @id
+  enabled_regions                 Int[]
+  make_harvestable_strategies     String[] @default(["transfer", "swap", "buy_dec"])
+  fee_accepted                    Boolean  @default(false)
+  post_harvest_strategy           String   @default("accumulate")
+  post_harvest_excluded_resources String[] @default([])
+  mythic_fee_accepted             Boolean  @default(false)
+  rental_strategy                   String  @default("highest_pp_per_dec")
+  rental_max_total_dec              Int     @default(0)
+  rental_max_dec_per_day_per_worker Int     @default(0)
+  rental_min_land_base_pp           Int     @default(0)
+  created_at                      DateTime @default(now())
+  updated_at                      DateTime @updatedAt
 
   @@map("land_manager_config")
 }

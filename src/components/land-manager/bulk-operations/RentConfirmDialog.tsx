@@ -1,0 +1,184 @@
+"use client";
+
+import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
+import { WarningAmber } from "@mui/icons-material";
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  Stack,
+  Typography,
+} from "@mui/material";
+
+interface Props {
+  exec: RentalExecutionPlan;
+  busy: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function fmtDec(value: number): string {
+  return value.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+export default function RentConfirmDialog({
+  exec,
+  busy,
+  onConfirm,
+  onCancel,
+}: Props) {
+  const { plan, emptySlotsByDeed } = exec;
+  const { totals } = plan;
+
+  const slotShortages = plan.items.filter(
+    (item) =>
+      item.picks.length > 0 &&
+      (emptySlotsByDeed[item.plot.deed_uid]?.length ?? 0) < item.picks.length
+  );
+
+  const noPicks = totals.slots_filled === 0;
+
+  return (
+    <Dialog open onClose={busy ? undefined : onCancel} maxWidth="sm" fullWidth>
+      <DialogTitle>Confirm — Rent Empty Workers</DialogTitle>
+      <DialogContent dividers>
+        <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
+          <Chip
+            label={`${totals.plots_with_picks}/${totals.plots_total} plots`}
+            size="small"
+            variant="outlined"
+          />
+          <Chip
+            label={`${totals.slots_filled}/${totals.slots_total} slots`}
+            size="small"
+            variant="outlined"
+          />
+          <Chip
+            label={`${fmtDec(totals.total_dec)} DEC total`}
+            size="small"
+            color="primary"
+          />
+        </Stack>
+
+        {noPicks ? (
+          <Alert severity="info">
+            No cards selected for rental. Check your config or biome filters.
+          </Alert>
+        ) : (
+          <>
+            <Alert severity="warning" icon={<WarningAmber />} sx={{ mb: 2 }}>
+              You are about to spend{" "}
+              <strong>{fmtDec(totals.total_dec)} DEC</strong> to rent{" "}
+              <strong>{totals.slots_filled}</strong> card
+              {totals.slots_filled === 1 ? "" : "s"} for{" "}
+              <strong>
+                {plan.rental_days ?? "?"}{" "}
+                {plan.rental_days === 1 ? "day" : "days"}
+              </strong>
+              {plan.rental_days_source && (
+                <Typography
+                  variant="caption"
+                  display="block"
+                  color="text.secondary"
+                >
+                  ({plan.rental_days_source})
+                </Typography>
+              )}
+              Season rentals cannot be cancelled — the full amount is taken
+              immediately and distributed to sellers.
+            </Alert>
+
+            {slotShortages.length > 0 && (
+              <Alert severity="warning" sx={{ mb: 2 }}>
+                {slotShortages.length} plot
+                {slotShortages.length === 1 ? "" : "s"} will have rented cards
+                but not enough free slots to stake them — those plots will be
+                skipped during staking and you can stake the cards manually.
+              </Alert>
+            )}
+
+            <Stack gap={1} divider={<Divider />}>
+              {plan.items
+                .filter((i) => i.picks.length > 0)
+                .map((item) => (
+                  <Box key={item.plot.deed_uid}>
+                    <Stack
+                      direction="row"
+                      gap={1}
+                      alignItems="center"
+                      flexWrap="wrap"
+                    >
+                      <Typography
+                        variant="caption"
+                        fontWeight="bold"
+                        fontFamily="monospace"
+                      >
+                        R{item.plot.region_number} · T{item.plot.tract_number} ·
+                        P{item.plot.plot_number}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {item.plot.resource_symbol ?? "—"}
+                      </Typography>
+                      <Chip
+                        label={`${item.picks.length} card${item.picks.length === 1 ? "" : "s"}`}
+                        size="small"
+                        variant="outlined"
+                        sx={{ fontSize: "0.65rem", height: 18 }}
+                      />
+                      <Chip
+                        label={`${fmtDec(item.plot_total_dec)} DEC`}
+                        size="small"
+                        color="primary"
+                        variant="outlined"
+                        sx={{ fontSize: "0.65rem", height: 18 }}
+                      />
+                    </Stack>
+                    <Stack gap={0.25} mt={0.5}>
+                      {item.picks.map((pick) => (
+                        <Typography
+                          key={pick.market_id}
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                        >
+                          • {pick.card_name} lvl {pick.level} —{" "}
+                          {fmtDec(pick.total_dec)} DEC ({pick.rental_days}d ·{" "}
+                          {fmtDec(pick.buy_price_per_day)} DEC/d)
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Box>
+                ))}
+            </Stack>
+          </>
+        )}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onCancel} disabled={busy}>
+          Cancel
+        </Button>
+        <Button
+          variant="contained"
+          color="info"
+          disabled={busy || noPicks}
+          onClick={onConfirm}
+          startIcon={
+            busy ? <CircularProgress size={14} color="inherit" /> : null
+          }
+        >
+          {busy ? "Renting…" : "Confirm & Rent"}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}

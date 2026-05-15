@@ -51,6 +51,112 @@ export interface PostHarvestActionSummary {
   dec_amount: number;
 }
 
+// === Rental strategy ===
+
+export type RentalStrategy = "highest_pp_per_dec";
+export const DEFAULT_RENTAL_STRATEGY: RentalStrategy = "highest_pp_per_dec";
+export const RENTAL_STRATEGY_LABELS: Record<RentalStrategy, string> = {
+  highest_pp_per_dec: "Highest base_pp per DEC",
+};
+
+export interface RentalConfig {
+  strategy: RentalStrategy;
+  /** Absolute DEC budget across all picks for the whole run. 0 = no limit. */
+  max_total_dec: number;
+  /** Max DEC/day per single rented card. 0 = no limit. */
+  max_dec_per_day_per_worker: number;
+  /** Minimum land_base_pp per card. 0 = no minimum. */
+  min_land_base_pp: number;
+}
+
+export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
+  strategy: DEFAULT_RENTAL_STRATEGY,
+  max_total_dec: 0,
+  max_dec_per_day_per_worker: 0,
+  min_land_base_pp: 0,
+};
+
+// === Rental eligibility (computed from region data) ===
+
+export interface RentalBiomeModifiers {
+  red: number;
+  blue: number;
+  white: number;
+  black: number;
+  green: number;
+  gold: number;
+}
+
+export interface RentalEligiblePlot {
+  deed_uid: string;
+  plot_id: number;
+  plot_number: number;
+  tract_number: number;
+  region_uid: string;
+  region_number: number;
+  resource_symbol: string | null;
+  worker_count: number;
+  max_workers: number;
+  empty_slots: number;
+  is_powered: boolean;
+  biome_modifiers: RentalBiomeModifiers;
+}
+
+export interface RentalEligibilityResult {
+  eligible: RentalEligiblePlot[];
+  unpoweredSkipped: RentalEligiblePlot[];
+}
+
+// === Rental plan (dry run output) ===
+
+export interface RentalPlanPick {
+  market_id: string;
+  card_uid: string;
+  card_detail_id: number;
+  card_name: string;
+  edition: number;
+  foil: number;
+  gold: boolean;
+  level: number;
+  color: string;
+  biome_modifier: number;
+  land_base_pp: number;
+  effective_pp: number;
+  buy_price_per_day: number;
+  rental_days: number;
+  total_dec: number;
+  pp_per_dec: number;
+  seller: string;
+  expiration_date: string;
+  card_image_url: string;
+}
+
+export interface RentalPlanItem {
+  plot: RentalEligiblePlot;
+  picks: RentalPlanPick[];
+  slots_filled: number;
+  slots_skipped: number;
+  plot_total_dec: number;
+  skip_reason: string | null;
+}
+
+export interface RentalPlanTotals {
+  plots_total: number;
+  plots_with_picks: number;
+  slots_total: number;
+  slots_filled: number;
+  total_dec: number;
+}
+
+export interface RentalPlan {
+  config: RentalConfig;
+  items: RentalPlanItem[];
+  totals: RentalPlanTotals;
+  warnings: string[];
+  rental_days: number | null;
+  rental_days_source: string;
+}
+
 // === Config (DB — per player) ===
 
 export interface LandManagerConfig {
@@ -61,6 +167,7 @@ export interface LandManagerConfig {
   post_harvest_strategy: PostHarvestStrategy;
   post_harvest_excluded_resources: string[];
   mythic_fee_accepted: boolean;
+  rental: RentalConfig;
 }
 
 // === Mythic deeds (Keeps & Castles) ===

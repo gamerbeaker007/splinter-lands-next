@@ -63,7 +63,7 @@ export function buildHarvestOp(
  * legitimately reject a fair trade at 2.5.
  */
 const DEFAULT_SWAP_MAX_SLIPPAGE = 2.5;
-const FEE_TRANSFER_MAX_SLIPPAGE = 20;
+const FEE_TRANSFER_MAX_SLIPPAGE = 50;
 
 export interface SwapTokensOpInput {
   username: string;
@@ -205,6 +205,70 @@ export function buildSellResourceForDecOp(
     max_slippage: maxSlippage,
     resource_symbol: resourceSymbol,
   });
+}
+
+/**
+ * Rent cards from the market by `market_id`. Multiple market_ids can be bundled
+ * into a single op. Uses ACTIVE key (DEC moves out of the user's balance).
+ */
+export function buildMarketRentOp(
+  username: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [username],
+      required_posting_auths: [],
+      id: "sm_market_rent",
+      json: JSON.stringify({
+        currency: "DEC",
+        items: marketIds,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+export const STAKE_TYPE_UID_LAND_WORKER = "STK-LND-WKR";
+
+export interface StakeWorkerCard {
+  card_uid: string;
+  slot: number;
+}
+
+/**
+ * Stake cards as workers on a deed. One op per deed. Uses POSTING key.
+ */
+export function buildStakeWorkersOp(
+  username: string,
+  deedUid: string,
+  cards: StakeWorkerCard[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: { cards: [], items: [] },
+        stake: {
+          cards: cards.map((c) => ({
+            card_uid: c.card_uid,
+            stake_type_uid: STAKE_TYPE_UID_LAND_WORKER,
+            slot: String(c.slot),
+          })),
+          items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
 }
 
 /** Buy a resource by spending DEC from the trade hub in a region. */

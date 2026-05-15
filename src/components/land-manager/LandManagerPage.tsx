@@ -3,14 +3,17 @@
 import LoginComponent from "@/components/auth/LoginComponent";
 import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
+import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import MythicOverview from "@/components/land-manager/MythicOverview";
 import RegionOverview from "@/components/land-manager/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/RegionResourceSummary";
+import RentalOverview from "@/components/land-manager/RentalOverview";
 import TodayPanel from "@/components/land-manager/TodayPanel";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
   DEFAULT_POST_HARVEST_STRATEGY,
+  DEFAULT_RENTAL_CONFIG,
   LandManagerConfig,
   MythicDeed,
 } from "@/types/landManager";
@@ -76,6 +79,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
       post_harvest_excluded_resources: [],
       mythic_fee_accepted: false,
+      rental: DEFAULT_RENTAL_CONFIG,
     }
   );
   const [configOpen, setConfigOpen] = useState(false);
@@ -219,12 +223,23 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         hasMythics={
           enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
         }
+        rental={currentConfig.rental}
         onSuccess={() => setRegionRefreshKey((k) => k + 1)}
       />
 
       <TodayPanel refreshKey={regionRefreshKey} />
 
+      <AlertsPanel
+        enabledRegions={currentConfig.enabled_regions}
+        refreshKey={regionRefreshKey}
+      />
+
       <MythicOverview deeds={enabledMythicDeeds} />
+
+      <RentalOverview
+        enabledRegions={currentConfig.enabled_regions}
+        refreshKey={regionRefreshKey}
+      />
 
       {/* Per-region overview with harvestable resources */}
       <RegionOverview

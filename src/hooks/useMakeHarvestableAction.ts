@@ -52,19 +52,23 @@ export function useMakeHarvestableAction({
           getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
           getDecBalance(username),
         ]);
+        const EMPTY: Record<string, number> = {
+          GRAIN: 0,
+          WOOD: 0,
+          STONE: 0,
+          IRON: 0,
+          AURA: 0,
+        };
+        const storedBalances = Object.fromEntries(
+          visibleRegions.map((r) => [
+            r.region_uid,
+            { ...(balances[r.region_uid] ?? EMPTY) },
+          ])
+        );
         const adjustedBalances = Object.fromEntries(
           visibleRegions.map((r) => [
             r.region_uid,
-            effectiveBalance(
-              balances[r.region_uid] ?? {
-                GRAIN: 0,
-                WOOD: 0,
-                STONE: 0,
-                IRON: 0,
-                AURA: 0,
-              },
-              r
-            ),
+            effectiveBalance(balances[r.region_uid] ?? EMPTY, r),
           ])
         );
         // Fetch pools as late as possible — right before building ops —
@@ -74,7 +78,7 @@ export function useMakeHarvestableAction({
           visibleRegions,
           username,
           harvestable,
-          adjustedBalances,
+          { effective: adjustedBalances, stored: storedBalances },
           strategies,
           dec,
           pools
