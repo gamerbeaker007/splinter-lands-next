@@ -395,6 +395,14 @@ export async function getTodayLogs(): Promise<{
     transactions: string[];
     fee_transactions: string[];
   } | null;
+  rental: {
+    runs: number;
+    rented_count: number;
+    staked_count: number;
+    total_dec: number;
+    rent_transactions: string[];
+    stake_transactions: string[];
+  } | null;
 }> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -403,13 +411,14 @@ export async function getTodayLogs(): Promise<{
       makeHarvestable: null,
       postHarvest: null,
       mythicHarvest: null,
+      rental: null,
     };
   }
 
   const date = today();
   const player = auth.username;
 
-  const [harvest, makeHarvestable, postHarvest, mythicHarvest] =
+  const [harvest, makeHarvestable, postHarvest, mythicHarvest, rental] =
     await Promise.all([
       prisma.landHarvestLog.findUnique({
         where: { date_player: { date, player } },
@@ -421,6 +430,9 @@ export async function getTodayLogs(): Promise<{
         where: { date_player: { date, player } },
       }),
       prisma.landMythicHarvestLog.findUnique({
+        where: { date_player: { date, player } },
+      }),
+      prisma.landRentalLog.findUnique({
         where: { date_player: { date, player } },
       }),
     ]);
@@ -462,7 +474,67 @@ export async function getTodayLogs(): Promise<{
           fee_transactions: mythicHarvest.fee_transactions,
         }
       : null,
+    rental: rental
+      ? {
+          runs: rental.runs,
+          rented_count: rental.rented_count,
+          staked_count: rental.staked_count,
+          total_dec: rental.total_dec,
+          rent_transactions: rental.rent_transactions,
+          stake_transactions: rental.stake_transactions,
+        }
+      : null,
   };
+}
+
+// ── Rental log ───────────────────────────────────────────────────────────────
+
+export interface RecordRentalLogInput {
+  player: string;
+  rentedCount: number;
+  stakedCount: number;
+  totalDec: number;
+  rentTxIds: string[];
+  stakeTxIds: string[];
+}
+
+/** Persist a rent-and-stake run. Upserts onto the (date, player) row — repeated runs accumulate. */
+export async function recordRentalLog(
+  input: RecordRentalLogInput
+): Promise<void> {
+  const { player, rentedCount, stakedCount, totalDec, rentTxIds, stakeTxIds } =
+    input;
+  const date = today();
+
+  const existing = await prisma.landRentalLog.findUnique({
+    where: { date_player: { date, player } },
+  });
+
+  if (existing) {
+    await prisma.landRentalLog.update({
+      where: { date_player: { date, player } },
+      data: {
+        runs: { increment: 1 },
+        rented_count: { increment: rentedCount },
+        staked_count: { increment: stakedCount },
+        total_dec: { increment: totalDec },
+        rent_transactions: { push: rentTxIds },
+        stake_transactions: { push: stakeTxIds },
+      },
+    });
+  } else {
+    await prisma.landRentalLog.create({
+      data: {
+        date,
+        player,
+        rented_count: rentedCount,
+        staked_count: stakedCount,
+        total_dec: totalDec,
+        rent_transactions: rentTxIds,
+        stake_transactions: stakeTxIds,
+      },
+    });
+  }
 }
 
 // ── Acknowledge harvest ───────────────────────────────────────────────────────

@@ -420,3 +420,18 @@ model LandMythicHarvestLog {
   @@id([date, player])
   @@map("land_mythic_harvest_log")
 }
+
+model LandRentalLog {
+  date               DateTime @db.Date
+  player             String
+  runs               Int      @default(1)
+  rented_count       Int      @default(0)   // total cards rented across all runs today
+  staked_count       Int      @default(0)   // total cards staked across all runs today
+  total_dec          Float    @default(0)   // total DEC spent across all runs today
+  rent_transactions  String[]               // txIds from sm_market_rent ops
+  stake_transactions String[] @default([])  // txIds from staking ops
+  updated_at         DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_rental_log")
+}

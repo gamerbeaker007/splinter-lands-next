@@ -70,3 +70,17 @@ CREATE TABLE "land_mythic_harvest_log" (
 
     CONSTRAINT "land_mythic_harvest_log_pkey" PRIMARY KEY ("date", "player")
 );
+
+CREATE TABLE "land_rental_log" (
+    "date"              DATE         NOT NULL,
+    "player"            TEXT         NOT NULL,
+    "runs"              INTEGER      NOT NULL DEFAULT 1,
+    "rented_count"      INTEGER      NOT NULL DEFAULT 0,
+    "staked_count"      INTEGER      NOT NULL DEFAULT 0,
+    "total_dec"         DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "rent_transactions" TEXT[]       NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "stake_transactions" TEXT[]      NOT NULL DEFAULT ARRAY[]::TEXT[],
+    "updated_at"        TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "land_rental_log_pkey" PRIMARY KEY ("date", "player")
+);

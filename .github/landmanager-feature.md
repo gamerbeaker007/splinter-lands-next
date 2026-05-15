@@ -241,8 +241,9 @@ prisma/
 | **Action 2b: Harvest Mythics** | `useHarvestMythicsAction`, `HarvestMythicsRow`, `MythicConfirmDialog`, fee payment |
 | **Action 3: Pay Service Fee** | Integrated into Harvest and MythicHarvest flows (not standalone button) |
 | **Action 4: Process Resources** | `useProcessResourcesAction`, `ProcessResourcesRow`, accumulate/sell_for_dec/add_to_pool strategies. add_to_pool: two-phase sell→re-fetch→add_liquidity with exact spot price |
-| Today Panel | Daily activity log with tx verification (harvest, make-harvestable, mythics, post-harvest) |
-| DB schema | LandManagerConfig, LandHarvestLog, LandMakeHarvestableLog, LandPostHarvestLog, LandMythicHarvestLog |
+| **Action 5: Rent Workers** | `useRentEmptyWorkersAction`, `RentEmptyWorkersRow`, `RentConfirmDialog`, `RentDryRunDialog`. Dry-run preview, confirm dialog, two-phase broadcast (rent active key → stake posting key), dialog closes on completion, button label: "Confirm Rent and Stake" |
+| Today Panel | Daily activity log with tx verification (harvest, make-harvestable, mythics, post-harvest, **rent workers**) |
+| DB schema | LandManagerConfig, LandHarvestLog, LandMakeHarvestableLog, LandPostHarvestLog, LandMythicHarvestLog, **LandRentalLog** |
 | Dry Run dialog | Shows planned ops/log before broadcast |
 | Experimental feature warning | Alert in LandManagerPage |
 
@@ -250,7 +251,6 @@ prisma/
 
 | Item | Notes |
 |---|---|
-| **Action 5: Rent Workers** | No hook, no row, no action file. Needs worker selection algorithm (biome/bloodline scoring), budget caps, VAPI endpoints |
 | Run History panel | No `RunHistory` component, no `land_manager_run` DB table (individual day-level log tables exist instead) |
 | "Run All" one-click button | Phase 2 feature |
 
@@ -263,15 +263,11 @@ prisma/
 ### Known Issues / Open Items
 
 - [ ] Fee exemption logic: currently checks `shouldApplyFee(username, regionNumber)` but the exemption is `{region_id, tract_id}` — if in region 65 AND tract 3 only, fee should be skipped. Current logic may skip the whole region instead.
-- [ ] Harvest fee acknowledgment ("I acknowledge the fee" checkbox): `fee_accepted` is stored in config but the UX for "don't show this again" after accepting is TBD.
-- [ ] Action 5: exact VAPI worker rental endpoints (check swagger)
-- [ ] Action 5: worker selection algorithm (biome, bloodline, ability scoring)
-- [ ] Rate limiting / throttling for bulk VAPI calls at scale
+- [ ] Harvest fee acknowledgment: dialog has "Don't show this again" checkbox and calls `acknowledgeHarvest()` (saves `fee_accepted: true` to DB). But `LandManagerPage` never updates `currentConfig.fee_accepted` in local state after confirmation — dialog re-appears if Harvest is clicked again in the same session. Fix: propagate acknowledgment back into `currentConfig` state.
+- [ ] Rate limiting / throttling for bulk VAPI calls at scale — broadcast is already batched (4 ops/block, 3s delay between batches in `splBroadcast.ts`). VAPI read calls (`getBulkRegionData`) are unthrottled but acceptable at current region counts.
 
 ---
 
 ## Open Questions / TBD
 
-- [ ] Action 5: exact VAPI POST endpoints for worker rental (discover when implementing)
-- [ ] Action 5: worker scoring algorithm details
-- [ ] Whether "transfer between regions" (Action 2 strategy) is same-account only — currently assumed yes
+- [x] Transfer between regions (Action 2 strategy) is same-account only — confirmed. `buildSwapTokensOp` has no `toPlayer` in the transfer path; only fee payment ops set `toPlayer`.

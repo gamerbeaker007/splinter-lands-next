@@ -176,7 +176,7 @@ export default function RentConfirmDialog({
             busy ? <CircularProgress size={14} color="inherit" /> : null
           }
         >
-          {busy ? "Renting…" : "Confirm & Rent"}
+          {busy ? "Renting…" : "Confirm Rent and Stake"}
         </Button>
       </DialogActions>
     </Dialog>

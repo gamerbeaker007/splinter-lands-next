@@ -55,6 +55,8 @@ export default function TodayPanel({
       ...(data.postHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.fee_transactions ?? []),
+      ...(data.rental?.rent_transactions ?? []),
+      ...(data.rental?.stake_transactions ?? []),
     ];
     const unique = [...new Set(allTxIds)];
     if (unique.length === 0) return;
@@ -192,7 +194,8 @@ export default function TodayPanel({
     data?.harvest !== null ||
     data?.makeHarvestable !== null ||
     data?.postHarvest !== null ||
-    data?.mythicHarvest !== null;
+    data?.mythicHarvest !== null ||
+    data?.rental !== null;
 
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
@@ -403,6 +406,52 @@ export default function TodayPanel({
                 {txList([
                   ...data.mythicHarvest.transactions,
                   ...data.mythicHarvest.fee_transactions,
+                ])}
+              </Box>
+            )}
+
+            {data?.rental && (
+              <Box>
+                <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    Rent Workers · {data.rental.runs} run
+                    {data.rental.runs !== 1 ? "s" : ""}
+                  </Typography>
+                  {anyFailed([
+                    ...data.rental.rent_transactions,
+                    ...data.rental.stake_transactions,
+                  ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
+                  {allVerified([
+                    ...data.rental.rent_transactions,
+                    ...data.rental.stake_transactions,
+                  ]) && (
+                    <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
+                  )}
+                </Stack>
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  <Chip
+                    label={`Rented: ${data.rental.rented_count}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                  <Chip
+                    label={`Staked: ${data.rental.staked_count}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                  <Chip
+                    label={`${data.rental.total_dec.toFixed(3)} DEC`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                </Stack>
+                {txList([
+                  ...data.rental.rent_transactions,
+                  ...data.rental.stake_transactions,
                 ])}
               </Box>
             )}

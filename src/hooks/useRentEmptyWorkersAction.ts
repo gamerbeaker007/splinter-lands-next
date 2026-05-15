@@ -1,12 +1,13 @@
+import { recordRentalLog } from "@/lib/backend/actions/land-manager/log-actions";
+import {
+  getDecBalance,
+  lookupTransaction,
+} from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   getRentalDryRunPlan,
   getRentalExecutionPlan,
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
-import {
-  getDecBalance,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   buildMarketRentOp,
   buildStakeWorkersOp,
@@ -237,6 +238,15 @@ export function useRentEmptyWorkersAction({
         stakedCount,
         totalDec: exec.plan.totals.total_dec,
       });
+      setExecutionPlan(null);
+      recordRentalLog({
+        player: username,
+        rentedCount: allMarketIds.length,
+        stakedCount,
+        totalDec: exec.plan.totals.total_dec,
+        rentTxIds: rentRes.txIds,
+        stakeTxIds,
+      }).catch(() => {});
       if (skippedDeeds > 0) {
         setError(
           `${skippedDeeds} plot${skippedDeeds === 1 ? "" : "s"} skipped during staking (slot count mismatch). Stake remaining cards manually.`
