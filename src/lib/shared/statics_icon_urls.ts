@@ -32,6 +32,7 @@ export const resource_unbinding_epic_icon_url = `${WEB_URL}website/icons/unbind_
 export const resource_unbinding_legendary_icon_url = `${WEB_URL}website/icons/unbind_legendary.webp`;
 export const resource_polymorph_potion_icon_url = `${WEB_URL}website/icons/img_polymorph-potion_400.webp`;
 export const resource_capacity_flux_icon_url = `${WEB_URL}website/icons/img_capacity-flux_400.webp`;
+export const resource_lustrous_potion_icon_url = `${WEB_URL}website/icons/img_lustrous-potion_400.webp`;
 
 export const land_default_off_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
 export const land_default_on_icon_url_placeholder = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__On.svg`;

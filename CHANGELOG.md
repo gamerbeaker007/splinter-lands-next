@@ -14,10 +14,78 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.x.x] -
+## [v1.1.0] - 2026-05-16
+
+### Added
+
+#### Land Cards page (Player Overview)
+- **New "Land Cards" tab** added to Player Overview (`/player-overview/land-card`).
+  The Land Card Resources table — previously embedded at the bottom of the Player
+  Dashboard tab — now lives on its own dedicated page for cleaner navigation.
+
+#### Land Manager (new page)
+
+A full land management automation page, accessible to players logged in via Hive Keychain.
+Authenticated via HTTP-only JWT cookie — no GitHub OAuth required for this flow.
+
+**Actions**
+
+- **Action 1 — Harvest All** — harvests all harvestable plots across all configured regions
+  in one click. Displays per-region harvest results inline.
+- **Action 2 — Make Harvestable & Harvest** — for plots that are not yet harvestable,
+  automatically resolves the missing resource (transfer from another region, trade, or
+  buy with DEC — configurable priority order) and then harvests. Results shown inline.
+- **Action 2b — Harvest Castles & Keeps** — separately harvests TAX resource from
+  Castle (region-level) and Keep (tract-level) deeds across all enabled regions.
+- **Action 3 — Pay Service Fee** — calculates and transfers a configurable percentage of
+  harvested resources to a designated fee recipient. Region + tract exemptions are
+  supported (default: region 65 / tract 3, own keep exempt). Fee payment is skipped if
+  the player is the fee recipient themselves.
+- **Action 4 — Distribute Resources** — applies a per-resource strategy to harvested
+  amounts (minus service fee): sell for DEC, save, add 100 % to trade hub, or split
+  between selling and the hub at a configurable percentage.
+- **Action 5 — Rent Workers for Power Core Plots** — finds empty worker slots on
+  Power Core plots across enabled regions, selects the best-fit rentals within
+  configurable DEC-per-worker and total-budget limits, and submits rental transactions.
+
+**Config dialog**
+
+- Per-account config stored in DB (`land_manager_config` table).
+- Configurable fields: enabled regions, Action 2 strategy order, service fee % and
+  recipient, fee exemptions (region + tract pairs), Action 4 per-resource strategy,
+  hub split %, Action 5 max DEC per worker / min plot PP / total budget cap.
+
+**Region overview panel**
+
+- Displays current resource balances, harvestable status and cost/status per enabled region.
+
+**DB logging**
+
+- Harvest runs, fee payments, make-harvestable steps, mythic harvests and worker rentals
+  are all recorded to dedicated log tables for auditability and admin visibility.
+- `land_manager_run` table stores a per-run summary (status, actions run, harvested
+  totals, fees paid, DEC earned/spent, workers rented).
+
+**Admin page — Fees Received section**
+
+- New `FeesPaidSection` on the admin dashboard shows daily fee totals aggregated across
+  all players, with distinct contributor names.
+- Amounts displayed are the **received** amount (gross × 0.9) accounting for the 10 %
+  Splinterlands resource-transfer fee.
+
+#### Resource page updates
+- **Lustrous Potion as AURA price source** — Lustrous Potion (`LUSTROUS`) added as a
+  new AURA price source alongside Capacity Flux. Appears in the AURA Price Sources box,
+  the resource preset buttons, and the per-AURA unit price calculation.
+
+### Changed
+- **Wagon Repair Kit crafting costs updated** — costs revised to:
+  AURA 1,250 · Wood 17,500 · Stone 7,000 · Iron 1,750.
+  Updated in the resource conversion calculator preset, the player crafting overview, and
+  the AURA-per-unit price derivation.
 
 ### Fixes
-- **GFA multiplier** - For the planner the GFA is reduced from 5 to 1
+- **GFA multiplier** — For the planner the GFA is reduced from 5 to 1.
 
 ---
 

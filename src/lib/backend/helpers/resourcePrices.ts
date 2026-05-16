@@ -116,6 +116,7 @@ function computeAuraPriceSingleSource(
     },
     AURA_POLYMORPH: { detailId: "POLYMORPH", presetKey: "polymorph potion" },
     AURA_FLUX: { detailId: "FLUX", presetKey: "capacity flux" },
+    AURA_LUSTROUS: { detailId: "LUSTROUS", presetKey: "lustrous potion" },
   };
 
   const entry = map[token];
@@ -159,6 +160,7 @@ export async function getResourceDECPrices() {
     "AURA_UNBIND_CA_L",
     "AURA_POLYMORPH",
     "AURA_FLUX",
+    "AURA_LUSTROUS",
     "SPS",
     "VOUCHER",
   ]) {

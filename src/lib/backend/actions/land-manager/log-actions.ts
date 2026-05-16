@@ -178,14 +178,6 @@ export async function getFeesPaidByDay(limit = 30): Promise<FeesPaidDayRow[]> {
     if (paidAnything) bucket.contributors.add(row.player);
   }
 
-  console.log(
-    "Aggregated fees by day:",
-    [...byDate.entries()].map(([date, v]) => ({
-      date,
-      totals: v.totals,
-      contributors: [...v.contributors],
-    }))
-  );
   return [...byDate.entries()]
     .filter(([, v]) => Object.keys(v.totals).length > 0)
     .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))

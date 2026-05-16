@@ -10,8 +10,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
+
+/** Splinterlands charges 10 % on every resource transfer — the recipient receives 90 %. */
+const TRANSPORT_FEE = 0.1;
 
 const fmt = (n: number) =>
   n.toLocaleString(undefined, {
@@ -32,9 +36,22 @@ export default async function FeesPaidSection() {
   return (
     <Card sx={{ mt: 4 }}>
       <CardContent>
-        <Typography variant="h6" gutterBottom>
-          Fees Paid (daily totals)
-        </Typography>
+        <Tooltip
+          title="Amounts shown are what was received after the 10 % Splinterlands resource-transfer fee."
+          placement="top-start"
+        >
+          <Typography
+            variant="h6"
+            gutterBottom
+            sx={{
+              cursor: "help",
+              textDecoration: "underline dotted",
+              textUnderlineOffset: 3,
+            }}
+          >
+            Fees Received (daily totals)
+          </Typography>
+        </Tooltip>
 
         {rows.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
@@ -62,7 +79,8 @@ export default async function FeesPaidSection() {
                         {row.date}
                       </TableCell>
                       {symbols.map((sym) => {
-                        const amount = row.totals[sym] ?? 0;
+                        const gross = row.totals[sym] ?? 0;
+                        const received = gross * (1 - TRANSPORT_FEE);
                         return (
                           <TableCell
                             key={sym}
@@ -70,10 +88,10 @@ export default async function FeesPaidSection() {
                             sx={{
                               fontFamily: "monospace",
                               color:
-                                amount > 0 ? "text.primary" : "text.disabled",
+                                received > 0 ? "text.primary" : "text.disabled",
                             }}
                           >
-                            {amount > 0 ? fmt(amount) : "—"}
+                            {received > 0 ? fmt(received) : "—"}
                           </TableCell>
                         );
                       })}
