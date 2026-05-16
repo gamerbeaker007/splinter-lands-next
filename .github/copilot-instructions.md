@@ -158,3 +158,4 @@ export async function getCached{Resource}(force = false): Promise<Type> {
 - **Cron logs** write to `/var/log/cron.log` in container (mounted volume)
 - **Cache singleton** uses globalThis to persist across Next.js hot reloads
 - **Prisma migration files** are versioned; don't manually edit after creation
+- **CHANGELOG and package.json versions must stay in sync**: when adding a versioned CHANGELOG entry (e.g. `## [v1.2.0] - YYYY-MM-DD`), also update the `version` field in `package.json` to match (without the `v` prefix, e.g. `"version": "1.2.0"`)

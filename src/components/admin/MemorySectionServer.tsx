@@ -1,31 +1,15 @@
 import { getMemoryUsage } from "@/lib/backend/admin/adminActions";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
   Card,
   CardContent,
-  IconButton,
   LinearProgress,
-  Stack,
-  Tooltip,
   Typography,
 } from "@mui/material";
+import { SectionLabel } from "./SectionLabel";
 
 function formatMB(bytes: number) {
   return (bytes / 1024 / 1024).toFixed(2) + " MB";
-}
-
-function SectionLabel({ label, tooltip }: { label: string; tooltip: string }) {
-  return (
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <Typography variant="subtitle2">{label}</Typography>
-      <Tooltip title={tooltip}>
-        <IconButton size="small">
-          <HelpOutlineIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-    </Stack>
-  );
 }
 
 export default async function MemorySectionServer() {

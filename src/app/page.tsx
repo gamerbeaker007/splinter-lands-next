@@ -3,8 +3,8 @@
 import ArticleSection from "@/components/articles/ArticleSection";
 import DefaultPageTile from "@/components/DefaultPageTile";
 import PlayerPageTile from "@/components/PlayerPageTile";
-import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
+import Container from "@mui/material/Container";
 
 const temp_image =
   "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
@@ -48,6 +48,13 @@ export default function Home() {
           <DefaultPageTile
             title="Land Planning"
             href="/planning"
+            image={temp_image}
+          />
+        </Box>
+        <Box sx={defaultBoxStyle}>
+          <DefaultPageTile
+            title="Land Manager"
+            href="/land-manager"
             image={temp_image}
           />
         </Box>

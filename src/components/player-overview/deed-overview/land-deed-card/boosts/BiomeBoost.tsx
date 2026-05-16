@@ -1,48 +1,21 @@
 import React, { JSX } from "react";
 import { Box, Typography, Avatar, Stack } from "@mui/material";
-import {
-  death_element_icon_url,
-  dragon_element_icon_url,
-  earth_element_icon_url,
-  fire_element_icon_url,
-  life_element_icon_url,
-  water_element_icon_url,
-} from "@/lib/shared/statics_icon_urls";
+import { biomeColorMap, biomeIconMap, BiomeKey } from "@/lib/shared/biomeUtils";
 
 export type BiomeBoostsProps = {
-  modifiers: Partial<
-    Record<"red" | "blue" | "white" | "black" | "green" | "gold", number>
-  >;
-};
-
-const biomeMapper: Record<string, string> = {
-  red: fire_element_icon_url,
-  blue: water_element_icon_url,
-  white: life_element_icon_url,
-  black: death_element_icon_url,
-  green: earth_element_icon_url,
-  gold: dragon_element_icon_url,
-};
-
-const colorMap: Record<string, string> = {
-  red: "red",
-  blue: "blue",
-  white: "gray",
-  black: "purple",
-  green: "green",
-  gold: "gold",
+  modifiers: Partial<Record<BiomeKey, number>>;
 };
 
 export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
   const positives: JSX.Element[] = [];
   const negatives: JSX.Element[] = [];
 
-  Object.entries(colorMap).forEach(([biome, bgColor]) => {
-    const modifier = modifiers[biome as keyof typeof modifiers] || 0;
+  Object.entries(biomeColorMap).forEach(([biome, bgColor]) => {
+    const modifier = modifiers[biome as BiomeKey] || 0;
     if (modifier !== 0) {
       const percent = modifier * 100;
       const isPositive = percent > 0;
-      const biomeImage = biomeMapper[biome];
+      const biomeImage = biomeIconMap[biome as BiomeKey] || "";
 
       const block = (
         <Box key={biome} textAlign="center">

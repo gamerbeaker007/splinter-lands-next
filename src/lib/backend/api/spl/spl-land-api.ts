@@ -6,6 +6,14 @@ import { SplDeedProjectsResponse } from "@/types/deedProjects";
 import { Assets } from "@/types/planner/market/market";
 import { AuraPrices } from "@/types/price";
 import { ResourceSupplyResponse } from "@/types/resourceSupplyResponse";
+import {
+  SplHarvestableResource,
+  SplHarvestableResponse,
+  SplPlayerResourceBalance,
+  SplProductionOverviewRegion,
+  SplProductionOverviewResponse,
+  SplRegionOverviewResponse,
+} from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
 import { SplMarketAsset } from "@/types/splMarketAsset";
 import { SplTaxes } from "@/types/splTaxes";
@@ -190,6 +198,7 @@ export async function getAURAPrices(): Promise<AuraPrices[]> {
       "UNBIND_CA_L",
       "POLYMORPH",
       "FLUX",
+      "LUSTROUS",
     ];
 
     return assets
@@ -247,7 +256,7 @@ export async function fetchDeedProjects(
     params: { limit, offset },
   });
 
-  if (!res.data || res.data.status !== "success") {
+  if (res.data?.status !== "success") {
     throw new Error("Invalid response from Splinterlands API");
   }
 
@@ -314,7 +323,7 @@ export async function fetchDeedHarvestActions(
     params: { limit, offset },
   });
 
-  if (!res.data || res.data.status !== "success") {
+  if (res.data?.status !== "success") {
     throw new Error("Invalid response from Splinterlands API");
   }
 
@@ -363,4 +372,92 @@ export async function fetchAllDeedHarvestActions(
     status: "success",
     data: allActions,
   };
+}
+
+export async function fetchProductionOverview(
+  player: string,
+  jwtToken: string
+): Promise<SplProductionOverviewRegion[]> {
+  const url = `/land/resources/production/overview`;
+  const res = await splLandClient.get(url, {
+    params: { player },
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+
+  logger.info(`SPL API - fetch production overview for: ${player}`);
+  const response = res.data as SplProductionOverviewResponse;
+  if (!response) throw new Error("Invalid response from Splinterlands API");
+
+  return response.data.regions.items ?? [];
+}
+
+export async function fetchSplHarvestableResources(
+  player: string,
+  regionUid: string,
+  jwtToken: string
+): Promise<SplHarvestableResource[]> {
+  const url = `/land/resources/production/region/harvestable`;
+  const res = await splLandClient.get(url, {
+    params: { player, region_uid: regionUid },
+    headers: { Authorization: `Bearer ${jwtToken}` },
+  });
+
+  const response = res.data as SplHarvestableResponse;
+  if (!response?.data)
+    throw new Error("Invalid response from Splinterlands API");
+
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+export async function fetchSplPlayerResourceBalance(
+  player: string,
+  jwtToken: string
+): Promise<SplPlayerResourceBalance[]> {
+  const url = `/land/resources/owned`;
+  try {
+    const res = await splLandClient.get(url, {
+      params: { player },
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    const data = res.data?.data;
+    if (!data) return [];
+    return Array.isArray(data) ? (data as SplPlayerResourceBalance[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function fetchRegionResourceBalance(
+  player: string,
+  regionUid: string,
+  jwtToken: string
+): Promise<Record<string, number>> {
+  const url = `/land/resources/production/region/overview`;
+  const empty: Record<string, number> = {
+    GRAIN: 0,
+    WOOD: 0,
+    STONE: 0,
+    IRON: 0,
+    AURA: 0,
+    RESEARCH: 0,
+  };
+  try {
+    const res = await splLandClient.get(url, {
+      params: { player, region_uid: regionUid },
+      headers: { Authorization: `Bearer ${jwtToken}` },
+    });
+    const response = res.data as SplRegionOverviewResponse;
+    const data = response?.data;
+    if (!data) return empty;
+    return {
+      GRAIN: data.grain?.regional_grain ?? 0,
+      WOOD: data.wood ?? 0,
+      STONE: data.stone ?? 0,
+      IRON: data.iron ?? 0,
+      AURA: data.aura ?? 0,
+      RESEARCH: data.research?.current ?? 0,
+    };
+  } catch {
+    return empty;
+  }
 }

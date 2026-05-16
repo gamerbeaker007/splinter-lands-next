@@ -30,6 +30,7 @@ const AURA_SOURCES = [
   },
   { key: "AURA_POLYMORPH", label: "Polymorph Potion", icon: "POLYMORPH" },
   { key: "AURA_FLUX", label: "Capacity Flux", icon: "FLUX" },
+  { key: "AURA_LUSTROUS", label: "Lustrous Potion", icon: "LUSTROUS" },
 ];
 
 export default function AuraPriceBox({
@@ -99,7 +100,7 @@ export default function AuraPriceBox({
               )}
               <Avatar
                 src={RESOURCE_ICON_MAP["DEC"]}
-                alt="AURA"
+                alt="DEC"
                 sx={{ width: 25, height: 25 }}
               />
             </Box>

@@ -34,6 +34,11 @@ const pages = [
     label: "Deed History",
     path: "/player-overview/deed-history",
   },
+  {
+    key: "land-card",
+    label: "Land Cards",
+    path: "/player-overview/land-card",
+  },
 ];
 
 type PlayerOverviewLayoutProps = {

@@ -1,9 +1,9 @@
 // components/BiomeBoosts.stories.tsx
-import { DeedComplete } from "@/types/deed";
-import { SplCardDetails } from "@/types/splCardDetails";
 import Box from "@mui/material/Box";
 import { Meta, StoryObj } from "@storybook/react";
 import { LandDeedCard } from "./LandDeedCard";
+import { DeedComplete } from "../../../../types/deed";
+import { SplCardDetails } from "../../../../types/splCardDetails";
 
 const meta: Meta<typeof LandDeedCard> = {
   title: "Components/PlayerOverview/LandDeedCard/LandDeedCard",

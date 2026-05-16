@@ -11,6 +11,7 @@ export type PresetName =
   | "unbinding legendary"
   | "polymorph potion"
   | "capacity flux"
+  | "lustrous potion"
   | "clear";
 
 export const RESOURCE_PRESETS: Record<
@@ -20,10 +21,10 @@ export const RESOURCE_PRESETS: Record<
   wagons: {
     input: {
       GRAIN: 0,
-      WOOD: 40000,
-      STONE: 10000,
-      IRON: 4000,
-      AURA: 2500,
+      WOOD: 17500,
+      STONE: 7000,
+      IRON: 1750,
+      AURA: 1250,
       VOUCHER: 0,
     },
     decExtra: 0,
@@ -62,6 +63,10 @@ export const RESOURCE_PRESETS: Record<
   },
   "capacity flux": {
     input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 1000, VOUCHER: 0 },
+    decExtra: 0,
+  },
+  "lustrous potion": {
+    input: { GRAIN: 0, WOOD: 0, STONE: 0, IRON: 0, AURA: 100, VOUCHER: 0 },
     decExtra: 0,
   },
   clear: {

@@ -11,8 +11,10 @@ import {
   basePPMax,
   CardBloodline,
   CardElement,
+  CardFoil,
   cardFoilModifiers,
   cardFoilModifiersLandCard,
+  CardRarity,
   cardSetModifiers,
   deedResourceBoostRules,
   DeedType,
@@ -32,6 +34,7 @@ import {
 import { Prices } from "@/types/price";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
+import { CardSetNameLandValid } from "@/types/editions";
 
 export function terrainBonusPct(
   terrain: DeedType,
@@ -116,23 +119,29 @@ export function computeSlot(
   };
 }
 
-function calcBasePP(slot: SlotInput) {
-  const foilId = slot.foil === "regular" ? 0 : 1; // for other variant use gold foil
-  const maxBasePP =
-    basePPMax[slot.rarity][slot.foil === "regular" ? "regular" : "gold"];
-  const maxBCX = determineCardMaxBCX(slot.set, slot.rarity, foilId);
+/**
+ * Land base PP per BCX for a card type — constant across BCX/level. Useful for
+ * estimating PP/DEC at the grouped market level (where we don't have bcx yet).
+ */
+export function calcLandPpPerBcx(
+  set: CardSetNameLandValid,
+  rarity: CardRarity,
+  foil: CardFoil
+): number {
+  const foilId = foil === "regular" ? 0 : 1; // for other variant use gold foil
+  const maxBasePP = basePPMax[rarity][foil === "regular" ? "regular" : "gold"];
+  const maxBCX = determineCardMaxBCX(set, rarity, foilId);
   const ppPerBcx = maxBasePP / maxBCX;
+  const isLandCard = set === "land";
+  const setModifier = cardSetModifiers[set] ?? 1;
+  const foilModifier = isLandCard
+    ? (cardFoilModifiersLandCard[foil] ?? 1)
+    : (cardFoilModifiers[foil] ?? 1);
+  return ppPerBcx * setModifier * foilModifier;
+}
 
-  const isLandCard = slot.set === "land";
-  const setModifier = cardSetModifiers[slot.set] ?? 1;
-
-  let foilModifier: number;
-  if (isLandCard) {
-    foilModifier = cardFoilModifiersLandCard[slot.foil] ?? 1;
-  } else {
-    foilModifier = cardFoilModifiers[slot.foil] ?? 1;
-  }
-  return ppPerBcx * slot.bcx * setModifier * foilModifier;
+function calcBasePP(slot: SlotInput) {
+  return calcLandPpPerBcx(slot.set, slot.rarity, slot.foil) * slot.bcx;
 }
 
 export function calcTotalPP(plotPlannerData: PlotPlannerData) {

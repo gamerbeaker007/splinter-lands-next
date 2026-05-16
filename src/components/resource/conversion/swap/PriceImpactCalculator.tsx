@@ -1,351 +1,503 @@
 "use client";
 
 import {
-  PriceImpactResult,
-  calculatePriceImpact,
-} from "@/lib/shared/priceUtils";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+  computeInputForDesiredOutput,
+  computeSwapAmounts,
+  poolFor,
+} from "@/lib/shared/landManagerUtils";
+import { calculatePriceImpact } from "@/lib/shared/priceUtils";
+import {
+  RESOURCE_ICON_MAP,
+  TRADE_HUB_FEE,
+  TRADE_HUB_FEE_PER_HOP,
+} from "@/lib/shared/statics";
 import { SplLandPool } from "@/types/spl/landPools";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import {
-  Alert,
   Box,
   Card,
   CardContent,
+  Chip,
+  Divider,
   FormControl,
   InputLabel,
   MenuItem,
+  Paper,
   Select,
+  Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
+
+const SINGLE_HOP_FEE_PCT = Math.round((1 - TRADE_HUB_FEE) * 100);
+const PER_HOP_FEE_PCT = Math.round((1 - TRADE_HUB_FEE_PER_HOP) * 100);
+
+interface SwapResult {
+  hops: HopDetail[];
+  payResult: number;
+  receiveResult: number;
+}
+
+// Pure forward calculation: given a pay amount, returns hop details and the receive amount.
+// Direction-independent — "receive" mode just resolves the required pay amount first, then calls this.
+function computeForwardHops(
+  pools: SplLandPool[],
+  fromSymbol: string,
+  toSymbol: string,
+  payAmount: number
+): SwapResult | null {
+  const hops: HopDetail[] = [];
+
+  if (fromSymbol === toSymbol) {
+    const { out_amount_2 } = computeSwapAmounts(
+      pools,
+      fromSymbol,
+      toSymbol,
+      payAmount
+    );
+    hops.push({
+      label: `${fromSymbol} → ${toSymbol} (transfer)`,
+      inputAmount: payAmount,
+      inputSymbol: fromSymbol,
+      outputAmount: out_amount_2,
+      outputSymbol: toSymbol,
+      priceImpact: 0,
+      feePct: SINGLE_HOP_FEE_PCT,
+    });
+    return { hops, payResult: payAmount, receiveResult: out_amount_2 };
+  }
+
+  if (fromSymbol === "DEC") {
+    const pool = poolFor(pools, toSymbol);
+    if (!pool) return null;
+    const r = calculatePriceImpact(
+      payAmount,
+      Number.parseFloat(pool.dec_quantity),
+      Number.parseFloat(pool.resource_quantity)
+    );
+    hops.push({
+      label: `DEC → ${toSymbol}`,
+      inputAmount: payAmount,
+      inputSymbol: "DEC",
+      outputAmount: r.amountReceived,
+      outputSymbol: toSymbol,
+      priceImpact: r.priceImpact,
+      feePct: SINGLE_HOP_FEE_PCT,
+    });
+    return { hops, payResult: payAmount, receiveResult: r.amountReceived };
+  }
+
+  if (toSymbol === "DEC") {
+    const pool = poolFor(pools, fromSymbol);
+    if (!pool) return null;
+    const r = calculatePriceImpact(
+      payAmount,
+      Number.parseFloat(pool.resource_quantity),
+      Number.parseFloat(pool.dec_quantity)
+    );
+    hops.push({
+      label: `${fromSymbol} → DEC`,
+      inputAmount: payAmount,
+      inputSymbol: fromSymbol,
+      outputAmount: r.amountReceived,
+      outputSymbol: "DEC",
+      priceImpact: r.priceImpact,
+      feePct: SINGLE_HOP_FEE_PCT,
+    });
+    return { hops, payResult: payAmount, receiveResult: r.amountReceived };
+  }
+
+  // resource → DEC → resource: per-hop fee applied on each hop
+  const fromPool = poolFor(pools, fromSymbol);
+  const toPool = poolFor(pools, toSymbol);
+  if (!fromPool || !toPool) return null;
+  const hop1 = calculatePriceImpact(
+    payAmount,
+    Number.parseFloat(fromPool.resource_quantity),
+    Number.parseFloat(fromPool.dec_quantity),
+    TRADE_HUB_FEE_PER_HOP
+  );
+  hops.push({
+    label: `Hop 1: ${fromSymbol} → DEC`,
+    inputAmount: payAmount,
+    inputSymbol: fromSymbol,
+    outputAmount: hop1.amountReceived,
+    outputSymbol: "DEC",
+    priceImpact: hop1.priceImpact,
+    feePct: PER_HOP_FEE_PCT,
+  });
+  const hop2 = calculatePriceImpact(
+    hop1.amountReceived,
+    Number.parseFloat(toPool.dec_quantity),
+    Number.parseFloat(toPool.resource_quantity),
+    TRADE_HUB_FEE_PER_HOP
+  );
+  hops.push({
+    label: `Hop 2: DEC → ${toSymbol}`,
+    inputAmount: hop1.amountReceived,
+    inputSymbol: "DEC",
+    outputAmount: hop2.amountReceived,
+    outputSymbol: toSymbol,
+    priceImpact: hop2.priceImpact,
+    feePct: PER_HOP_FEE_PCT,
+  });
+  return { hops, payResult: payAmount, receiveResult: hop2.amountReceived };
+}
 
 interface Props {
   data: SplLandPool[];
   timeStamp: string | null;
 }
 
-const emptyPriceImpactResult: PriceImpactResult = {
-  amountReceived: 0,
-  priceImpact: 0,
-};
+type Direction = "pay" | "receive";
+
+interface HopDetail {
+  label: string;
+  inputAmount: number;
+  inputSymbol: string;
+  outputAmount: number;
+  outputSymbol: string;
+  priceImpact: number;
+  // Fee taken on this hop, expressed as a percent. 0 = no fee.
+  feePct: number;
+}
+
+const fmt = (n: number, d = 3) =>
+  n.toLocaleString(undefined, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: d,
+  });
+
+const impactColor = (pct: number) =>
+  pct > 5 ? "error.main" : pct > 1 ? "warning.main" : "success.main";
+
+function ResourceIcon({
+  symbol,
+  size = 32,
+}: {
+  symbol: string;
+  size?: number;
+}) {
+  const src = RESOURCE_ICON_MAP[symbol];
+  if (!src) return <Typography variant="caption">{symbol}</Typography>;
+  return <Image src={src} alt={symbol} width={size} height={size} />;
+}
+
+function PoolInfo({ pool, label }: { pool: SplLandPool; label: string }) {
+  const dR = Number.parseFloat(pool.dec_quantity);
+  const rR = Number.parseFloat(pool.resource_quantity);
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary" fontWeight="bold">
+        {label}
+      </Typography>
+      <Stack direction="row" gap={3} mt={0.5}>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            DEC reserve
+          </Typography>
+          <Typography variant="body2" fontFamily="monospace">
+            {fmt(dR, 0)}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            {pool.token_symbol} reserve
+          </Typography>
+          <Typography variant="body2" fontFamily="monospace">
+            {fmt(rR, 0)}
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="caption" color="text.secondary">
+            Price
+          </Typography>
+          <Typography variant="body2" fontFamily="monospace">
+            {(dR / rR).toFixed(4)} DEC/{pool.token_symbol}
+          </Typography>
+        </Box>
+      </Stack>
+    </Box>
+  );
+}
+
+function HopTable({ hops }: { hops: HopDetail[] }) {
+  if (hops.length === 0) return null;
+  return (
+    <Paper variant="outlined">
+      <Table size="small">
+        <TableHead>
+          <TableRow>
+            <TableCell>Step</TableCell>
+            <TableCell align="right">Input</TableCell>
+            <TableCell align="right">Output</TableCell>
+            <TableCell align="right">Price impact</TableCell>
+            <TableCell>Fee</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {hops.map((h) => (
+            <TableRow key={h.label}>
+              <TableCell>
+                <Typography variant="caption">{h.label}</Typography>
+              </TableCell>
+              <TableCell align="right" sx={{ fontFamily: "monospace" }}>
+                {fmt(h.inputAmount)} {h.inputSymbol}
+              </TableCell>
+              <TableCell align="right" sx={{ fontFamily: "monospace" }}>
+                {fmt(h.outputAmount)} {h.outputSymbol}
+              </TableCell>
+              <TableCell align="right">
+                <Typography
+                  variant="caption"
+                  sx={{ color: impactColor(h.priceImpact), fontWeight: "bold" }}
+                >
+                  {h.priceImpact.toFixed(2)}%
+                </Typography>
+              </TableCell>
+              <TableCell>
+                {h.feePct > 0 ? (
+                  <Chip
+                    label={`${h.feePct}%`}
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                  />
+                ) : (
+                  <Chip label="—" size="small" variant="outlined" />
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </Paper>
+  );
+}
 
 export function PriceImpactCalculator({ data, timeStamp }: Props) {
-  const [selectedResource, setSelectedResource] = useState<string>("");
-  const [decAmount, setDecAmount] = useState<string>("");
-  const [resourceAmount, setResourceAmount] = useState<string>("");
-  const [tokenSymbol, setTokenSymbol] = useState<string>("");
-  const [amountReceived, setAmountReceived] = useState<number>(0);
+  const resourceSymbols = data.map((p) => p.token_symbol);
+  const allSymbols = ["DEC", ...resourceSymbols];
 
-  // Select first resource on load
-  useEffect(() => {
-    (async () => {
-      if (data.length > 0 && !selectedResource) {
-        setSelectedResource(data[0].token_symbol);
-      }
-    })();
-  }, [data, selectedResource]);
+  const [fromSymbol, setFromSymbol] = useState(resourceSymbols[0] ?? "DEC");
+  const [toSymbol, setToSymbol] = useState("DEC");
+  const [payAmount, setPayAmount] = useState("");
+  const [receiveAmount, setReceiveAmount] = useState("");
+  const [direction, setDirection] = useState<Direction>("pay");
 
-  // Get the selected resource's data
-  const selectedResourceData = useMemo(() => {
-    return data.find((d: SplLandPool) => d.token_symbol === selectedResource);
-  }, [data, selectedResource]);
+  const compute = useMemo((): SwapResult | null => {
+    const amount = Number.parseFloat(
+      direction === "pay" ? payAmount : receiveAmount
+    );
+    if (!amount || amount <= 0) return null;
 
-  // Calculate price impact based on which field is filled
-  const priceImpactResult = useMemo((): PriceImpactResult => {
-    if (!selectedResourceData) return emptyPriceImpactResult;
-
-    const decQuantity = parseFloat(selectedResourceData.dec_quantity);
-    const resourceQuantity = parseFloat(selectedResourceData.resource_quantity);
-
-    const parsedDecAmount = parseFloat(decAmount);
-    if (decAmount && !isNaN(parsedDecAmount) && parsedDecAmount > 0) {
-      return calculatePriceImpact(
-        parsedDecAmount,
-        decQuantity,
-        resourceQuantity
-      );
+    if (direction === "pay") {
+      return computeForwardHops(data, fromSymbol, toSymbol, amount);
     }
 
-    const parsedResourceAmount = parseFloat(resourceAmount);
-    if (
-      resourceAmount &&
-      !isNaN(parsedResourceAmount) &&
-      parsedResourceAmount > 0
-    ) {
-      return calculatePriceImpact(
-        parsedResourceAmount,
-        resourceQuantity,
-        decQuantity
-      );
-    }
+    // "receive" mode: invert to find the required pay amount, then run forward for hop details
+    const needed = computeInputForDesiredOutput(
+      data,
+      fromSymbol,
+      toSymbol,
+      amount
+    );
+    if (!Number.isFinite(needed)) return null;
+    return computeForwardHops(data, fromSymbol, toSymbol, needed);
+  }, [fromSymbol, toSymbol, payAmount, receiveAmount, direction, data]);
 
-    return emptyPriceImpactResult;
-  }, [selectedResourceData, decAmount, resourceAmount]);
-
-  // Update resource amount when DEC amount changes
-  const handleDecAmountChange = (value: string) => {
-    setDecAmount(value);
-    const parsedValue = parseFloat(value);
-
-    if (
-      value &&
-      !isNaN(parsedValue) &&
-      parsedValue > 0 &&
-      selectedResourceData
-    ) {
-      const decQuantity = parseFloat(selectedResourceData.dec_quantity);
-      const resourceQuantity = parseFloat(
-        selectedResourceData.resource_quantity
-      );
-      const result = calculatePriceImpact(
-        parsedValue,
-        decQuantity,
-        resourceQuantity
-      );
-      if (result.amountReceived > 0) {
-        setResourceAmount(result.amountReceived.toFixed(3));
-        setTokenSymbol(selectedResourceData.token_symbol);
-        setAmountReceived(result.amountReceived);
-      }
-    } else {
-      setResourceAmount("");
-    }
+  const handlePayChange = (val: string) => {
+    setPayAmount(val);
+    setDirection("pay");
+    setReceiveAmount("");
   };
 
-  // Update DEC amount when resource amount changes
-  const handleResourceAmountChange = (value: string) => {
-    setResourceAmount(value);
-    const parsedValue = parseFloat(value);
-
-    if (
-      value &&
-      !isNaN(parsedValue) &&
-      parsedValue > 0 &&
-      selectedResourceData
-    ) {
-      const decQuantity = parseFloat(selectedResourceData.dec_quantity);
-      const resourceQuantity = parseFloat(
-        selectedResourceData.resource_quantity
-      );
-      const result = calculatePriceImpact(
-        parsedValue,
-        resourceQuantity,
-        decQuantity
-      );
-      if (result.amountReceived > 0) {
-        setDecAmount(result.amountReceived.toFixed(3));
-        setTokenSymbol("DEC");
-        setAmountReceived(result.amountReceived);
-      }
-    } else {
-      setDecAmount("");
-    }
+  const handleReceiveChange = (val: string) => {
+    setReceiveAmount(val);
+    setDirection("receive");
+    setPayAmount("");
   };
 
-  const formatNumber = (num: number, decimals: number = 2): string => {
-    return num.toLocaleString(undefined, {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    });
+  const swapFromTo = () => {
+    const prevFrom = fromSymbol;
+    setFromSymbol(toSymbol);
+    setToSymbol(prevFrom);
+    setPayAmount("");
+    setReceiveAmount("");
   };
+
+  const fromPool = fromSymbol === "DEC" ? null : poolFor(data, fromSymbol);
+  const toPool = toSymbol === "DEC" ? null : poolFor(data, toSymbol);
 
   return (
-    <Box mt={3} minWidth={200} maxWidth={500}>
+    <Box mt={3} maxWidth={700}>
       <Typography variant="h5" gutterBottom>
-        Liquidity Pool Price Impact Calculator
+        Trade Hub Swap Calculator
       </Typography>
-
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Calculate the price impact when swapping DEC for resources in the
-        liquidity pools. This uses the constant product formula (x × y = k) used
-        by Uniswap and similar AMMs.
-      </Alert>
 
       <Card variant="outlined">
         <CardContent>
-          <Box display="flex" flexDirection="column" gap={3}>
-            {/* Resource Selection */}
-            <FormControl fullWidth>
-              <InputLabel>Select Pool</InputLabel>
-              <Select
-                value={selectedResource}
-                label="Select Pool"
-                onChange={(e) => {
-                  setSelectedResource(e.target.value);
-                  setDecAmount("");
-                  setResourceAmount("");
-                }}
-              >
-                {data.map((item) => (
-                  <MenuItem key={item.token_symbol} value={item.token_symbol}>
-                    <Box display="flex" alignItems="center" gap={1}>
-                      <Image
-                        src={RESOURCE_ICON_MAP["DEC"]}
-                        alt="DEC"
-                        width={24}
-                        height={24}
-                      />
-                      <Typography>-</Typography>
-                      <Image
-                        src={RESOURCE_ICON_MAP[item.token_symbol]}
-                        alt={item.token_symbol}
-                        width={24}
-                        height={24}
-                      />
-                      <Typography>{item.token_symbol}</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-
-            {/* Pool Information */}
-            {selectedResourceData && (
-              <Box>
-                <Typography variant="h6" gutterBottom>
-                  Current Pool Status
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Last Updated:</strong>{" "}
-                  {new Date(
-                    timeStamp ? parseInt(timeStamp) : 0
-                  ).toLocaleString()}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>DEC in Pool:</strong>{" "}
-                  {formatNumber(parseFloat(selectedResourceData.dec_quantity))}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>{selectedResourceData.token_symbol} in Pool:</strong>{" "}
-                  {formatNumber(
-                    parseFloat(selectedResourceData.resource_quantity)
-                  )}
-                </Typography>
-                <Typography variant="body2">
-                  <strong>Market Price:</strong> 1{" "}
-                  {selectedResourceData.token_symbol} ={" "}
-                  {formatNumber(
-                    parseFloat(selectedResourceData.dec_quantity) /
-                      parseFloat(selectedResourceData.resource_quantity),
-                    4
-                  )}{" "}
-                  DEC
-                </Typography>
-              </Box>
-            )}
-
-            {/* Swap Amount Inputs */}
-            {selectedResourceData && (
-              <Box display="flex" flexDirection="row" flexWrap={"wrap"} gap={2}>
-                <Box
-                  display={"flex"}
-                  flexDirection={"column"}
-                  alignItems="center"
-                  justifyContent="center"
-                  maxWidth={190}
-                >
-                  <Image
-                    src={RESOURCE_ICON_MAP["DEC"]}
-                    alt="DEC"
-                    width={80}
-                    height={80}
-                  />
-                  <TextField
-                    label="DEC Amount"
-                    type="text"
-                    value={decAmount}
-                    onChange={(e) => handleDecAmountChange(e.target.value)}
-                    slotProps={{
-                      input: {
-                        inputProps: {
-                          inputMode: "decimal",
-                        },
-                      },
-                    }}
-                  />
-                </Box>
-                <Box display="flex" alignItems="center" justifyContent="center">
-                  <SwapHorizIcon sx={{ width: 50, height: 50 }} />
-                </Box>
-                <Box
-                  display={"flex"}
-                  flexDirection={"column"}
-                  alignItems="center"
-                  justifyContent="center"
-                  maxWidth={190}
-                >
-                  {" "}
-                  <Image
-                    src={RESOURCE_ICON_MAP[selectedResourceData.token_symbol]}
-                    alt={selectedResourceData.token_symbol}
-                    width={80}
-                    height={80}
-                  />
-                  <TextField
-                    label={`${selectedResourceData.token_symbol} Amount`}
-                    type="text"
-                    value={resourceAmount}
-                    onChange={(e) => handleResourceAmountChange(e.target.value)}
-                    fullWidth
-                    slotProps={{
-                      input: {
-                        inputProps: {
-                          inputMode: "decimal",
-                        },
-                      },
-                    }}
-                  />
-                </Box>
-              </Box>
-            )}
-
-            {/* Results */}
-
-            <Box
-              sx={{
-                p: 2,
-                bgcolor: "background.paper",
-                borderRadius: 1,
-                border: "1px solid",
-                borderColor: "divider",
-              }}
-            >
-              <Typography variant="h6" gutterBottom>
-                Swap Results
-              </Typography>
-
-              <Box display="flex" flexDirection="column" gap={1}>
-                <Box mb={1} display={"flex"} flexDirection={"row"} gap={1}>
-                  <Typography variant="body2">
-                    <strong>You will receive:</strong>{" "}
-                    {formatNumber(amountReceived)} {tokenSymbol}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    (incl fee 10%)
-                  </Typography>
-                </Box>
-
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: "bold",
-                    color:
-                      priceImpactResult.priceImpact > 5
-                        ? "error.main"
-                        : priceImpactResult.priceImpact > 1
-                          ? "warning.main"
-                          : "success.main",
+          <Stack spacing={3}>
+            {/* From / To selectors */}
+            <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>From</InputLabel>
+                <Select
+                  value={fromSymbol}
+                  label="From"
+                  onChange={(e) => {
+                    setFromSymbol(e.target.value);
+                    setPayAmount("");
+                    setReceiveAmount("");
                   }}
                 >
-                  <strong>Price Impact:</strong>{" "}
-                  {formatNumber(priceImpactResult.priceImpact, 2)}%
+                  {allSymbols.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      <Stack direction="row" gap={1} alignItems="center">
+                        <ResourceIcon symbol={s} size={20} />
+                        <span>{s}</span>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <Tooltip title="Swap direction">
+                <Box sx={{ cursor: "pointer" }} onClick={swapFromTo}>
+                  <SwapHorizIcon />
+                </Box>
+              </Tooltip>
+
+              <FormControl size="small" sx={{ minWidth: 140 }}>
+                <InputLabel>To</InputLabel>
+                <Select
+                  value={toSymbol}
+                  label="To"
+                  onChange={(e) => {
+                    setToSymbol(e.target.value);
+                    setPayAmount("");
+                    setReceiveAmount("");
+                  }}
+                >
+                  {allSymbols.map((s) => (
+                    <MenuItem key={s} value={s}>
+                      <Stack direction="row" gap={1} alignItems="center">
+                        <ResourceIcon symbol={s} size={20} />
+                        <span>{s}</span>
+                      </Stack>
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Stack>
+
+            {/* Amount inputs */}
+            <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Pay ({fromSymbol})
                 </Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={
+                    direction === "pay"
+                      ? payAmount
+                      : (compute?.payResult?.toFixed(3) ?? "")
+                  }
+                  onChange={(e) => handlePayChange(e.target.value)}
+                  slotProps={{
+                    input: { inputProps: { inputMode: "decimal" } },
+                  }}
+                  sx={{ display: "block", mt: 0.5 }}
+                  placeholder="0"
+                />
               </Box>
-            </Box>
-          </Box>
+              <Typography sx={{ mt: 2.5 }}>→</Typography>
+              <Box>
+                <Typography variant="caption" color="text.secondary">
+                  Receive ({toSymbol})
+                </Typography>
+                <TextField
+                  size="small"
+                  type="number"
+                  value={
+                    direction === "receive"
+                      ? receiveAmount
+                      : (compute?.receiveResult?.toFixed(3) ?? "")
+                  }
+                  onChange={(e) => handleReceiveChange(e.target.value)}
+                  slotProps={{
+                    input: { inputProps: { inputMode: "decimal" } },
+                  }}
+                  sx={{ display: "block", mt: 0.5 }}
+                  placeholder="0"
+                />
+              </Box>
+            </Stack>
+
+            {/* Hop breakdown */}
+            {compute && compute.hops.length > 0 && (
+              <>
+                <Divider />
+                <Box>
+                  <Typography variant="subtitle2" mb={1}>
+                    Swap details
+                  </Typography>
+                  <HopTable hops={compute.hops} />
+                </Box>
+              </>
+            )}
+
+            {/* Pool state */}
+            {(fromPool || toPool) && (
+              <>
+                <Divider />
+                <Box>
+                  <Typography variant="subtitle2" mb={1}>
+                    Pool state
+                    {timeStamp && (
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                        ml={1}
+                      >
+                        · updated{" "}
+                        {new Date(parseInt(timeStamp)).toLocaleString()}
+                      </Typography>
+                    )}
+                  </Typography>
+                  <Stack gap={2}>
+                    {fromPool && (
+                      <PoolInfo
+                        pool={fromPool}
+                        label={`${fromSymbol}/DEC pool`}
+                      />
+                    )}
+                    {toPool && toPool !== fromPool && (
+                      <PoolInfo pool={toPool} label={`${toSymbol}/DEC pool`} />
+                    )}
+                  </Stack>
+                </Box>
+              </>
+            )}
+
+            {/* No result warning */}
+            {(payAmount || receiveAmount) && !compute && (
+              <Typography variant="body2" color="error">
+                Pool cannot supply the requested amount.
+              </Typography>
+            )}
+          </Stack>
         </CardContent>
       </Card>
     </Box>

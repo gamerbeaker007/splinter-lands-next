@@ -1,8 +1,13 @@
 import type { NextConfig } from "next";
+import { name, version } from "./package.json";
 
 const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
+  env: {
+    NEXT_PUBLIC_APP_NAME: name,
+    NEXT_PUBLIC_APP_VERSION: version,
+  },
   images: {
     remotePatterns: [
       {

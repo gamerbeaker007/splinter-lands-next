@@ -1,5 +1,22 @@
 import { LoginResponse } from "@/types/auth/auth";
 import { SplBalance } from "@/types/spl/balance";
+import { SplInventory } from "@/types/spl/inventory";
+import {
+  SplMarketListing,
+  SplMarketRentGrouped,
+} from "@/types/spl/marketRental";
+import { SplSettingsResponse } from "@/types/spl/settings";
+import type {
+  AddLiquidityTrxData,
+  HarvestAllTrxData,
+  MarketRentTrxData,
+  SplTrxResult,
+  StakeChangeTrxData,
+  SwapTokensOpInput,
+  SwapTokensTrxData,
+  TaxCollectionTrxData,
+  TrxLookupOutcome,
+} from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketCardData } from "@/types/splMarketCardData copy";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
@@ -10,7 +27,6 @@ import * as rax from "retry-axios";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
-import { SplInventory } from "@/types/spl/inventory";
 
 const splBaseClient = axios.create({
   baseURL: "https://api.splinterlands.com",
@@ -40,7 +56,7 @@ export async function getAuthorizationHeader(
       logger.info(`Using Bearer token for authenticated request`);
     }
 
-    return headers ? headers : undefined;
+    return headers || undefined;
   } catch (error) {
     logger.warn(`Failed to read auth token from cookies: ${error}`);
     return undefined;
@@ -70,9 +86,7 @@ export async function splLogin(
       if (response.data.error) {
         throw new Error(response.data.error);
       }
-      const result = response.data as LoginResponse;
-
-      return result as LoginResponse;
+      return response.data as LoginResponse;
     } else {
       throw new Error("Login request failed");
     }
@@ -164,6 +178,76 @@ export async function fetchMarketCardData() {
   return data as SplMarketCardData[];
 }
 
+export async function fetchMarketForRentGrouped(): Promise<
+  SplMarketRentGrouped[]
+> {
+  const url = "market/for_rent_grouped";
+  logger.info("Fetch market for-rent grouped");
+  const params = {
+    level: "max",
+  };
+  const res = await splBaseClient.get(url, { params });
+
+  const data = res.data;
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid response from Splinterlands API");
+  }
+  return data as SplMarketRentGrouped[];
+}
+
+/**
+ * Returns rental market listings for the given (card_detail_id, foil, edition).
+ * Caller still does season/PP filtering.
+ */
+export async function fetchMarketRentalListings(
+  cardDetailId: number,
+  foil: number,
+  edition: number
+): Promise<SplMarketListing[]> {
+  const url = "market/market_query_by_card";
+  const res = await splBaseClient.get(url, {
+    params: {
+      card_detail_id: cardDetailId,
+      foil,
+      edition,
+      type: "rent",
+      rental_type: "season",
+      sort: "low_price_bcx",
+    },
+  });
+
+  const data = res.data;
+  const items: unknown = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { data?: unknown[] })?.data)
+      ? (data as { data: unknown[] }).data
+      : null;
+  if (!Array.isArray(items)) {
+    logger.warn(
+      `[rental] ${url} unexpected response shape for cdid=${cardDetailId} foil=${foil} ed=${edition}: ${JSON.stringify(data).slice(0, 300)}`
+    );
+    throw new Error("Invalid response from Splinterlands API");
+  }
+  return items as SplMarketListing[];
+}
+
+export async function fetchSettings(): Promise<SplSettingsResponse | null> {
+  try {
+    const res = await splBaseClient.get("/settings");
+    const data = res.data;
+    if (data && typeof data === "object" && "season" in data) {
+      return data as SplSettingsResponse;
+    }
+    logger.warn(
+      `[rental] /settings response missing 'season' key: ${JSON.stringify(data).slice(0, 200)}`
+    );
+    return null;
+  } catch (err) {
+    logger.warn(`[rental] /settings fetch failed: ${err}`);
+    return null;
+  }
+}
+
 export async function fetchPlayerBalances(
   player: string,
   filterTypes: string[] = []
@@ -225,4 +309,167 @@ export async function fetchPlayerInventory(
     throw new Error(data?.error || "Invalid response from Splinterlands API");
   }
   return data;
+}
+
+// ── Transaction lookup ────────────────────────────────────────────────────────
+
+type Raw = Record<string, unknown>;
+
+function parseHarvestAll(d: Raw): HarvestAllTrxData {
+  return {
+    success: d.success as boolean,
+    message: (d.message as string) ?? "",
+    results: (d.results as HarvestAllTrxData["results"]) ?? [],
+    deeds: (d.deeds as HarvestAllTrxData["deeds"]) ?? [],
+    num_worksite_transitions: (d.num_worksite_transitions as number) ?? 0,
+  };
+}
+
+function parseSwapTokens(d: Raw): SwapTokensTrxData {
+  return {
+    resource: (d.resource as string) ?? "",
+    resource_amount: (d.resource_amount as number) ?? 0,
+    dec_amount: (d.dec_amount as number) ?? 0,
+    region_uid: (d.region_uid as string) ?? "",
+    region_name: (d.region_name as string) ?? "",
+    to_player: (d.to_player as string) ?? "",
+  };
+}
+
+function parseSwapTokensInput(opInput: Raw): SwapTokensOpInput {
+  return {
+    region_uid: (opInput.region_uid as string) ?? "",
+    resource_amount: (opInput.resource_amount as number) ?? 0,
+    resource_symbol: (opInput.resource_symbol as string) ?? "",
+  };
+}
+
+function parseTaxCollection(d: Raw): TaxCollectionTrxData {
+  return {
+    deed_uid: (d.deed_uid as string) ?? "",
+    kingdom_type: (d.kingdom_type as string) ?? "",
+    elapsed_hours: (d.elapsed_hours as number) ?? 0,
+    tokens: ((d.tokens as { tokens?: unknown[] })?.tokens ??
+      []) as TaxCollectionTrxData["tokens"],
+    fragment_found: (d.fragment_found as boolean) ?? false,
+    fragment_chance: (d.fragment_chance as number) ?? 0,
+  };
+}
+
+function parseAddLiquidity(d: Raw): AddLiquidityTrxData {
+  return {
+    resource: (d.resource as string) ?? "",
+    resource_amount: (d.resource_amount as number) ?? 0,
+    dec_amount: (d.dec_amount as number) ?? 0,
+    region_uid: (d.region_uid as string) ?? "",
+    region_name: (d.region_name as string) ?? "",
+  };
+}
+
+function parseMarketRent(d: Raw): MarketRentTrxData {
+  return {
+    success: (d.success as boolean) ?? false,
+    renter: (d.renter as string) ?? "",
+    num_cards: (d.num_cards as number) ?? 0,
+    total_price: (d.total_price as number) ?? 0,
+    total_fees_dec: (d.total_fees_dec as number) ?? 0,
+    total_market_fees_dec: (d.total_market_fees_dec as number) ?? 0,
+    total_burn_fees_dec: (d.total_burn_fees_dec as number) ?? 0,
+    total_referral_cut: (d.total_referral_cut as number) ?? 0,
+    by_seller: (d.by_seller as MarketRentTrxData["by_seller"]) ?? [],
+  };
+}
+
+function parseStakeChange(d: Raw): StakeChangeTrxData {
+  return {
+    result_code: (d.result_code as number) ?? -1,
+    error_message: (d.error_message as string) ?? "",
+    harvest_data: (d.harvest_data as unknown[]) ?? [],
+    ashes_used: (d.ashes_used as number) ?? 0,
+    ashes_starting_balance: (d.ashes_starting_balance as number) ?? 0,
+  };
+}
+
+export async function fetchTransactionLookup(
+  trxId: string
+): Promise<TrxLookupOutcome> {
+  try {
+    const url = "/transactions/lookup";
+    const res = await splBaseClient.get(url, { params: { trx_id: trxId } });
+    const trxInfo = res.data?.trx_info;
+
+    // Not yet on-chain — trx_info absent
+    if (!trxInfo) return { status: "pending" };
+
+    // On-chain but rejected by the game engine
+    if (trxInfo.success === false) {
+      const error: string =
+        trxInfo.error ?? trxInfo.error_code ?? "Transaction failed";
+      return { status: "failed", error };
+    }
+
+    if (!trxInfo.result) return { status: "pending" };
+
+    const outer = JSON.parse(trxInfo.result as string);
+
+    const opData = JSON.parse(trxInfo.data as string) as Raw & { op?: string };
+    // sm_land_operation ops carry the op type in data.op; sm_market_rent /
+    // sm_stake_change have no `op` field and are identified by trx_info.type.
+    const op = opData.op ?? (trxInfo.type as string | undefined);
+
+    let result: SplTrxResult | null = null;
+    switch (op) {
+      case "harvest_all":
+      case "swap_tokens":
+      case "tax_collection":
+      case "add_liquidity": {
+        if (outer?.result?.success === false) {
+          const error: string =
+            outer?.result?.error ?? outer?.error ?? "Transaction failed";
+          return { status: "failed", error };
+        }
+        const d = outer?.result?.data as Raw | null;
+        if (!d) return { status: "pending" };
+        if (op === "harvest_all")
+          result = { type: "harvest_all", data: parseHarvestAll(d) };
+        else if (op === "swap_tokens")
+          result = {
+            type: "swap_tokens",
+            input: parseSwapTokensInput(opData),
+            data: parseSwapTokens(d),
+          };
+        else if (op === "tax_collection")
+          result = { type: "tax_collection", data: parseTaxCollection(d) };
+        else result = { type: "add_liquidity", data: parseAddLiquidity(d) };
+        break;
+      }
+      case "market_rent": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "Rent transaction failed";
+          return { status: "failed", error };
+        }
+        result = { type: "market_rent", data: parseMarketRent(outer as Raw) };
+        break;
+      }
+      case "stake_change": {
+        const code = outer?.result_code;
+        if (typeof code === "number" && code !== 0) {
+          const error: string =
+            (outer?.error_message as string) ?? "Stake change failed";
+          return { status: "failed", error };
+        }
+        result = {
+          type: "stake_change",
+          data: parseStakeChange(outer as Raw),
+        };
+        break;
+      }
+      default:
+        return { status: "pending" };
+    }
+    return { status: "success", result };
+  } catch {
+    return { status: "pending" };
+  }
 }

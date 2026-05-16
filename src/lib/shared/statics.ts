@@ -28,6 +28,7 @@ import {
   resource_fortune_ticket_icon_url,
   resource_grain_icon_url,
   resource_iron_icon_url,
+  resource_lustrous_potion_icon_url,
   resource_midnight_potion_icon_url,
   resource_polymorph_potion_icon_url,
   resource_research_icon_url,
@@ -139,11 +140,15 @@ export const RESOURCE_ICON_MAP: Record<string, string> = {
   UNBIND_CA_L: resource_unbinding_legendary_icon_url,
   CINDER: cinder_icon_url,
   FLUX: resource_capacity_flux_icon_url,
+  LUSTROUS: resource_lustrous_potion_icon_url,
   POLYMORPH: resource_polymorph_potion_icon_url,
   "": land_hammer_icon_url,
 };
 
 export const TRADE_HUB_FEE = 0.9;
+// Per-hop fee multiplier for 2-hop swaps (resource → DEC → resource).
+// Each hop takes 5%, so total ≈ 9.75% (0.95 * 0.95 = 0.9025).
+export const TRADE_HUB_FEE_PER_HOP = 0.95;
 export const TAX_RATE = 0.1;
 
 export const worksiteTypeMapping: Record<string, string> = {

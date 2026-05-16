@@ -346,3 +346,92 @@ model Log {
   @@index([created_at])
   @@map("logs")
 }
+
+model LandManagerConfig {
+  player                          String   @id
+  enabled_regions                 Int[]
+  make_harvestable_strategies     String[] @default(["transfer", "swap", "buy_dec"])
+  fee_accepted                    Boolean  @default(false)
+  post_harvest_strategy           String   @default("accumulate")
+  post_harvest_excluded_resources String[] @default([])
+  mythic_fee_accepted             Boolean  @default(false)
+  rental_strategy                   String  @default("highest_pp_per_dec")
+  rental_max_total_dec              Int     @default(0)
+  rental_max_dec_per_day_per_worker Int     @default(0)
+  rental_min_land_base_pp           Int     @default(0)
+  created_at                      DateTime @default(now())
+  updated_at                      DateTime @updatedAt
+
+  @@map("land_manager_config")
+}
+
+model LandHarvestLog {
+  date                 DateTime @db.Date
+  player               String
+  runs                 Int      @default(1)
+  resources_json       Json     // { GRAIN: total, WOOD: total, … } summed across all runs today
+  fees_json            Json     @default("{}")  // { GRAIN: feeTotal, … } fees successfully paid
+  unpaid_fees_json     Json     @default("{}")  // { GRAIN: feeTotal, … } fees that were owed but not paid (cancelled/failed)
+  fee_error            String?                  // last error or cancellation reason when unpaid_fees_json is non-empty
+  harvest_transactions String[]                 // txIds from the harvest phase
+  fee_transactions     String[] @default([])    // txIds from the fee-payment phase
+  updated_at           DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_harvest_log")
+}
+
+model LandMakeHarvestableLog {
+  date         DateTime @db.Date
+  player       String
+  runs         Int      @default(1)
+  actions_json Json     // array of ActionSummary, merged/summed by (type,from_region,to_region,from_symbol,to_symbol)
+  transactions String[] // one txId per successful broadcast
+  updated_at   DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_make_harvestable_log")
+}
+
+model LandPostHarvestLog {
+  date         DateTime @db.Date
+  player       String
+  runs         Int      @default(1)
+  actions_json Json     // array of PostHarvestActionSummary, merged by (type, region_uid, symbol)
+  transactions String[]
+  updated_at   DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_post_harvest_log")
+}
+
+model LandMythicHarvestLog {
+  date              DateTime @db.Date
+  player            String
+  runs              Int      @default(1)
+  results_json      Json                     // array of MythicHarvestResult
+  fees_json         Json     @default("{}")  // { token: total } fees successfully paid
+  unpaid_fees_json  Json     @default("{}")  // { token: total } fees owed but not paid
+  fee_error         String?                  // last fee error or cancellation reason
+  transactions      String[]                 // txIds from tax_collection ops
+  fee_transactions  String[] @default([])    // txIds from fee-payment ops
+  updated_at        DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_mythic_harvest_log")
+}
+
+model LandRentalLog {
+  date               DateTime @db.Date
+  player             String
+  runs               Int      @default(1)
+  rented_count       Int      @default(0)   // total cards rented across all runs today
+  staked_count       Int      @default(0)   // total cards staked across all runs today
+  total_dec          Float    @default(0)   // total DEC spent across all runs today
+  rent_transactions  String[]               // txIds from sm_market_rent ops
+  stake_transactions String[] @default([])  // txIds from staking ops
+  updated_at         DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_rental_log")
+}
