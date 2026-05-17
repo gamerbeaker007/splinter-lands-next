@@ -13,6 +13,7 @@ import {
   fetchSplPlayerResourceBalance,
   fetchTaxes,
 } from "@/lib/backend/api/spl/spl-land-api";
+import { cache } from "@/lib/backend/cache/cache";
 import { MythicDeed } from "@/types/landManager";
 import {
   SplHarvestableResource,
@@ -23,6 +24,8 @@ import { SplLandPool } from "@/types/spl/landPools";
 import type { TrxLookupOutcome } from "@/types/spl/trx";
 import { cookies } from "next/headers";
 import { getAuthStatus } from "../auth-actions";
+
+const BULK_REGION_CACHE_TTL = 30; // seconds
 
 async function getJwtToken(): Promise<string | null> {
   const cookieStore = await cookies();
@@ -125,7 +128,10 @@ export async function getRegionResourceBalance(regionUid: string): Promise<{
 
 // ── Bulk region data (harvestable + balance for multiple regions) ──────────
 
-export async function getBulkRegionData(regionUids: string[]): Promise<{
+export async function getBulkRegionData(
+  regionUids: string[],
+  force = false
+): Promise<{
   harvestable: Record<string, SplHarvestableResource[]>;
   balances: Record<string, Record<string, number>>;
   error?: string;
@@ -136,6 +142,16 @@ export async function getBulkRegionData(regionUids: string[]): Promise<{
   }
   const jwt = await getJwtToken();
   if (!jwt) return { harvestable: {}, balances: {}, error: "No session token" };
+
+  const cacheKey = `bulk-region:${auth.username}:${[...regionUids].sort().join(",")}`;
+
+  if (!force) {
+    const cached = cache.get<{
+      harvestable: Record<string, SplHarvestableResource[]>;
+      balances: Record<string, Record<string, number>>;
+    }>(cacheKey);
+    if (cached) return cached;
+  }
 
   const results = await Promise.allSettled(
     regionUids.flatMap((uid) => [
@@ -163,7 +179,9 @@ export async function getBulkRegionData(regionUids: string[]): Promise<{
     else balances[v.uid] = v.data as Record<string, number>;
   }
 
-  return { harvestable, balances };
+  const fresh = { harvestable, balances };
+  cache.set(cacheKey, fresh, BULK_REGION_CACHE_TTL);
+  return fresh;
 }
 
 // ── DEC balance ───────────────────────────────────────────────────────────

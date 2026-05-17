@@ -14,6 +14,29 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.2.0] - 2026-05-17
+
+### Changed
+
+#### Land Manager improvements
+- **30-second server-side cache for bulk region data** — `getBulkRegionData` now caches
+  results per user for 30 seconds. Dry-run calls serve from cache; execute calls always
+  bypass it to guarantee fresh data before broadcasting. Eliminates redundant VAPI hits
+  when a user clicks around without taking action.
+- **Transaction verification persists across panel refreshes** — the Today Panel now
+  remembers which transaction IDs have already been verified or failed. Re-fetching the
+  activity log (after an action completes) no longer re-looks up already-settled
+  transactions against the SPL API.
+- **Dry Run dialog simplified** — the raw Operations JSON block and copy button have
+  been removed. The dialog now shows only the human-readable plan log, with a larger
+  display area.
+- **Rent Empty Workers disabled when no eligible plots** — both the Rent and Dry Run
+  buttons are automatically disabled when there are no powered plots with empty worker
+  slots. The tooltip explains why when disabled. Eligibility re-checks after each
+  successful rent run.
+
+---
+
 ## [v1.1.0] - 2026-05-16
 
 ### Added

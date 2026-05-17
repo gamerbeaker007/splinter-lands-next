@@ -76,15 +76,15 @@ export function useHarvestMythicsAction({
           const [{ pools }, { balances }, feeApplicableNums] =
             await Promise.all([
               getLandPools(),
-              getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+              getBulkRegionData(
+                visibleRegions.map((r) => r.region_uid),
+                !isDryRun
+              ),
               getFeeApplicableRegionNumbers(username, [
                 ...new Set(mythicDeeds.map((d) => d.region_number)),
               ]),
             ]);
           const feeApplicable = new Set(feeApplicableNums);
-          const ops: [string, object][] = mythicDeeds.map((deed) =>
-            buildTaxCollectionOp(username, deed.region_uid, deed.deed_uid)
-          );
           const log = mythicDeeds.map((d) => {
             const taxes =
               d.taxes.map((t) => `${t.token} ${t.balance}`).join(", ") ||
@@ -99,14 +99,9 @@ export function useHarvestMythicsAction({
             feeApplicable.has(n)
           );
           const capped = capFeesAtBalance(desired, balances);
-          const {
-            postingOps,
-            activeOps,
-            log: feeLog,
-          } = buildFeeOps(username, pools, capped);
-          ops.push(...postingOps, ...activeOps);
+          const { log: feeLog } = buildFeeOps(username, pools, capped);
           log.push(...feeLog);
-          return { title: "Dry Run — Harvest Mythics", log, ops };
+          return { title: "Dry Run — Harvest Mythics", log };
         }
 
         if (!mythicDeeds.some((d) => d.taxes.length > 0)) {

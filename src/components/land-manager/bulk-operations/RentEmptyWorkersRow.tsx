@@ -59,7 +59,10 @@ export default function RentEmptyWorkersRow({
         alignItems="center"
         mb={1.5}
       >
-        <ButtonGroup size="small" disabled={anyBusy}>
+        <ButtonGroup
+          size="small"
+          disabled={anyBusy || action.eligiblePlotCount === 0}
+        >
           <Button
             variant="contained"
             color="info"
@@ -74,14 +77,23 @@ export default function RentEmptyWorkersRow({
           >
             Rent Empty Workers
           </Button>
-          <Tooltip title="Show planned rentals without broadcasting">
-            <Button
-              variant="outlined"
-              color="info"
-              onClick={() => action.preview()}
-            >
-              Dry Run
-            </Button>
+          <Tooltip
+            title={
+              action.eligiblePlotCount === 0
+                ? "No plots with empty worker slots"
+                : "Show planned rentals without broadcasting"
+            }
+          >
+            <span>
+              <Button
+                variant="outlined"
+                color="info"
+                disabled={anyBusy || action.eligiblePlotCount === 0}
+                onClick={() => action.preview()}
+              >
+                Dry Run
+              </Button>
+            </span>
           </Tooltip>
         </ButtonGroup>
       </Stack>

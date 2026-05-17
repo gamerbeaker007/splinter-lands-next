@@ -50,10 +50,13 @@ export function useProcessResourcesAction({
       setError(null);
       try {
         const [{ balances }, { pools }] = await Promise.all([
-          getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+          getBulkRegionData(
+            visibleRegions.map((r) => r.region_uid),
+            !isDryRun
+          ),
           getLandPools(),
         ]);
-        const { ops, sellOps, log, actions } = buildPostHarvestOps(
+        const { sellOps, log, actions } = buildPostHarvestOps(
           visibleRegions,
           username,
           balances,
@@ -63,7 +66,7 @@ export function useProcessResourcesAction({
         );
 
         if (isDryRun) {
-          return { title: "Dry Run — Process Resources", log, ops };
+          return { title: "Dry Run — Process Resources", log };
         } else if (sellOps.length === 0) {
           setError(
             "No resources to process (all below minimum or strategy is accumulate)."
@@ -86,7 +89,10 @@ export function useProcessResourcesAction({
               const [{ pools: freshPools }, { balances: freshBalances }] =
                 await Promise.all([
                   getLandPools(),
-                  getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+                  getBulkRegionData(
+                    visibleRegions.map((r) => r.region_uid),
+                    true
+                  ),
                 ]);
               const freshPoolMap = new Map(
                 freshPools.map((p) => [

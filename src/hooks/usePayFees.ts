@@ -1,4 +1,8 @@
 import {
+  getBulkRegionData,
+  lookupTransaction,
+} from "@/lib/backend/actions/land-manager/overview-actions";
+import {
   buildFeeOps,
   capFeesAtBalance,
   DesiredFee,
@@ -11,10 +15,6 @@ import {
 } from "@/lib/frontend/splBroadcast";
 import { SplLandPool } from "@/types/spl/landPools";
 import { useCallback, useState } from "react";
-import {
-  getBulkRegionData,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
 
 export interface PayFeesResult {
   /** True when every requested fee op (posting + active) broadcast and confirmed. */
@@ -81,7 +81,7 @@ export function usePayFees(username: string): UsePayFees {
       let balances: Record<string, Record<string, number>> = {};
       try {
         const regionUids = [...new Set(desired.map((f) => f.region_uid))];
-        const refreshed = await getBulkRegionData(regionUids);
+        const refreshed = await getBulkRegionData(regionUids, true);
         balances = refreshed.balances;
       } catch (err) {
         const message =

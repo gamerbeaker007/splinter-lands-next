@@ -3,7 +3,6 @@
 export interface DryRunResult {
   title: string;
   log: string[];
-  ops: [string, object][];
 }
 
 // === App-level constants (not stored per player) ===

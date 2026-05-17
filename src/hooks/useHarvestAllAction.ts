@@ -86,7 +86,10 @@ export function useHarvestAllAction({
       setError(null);
       try {
         const [{ harvestable, balances }, { pools }] = await Promise.all([
-          getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+          getBulkRegionData(
+            visibleRegions.map((r) => r.region_uid),
+            !isDryRun
+          ),
           getLandPools(),
         ]);
         const adjustedBalances = Object.fromEntries(
@@ -105,10 +108,8 @@ export function useHarvestAllAction({
 
         if (isDryRun) {
           const log: string[] = [];
-          const ops: [string, object][] = [];
           for (const region of eligibleRegions) {
             const built = buildRegionHarvestOnlyOp(username, region);
-            ops.push(...built.ops);
             log.push(...built.log);
           }
           const feeApplicable = new Set(
@@ -123,14 +124,9 @@ export function useHarvestAllAction({
             feeApplicable.has(n)
           );
           const capped = capFeesAtBalance(desired, adjustedBalances);
-          const {
-            postingOps,
-            activeOps,
-            log: feeLog,
-          } = buildFeeOps(username, pools, capped);
-          ops.push(...postingOps, ...activeOps);
+          const { log: feeLog } = buildFeeOps(username, pools, capped);
           log.push(...feeLog);
-          return { title: "Dry Run — Harvest All", log, ops };
+          return { title: "Dry Run — Harvest All", log };
         }
 
         if (eligibleRegions.length === 0) {

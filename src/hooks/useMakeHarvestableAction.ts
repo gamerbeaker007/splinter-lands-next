@@ -49,7 +49,10 @@ export function useMakeHarvestableAction({
       setError(null);
       try {
         const [{ harvestable, balances }, dec] = await Promise.all([
-          getBulkRegionData(visibleRegions.map((r) => r.region_uid)),
+          getBulkRegionData(
+            visibleRegions.map((r) => r.region_uid),
+            !isDryRun
+          ),
           getDecBalance(username),
         ]);
         const EMPTY: Record<string, number> = {
@@ -85,7 +88,7 @@ export function useMakeHarvestableAction({
         );
 
         if (isDryRun) {
-          return { title: "Dry Run — Make All Harvestable", log, ops };
+          return { title: "Dry Run — Make All Harvestable", log };
         } else if (ops.length === 0) {
           setError(
             "All regions are already harvestable (or no strategies could help)."

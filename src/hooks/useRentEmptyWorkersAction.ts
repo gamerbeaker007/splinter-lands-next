@@ -5,6 +5,7 @@ import {
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   getRentalDryRunPlan,
+  getRentalEligibility,
   getRentalExecutionPlan,
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
@@ -19,7 +20,7 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { RentalConfig, RentalPlan } from "@/types/landManager";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 // Max market_ids bundled into a single sm_market_rent op. Conservative — the
 // custom_json size limit on Hive is ~8KB but the engine may have its own cap.
@@ -43,6 +44,7 @@ export interface RentExecuteResult {
 
 export interface UseRentEmptyWorkersAction {
   busy: boolean;
+  eligiblePlotCount: number | null;
   dryRunPlan: RentalPlan | null;
   executionPlan: RentalExecutionPlan | null;
   result: RentExecuteResult | null;
@@ -69,11 +71,30 @@ export function useRentEmptyWorkersAction({
   onSuccess,
 }: Params): UseRentEmptyWorkersAction {
   const [busy, setBusy] = useState(false);
+  const [eligiblePlotCount, setEligiblePlotCount] = useState<number | null>(
+    null
+  );
+  const [checkKey, setCheckKey] = useState(0);
   const [dryRunPlan, setDryRunPlan] = useState<RentalPlan | null>(null);
   const [executionPlan, setExecutionPlan] =
     useState<RentalExecutionPlan | null>(null);
   const [result, setResult] = useState<RentExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getRentalEligibility(enabledRegions)
+      .then(({ eligible }) => {
+        if (!cancelled) setEligiblePlotCount(eligible.length);
+      })
+      .catch(() => {
+        if (!cancelled) setEligiblePlotCount(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabledRegions.join(","), checkKey]);
 
   const preview = useCallback(async () => {
     setBusy(true);
@@ -253,6 +274,7 @@ export function useRentEmptyWorkersAction({
         );
       }
       onSuccess?.();
+      setCheckKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -262,6 +284,7 @@ export function useRentEmptyWorkersAction({
 
   return {
     busy,
+    eligiblePlotCount,
     dryRunPlan,
     executionPlan,
     result,

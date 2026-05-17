@@ -17,7 +17,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type TodayLogsResult = Awaited<ReturnType<typeof getTodayLogs>>;
 
@@ -32,6 +32,9 @@ export default function TodayPanel({
   const [failedTxIds, setFailedTxIds] = useState<Map<string, string>>(
     new Map()
   );
+  // Persist across refreshes — once a tx is settled it never needs re-lookup
+  const persistentVerified = useRef<Set<string>>(new Set());
+  const persistentFailed = useRef<Map<string, string>>(new Map());
 
   useEffect(() => {
     let cancelled = false;
@@ -61,24 +64,36 @@ export default function TodayPanel({
     const unique = [...new Set(allTxIds)];
     if (unique.length === 0) return;
 
+    // Immediately reflect already-known outcomes without any API call
+    setVerifiedTxIds(new Set(persistentVerified.current));
+    setFailedTxIds(new Map(persistentFailed.current));
+
+    const toPoll = unique.filter(
+      (id) =>
+        !persistentVerified.current.has(id) && !persistentFailed.current.has(id)
+    );
+    if (toPoll.length === 0) return;
+
     let cancelled = false;
-    const verified = new Set<string>();
-    const failed = new Map<string, string>();
 
     async function poll(ids: string[]) {
       await Promise.all(
         ids.map(async (txId) => {
           const outcome = await lookupTransaction(txId);
-          if (outcome.status === "success") verified.add(txId);
-          else if (outcome.status === "failed") failed.set(txId, outcome.error);
+          if (outcome.status === "success")
+            persistentVerified.current.add(txId);
+          else if (outcome.status === "failed")
+            persistentFailed.current.set(txId, outcome.error);
         })
       );
       if (cancelled) return;
-      setVerifiedTxIds(new Set(verified));
-      setFailedTxIds(new Map(failed));
+      setVerifiedTxIds(new Set(persistentVerified.current));
+      setFailedTxIds(new Map(persistentFailed.current));
 
       const remaining = ids.filter(
-        (id) => !verified.has(id) && !failed.has(id)
+        (id) =>
+          !persistentVerified.current.has(id) &&
+          !persistentFailed.current.has(id)
       );
       if (remaining.length === 0) return;
       await new Promise((r) => setTimeout(r, 5000));
@@ -86,17 +101,19 @@ export default function TodayPanel({
       await Promise.all(
         remaining.map(async (txId) => {
           const outcome = await lookupTransaction(txId);
-          if (outcome.status === "success") verified.add(txId);
-          else if (outcome.status === "failed") failed.set(txId, outcome.error);
+          if (outcome.status === "success")
+            persistentVerified.current.add(txId);
+          else if (outcome.status === "failed")
+            persistentFailed.current.set(txId, outcome.error);
         })
       );
       if (!cancelled) {
-        setVerifiedTxIds(new Set(verified));
-        setFailedTxIds(new Map(failed));
+        setVerifiedTxIds(new Set(persistentVerified.current));
+        setFailedTxIds(new Map(persistentFailed.current));
       }
     }
 
-    poll(unique);
+    poll(toPoll);
     return () => {
       cancelled = true;
     };
