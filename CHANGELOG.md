@@ -14,6 +14,24 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.3.0] - 2026-05-18
+
+### Added
+
+#### Land Manager — Stake DEC logging
+- **`land_stake_dec_log` table** — records per-player, per-day DEC staking activity:
+  succeeded and failed amounts (keyed by `region_uid`), totals, error message, and
+  transaction IDs. Used to audit automated DEC-stake runs in the land manager.
+
+### Changed
+
+#### Land Manager config
+- **`rental_min_foil` field added to `land_manager_config`** — allows configuring a
+  minimum foil level for worker rentals (default `0` = any foil). Stored as an integer
+  where `0` = regular, `1` = gold, etc.
+
+---
+
 ## [v1.2.0] - 2026-05-17
 
 ### Changed

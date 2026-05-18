@@ -28,19 +28,17 @@ export type SplPlayerCardCollection = {
   delegated_to_display_name?: string;
   delegated_to?: string;
   last_used_date?: string;
-  rental_days?: string;
+  rental_days?: number | string | null;
   rental_date?: string;
+  rental_type?: string | null;
+  buy_price?: string | null;
 
   //unused in this app
   //  "gold": boolean,
   //   "market_id"?: string,
-  //   "buy_price"?: string,
   //   "market_listing_type"?: string,
   //   "market_listing_status"?: string,
   //   "market_created_date"?: string,
-  //   "rental_type"?: string,
-  //   "rental_days"?: string,
-  //   "rental_date"?: string,
   //   "next_rental_payment"?: string,
   //   "cancel_tx"?: string,
   //   "cancel_date"?: string,

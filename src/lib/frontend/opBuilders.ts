@@ -271,6 +271,31 @@ export function buildStakeWorkersOp(
   ];
 }
 
+/**
+ * Stake DEC into a region's power-up pool. Uses POSTING key.
+ * Maps to the SPL `sm_dec_powerup_region` custom_json.
+ */
+export function buildStakeDecRegionOp(
+  username: string,
+  regionUid: string,
+  amount: number
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_dec_powerup_region",
+      json: JSON.stringify({
+        amount,
+        region_uid: regionUid,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
 /** Buy a resource by spending DEC from the trade hub in a region. */
 export function buildBuyWithDecOp(
   username: string,

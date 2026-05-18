@@ -11,16 +11,24 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
+  IconButton,
   Menu,
   MenuItem,
   Stack,
   TextField,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
 import { useState } from "react";
 
-export default function LoginComponent() {
+interface LoginComponentProps {
+  compact?: boolean;
+}
+
+export default function LoginComponent({
+  compact = false,
+}: LoginComponentProps) {
   const {
     user,
     loading: authLoading,
@@ -100,51 +108,192 @@ export default function LoginComponent() {
     );
   }
 
+  if (compact) {
+    return (
+      <>
+        {user?.username ? (
+          <Tooltip title={user.username}>
+            <Box
+              onClick={handleLoginClick}
+              sx={{
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                p: 0.5,
+                borderRadius: 1,
+                outline: "none",
+                "&:hover": { backgroundColor: "action.hover" },
+                "&:focus": { boxShadow: "none", outline: "none" },
+              }}
+              tabIndex={0}
+            >
+              <Avatar sx={{ width: 32, height: 32 }}>
+                <Image
+                  src={`https://images.hive.blog/u/${user.username}/avatar`}
+                  alt={user.username}
+                  width={32}
+                  height={32}
+                />
+              </Avatar>
+            </Box>
+          </Tooltip>
+        ) : (
+          <Tooltip title="Sign In">
+            <IconButton onClick={handleLoginClick} size="small">
+              <Image
+                src="/images/Splinterlands.avif"
+                alt="Sign In"
+                width={24}
+                height={24}
+              />
+            </IconButton>
+          </Tooltip>
+        )}
+
+        {/* User Menu (when logged in) */}
+        <Menu
+          anchorEl={anchorEl}
+          open={Boolean(anchorEl)}
+          onClose={handleMenuClose}
+          anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+          transformOrigin={{ vertical: "top", horizontal: "right" }}
+        >
+          <MenuItem onClick={handleLogout}>
+            <LogoutIcon sx={{ mr: 1 }} fontSize="small" />
+            Logout
+          </MenuItem>
+        </Menu>
+
+        {/* Login Dialog */}
+        <Dialog
+          open={loginDialogOpen}
+          onClose={handleDialogClose}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              textAlign="center"
+            >
+              Sign in with your Hive account using Keychain
+            </Typography>
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={3} sx={{ mt: 1 }}>
+              <TextField
+                label="Hive Username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                disabled={signingInProgress}
+                fullWidth
+                autoFocus
+                placeholder="Enter your Hive username"
+              />
+              {error && (
+                <Alert severity="error" variant="outlined">
+                  {error.message}
+                </Alert>
+              )}
+              {signingInProgress && (
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    Waiting for Keychain signature...
+                  </Typography>
+                </Stack>
+              )}
+              <Button
+                onClick={handleLogin}
+                variant="contained"
+                size="large"
+                disabled={signingInProgress || !username.trim()}
+                fullWidth
+                sx={{
+                  p: 0,
+                  minHeight: 48,
+                  minWidth: 120,
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <Image
+                  src="/images/HiveKeychainInlogButton.png"
+                  alt="Sign In with Keychain"
+                  fill
+                  sizes="(max-width: 600px) 100vw, 120px"
+                  style={{
+                    objectFit: "contain",
+                    opacity: signingInProgress || !username.trim() ? 0.5 : 1,
+                  }}
+                />
+              </Button>
+            </Stack>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
   return (
     <>
-      <Box
-        onClick={handleLoginClick}
-        sx={{
-          cursor: "pointer",
-          display: "flex",
-          alignItems: "center",
-          gap: 1,
-          p: 1,
-          borderRadius: 1,
-          outline: "none",
-          "&:hover": {
-            backgroundColor: "action.hover",
-          },
-          "&:focus": {
-            boxShadow: "none",
+      {user?.username ? (
+        <Box
+          onClick={handleLoginClick}
+          sx={{
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 1,
+            p: 1,
+            borderRadius: 1,
             outline: "none",
-          },
-        }}
-        tabIndex={0}
-      >
-        {user?.username ? (
-          <>
-            <Avatar sx={{ width: 32, height: 32 }}>
-              <Image
-                src={`https://images.hive.blog/u/${user.username}/avatar`}
-                alt={user.username}
-                width={32}
-                height={32}
-              />
-            </Avatar>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-              {user.username}
-            </Typography>
-          </>
-        ) : (
-          <Image
-            src={"/images/Splinterlands.avif"}
-            alt="Login"
-            width={25}
-            height={25}
-          />
-        )}
-      </Box>
+            "&:hover": {
+              backgroundColor: "action.hover",
+            },
+            "&:focus": {
+              boxShadow: "none",
+              outline: "none",
+            },
+          }}
+          tabIndex={0}
+        >
+          <Avatar sx={{ width: 32, height: 32 }}>
+            <Image
+              src={`https://images.hive.blog/u/${user.username}/avatar`}
+              alt={user.username}
+              width={32}
+              height={32}
+            />
+          </Avatar>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>
+            {user.username}
+          </Typography>
+        </Box>
+      ) : (
+        <Button
+          onClick={handleLoginClick}
+          variant="outlined"
+          startIcon={
+            <Image
+              src={"/images/Splinterlands.avif"}
+              alt=""
+              width={20}
+              height={20}
+            />
+          }
+          sx={{ textTransform: "none" }}
+        >
+          Sign In
+        </Button>
+      )}
 
       {/* User Menu (when logged in) */}
       <Menu

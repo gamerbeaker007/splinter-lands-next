@@ -8,6 +8,7 @@ import {
 import { SplSettingsResponse } from "@/types/spl/settings";
 import type {
   AddLiquidityTrxData,
+  DecPowerupRegionTrxData,
   HarvestAllTrxData,
   MarketRentTrxData,
   SplTrxResult,
@@ -198,6 +199,11 @@ export async function fetchMarketForRentGrouped(): Promise<
 /**
  * Returns rental market listings for the given (card_detail_id, foil, edition).
  * Caller still does season/PP filtering.
+ * foil = 0 use foil=0
+ * foil = 1 or 2 user foil="gold"
+ * foil = 3 or 4 use foil="black"
+ *
+ * Then filter out the ones that are not needed
  */
 export async function fetchMarketRentalListings(
   cardDetailId: number,
@@ -205,10 +211,22 @@ export async function fetchMarketRentalListings(
   edition: number
 ): Promise<SplMarketListing[]> {
   const url = "market/market_query_by_card";
+
+  // Map internal foil values to API values
+  let apiFoil: number | string = foil;
+
+  if (foil === 0) {
+    apiFoil = 0;
+  } else if (foil === 1 || foil === 2) {
+    apiFoil = "gold";
+  } else if (foil === 3 || foil === 4) {
+    apiFoil = "black";
+  }
+
   const res = await splBaseClient.get(url, {
     params: {
       card_detail_id: cardDetailId,
-      foil,
+      foil: apiFoil,
       edition,
       type: "rent",
       rental_type: "season",
@@ -228,7 +246,11 @@ export async function fetchMarketRentalListings(
     );
     throw new Error("Invalid response from Splinterlands API");
   }
-  return items as SplMarketListing[];
+
+  // Filter out listings with foil that doesn't match the requested foil
+  return (items as SplMarketListing[]).filter(
+    (listing) => listing.foil === foil
+  );
 }
 
 export async function fetchSettings(): Promise<SplSettingsResponse | null> {
@@ -380,6 +402,23 @@ function parseMarketRent(d: Raw): MarketRentTrxData {
   };
 }
 
+function parseDecPowerupRegion(d: Raw): DecPowerupRegionTrxData {
+  const harvest = (d.harvestResults as Raw | undefined) ?? {};
+  const harvestData = (harvest.data as Raw | undefined) ?? {};
+  return {
+    pre_op_efficiency: (d.pre_op_efficiency as number) ?? 0,
+    post_op_efficiency: (d.post_op_efficiency as number) ?? 0,
+    harvest_succeeded: (harvest.success as boolean) ?? false,
+    harvest_error: (harvest.error as string) ?? "",
+    harvest_message: (harvestData.message as string) ?? "",
+    harvest_deed_count: Array.isArray(harvestData.results)
+      ? (harvestData.results as unknown[]).length
+      : 0,
+    harvest_results:
+      (harvestData.results as DecPowerupRegionTrxData["harvest_results"]) ?? [],
+  };
+}
+
 function parseStakeChange(d: Raw): StakeChangeTrxData {
   return {
     result_code: (d.result_code as number) ?? -1,
@@ -422,7 +461,8 @@ export async function fetchTransactionLookup(
       case "harvest_all":
       case "swap_tokens":
       case "tax_collection":
-      case "add_liquidity": {
+      case "add_liquidity":
+      case "dec_powerup_region": {
         if (outer?.result?.success === false) {
           const error: string =
             outer?.result?.error ?? outer?.error ?? "Transaction failed";
@@ -440,7 +480,13 @@ export async function fetchTransactionLookup(
           };
         else if (op === "tax_collection")
           result = { type: "tax_collection", data: parseTaxCollection(d) };
-        else result = { type: "add_liquidity", data: parseAddLiquidity(d) };
+        else if (op === "add_liquidity")
+          result = { type: "add_liquidity", data: parseAddLiquidity(d) };
+        else
+          result = {
+            type: "dec_powerup_region",
+            data: parseDecPowerupRegion(d),
+          };
         break;
       }
       case "market_rent": {

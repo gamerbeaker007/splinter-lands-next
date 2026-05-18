@@ -7,6 +7,7 @@ import {
 } from "@/lib/backend/actions/auth-actions";
 import logger from "@/lib/frontend/log/logger.client";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
+import { useRouter } from "next/navigation";
 import {
   createContext,
   ReactNode,
@@ -41,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
 
   // Check if user is logged in (from server)
   const checkAuthStatus = async () => {
@@ -145,6 +147,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Refresh auth status after successful login
       await checkAuthStatus();
+      // Re-run the current page's server components so server-fetched data
+      // (e.g. land-manager config) reflects the new user instead of showing
+      // the previous user's data until the next full page reload.
+      router.refresh();
     } catch (err) {
       if (err instanceof Error) {
         setError(err.message);
@@ -168,6 +174,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError(errorMsg);
     } finally {
       setUser(null);
+      router.refresh();
     }
   };
 

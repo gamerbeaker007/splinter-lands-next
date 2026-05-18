@@ -1,24 +1,14 @@
 "use client";
 
+import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
-  getRegionAlerts,
-  getRentalEligibility,
-  RegionAlertInfo,
-} from "@/lib/backend/actions/land-manager/rental-actions";
-import {
-  BIOME_KEYS,
-  biomeColorMap,
-  biomeIconMap,
-  biomeLabelMap,
-} from "@/lib/shared/biomeUtils";
-import {
-  RentalBiomeModifiers,
-  RentalEligibilityResult,
-  RentalEligiblePlot,
-} from "@/types/landManager";
+  landElementBgColor,
+  landElementIconUrl,
+  landElementLabel,
+} from "@/lib/utils/cardUtil";
+import { BiomeModifiers, RentalEligiblePlot } from "@/types/landManager";
 import { Bolt, BoltOutlined } from "@mui/icons-material";
 import {
-  Alert,
   Avatar,
   Box,
   Card,
@@ -30,60 +20,115 @@ import {
   TableBody,
   TableCell,
   TableHead,
+  TablePagination,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useMemo, useState } from "react";
+import { cardElementOptions } from "@/types/planner";
 
 interface Props {
   enabledRegions: number[];
   refreshKey?: number;
 }
 
-function BiomeChips({ modifiers }: { modifiers: RentalBiomeModifiers }) {
+interface PlotRentSummary {
+  rentedCount: number;
+  decPerDay: number;
+  totalDec: number;
+}
+
+function fmtDec(value: number): string {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 3 });
+}
+
+function fmtInt(value: number): string {
+  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+function BiomeChips({ modifiers }: { modifiers: BiomeModifiers }) {
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap">
-      {BIOME_KEYS.filter((key) => modifiers[key] > 0).map((key) => (
-        <Chip
-          key={key}
-          avatar={
-            <Avatar
-              src={biomeIconMap[key]}
-              alt={biomeLabelMap[key]}
-              variant="rounded"
-              sx={{
-                backgroundColor: biomeColorMap[key],
+      {cardElementOptions
+        .filter((key) => modifiers[key] > 0)
+        .map((key) => (
+          <Chip
+            key={key}
+            avatar={
+              <Avatar
+                src={landElementIconUrl[key]}
+                alt={landElementLabel[key]}
+                variant="rounded"
+                sx={{
+                  backgroundColor: landElementBgColor[key],
 
-                // Bigger avatar container
-                width: 20,
-                height: 20,
+                  // Bigger avatar container
+                  width: 20,
+                  height: 20,
 
-                // Smaller icon inside
-                "& img": {
-                  width: 12,
-                  height: 12,
-                  objectFit: "contain",
-                },
-              }}
-            />
-          }
-          label={`+${(modifiers[key] * 100).toFixed(0)}%`}
-          size="small"
-          variant="outlined"
-          sx={{
-            fontSize: "0.65rem",
-            height: 25,
-            "& .MuiChip-avatar": {
-              ml: 0.25,
-            },
-          }}
-        />
-      ))}
+                  // Smaller icon inside
+                  "& img": {
+                    width: 12,
+                    height: 12,
+                    objectFit: "contain",
+                  },
+                }}
+              />
+            }
+            label={`+${(modifiers[key] * 100).toFixed(0)}%`}
+            size="small"
+            variant="outlined"
+            sx={{
+              fontSize: "0.65rem",
+              height: 25,
+              "& .MuiChip-avatar": {
+                ml: 0.25,
+              },
+            }}
+          />
+        ))}
     </Stack>
   );
 }
 
-function PlotRow({ plot }: { plot: RentalEligiblePlot }) {
+function WorkerCount({
+  workerCount,
+  rentedCount,
+  maxWorkers,
+}: {
+  workerCount: number;
+  rentedCount: number;
+  maxWorkers: number;
+}) {
+  const ownedCount = Math.max(0, workerCount - rentedCount);
+  const emptyCount = Math.max(0, maxWorkers - workerCount);
+  // No rentals → keep the simpler "X / max" display.
+  if (rentedCount === 0) {
+    return (
+      <Typography variant="caption">
+        {workerCount} / {maxWorkers}
+      </Typography>
+    );
+  }
+  return (
+    <Tooltip
+      title={`${ownedCount} owned · ${rentedCount} rented · ${emptyCount} empty`}
+    >
+      <Typography variant="caption">
+        {ownedCount}+{rentedCount} / {maxWorkers}
+      </Typography>
+    </Tooltip>
+  );
+}
+
+function PlotRow({
+  plot,
+  rentSummary,
+}: {
+  plot: RentalEligiblePlot;
+  rentSummary: PlotRentSummary;
+}) {
   return (
     <TableRow>
       <TableCell>
@@ -101,9 +146,11 @@ function PlotRow({ plot }: { plot: RentalEligiblePlot }) {
           ) : (
             <BoltOutlined sx={{ fontSize: 14, color: "text.disabled" }} />
           )}
-          <Typography variant="caption">
-            {plot.worker_count} / {plot.max_workers}
-          </Typography>
+          <WorkerCount
+            workerCount={plot.worker_count}
+            rentedCount={rentSummary.rentedCount}
+            maxWorkers={plot.max_workers}
+          />
         </Stack>
       </TableCell>
       <TableCell>
@@ -115,6 +162,16 @@ function PlotRow({ plot }: { plot: RentalEligiblePlot }) {
           sx={{ fontSize: "0.65rem", height: 18 }}
         />
       </TableCell>
+      <TableCell align="right">
+        <Typography variant="caption">
+          {rentSummary.decPerDay > 0 ? fmtDec(rentSummary.decPerDay) : "—"}
+        </Typography>
+      </TableCell>
+      <TableCell align="right">
+        <Typography variant="caption">
+          {rentSummary.totalDec > 0 ? fmtDec(rentSummary.totalDec) : "—"}
+        </Typography>
+      </TableCell>
       <TableCell>
         <BiomeChips modifiers={plot.biome_modifiers} />
       </TableCell>
@@ -124,9 +181,11 @@ function PlotRow({ plot }: { plot: RentalEligiblePlot }) {
 
 function PlotTable({
   plots,
+  rentByPlot,
   emptyMessage,
 }: {
   plots: RentalEligiblePlot[];
+  rentByPlot: Map<number, PlotRentSummary>;
   emptyMessage: string;
 }) {
   if (plots.length === 0) {
@@ -136,6 +195,11 @@ function PlotTable({
       </Typography>
     );
   }
+  const empty: PlotRentSummary = {
+    rentedCount: 0,
+    decPerDay: 0,
+    totalDec: 0,
+  };
   return (
     <Box sx={{ overflowX: "auto" }}>
       <Table size="small">
@@ -145,12 +209,18 @@ function PlotTable({
             <TableCell>Resource</TableCell>
             <TableCell>Workers</TableCell>
             <TableCell>Empty</TableCell>
+            <TableCell align="right">DEC/day</TableCell>
+            <TableCell align="right">Total DEC</TableCell>
             <TableCell>Biome boost</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {plots.map((p) => (
-            <PlotRow key={p.deed_uid} plot={p} />
+            <PlotRow
+              key={p.deed_uid}
+              plot={p}
+              rentSummary={rentByPlot.get(p.plot_id) ?? empty}
+            />
           ))}
         </TableBody>
       </Table>
@@ -162,26 +232,30 @@ export default function RentalOverview({
   enabledRegions,
   refreshKey = 0,
 }: Props) {
-  const [data, setData] = useState<RentalEligibilityResult | null>(null);
-  const [alerts, setAlerts] = useState<RegionAlertInfo[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    eligibility: data,
+    rentedCards,
+    loading,
+  } = useLandManagerRegionData(enabledRegions, refreshKey);
 
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([
-      getRentalEligibility(enabledRegions),
-      getRegionAlerts(enabledRegions),
-    ]).then(([d, a]) => {
-      if (!cancelled) {
-        setData(d);
-        setAlerts(a);
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [enabledRegions, refreshKey]);
+  const rentByPlot = useMemo(() => {
+    const map = new Map<number, PlotRentSummary>();
+    for (const c of rentedCards?.cards ?? []) {
+      const existing = map.get(c.stake_plot) ?? {
+        rentedCount: 0,
+        decPerDay: 0,
+        totalDec: 0,
+      };
+      existing.rentedCount += 1;
+      existing.decPerDay += c.dec_per_day;
+      existing.totalDec += c.total_dec;
+      map.set(c.stake_plot, existing);
+    }
+    return map;
+  }, [rentedCards]);
+
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
 
   if (enabledRegions.length === 0) return null;
 
@@ -202,12 +276,19 @@ export default function RentalOverview({
     0
   );
 
-  if (data.eligible.length === 0 && data.unpoweredSkipped.length === 0) {
+  const hasRented = (rentedCards?.cards.length ?? 0) > 0;
+  if (
+    data.eligible.length === 0 &&
+    data.unpoweredSkipped.length === 0 &&
+    !hasRented
+  ) {
     return null;
   }
 
-  const stakeShortfalls = alerts.filter(
-    (a) => a.dec_stake_needed > a.dec_stake_in_use
+  const cards = rentedCards?.cards ?? [];
+  const paginated = cards.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
   );
 
   return (
@@ -217,26 +298,27 @@ export default function RentalOverview({
           Rental Overview
         </Typography>
 
-        {stakeShortfalls.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
-            <Typography variant="caption" display="block">
-              DEC stake shortfall in {stakeShortfalls.length} region
-              {stakeShortfalls.length === 1 ? "" : "s"} — these regions need
-              more DEC staked before full PP can be earned:
-            </Typography>
-            <Stack direction="row" gap={0.5} flexWrap="wrap" mt={0.5}>
-              {stakeShortfalls.map((r) => (
-                <Chip
-                  key={r.region_number}
-                  label={`R${r.region_number}: +${(r.dec_stake_needed - r.dec_stake_in_use).toLocaleString("en-US", { maximumFractionDigits: 0 })} DEC`}
-                  size="small"
-                  variant="outlined"
-                  color="warning"
-                  sx={{ fontSize: "0.65rem", height: 20 }}
-                />
-              ))}
-            </Stack>
-          </Alert>
+        {hasRented && rentedCards && (
+          <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
+            <Chip
+              label={`Rented cards: ${rentedCards.cards.length}`}
+              size="small"
+              variant="outlined"
+              color="info"
+            />
+            <Chip
+              label={`${fmtDec(rentedCards.total_dec_per_day)} DEC/day`}
+              size="small"
+              variant="outlined"
+              color="info"
+            />
+            <Chip
+              label={`${fmtInt(rentedCards.total_dec_for_duration)} DEC total spend`}
+              size="small"
+              variant="outlined"
+              color="info"
+            />
+          </Stack>
         )}
 
         <Stack gap={2}>
@@ -249,6 +331,7 @@ export default function RentalOverview({
             </Typography>
             <PlotTable
               plots={data.eligible}
+              rentByPlot={rentByPlot}
               emptyMessage="No plots with empty worker slots"
             />
           </Box>
@@ -264,7 +347,87 @@ export default function RentalOverview({
               </Typography>
               <PlotTable
                 plots={data.unpoweredSkipped}
+                rentByPlot={rentByPlot}
                 emptyMessage="No unpowered plots"
+              />
+            </Box>
+          )}
+
+          {hasRented && (
+            <Box>
+              <Typography variant="caption" color="text.secondary" gutterBottom>
+                Rented cards — {cards.length} card
+                {cards.length === 1 ? "" : "s"} rented from other players,
+                staked on your plots.
+              </Typography>
+              <Box sx={{ overflowX: "auto" }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Card UID</TableCell>
+                      <TableCell>Owner</TableCell>
+                      <TableCell>Plot</TableCell>
+                      <TableCell>Type</TableCell>
+                      <TableCell align="right">Days left</TableCell>
+                      <TableCell align="right">DEC/day</TableCell>
+                      <TableCell align="right">Total DEC</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginated.map((c) => (
+                      <TableRow key={c.card_uid}>
+                        <TableCell>
+                          <Typography variant="caption" fontFamily="monospace">
+                            {c.card_uid}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption">{c.owner}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption" fontFamily="monospace">
+                            {c.stake_region != null
+                              ? `R${c.stake_region} · `
+                              : ""}
+                            #{c.stake_plot}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="caption">
+                            {c.rental_type}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {c.rental_days}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {fmtDec(c.dec_per_day)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {fmtDec(c.total_dec)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+              <TablePagination
+                component="div"
+                count={cards.length}
+                page={page}
+                onPageChange={(_, newPage) => setPage(newPage)}
+                rowsPerPage={rowsPerPage}
+                onRowsPerPageChange={(e) => {
+                  setRowsPerPage(parseInt(e.target.value, 10));
+                  setPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 25, 50]}
               />
             </Box>
           )}

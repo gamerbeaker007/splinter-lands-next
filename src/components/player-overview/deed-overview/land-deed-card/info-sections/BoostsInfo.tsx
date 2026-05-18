@@ -71,12 +71,12 @@ export default function BoostInfo({
       >
         <BiomeBoosts
           modifiers={{
-            red: redBiomeBoost,
-            blue: blueBiomeBoost,
-            white: whiteBiomeBoost,
-            black: blackBiomeBoost,
-            green: greenbBiomeBoost,
-            gold: goldBiomeBoost,
+            fire: redBiomeBoost,
+            water: blueBiomeBoost,
+            life: whiteBiomeBoost,
+            death: blackBiomeBoost,
+            earth: greenbBiomeBoost,
+            dragon: goldBiomeBoost,
           }}
         />
         <Divider

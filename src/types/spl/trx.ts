@@ -127,6 +127,27 @@ export interface MarketRentTrxData {
   by_seller: MarketRentSellerResult[];
 }
 
+// ── dec_powerup_region ────────────────────────────────────────────────────────
+// Result of staking DEC into a region. Triggers an auto-harvest as a side
+// effect — we surface the key bits (efficiency change + the inner harvest
+// outcome) so callers can verify the stake landed and report what happened
+// during the implicit harvest.
+
+export interface DecPowerupRegionTrxData {
+  pre_op_efficiency: number;
+  post_op_efficiency: number;
+  /** True when the auto-harvest sub-step ran cleanly. */
+  harvest_succeeded: boolean;
+  /** Inner harvest error, empty string when none. */
+  harvest_error: string;
+  /** Human-readable summary from the inner harvest (e.g. "1 deeds were harvested"). */
+  harvest_message: string;
+  /** Number of deeds harvested as part of the auto-harvest. */
+  harvest_deed_count: number;
+  /** Per-deed harvest outcomes — same shape as harvest_all results. */
+  harvest_results: HarvestAllDeedResult[];
+}
+
 // ── stake_change ──────────────────────────────────────────────────────────────
 
 export interface StakeChangeTrxData {
@@ -147,7 +168,8 @@ export type SplTrxResult =
   | { type: "tax_collection"; data: TaxCollectionTrxData }
   | { type: "add_liquidity"; data: AddLiquidityTrxData }
   | { type: "market_rent"; data: MarketRentTrxData }
-  | { type: "stake_change"; data: StakeChangeTrxData };
+  | { type: "stake_change"; data: StakeChangeTrxData }
+  | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData };
 
 /**
  * Outcome of a single transaction lookup.

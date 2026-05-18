@@ -10,6 +10,7 @@ import {
   Alert,
   Box,
   Button,
+  capitalize,
   Chip,
   Dialog,
   DialogActions,
@@ -20,6 +21,8 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { foilLabel } from "@/lib/utils/cardUtil";
+import { cardElementColorMap } from "@/types/planner";
 
 interface Props {
   plan: RentalPlan;
@@ -71,7 +74,11 @@ function PickCard({ pick }: { pick: RentalPlanPick }) {
           {pick.card_name}
         </Typography>
         <Typography variant="caption" color="text.secondary">
-          lvl {pick.level} · {pick.color} ·{" "}
+          lvl {pick.level} ·{" "}
+          {capitalize(
+            cardElementColorMap[pick.color.toLowerCase()] ?? pick.color
+          )}{" "}
+          · {foilLabel(pick.foil)} Foil ·{" "}
           {pick.biome_modifier > 0
             ? `+${(pick.biome_modifier * 100).toFixed(0)}% biome`
             : "no biome bonus"}

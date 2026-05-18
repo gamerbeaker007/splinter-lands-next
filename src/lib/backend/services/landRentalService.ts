@@ -5,9 +5,13 @@ import {
 } from "@/lib/backend/api/spl/spl-base-api";
 import logger from "@/lib/backend/log/logger.server";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
-import { BiomeKey, biomeKeyForCardColor } from "@/lib/shared/biomeUtils";
-import { findCardSet, getCardImgV2 } from "@/lib/utils/cardUtil";
 import {
+  findCardElement,
+  findCardSet,
+  getCardImgV2,
+} from "@/lib/utils/cardUtil";
+import {
+  CardElement,
   CardFoil,
   cardFoilOptions,
   CardRarity,
@@ -75,7 +79,7 @@ interface CandidateTuple {
   card_detail_id: number;
   foil: number;
   edition: number;
-  biomeKey: BiomeKey;
+  element: CardElement;
 }
 
 interface CandidateTuplesResult {
@@ -87,10 +91,11 @@ interface CandidateTuplesResult {
 interface ScoredListing {
   listing: SplMarketListing;
   card: SplCardDetails;
-  biomeKey: BiomeKey;
+  element: CardElement;
   total_dec: number;
   rental_days: number;
   land_base_pp: number;
+  potential_effective_pp: number;
 }
 
 interface PlotState {
@@ -180,7 +185,8 @@ function buildCandidateTuples(
   cardById: Map<number, SplCardDetails>,
   cardDetails: SplCardDetails[],
   maxPerWorkerPerDay: number,
-  minLandBasePp: number
+  minLandBasePp: number,
+  minFoil: number
 ): CandidateTuplesResult {
   const tupleByKey = new Map<string, CandidateTuple>();
   const perBiome: Record<string, number> = {};
@@ -194,6 +200,7 @@ function buildCandidateTuples(
     if (!card) return Number.POSITIVE_INFINITY;
     const ppPerBcx = ppPerBcxForGrouped(g, card, cardDetails);
     if (ppPerBcx === null || ppPerBcx <= 0) return Number.POSITIVE_INFINITY;
+
     return g.low_price_bcx / ppPerBcx;
   };
   const groupedSorted = [...grouped].sort(
@@ -203,12 +210,16 @@ function buildCandidateTuples(
   for (const g of groupedSorted) {
     const card = cardById.get(g.card_detail_id);
     if (!card) continue;
-    const biomeKey = biomeKeyForCardColor(card.color);
-    if (!biomeKey) continue; // neutral / unknown
+    const element = findCardElement(cardDetails, g.card_detail_id);
+
+    // Min foil: skip groups below the chosen foil rank (0=Regular, 1=Gold, ...).
+    if (g.foil < minFoil) continue;
+
     // Per-worker DEC/day cap: if even the cheapest listing of this group
     // exceeds the cap, no listings in it can ever be picked — skip before
     // making an API call.
     if (g.low_price > maxPerWorkerPerDay) continue;
+
     // Min land_base_pp: all listings in a group share level → share BCX → same
     // land_base_pp. Skip the group before fetching if it's below the floor.
     if (minLandBasePp > 0) {
@@ -217,16 +228,15 @@ function buildCandidateTuples(
     }
     groupedAfterColorFilter += 1;
 
-    if ((perBiome[biomeKey] ?? 0) >= MAX_GROUPED_CANDIDATES_PER_BIOME) continue;
-
+    if ((perBiome[element] ?? 0) >= MAX_GROUPED_CANDIDATES_PER_BIOME) continue;
     const key = `${g.card_detail_id}:${g.foil}:${g.edition}`;
     if (tupleByKey.has(key)) continue;
-    perBiome[biomeKey] = (perBiome[biomeKey] ?? 0) + 1;
+    perBiome[element] = (perBiome[element] ?? 0) + 1;
     tupleByKey.set(key, {
       card_detail_id: g.card_detail_id,
       foil: g.foil,
       edition: g.edition,
-      biomeKey,
+      element,
     });
   }
 
@@ -314,27 +324,33 @@ function rentalDaysFromListing(
 function scoreListing(
   listing: SplMarketListing,
   card: SplCardDetails,
-  biomeKey: BiomeKey,
+  element: CardElement,
   rentalDays: number,
   minLandBasePp: number
 ): ScoredListing | null {
   if (rentalDays <= 0) return null;
+  //Assume 10% buff because land bonus will be applied only for neutrals the boost is 0 (so rank neutrals lower)
+  const boost = element === "neutral" ? 0 : 0.1;
   const land_base_pp = Number(listing.land_base_pp);
+
   if (!Number.isFinite(land_base_pp) || land_base_pp <= 0) return null;
+
   // Per-listing PP guard. Needed in addition to the grouped pre-filter because
   // market_query_by_card returns ALL levels for (cdid, foil, edition) and a
   // tuple keyed on those three can be added by a high-level group, then a
   // low-level listing of the same card slips through the response.
   if (minLandBasePp > 0 && land_base_pp < minLandBasePp) return null;
+
   const total_dec = listing.buy_price * rentalDays;
   if (total_dec <= 0) return null;
   return {
     listing,
     card,
-    biomeKey,
+    element,
     total_dec,
     rental_days: rentalDays,
     land_base_pp,
+    potential_effective_pp: land_base_pp * (1 + boost),
   };
 }
 
@@ -353,8 +369,8 @@ function findBestPlotForListing(
   for (const state of states) {
     const remaining = remainingSlots.get(state.plot.deed_uid) ?? 0;
     if (remaining <= 0) continue;
-    const mod = state.plot.biome_modifiers[scored.biomeKey];
-    if (mod <= 0) continue; // plot does not benefit from this card's biome
+    const mod = state.plot.biome_modifiers[scored.element] ?? 0;
+    if (mod < 0) continue; // plot does not benefit from this card's element
     // Primary: highest biome modifier (give best card to plot that benefits most).
     // Tiebreak: plot with more empty slots (spreads picks evenly across plots).
     if (
@@ -439,7 +455,7 @@ async function fetchAndAssignLazy(
       const scored = scoreListing(
         listing,
         card,
-        tuple.biomeKey,
+        tuple.element,
         rentalDays,
         config.min_land_base_pp
       );
@@ -448,8 +464,8 @@ async function fetchAndAssignLazy(
     }
     scoredList.sort(
       (a, b) =>
-        b.land_base_pp / b.listing.buy_price -
-        a.land_base_pp / a.listing.buy_price
+        b.potential_effective_pp / b.listing.buy_price -
+        a.potential_effective_pp / a.listing.buy_price
     );
 
     for (const scored of scoredList) {
@@ -461,7 +477,7 @@ async function fetchAndAssignLazy(
       const target = findBestPlotForListing(scored, states, remainingSlots);
       if (!target) continue;
 
-      const mod = target.plot.biome_modifiers[scored.biomeKey];
+      const mod = target.plot.biome_modifiers[scored.element] ?? 0;
       target.picks.push(buildPick(scored, mod));
       target.plot_total_dec += scored.total_dec;
       remainingSlots.set(
@@ -525,7 +541,8 @@ export async function buildRentalPlan(
     cardById,
     cardDetails,
     maxDECPerWorkerPerDay,
-    config.min_land_base_pp
+    config.min_land_base_pp,
+    config.min_foil
   );
   logger.info(
     `[rental] biome-mappable: ${cands.groupedAfterColorFilter}; unique tuples: ${cands.tuples.length}; per biome: ${JSON.stringify(cands.perBiome)}`

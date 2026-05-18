@@ -40,7 +40,7 @@ export default function TopBar() {
           <CacheStatusDot />
           <ActiveTile />
           <ThemeToggle />
-          <LoginComponent />
+          <LoginComponent compact />
         </Box>
       </Toolbar>
     </AppBar>

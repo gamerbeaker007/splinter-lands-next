@@ -1,5 +1,9 @@
 // === Dry-run result (shared across bulk action hooks) ===
 
+import { BiomeModifiers } from "@/lib/utils/cardUtil";
+
+export type { BiomeModifiers };
+
 export interface DryRunResult {
   title: string;
   log: string[];
@@ -66,6 +70,8 @@ export interface RentalConfig {
   max_dec_per_day_per_worker: number;
   /** Minimum land_base_pp per card. 0 = no minimum. */
   min_land_base_pp: number;
+  /** Minimum foil rank (0=Regular). Cards below this are skipped. */
+  min_foil: number;
 }
 
 export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
@@ -73,19 +79,10 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   max_total_dec: 0,
   max_dec_per_day_per_worker: 0,
   min_land_base_pp: 0,
+  min_foil: 0,
 };
 
 // === Rental eligibility (computed from region data) ===
-
-export interface RentalBiomeModifiers {
-  red: number;
-  blue: number;
-  white: number;
-  black: number;
-  green: number;
-  gold: number;
-}
-
 export interface RentalEligiblePlot {
   deed_uid: string;
   plot_id: number;
@@ -98,7 +95,7 @@ export interface RentalEligiblePlot {
   max_workers: number;
   empty_slots: number;
   is_powered: boolean;
-  biome_modifiers: RentalBiomeModifiers;
+  biome_modifiers: BiomeModifiers;
 }
 
 export interface RentalEligibilityResult {

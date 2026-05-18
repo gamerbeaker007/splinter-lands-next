@@ -14,8 +14,12 @@ async function LandManagerContent() {
       : Promise.resolve({ regions: [] }),
   ]);
 
+  // Key by username so a fresh login replaces the previous user's local
+  // state (currentConfig) instead of holding the stale config from the
+  // first mount until the next full page reload.
   return (
     <LandManagerPage
+      key={auth.username ?? "anon"}
       auth={auth}
       config={config}
       allRegions={overview.regions}

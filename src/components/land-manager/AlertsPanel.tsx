@@ -1,19 +1,12 @@
 "use client";
 
+import { useLandManagerRegionData } from "../../hooks/useLandManagerRegionData";
+import { CheckCircleOutline, GroupAddOutlined } from "@mui/icons-material";
 import {
-  getRegionAlerts,
-  RegionAlertInfo,
-} from "@/lib/backend/actions/land-manager/rental-actions";
-import {
-  BoltOutlined,
-  CheckCircleOutline,
-  WarningAmber,
-} from "@mui/icons-material";
-import {
+  Alert,
   Box,
   Card,
   CardContent,
-  Chip,
   Skeleton,
   Stack,
   Table,
@@ -23,7 +16,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 
 interface Props {
   enabledRegions: number[];
@@ -35,43 +27,35 @@ function fmtNum(value: number): string {
 }
 
 export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
-  const [data, setData] = useState<RegionAlertInfo[] | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    getRegionAlerts(enabledRegions).then((d) => {
-      if (!cancelled) {
-        setData(d);
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [enabledRegions, refreshKey]);
+  const { eligibility, alerts, loading } = useLandManagerRegionData(
+    enabledRegions,
+    refreshKey
+  );
 
   if (enabledRegions.length === 0) return null;
-  if (loading || data === null) {
+  if (loading) {
     return (
       <Box sx={{ mb: 2 }}>
         <Skeleton variant="rounded" height={100} />
       </Box>
     );
   }
-  if (data.length === 0) return null;
 
-  const totalUnpowered = data.reduce((s, r) => s + r.unpowered_plot_count, 0);
-  const shortfallByRegion = data.map((r) => ({
+  const shortfallByRegion = alerts.map((r) => ({
     region: r,
     shortfall: Math.max(0, r.dec_stake_needed - r.dec_stake_in_use),
   }));
   const totalShortfall = shortfallByRegion.reduce((s, x) => s + x.shortfall, 0);
   const regionsWithShortfall = shortfallByRegion.filter((x) => x.shortfall > 0);
 
-  // Panel only appears when at least one alert is live. When both checks pass
-  // (all plots powered + DEC stake sufficient everywhere), nothing renders.
-  if (totalUnpowered === 0 && totalShortfall === 0) return null;
+  const eligiblePlots = eligibility?.eligible ?? [];
+  const totalEmptyEligible = eligiblePlots.reduce(
+    (s, p) => s + p.empty_slots,
+    0
+  );
+  const hasPoweredEmpty = totalEmptyEligible > 0;
+
+  if (!hasPoweredEmpty && totalShortfall === 0) return null;
 
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
@@ -81,54 +65,29 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
         </Typography>
 
         <Stack gap={2}>
-          {/* Unpowered plots — only when there are unpowered plots; otherwise
-              a small "all clear" line so the user can see the check ran. */}
-          {totalUnpowered > 0 ? (
+          {hasPoweredEmpty && (
             <Box>
               <Stack direction="row" gap={1} alignItems="center" mb={0.5}>
-                <BoltOutlined sx={{ fontSize: 14, color: "warning.main" }} />
-                <Typography variant="caption" color="warning.main">
-                  Unpowered plots — {totalUnpowered} total
+                <GroupAddOutlined sx={{ fontSize: 14, color: "info.main" }} />
+                <Typography variant="caption" color="info.main">
+                  Powered plots with empty workers — {totalEmptyEligible} slot
+                  {totalEmptyEligible === 1 ? "" : "s"} across{" "}
+                  {eligiblePlots.length} plot
+                  {eligiblePlots.length === 1 ? "" : "s"}
                 </Typography>
-              </Stack>
-              <Stack direction="row" gap={0.5} flexWrap="wrap">
-                {data
-                  .filter((r) => r.unpowered_plot_count > 0)
-                  .map((r) => (
-                    <Chip
-                      key={r.region_number}
-                      label={`R${r.region_number}: ${r.unpowered_plot_count}/${r.total_plot_count}`}
-                      size="small"
-                      variant="outlined"
-                      color="warning"
-                      sx={{ fontSize: "0.65rem", height: 20 }}
-                    />
-                  ))}
               </Stack>
             </Box>
-          ) : (
-            <Stack direction="row" gap={1} alignItems="center">
-              <CheckCircleOutline
-                sx={{ fontSize: 14, color: "success.main" }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                All worker plots are powered.
-              </Typography>
-            </Stack>
           )}
 
-          {/* DEC stake — only when there is at least one shortfall; otherwise
-              a small "all clear" line. */}
           {totalShortfall > 0 ? (
-            <Box>
-              <Stack direction="row" gap={1} alignItems="center" mb={0.5}>
-                <WarningAmber sx={{ fontSize: 14, color: "warning.main" }} />
-                <Typography variant="caption" color="warning.main">
-                  DEC stake shortfall — {fmtNum(totalShortfall)} DEC across{" "}
-                  {regionsWithShortfall.length} region
-                  {regionsWithShortfall.length === 1 ? "" : "s"}
+            <Stack gap={1}>
+              <Alert severity="warning">
+                <Typography variant="caption" display="block">
+                  DEC stake shortfall in {regionsWithShortfall.length} region
+                  {regionsWithShortfall.length === 1 ? "" : "s"} — these regions
+                  need more DEC staked before full PP can be earned:
                 </Typography>
-              </Stack>
+              </Alert>
               <Box sx={{ overflowX: "auto" }}>
                 <Table size="small">
                   <TableHead>
@@ -171,7 +130,7 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
                   </TableBody>
                 </Table>
               </Box>
-            </Box>
+            </Stack>
           ) : (
             <Stack direction="row" gap={1} alignItems="center">
               <CheckCircleOutline

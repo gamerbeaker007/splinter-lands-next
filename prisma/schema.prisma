@@ -347,6 +347,22 @@ model Log {
   @@map("logs")
 }
 
+model LandStakeDecLog {
+  date             DateTime @db.Date
+  player           String
+  runs             Int      @default(1)
+  succeeded_json   Json     @default("{}")    // { region_uid: amount } broadcast & confirmed
+  failed_json      Json     @default("{}")    // { region_uid: amount } attempted but failed
+  total_succeeded  Float    @default(0)
+  total_failed     Float    @default(0)
+  error            String?
+  transactions     String[] @default([])
+  updated_at       DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_stake_dec_log")
+}
+
 model LandManagerConfig {
   player                          String   @id
   enabled_regions                 Int[]
@@ -359,6 +375,7 @@ model LandManagerConfig {
   rental_max_total_dec              Int     @default(0)
   rental_max_dec_per_day_per_worker Int     @default(0)
   rental_min_land_base_pp           Int     @default(0)
+  rental_min_foil                   Int     @default(0)
   created_at                      DateTime @default(now())
   updated_at                      DateTime @updatedAt
 
@@ -428,7 +445,7 @@ model LandRentalLog {
   rented_count       Int      @default(0)   // total cards rented across all runs today
   staked_count       Int      @default(0)   // total cards staked across all runs today
   total_dec          Float    @default(0)   // total DEC spent across all runs today
-  rent_transactions  String[]               // txIds from sm_market_rent ops
+  rent_transactions  String[] @default([])  // txIds from sm_market_rent ops
   stake_transactions String[] @default([])  // txIds from staking ops
   updated_at         DateTime @updatedAt
 

@@ -395,6 +395,15 @@ export async function getTodayLogs(): Promise<{
     rent_transactions: string[];
     stake_transactions: string[];
   } | null;
+  stakeDec: {
+    runs: number;
+    succeeded_json: unknown;
+    failed_json: unknown;
+    total_succeeded: number;
+    total_failed: number;
+    error: string | null;
+    transactions: string[];
+  } | null;
 }> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -404,30 +413,40 @@ export async function getTodayLogs(): Promise<{
       postHarvest: null,
       mythicHarvest: null,
       rental: null,
+      stakeDec: null,
     };
   }
 
   const date = today();
   const player = auth.username;
 
-  const [harvest, makeHarvestable, postHarvest, mythicHarvest, rental] =
-    await Promise.all([
-      prisma.landHarvestLog.findUnique({
-        where: { date_player: { date, player } },
-      }),
-      prisma.landMakeHarvestableLog.findUnique({
-        where: { date_player: { date, player } },
-      }),
-      prisma.landPostHarvestLog.findUnique({
-        where: { date_player: { date, player } },
-      }),
-      prisma.landMythicHarvestLog.findUnique({
-        where: { date_player: { date, player } },
-      }),
-      prisma.landRentalLog.findUnique({
-        where: { date_player: { date, player } },
-      }),
-    ]);
+  const [
+    harvest,
+    makeHarvestable,
+    postHarvest,
+    mythicHarvest,
+    rental,
+    stakeDec,
+  ] = await Promise.all([
+    prisma.landHarvestLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landMakeHarvestableLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landPostHarvestLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landMythicHarvestLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landRentalLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landStakeDecLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+  ]);
 
   return {
     harvest: harvest
@@ -474,6 +493,17 @@ export async function getTodayLogs(): Promise<{
           total_dec: rental.total_dec,
           rent_transactions: rental.rent_transactions,
           stake_transactions: rental.stake_transactions,
+        }
+      : null,
+    stakeDec: stakeDec
+      ? {
+          runs: stakeDec.runs,
+          succeeded_json: stakeDec.succeeded_json,
+          failed_json: stakeDec.failed_json,
+          total_succeeded: stakeDec.total_succeeded,
+          total_failed: stakeDec.total_failed,
+          error: stakeDec.error,
+          transactions: stakeDec.transactions,
         }
       : null,
   };

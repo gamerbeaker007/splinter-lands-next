@@ -1,24 +1,31 @@
 import React, { JSX } from "react";
 import { Box, Typography, Avatar, Stack } from "@mui/material";
-import { biomeColorMap, biomeIconMap, BiomeKey } from "@/lib/shared/biomeUtils";
+import {
+  BiomeModifiers,
+  landElementBgColor,
+  landElementIconUrl,
+} from "@/lib/utils/cardUtil";
+import { cardElementOptions } from "@/types/planner";
 
 export type BiomeBoostsProps = {
-  modifiers: Partial<Record<BiomeKey, number>>;
+  modifiers: BiomeModifiers;
 };
 
 export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
   const positives: JSX.Element[] = [];
   const negatives: JSX.Element[] = [];
 
-  Object.entries(biomeColorMap).forEach(([biome, bgColor]) => {
-    const modifier = modifiers[biome as BiomeKey] || 0;
+  cardElementOptions.forEach((element) => {
+    if (element === "neutral") return;
+    const bgColor = landElementBgColor[element];
+    const modifier = modifiers[element] || 0;
     if (modifier !== 0) {
       const percent = modifier * 100;
       const isPositive = percent > 0;
-      const biomeImage = biomeIconMap[biome as BiomeKey] || "";
+      const biomeImage = landElementIconUrl[element] || "";
 
       const block = (
-        <Box key={biome} textAlign="center">
+        <Box key={element} textAlign="center">
           <Typography
             fontWeight="bold"
             fontFamily="monospace"

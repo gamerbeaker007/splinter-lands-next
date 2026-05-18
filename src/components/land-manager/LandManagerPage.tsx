@@ -224,6 +224,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
           enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
         }
         rental={currentConfig.rental}
+        refreshKey={regionRefreshKey}
         onSuccess={() => setRegionRefreshKey((k) => k + 1)}
       />
 

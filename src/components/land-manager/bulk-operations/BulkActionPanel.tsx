@@ -6,6 +6,8 @@ import HarvestMythicsRow from "@/components/land-manager/bulk-operations/Harvest
 import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
 import RentEmptyWorkersRow from "@/components/land-manager/bulk-operations/RentEmptyWorkersRow";
+import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
+import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   DryRunResult,
@@ -29,6 +31,7 @@ interface Props {
   mythicFeeAccepted: boolean;
   hasMythics: boolean;
   rental: RentalConfig;
+  refreshKey?: number;
   onSuccess?: () => void;
 }
 
@@ -43,9 +46,19 @@ export default function BulkActionPanel({
   mythicFeeAccepted,
   hasMythics,
   rental,
+  refreshKey = 0,
   onSuccess,
 }: Props) {
   const router = useRouter();
+  const { alerts } = useLandManagerRegionData(enabledRegions, refreshKey);
+  const stakeShortfall = useMemo(
+    () =>
+      alerts.reduce(
+        (s, a) => s + Math.max(0, a.dec_stake_needed - a.dec_stake_in_use),
+        0
+      ),
+    [alerts]
+  );
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
   const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
     Set<number>
@@ -56,6 +69,7 @@ export default function BulkActionPanel({
     processResources: false,
     mythicHarvest: false,
     rentEmptyWorkers: false,
+    stakeDec: false,
   });
 
   useEffect(() => {
@@ -93,6 +107,10 @@ export default function BulkActionPanel({
   );
   const onRentEmptyWorkersBusy = useCallback(
     (b: boolean) => setBusyMap((m) => ({ ...m, rentEmptyWorkers: b })),
+    []
+  );
+  const onStakeDecBusy = useCallback(
+    (b: boolean) => setBusyMap((m) => ({ ...m, stakeDec: b })),
     []
   );
 
@@ -156,6 +174,15 @@ export default function BulkActionPanel({
           rental={rental}
           anyBusy={anyBusy}
           onBusyChange={onRentEmptyWorkersBusy}
+          onSuccess={afterSuccess}
+        />
+
+        <StakeDecRow
+          username={username}
+          enabledRegions={enabledRegions}
+          shortfallTotal={stakeShortfall}
+          anyBusy={anyBusy}
+          onBusyChange={onStakeDecBusy}
           onSuccess={afterSuccess}
         />
       </Stack>

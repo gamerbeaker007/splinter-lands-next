@@ -45,8 +45,11 @@ function getCardRarity(
  */
 function isActiveRental(card: SplPlayerCardCollection): boolean {
   if (!card.rental_days || !card.rental_date) return false;
-  const days = Number.parseInt(card.rental_days, 10);
-  if (Number.isNaN(days)) return false;
+  const days =
+    typeof card.rental_days === "number"
+      ? card.rental_days
+      : Number.parseInt(card.rental_days, 10);
+  if (!Number.isFinite(days)) return false;
   const end = new Date(card.rental_date).getTime() + days * 24 * 60 * 60 * 1000;
   return Date.now() < end;
 }

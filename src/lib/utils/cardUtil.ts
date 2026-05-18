@@ -1,10 +1,20 @@
 import { Resource } from "@/constants/resource/resource";
-import { WEB_URL } from "@/lib/shared/statics_icon_urls";
+import {
+  death_element_icon_url,
+  dragon_element_icon_url,
+  earth_element_icon_url,
+  fire_element_icon_url,
+  life_element_icon_url,
+  neutral_element_icon_url,
+  water_element_icon_url,
+  WEB_URL,
+} from "@/lib/shared/statics_icon_urls";
 import { CardSetNameLandValid, editionMap } from "@/types/editions";
 import {
   CardElement,
   cardElementColorMap,
   CardFoil,
+  cardFoilOptions,
   cardFoilSuffixMap,
   CardRarity,
   cardRarityOptions,
@@ -18,26 +28,65 @@ import { SplCardDetails } from "@/types/splCardDetails";
 type FoilBCXType = "normal" | "gold";
 type SetName = "alpha" | "beta" | "default";
 
-type FoilMeta = {
-  bcxType: FoilBCXType;
-  suffix: string;
-  label: string;
-};
-
 // ----------------------------------
-// Foil Metadata Map
+// Foil labels (display) — keyed on the existing CardFoil string type.
+// `cardFoilOptions` provides the index→string mapping (0=regular …).
 // ----------------------------------
 
-/**
- * @deprecated remove when possible.
- */
-const foilMetaMap: Record<number, FoilMeta> = {
-  0: { bcxType: "normal", suffix: "", label: "Regular" },
-  1: { bcxType: "gold", suffix: "_gold", label: "Gold" },
-  2: { bcxType: "gold", suffix: "_gold", label: "Gold Arcane" },
-  3: { bcxType: "gold", suffix: "_blk", label: "Black Foil" },
-  4: { bcxType: "gold", suffix: "_blk", label: "Black Arcane" },
+export const cardFoilLabels: Record<CardFoil, string> = {
+  regular: "Regular",
+  gold: "Gold",
+  "gold arcane": "Gold Arcane",
+  black: "Black",
+  "black arcane": "Black Arcane",
 };
+
+/** Display label for a numeric foil id (0=Regular, 1=Gold, …, 4=Black Arcane). */
+export const foilLabel = (foil: number): string => {
+  const opt = cardFoilOptions[foil];
+  return opt ? cardFoilLabels[opt] : `Unknown (${foil})`;
+};
+
+/** All valid foil ids, in order. Use the index to look up `cardFoilOptions`. */
+export const FOIL_IDS: number[] = cardFoilOptions.map((_, i) => i);
+
+// ----------------------------------
+// Land biome elements (the 6 non-neutral `CardElement`s that match the
+// plot biome-modifier slots). Display maps (color, icon, label) live here
+// so callers don't need a separate biome utils module.
+// ----------------------------------
+
+export const landElementBgColor: Record<CardElement, string> = {
+  fire: "red",
+  water: "blue",
+  life: "gray",
+  death: "purple",
+  earth: "green",
+  dragon: "gold",
+  neutral: "gray",
+};
+
+export const landElementIconUrl: Record<CardElement, string> = {
+  fire: fire_element_icon_url,
+  water: water_element_icon_url,
+  life: life_element_icon_url,
+  death: death_element_icon_url,
+  earth: earth_element_icon_url,
+  dragon: dragon_element_icon_url,
+  neutral: neutral_element_icon_url,
+};
+
+export const landElementLabel: Record<CardElement, string> = {
+  fire: "Fire",
+  water: "Water",
+  life: "Life",
+  death: "Death",
+  earth: "Earth",
+  dragon: "Dragon",
+  neutral: "Neutral",
+};
+
+export type BiomeModifiers = Record<CardElement, number>;
 
 // ----------------------------------
 // BCX Map
@@ -59,15 +108,6 @@ const bcxMap: Record<
   },
 };
 
-// ----------------------------------
-// Utilities
-// ----------------------------------
-
-const getFoilSuffix = (foil: number): string => foilMetaMap[foil]?.suffix ?? "";
-
-const getFoilType = (foil: number): FoilBCXType =>
-  foilMetaMap[foil]?.bcxType ?? "normal";
-
 /**
  * @deprecated Use getCardImgV2 instead.
  */
@@ -77,7 +117,8 @@ export function getCardImg(
   foil: number,
   level?: number
 ): string {
-  const suffix = getFoilSuffix(foil);
+  const foilName = cardFoilOptions[foil];
+  const suffix = foilName ? cardFoilSuffixMap[foilName] : "";
   const baseCardUrl = `${WEB_URL}cards_by_level`;
   const editionName = editionMap[edition]?.urlName || "default";
   const safeCardName = encodeURIComponent(cardName.trim());
@@ -137,7 +178,7 @@ export const determineCardMaxBCX = (
   rarity: CardRarity,
   foil: number
 ): number => {
-  const foilType = getFoilType(foil);
+  const foilType: FoilBCXType = foil > 0 ? "gold" : "normal";
   const validSets: SetName[] = ["alpha", "beta", "default"];
   const set: SetName = validSets.includes(cardSet as SetName)
     ? (cardSet as SetName)

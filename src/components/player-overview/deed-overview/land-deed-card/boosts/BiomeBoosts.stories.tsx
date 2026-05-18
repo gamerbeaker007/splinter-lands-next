@@ -14,11 +14,11 @@ type Story = StoryObj<typeof BiomeBoosts>;
 export const Default: Story = {
   args: {
     modifiers: {
-      red: 0.1,
-      blue: -0.15,
-      green: 0.05,
-      white: 0.1,
-      gold: 1,
+      fire: 0.1,
+      water: -0.15,
+      earth: 0.05,
+      life: 0.1,
+      dragon: 1,
     },
   },
 };

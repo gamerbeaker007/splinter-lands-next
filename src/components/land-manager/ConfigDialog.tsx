@@ -8,6 +8,7 @@ import {
   saveRentalConfig,
 } from "@/lib/backend/actions/land-manager/config-actions";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
+import { FOIL_IDS, foilLabel } from "@/lib/utils/cardUtil";
 import {
   DEFAULT_POST_HARVEST_STRATEGY,
   LandManagerConfig,
@@ -37,8 +38,11 @@ import {
   FormControl,
   FormControlLabel,
   IconButton,
+  InputLabel,
+  MenuItem,
   Radio,
   RadioGroup,
+  Select,
   Stack,
   TextField,
   Tooltip,
@@ -496,6 +500,34 @@ export default function ConfigDialog({
                 slotProps={{ htmlInput: { min: 0 } }}
                 helperText="0 = no minimum. Skip cards whose land_base_pp is below this."
               />
+              <FormControl size="small">
+                <InputLabel id="rental-min-foil-label">Minimum foil</InputLabel>
+                <Select
+                  labelId="rental-min-foil-label"
+                  label="Minimum foil"
+                  value={rental.min_foil}
+                  onChange={(e) =>
+                    setRental((prev) => ({
+                      ...prev,
+                      min_foil: Number(e.target.value),
+                    }))
+                  }
+                >
+                  {FOIL_IDS.map((f) => (
+                    <MenuItem key={f} value={f}>
+                      {foilLabel(f)}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 0.5 }}
+                >
+                  Skip cards whose foil rank is below this. Regular = include
+                  all.
+                </Typography>
+              </FormControl>
             </Stack>
           </AccordionDetails>
         </Accordion>

@@ -3,6 +3,7 @@ import {
   fetchRegionDataPlayer,
   fetchStakedAssets,
 } from "@/lib/backend/api/spl/spl-land-api";
+import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import {
   DEFAULT_RENTAL_CONFIG,
@@ -63,12 +64,12 @@ export async function getRentalEligibility(
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
       biome_modifiers: {
-        red: staking.red_biome_modifier ?? 0,
-        blue: staking.blue_biome_modifier ?? 0,
-        white: staking.white_biome_modifier ?? 0,
-        black: staking.black_biome_modifier ?? 0,
-        green: staking.green_biome_modifier ?? 0,
-        gold: staking.gold_biome_modifier ?? 0,
+        fire: staking.red_biome_modifier ?? 0,
+        water: staking.blue_biome_modifier ?? 0,
+        life: staking.white_biome_modifier ?? 0,
+        death: staking.black_biome_modifier ?? 0,
+        earth: staking.green_biome_modifier ?? 0,
+        dragon: staking.gold_biome_modifier ?? 0,
       },
     };
 
@@ -139,6 +140,116 @@ export async function getRegionAlerts(
   return [...byRegion.values()].sort(
     (a, b) => a.region_number - b.region_number
   );
+}
+
+export interface RentedCardsSpendSummary {
+  card_count: number;
+  total_dec_per_day: number;
+  total_dec_for_duration: number;
+}
+
+export interface RentedCardEntry {
+  card_uid: string;
+  card_detail_id: number;
+  owner: string;
+  rental_type: string;
+  rental_days: number;
+  dec_per_day: number;
+  total_dec: number;
+  stake_plot: number;
+  stake_region: number | null;
+}
+
+export interface RentedCardsList {
+  cards: RentedCardEntry[];
+  total_dec_per_day: number;
+  total_dec_for_duration: number;
+}
+
+function isPlayerRentedCard(
+  c: import("@/types/splPlayerCardDetails").SplPlayerCardCollection,
+  username: string
+): boolean {
+  if (!c.rental_type) return false;
+  if (c.stake_plot == null) return false;
+  if (!c.player || c.player === username) return false;
+  return true;
+}
+
+/**
+ * Sums what the current player is spending on cards rented FROM other players
+ * and currently staked on one of their plots. Filters the player's collection
+ * to cards where rental_type and stake_plot are set and the owning player
+ * (`player` field on the card) is not the authenticated user.
+ */
+export async function getRentedCardsSpend(): Promise<RentedCardsSpendSummary> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { card_count: 0, total_dec_per_day: 0, total_dec_for_duration: 0 };
+  }
+
+  const cards = await getCachedPlayerCardCollection(auth.username);
+  let card_count = 0;
+  let total_dec_per_day = 0;
+  let total_dec_for_duration = 0;
+  for (const c of cards) {
+    if (!isPlayerRentedCard(c, auth.username)) continue;
+    const perDay = Number(c.buy_price);
+    if (!Number.isFinite(perDay) || perDay <= 0) continue;
+    const days = Number(c.rental_days);
+    const safeDays = Number.isFinite(days) && days > 0 ? days : 0;
+
+    card_count += 1;
+    total_dec_per_day += perDay;
+    total_dec_for_duration += perDay * safeDays;
+  }
+
+  return { card_count, total_dec_per_day, total_dec_for_duration };
+}
+
+/**
+ * Per-card breakdown of rentals the current player is paying for. Same filter
+ * as {@link getRentedCardsSpend} but returns each card individually so the UI
+ * can render a paginated table with DEC/day and total DEC per row.
+ */
+export async function getRentedCardsList(): Promise<RentedCardsList> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { cards: [], total_dec_per_day: 0, total_dec_for_duration: 0 };
+  }
+
+  const collection = await getCachedPlayerCardCollection(auth.username);
+  const cards: RentedCardEntry[] = [];
+  let total_dec_per_day = 0;
+  let total_dec_for_duration = 0;
+
+  for (const c of collection) {
+    if (!isPlayerRentedCard(c, auth.username)) continue;
+    const perDay = Number(c.buy_price);
+    if (!Number.isFinite(perDay) || perDay <= 0) continue;
+    const daysNum = Number(c.rental_days);
+    const days = Number.isFinite(daysNum) && daysNum > 0 ? daysNum : 0;
+    const total = perDay * days;
+
+    cards.push({
+      card_uid: c.uid,
+      card_detail_id: c.card_detail_id,
+      owner: c.player,
+      rental_type: c.rental_type ?? "",
+      rental_days: days,
+      dec_per_day: perDay,
+      total_dec: total,
+      stake_plot: c.stake_plot as number,
+      stake_region: c.stake_region ?? null,
+    });
+    total_dec_per_day += perDay;
+    total_dec_for_duration += total;
+  }
+
+  // Sort most-expensive first so the user sees the biggest spends up top.
+  cards.sort((a, b) => b.total_dec - a.total_dec);
+
+  return { cards, total_dec_per_day, total_dec_for_duration };
 }
 
 export async function getRentalDryRunPlan(
