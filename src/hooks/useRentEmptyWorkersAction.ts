@@ -7,7 +7,6 @@ import {
 import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
 import {
   getRentalDryRunPlan,
-  getRentalEligibility,
   getRentalExecutionPlan,
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
@@ -20,12 +19,13 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { RentalConfig, RentalPlan } from "@/types/landManager";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Params {
   username: string;
   rental: RentalConfig;
   enabledRegions: number[];
+  eligiblePlotCount?: number | null;
   onSuccess?: () => void;
 }
 
@@ -58,33 +58,15 @@ export function useRentEmptyWorkersAction({
   username,
   rental,
   enabledRegions,
+  eligiblePlotCount = null,
   onSuccess,
 }: Params): UseRentEmptyWorkersAction {
   const [busy, setBusy] = useState(false);
-  const [eligiblePlotCount, setEligiblePlotCount] = useState<number | null>(
-    null
-  );
-  const [checkKey, setCheckKey] = useState(0);
   const [dryRunPlan, setDryRunPlan] = useState<RentalPlan | null>(null);
   const [executionPlan, setExecutionPlan] =
     useState<RentalExecutionPlan | null>(null);
   const [result, setResult] = useState<RentExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getRentalEligibility(enabledRegions)
-      .then(({ eligible }) => {
-        if (!cancelled) setEligiblePlotCount(eligible.length);
-      })
-      .catch(() => {
-        if (!cancelled) setEligiblePlotCount(null);
-      });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledRegions.join(","), checkKey]);
 
   const preview = useCallback(async () => {
     setBusy(true);
@@ -273,7 +255,6 @@ export function useRentEmptyWorkersAction({
         );
       }
       onSuccess?.();
-      setCheckKey((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {

@@ -53,7 +53,10 @@ export default function BulkActionPanel({
   onSuccess,
 }: Props) {
   const router = useRouter();
-  const { stakedDEC } = useLandManagerRegionData(enabledRegions, refreshKey);
+  const { stakedDEC, eligibility } = useLandManagerRegionData(
+    enabledRegions,
+    refreshKey
+  );
   const stakeShortfall = useMemo(
     () =>
       stakedDEC.reduce(
@@ -176,6 +179,7 @@ export default function BulkActionPanel({
           enabledRegions={enabledRegions}
           rental={rental}
           authorityStatus={authorityStatus}
+          eligiblePlotCount={eligibility?.eligible.length ?? null}
           anyBusy={anyBusy}
           onBusyChange={onRentEmptyWorkersBusy}
           onSuccess={afterSuccess}

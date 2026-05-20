@@ -21,6 +21,7 @@ interface Props {
   enabledRegions: number[];
   rental: RentalConfig;
   authorityStatus?: RentalAuthorityStatus | null;
+  eligiblePlotCount?: number | null;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onSuccess: () => void;
@@ -38,6 +39,7 @@ export default function RentEmptyWorkersRow({
   enabledRegions,
   rental,
   authorityStatus,
+  eligiblePlotCount,
   anyBusy,
   onBusyChange,
   onSuccess,
@@ -46,6 +48,7 @@ export default function RentEmptyWorkersRow({
     username,
     rental,
     enabledRegions,
+    eligiblePlotCount,
     onSuccess,
   });
   const authority = authorityStatus ?? null;
