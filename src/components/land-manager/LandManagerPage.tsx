@@ -1,14 +1,16 @@
 "use client";
 
 import LoginComponent from "@/components/auth/LoginComponent";
+import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
-import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import MythicOverview from "@/components/land-manager/MythicOverview";
 import RegionOverview from "@/components/land-manager/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/RegionResourceSummary";
+import RentalAuthorityCard from "@/components/land-manager/RentalAuthorityCard";
 import RentalOverview from "@/components/land-manager/RentalOverview";
 import TodayPanel from "@/components/land-manager/TodayPanel";
+import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
@@ -84,6 +86,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
   );
   const [configOpen, setConfigOpen] = useState(false);
   const [regionRefreshKey, setRegionRefreshKey] = useState(0);
+  const authorityHook = useRentalAuthorityStatus();
   const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
     null
   );
@@ -172,6 +175,8 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </Box>
       </Alert>
 
+      <RentalAuthorityCard authority={authorityHook} />
+
       {/* Region status banner */}
       {enabledCount === 0 ? (
         <Alert
@@ -224,6 +229,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
           enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
         }
         rental={currentConfig.rental}
+        authorityStatus={authorityHook.status}
         refreshKey={regionRefreshKey}
         onSuccess={() => setRegionRefreshKey((k) => k + 1)}
       />

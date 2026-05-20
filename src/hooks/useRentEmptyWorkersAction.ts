@@ -1,8 +1,10 @@
+import { getRentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { recordRentalLog } from "@/lib/backend/actions/land-manager/log-actions";
 import {
   getDecBalance,
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
 import {
   getRentalDryRunPlan,
   getRentalEligibility,
@@ -10,21 +12,15 @@ import {
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
 import {
-  buildMarketRentOp,
   buildStakeWorkersOp,
   StakeWorkerCard,
 } from "@/lib/frontend/opBuilders";
 import {
   broadcastOperations,
-  KeychainKeyTypes,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { RentalConfig, RentalPlan } from "@/types/landManager";
 import { useCallback, useEffect, useState } from "react";
-
-// Max market_ids bundled into a single sm_market_rent op. Conservative — the
-// custom_json size limit on Hive is ~8KB but the engine may have its own cap.
-const MAX_ITEMS_PER_RENT_OP = 10;
 
 interface Params {
   username: string;
@@ -56,12 +52,6 @@ export interface UseRentEmptyWorkersAction {
   preview: () => Promise<void>;
   prepareExecution: () => Promise<void>;
   execute: () => Promise<void>;
-}
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const out: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
-  return out;
 }
 
 export function useRentEmptyWorkersAction({
@@ -178,17 +168,26 @@ export function useRentEmptyWorkersAction({
       return;
     }
 
-    const rentOps = chunk(allMarketIds, MAX_ITEMS_PER_RENT_OP).map((ids) =>
-      buildMarketRentOp(username, ids)
-    );
-
     try {
-      // ── Phase 1: rent (active key) ──
-      const rentRes = await broadcastOperations(
-        username,
-        rentOps,
-        KeychainKeyTypes.active
-      );
+      // ── Phase 1: rent (server-signed, no Keychain popup) ──
+      // Renting is server-side only — the configured land-service account
+      // signs sm_market_rent on the player's behalf via granted rental
+      // authority. The UI blocks this code path when authority is missing.
+      const authority = await getRentalAuthorityStatus();
+      if (!authority.serviceConfigured) {
+        setError("Server-side renting is not configured.");
+        setBusy(false);
+        return;
+      }
+      if (!authority.authorized) {
+        setError(
+          `@${authority.serviceAccount} does not have rental authority for @${authority.player}.`
+        );
+        setBusy(false);
+        return;
+      }
+
+      const rentRes = await rentOnBehalfOf(allMarketIds);
       if (!rentRes.success) {
         setError(
           `Rent failed: ${rentRes.error ?? "unknown error"}.${

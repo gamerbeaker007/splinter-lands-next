@@ -12,6 +12,65 @@ A new **Land Manager** page that lets an authenticated player run automated land
 1. **Phase 1 — Manual control**: Individual action buttons per action, result visible on page, full control.
 2. **Phase 2 — One-click automation**: Single "Run All" button that executes all configured actions in sequence.
 3. **Phase 3 — Worker process**: Once Splinterlands supports account delegation, run as background worker without player session.
+   - **Phase 3a (partial, landed)**: Server-side broadcasting of `sm_market_rent` via the configured land-service account when a player has granted "Rental" authority. The client-side Keychain rent path has been removed — renting is server-side only. Posting-key ops (worker staking) still need Keychain. See "Rental Authority" below.
+
+---
+
+## Rental Authority — server-side renting
+
+Splinterlands' Account Security UI lets a player grant other accounts the
+**Rental** authority. Any account in that list can sign `sm_market_rent` ops
+on the player's behalf by adding a `"player": "<player>"` field to the JSON
+body. SPL's game engine validates the signer against the player's
+`authorities.rental[]` list and accepts/rejects accordingly. (The sibling
+buckets `purchase` and `delegation` cover other on-behalf flows we do not use.)
+
+**Renting is server-side only.** The client never holds the active key and the
+old client-side Keychain rent path has been removed.
+
+### Wiring in this codebase
+
+- **Env vars** (`.env.example`):
+  - `SPL_LAND_SERVICE_ACCOUNT` — the Hive account that signs.
+  - `SPL_LAND_SERVICE_ACTIVE_KEY` — active private key, **server-only**.
+  - `HIVE_RPC_NODES` (optional) — comma-separated RPC endpoints.
+
+  Neither `SPL_LAND_SERVICE_*` env var is mirrored to a `NEXT_PUBLIC_*`
+  counterpart. The UI reads the configured account name from the server via
+  `getRentalAuthorityStatus()` — there is no reason to inline it into the
+  client bundle, and skipping the `NEXT_PUBLIC_` mirror means the account
+  name is also gated by JWT auth on the server action.
+- **Authority check**: `src/lib/backend/services/splAuthorityService.ts`
+  calls `GET https://api.splinterlands.com/players/authorities?players=<name>`
+  and checks `authorities.rental[]` against the configured service account.
+  Cached 5 minutes via `cache.ts`.
+- **Server action**: `src/lib/backend/actions/land-manager/authority-actions.ts`
+  exposes `getRentalAuthorityStatus()` and `refreshRentalAuthorityStatus()`.
+- **UI**:
+  - `src/components/land-manager/RentalAuthorityCard.tsx` — the user-facing
+    card on the Land Manager page. Shows current state (not configured / not
+    authorized / authorized) and broadcasts grant/revoke directly via Hive
+    Keychain (`sm_set_authority`, active key). Smart-merges with the player's
+    existing rental list so other grants (e.g. peakmonsters) are preserved.
+    After broadcast, polls the SPL authorities endpoint up to 30 s and shows
+    the confirmed state automatically.
+- **Broadcasting**: `src/lib/backend/services/hiveBroadcastService.ts` uses
+  `@hiveio/dhive` to sign and broadcast custom_json ops. Batches at
+  ≤ 4 ops per tx and sleeps 3 s between batches (mirrors the client flow).
+- **Rent action**: `src/lib/backend/actions/land-manager/rent-broadcast-actions.ts`
+  exposes `rentOnBehalfOf(marketIds)`. Verifies auth + authority, builds the ops
+  with `player: <player>`, and broadcasts via the service account.
+- **Hook guard**: `src/hooks/useRentEmptyWorkersAction.ts` calls
+  `getRentalAuthorityStatus()` at execute time and bails with a clear error
+  unless the service is configured AND the player has granted authority.
+
+### Behavior matrix
+
+| Service env-vars | Player granted authority | Rent button   | Rent path                  |
+|------------------|--------------------------|---------------|----------------------------|
+| unset            | n/a                      | **disabled**  | n/a — admin must configure |
+| set              | no                       | **disabled**  | n/a — prompt to grant      |
+| set              | yes                      | enabled       | Server signs from service  |
 
 ---
 

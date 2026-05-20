@@ -12,6 +12,47 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+### Added
+
+#### Land Manager — Rental Authority (server-side renting, required)
+
+**Renting is now server-side only.** The configured land-service account signs
+`sm_market_rent` on behalf of every player who has granted it the **Rental**
+authority via
+[SPL Account Security](https://splinterlands.com/?p=account_security). The
+old client-side Keychain rent path has been removed.
+
+- **No more per-batch active-key Keychain popups** during renting. Worker
+  staking still uses the player's posting key via Keychain.
+- **`RentalAuthorityCard` on the Land Manager page** — shows current state
+  (not configured / not authorized / authorized) and broadcasts grant /
+  revoke directly via Keychain using `sm_set_authority`:
+  - **Grant** → builds `{rental: [...existing, SPL_LAND_SERVICE_ACCOUNT]}`,
+    smart-merging with the player's existing rental list so other grants
+    (e.g. peakmonsters) are preserved.
+  - **Revoke** → builds `{rental: [...existing without service account]}`.
+  - After broadcast, the card polls the SPL authorities endpoint for up to
+    30 s and shows the confirmed state automatically.
+- **Rent / Dry Run buttons are disabled** until the service account is
+  configured AND the player has granted the rental authority.
+- **`/players/authorities` lookup is cached** for 5 minutes per player.
+- **Env vars** (see `.env.example`, both now required for renting):
+  - `SPL_LAND_SERVICE_ACCOUNT` — Hive account that signs delegated rent ops.
+  - `SPL_LAND_SERVICE_ACTIVE_KEY` — active private key for the above. Server-
+    side only — the account name is returned to the UI via a server action
+    (`getRentalAuthorityStatus()`); neither value is exposed via
+    `NEXT_PUBLIC_*`.
+  - `HIVE_RPC_NODES` (optional) — comma-separated RPC endpoints. Defaults to
+    `api.hive.blog`, `api.openhive.network`, `api.deathwing.me`.
+- **New dependency**: `@hiveio/dhive` for server-side Hive transaction signing.
+
+### Removed
+
+- Client-side Keychain branch of the Rent Empty Workers flow.
+- `buildMarketRentOp` in `src/lib/frontend/opBuilders.ts` (no callers remain).
+- Earlier admin-page "Rental Authority" section — replaced by the user-facing
+  `RentalAuthorityCard` on the Land Manager page.
+
 ---
 
 ## [v1.3.0] - 2026-05-18

@@ -159,3 +159,8 @@ export async function getCached{Resource}(force = false): Promise<Type> {
 - **Cache singleton** uses globalThis to persist across Next.js hot reloads
 - **Prisma migration files** are versioned; don't manually edit after creation
 - **CHANGELOG and package.json versions must stay in sync**: when adding a versioned CHANGELOG entry (e.g. `## [v1.2.0] - YYYY-MM-DD`), also update the `version` field in `package.json` to match (without the `v` prefix, e.g. `"version": "1.2.0"`)
+- **`SPL_LAND_SERVICE_ACTIVE_KEY` is a private Hive active key — server-only, never expose to client**:
+  - Never add a `NEXT_PUBLIC_` mirror of it (Next.js would bundle it into the client JS).
+  - Only read via `process.env.SPL_LAND_SERVICE_ACTIVE_KEY` inside `src/lib/backend/` modules.
+  - Never return it (or any derived signing artefact) from a Server Action response.
+  - The only consumers are `hiveBroadcastService.ts` (signs ops) and `splAuthorityService.ts` (presence check). Keep it that way.

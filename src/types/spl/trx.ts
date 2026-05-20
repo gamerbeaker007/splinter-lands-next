@@ -148,6 +148,16 @@ export interface DecPowerupRegionTrxData {
   harvest_results: HarvestAllDeedResult[];
 }
 
+// ── set_authority ────────────────────────────────────────────────────────────
+// Result of sm_set_authority (grant/revoke rental/purchase/delegation).
+// The `result` envelope is `{ success, authority: { rental, purchase, delegation } }`.
+
+export interface SetAuthorityTrxData {
+  rental: string[];
+  purchase: string[];
+  delegation: string[];
+}
+
 // ── stake_change ──────────────────────────────────────────────────────────────
 
 export interface StakeChangeTrxData {
@@ -169,7 +179,8 @@ export type SplTrxResult =
   | { type: "add_liquidity"; data: AddLiquidityTrxData }
   | { type: "market_rent"; data: MarketRentTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
-  | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData };
+  | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
+  | { type: "set_authority"; data: SetAuthorityTrxData };
 
 /**
  * Outcome of a single transaction lookup.

@@ -1,5 +1,26 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Configuration
+
+Copy `.env.example` to `.env` and fill in the required values. Documented
+sections:
+
+- **Database** — `DATABASE_URL` (PostgreSQL).
+- **App** — `ALLOWED_ORIGINS`, `NEXTAUTH_URL`, `NEXT_PUBLIC_API_URL`,
+  `CACHE_INVALIDATE_TOKEN` (must match between the `app` and `worker`
+  containers).
+- **Admin auth** — `GITHUB_ID`, `GITHUB_SECRET`, `GITHUB_ALLOWED_USERS`
+  (only used for `/admin`).
+- **Rental Authority (required for renting)** —
+  `SPL_LAND_SERVICE_ACCOUNT`, `SPL_LAND_SERVICE_ACTIVE_KEY`. Renting is
+  server-side only: the configured account signs `sm_market_rent` on behalf of
+  any player who has granted it the **Rental** authority via
+  [SPL Account Security](https://splinterlands.com/?p=account_security). The
+  Land Manager page exposes a card that links the player directly into that
+  flow. Neither env var is exposed via `NEXT_PUBLIC_*`; the UI reads the
+  configured account name via a server action. See
+  `.github/landmanager-feature.md` for the full design.
+
 ## Getting Started
 
 First, run the development server:

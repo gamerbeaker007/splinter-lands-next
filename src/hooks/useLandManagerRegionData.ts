@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  getRegionAlerts,
+  getRegionStakedDEC,
   getRentalEligibility,
   getRentedCardsList,
-  RegionAlertInfo,
+  RegionDECInfo,
   RentedCardsList,
 } from "@/lib/backend/actions/land-manager/rental-actions";
 import { RentalEligibilityResult } from "@/types/landManager";
@@ -12,7 +12,7 @@ import { useEffect, useState } from "react";
 
 interface LandRegionData {
   eligibility: RentalEligibilityResult | null;
-  alerts: RegionAlertInfo[];
+  stakedDEC: RegionDECInfo[];
   rentedCards: RentedCardsList | null;
   loading: boolean;
 }
@@ -23,7 +23,7 @@ export function useLandManagerRegionData(
 ): LandRegionData {
   const [eligibility, setEligibility] =
     useState<RentalEligibilityResult | null>(null);
-  const [alerts, setAlerts] = useState<RegionAlertInfo[]>([]);
+  const [stakedDEC, setStakedDEC] = useState<RegionDECInfo[]>([]);
   const [rentedCards, setRentedCards] = useState<RentedCardsList | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -31,12 +31,12 @@ export function useLandManagerRegionData(
     let cancelled = false;
     Promise.all([
       getRentalEligibility(enabledRegions),
-      getRegionAlerts(enabledRegions),
+      getRegionStakedDEC(enabledRegions),
       getRentedCardsList(),
     ]).then(([e, a, r]) => {
       if (!cancelled) {
         setEligibility(e);
-        setAlerts(a);
+        setStakedDEC(a);
         setRentedCards(r);
         setLoading(false);
       }
@@ -46,5 +46,5 @@ export function useLandManagerRegionData(
     };
   }, [enabledRegions, refreshKey]);
 
-  return { eligibility, alerts, rentedCards, loading };
+  return { eligibility, stakedDEC, rentedCards, loading };
 }

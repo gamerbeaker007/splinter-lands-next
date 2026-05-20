@@ -5,12 +5,14 @@ import {
   SplMarketListing,
   SplMarketRentGrouped,
 } from "@/types/spl/marketRental";
+import { SplPlayerAuthorities } from "@/types/spl/playerAuthorities";
 import { SplSettingsResponse } from "@/types/spl/settings";
 import type {
   AddLiquidityTrxData,
   DecPowerupRegionTrxData,
   HarvestAllTrxData,
   MarketRentTrxData,
+  SetAuthorityTrxData,
   SplTrxResult,
   StakeChangeTrxData,
   SwapTokensOpInput,
@@ -333,6 +335,30 @@ export async function fetchPlayerInventory(
   return data;
 }
 
+// ── Rental / delegation authorities ──────────────────────────────────────────
+
+/**
+ * Returns the list of accounts each player has granted
+ * rental/delegation/purchase authority to via SPL Account Security. The
+ * `rental` bucket is the one the land-service account must appear in to sign
+ * `sm_market_rent` on behalf of the player.
+ */
+export async function fetchPlayerAuthorities(
+  players: string[]
+): Promise<SplPlayerAuthorities[]> {
+  if (players.length === 0) return [];
+  const url = "/players/authorities";
+  const res = await splBaseClient.get(url, {
+    params: { players: players.join(",") },
+  });
+  const data = res.data;
+  if (!Array.isArray(data)) {
+    logger.error("Invalid response format from /players/authorities", data);
+    throw new Error("Invalid response from Splinterlands API");
+  }
+  return data as SplPlayerAuthorities[];
+}
+
 // ── Transaction lookup ────────────────────────────────────────────────────────
 
 type Raw = Record<string, unknown>;
@@ -508,6 +534,28 @@ export async function fetchTransactionLookup(
         result = {
           type: "stake_change",
           data: parseStakeChange(outer as Raw),
+        };
+        break;
+      }
+      case "set_authority": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "set_authority failed";
+          return { status: "failed", error };
+        }
+        const auth = outer?.authority as {
+          rental?: string[];
+          purchase?: string[];
+          delegation?: string[];
+        } | null;
+        if (!auth) return { status: "pending" };
+        result = {
+          type: "set_authority",
+          data: {
+            rental: Array.isArray(auth.rental) ? auth.rental : [],
+            purchase: Array.isArray(auth.purchase) ? auth.purchase : [],
+            delegation: Array.isArray(auth.delegation) ? auth.delegation : [],
+          } satisfies SetAuthorityTrxData,
         };
         break;
       }
