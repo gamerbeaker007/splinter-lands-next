@@ -12,6 +12,10 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+---
+
+## [v1.4.0] - 2026-05-21
+
 ### Added
 
 #### Land Manager — Rental Authority (server-side renting, required)
@@ -45,6 +49,20 @@ old client-side Keychain rent path has been removed.
   - `HIVE_RPC_NODES` (optional) — comma-separated RPC endpoints. Defaults to
     `api.hive.blog`, `api.openhive.network`, `api.deathwing.me`.
 - **New dependency**: `@hiveio/dhive` for server-side Hive transaction signing.
+
+### Changed
+
+#### docker-compose.yml — security hardening
+- **PostgreSQL port restricted to localhost** — `db` port binding changed from
+  `5432:5432` (all interfaces) to `127.0.0.1:5432:5432`. Prevents external
+  access to the database on internet-facing hosts.
+- **Removed weak default fallbacks** — `POSTGRES_USER`, `POSTGRES_PASSWORD`,
+  and `POSTGRES_DB` no longer fall back to `postgres`/`postgres`/`spl`. A
+  deploy without these set in `.env` now fails immediately rather than
+  silently using insecure defaults.
+- **`SPL_LAND_SERVICE_ACCOUNT` and `SPL_LAND_SERVICE_ACTIVE_KEY` added to the
+  `app` service** — were previously absent from the compose file, meaning the
+  rental authority feature was silently unconfigured in Docker deployments.
 
 ### Removed
 
