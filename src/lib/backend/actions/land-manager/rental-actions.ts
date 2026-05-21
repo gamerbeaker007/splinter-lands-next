@@ -1,22 +1,22 @@
 "use server";
 import {
+  fetchProductionOverview,
   fetchRegionDataPlayer,
   fetchStakedAssets,
 } from "@/lib/backend/api/spl/spl-land-api";
-import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
+import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import {
   DEFAULT_RENTAL_CONFIG,
   RentalConfig,
-  RentalEligiblePlot,
   RentalEligibilityResult,
+  RentalEligiblePlot,
   RentalPlan,
 } from "@/types/landManager";
 import { Card, StakedAssets } from "@/types/stakedAssets";
+import { cookies } from "next/headers";
 import pLimit from "p-limit";
 import { getAuthStatus } from "../auth-actions";
-
-const DEFAULT_MAX_WORKERS = 5;
 
 export async function getRentalEligibility(
   enabledRegions: number[]
@@ -45,11 +45,8 @@ export async function getRentalEligibility(
     const staking = stakingByDeed.get(deed.deed_uid);
     if (!staking) continue;
 
-    const maxWorkers = staking.max_workers_allowed ?? DEFAULT_MAX_WORKERS;
-    if (maxWorkers <= 0) continue; // not a worker plot (e.g. castle/keep)
-
+    const maxWorkers = staking.max_workers_allowed ?? 0;
     const workerCount = staking.worker_count ?? 0;
-    if (workerCount >= maxWorkers) continue;
 
     const plot: RentalEligiblePlot = {
       deed_uid: deed.deed_uid,
@@ -73,10 +70,12 @@ export async function getRentalEligibility(
       },
     };
 
-    if (plot.is_powered) {
-      eligible.push(plot);
-    } else {
+    if (!plot.is_powered) {
       unpoweredSkipped.push(plot);
+    } else {
+      if (workerCount < maxWorkers) {
+        eligible.push(plot);
+      }
     }
   }
 
@@ -89,57 +88,38 @@ export async function getRentalEligibility(
   return { eligible, unpoweredSkipped };
 }
 
-export interface RegionAlertInfo {
+export interface RegionDECInfo {
   region_number: number;
   region_uid: string;
   total_plot_count: number;
-  unpowered_plot_count: number;
   dec_stake_needed: number;
   dec_stake_in_use: number;
 }
 
-export async function getRegionAlerts(
+export async function getRegionStakedDEC(
   enabledRegions: number[]
-): Promise<RegionAlertInfo[]> {
+): Promise<RegionDECInfo[]> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) return [];
   if (enabledRegions.length === 0) return [];
 
-  const regionData = await fetchRegionDataPlayer(auth.username);
-  const stakingByDeed = new Map(
-    regionData.staking_details.map((s) => [s.deed_uid, s])
-  );
+  const cookieStore = await cookies();
+  const jwt = cookieStore.get("jwt_token")?.value ?? null;
+  if (!jwt) return [];
+
+  const regions = await fetchProductionOverview(auth.username, jwt);
   const enabledSet = new Set(enabledRegions);
 
-  const byRegion = new Map<number, RegionAlertInfo>();
-  for (const deed of regionData.deeds) {
-    if (!enabledSet.has(deed.region_number)) continue;
-    const staking = stakingByDeed.get(deed.deed_uid);
-    if (!staking) continue;
-
-    let info = byRegion.get(deed.region_number);
-    if (info) {
-      info.dec_stake_needed += staking.total_dec_stake_needed ?? 0;
-      info.dec_stake_in_use += staking.total_dec_stake_in_use ?? 0;
-    } else {
-      info = {
-        region_number: deed.region_number,
-        region_uid: deed.region_uid,
-        total_plot_count: 0,
-        unpowered_plot_count: 0,
-        dec_stake_needed: staking.total_dec_stake_needed ?? 0,
-        dec_stake_in_use: staking.total_dec_stake_in_use ?? 0,
-      };
-      byRegion.set(deed.region_number, info);
-    }
-    info.total_plot_count += 1;
-
-    if (!(staking.is_powered ?? false)) info.unpowered_plot_count += 1;
-  }
-
-  return [...byRegion.values()].sort(
-    (a, b) => a.region_number - b.region_number
-  );
+  return regions
+    .filter((r) => enabledSet.has(r.region_number))
+    .map((r) => ({
+      region_number: r.region_number,
+      region_uid: r.region_uid,
+      total_plot_count: r.plots_owned,
+      dec_stake_needed: r.dark_energy_required,
+      dec_stake_in_use: r.dark_energy_staked,
+    }))
+    .sort((a, b) => a.region_number - b.region_number);
 }
 
 export interface RentedCardsSpendSummary {

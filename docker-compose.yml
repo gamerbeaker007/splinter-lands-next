@@ -3,15 +3,15 @@ services:
     image: postgres:17-alpine
     container_name: splinter-lands-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-spl}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     volumes:
       - spl_db_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -34,7 +34,7 @@ services:
       db:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
     entrypoint: ["npx", "prisma", "migrate", "deploy"]
     restart: "no"
 
@@ -49,13 +49,15 @@ services:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
       GITHUB_ID: ${GITHUB_ID}
       GITHUB_SECRET: ${GITHUB_SECRET}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       GITHUB_ALLOWED_USERS: ${GITHUB_ALLOWED_USERS:-}
       CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}
+      SPL_LAND_SERVICE_ACCOUNT: ${SPL_LAND_SERVICE_ACCOUNT:-}
+      SPL_LAND_SERVICE_ACTIVE_KEY: ${SPL_LAND_SERVICE_ACTIVE_KEY:-}
     entrypoint: ["node", "server.js"]
     ports:
       - "3000:3000"
@@ -71,7 +73,7 @@ services:
         condition: service_completed_successfully
     environment:
       NODE_ENV: production
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@db:5432/${POSTGRES_DB:-spl}?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
       NEXT_PUBLIC_BASE_URL: http://app:3000
       CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}
     entrypoint: ["npx", "tsx", "--tsconfig", "src/scripts/tsconfig.scripts.json", "src/scripts/worker.ts"]

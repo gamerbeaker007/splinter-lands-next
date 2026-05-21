@@ -1,7 +1,10 @@
 "use client";
 
-import { useLandManagerRegionData } from "../../hooks/useLandManagerRegionData";
-import { CheckCircleOutline, GroupAddOutlined } from "@mui/icons-material";
+import {
+  CheckCircleOutline,
+  FlashOffOutlined,
+  GroupAddOutlined,
+} from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -16,6 +19,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { useLandManagerRegionData } from "../../hooks/useLandManagerRegionData";
 
 interface Props {
   enabledRegions: number[];
@@ -27,7 +31,7 @@ function fmtNum(value: number): string {
 }
 
 export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
-  const { eligibility, alerts, loading } = useLandManagerRegionData(
+  const { eligibility, stakedDEC, loading } = useLandManagerRegionData(
     enabledRegions,
     refreshKey
   );
@@ -41,7 +45,7 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
     );
   }
 
-  const shortfallByRegion = alerts.map((r) => ({
+  const shortfallByRegion = stakedDEC.map((r) => ({
     region: r,
     shortfall: Math.max(0, r.dec_stake_needed - r.dec_stake_in_use),
   }));
@@ -54,8 +58,10 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
     0
   );
   const hasPoweredEmpty = totalEmptyEligible > 0;
+  const unpoweredPlots = eligibility?.unpoweredSkipped ?? [];
 
-  if (!hasPoweredEmpty && totalShortfall === 0) return null;
+  if (!hasPoweredEmpty && unpoweredPlots.length === 0 && totalShortfall === 0)
+    return null;
 
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
@@ -64,16 +70,28 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
           Alerts
         </Typography>
 
-        <Stack gap={2}>
+        <Stack gap={0.5}>
           {hasPoweredEmpty && (
             <Box>
-              <Stack direction="row" gap={1} alignItems="center" mb={0.5}>
+              <Stack direction="row" gap={1} alignItems="center">
                 <GroupAddOutlined sx={{ fontSize: 14, color: "info.main" }} />
                 <Typography variant="caption" color="info.main">
-                  Powered plots with empty workers — {totalEmptyEligible} slot
-                  {totalEmptyEligible === 1 ? "" : "s"} across{" "}
+                  Powered plots with empty workers ({totalEmptyEligible}) across{" "}
                   {eligiblePlots.length} plot
                   {eligiblePlots.length === 1 ? "" : "s"}
+                </Typography>
+              </Stack>
+            </Box>
+          )}
+
+          {unpoweredPlots.length > 0 && (
+            <Box>
+              <Stack direction="row" gap={1} alignItems="center" mb={0.5}>
+                <FlashOffOutlined
+                  sx={{ fontSize: 14, color: "warning.main" }}
+                />
+                <Typography variant="caption" color="warning.main">
+                  Unpowered plots: {unpoweredPlots.length}
                 </Typography>
               </Stack>
             </Box>

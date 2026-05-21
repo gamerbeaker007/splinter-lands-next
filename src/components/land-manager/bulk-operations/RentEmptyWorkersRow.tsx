@@ -3,6 +3,7 @@
 import RentConfirmDialog from "@/components/land-manager/bulk-operations/RentConfirmDialog";
 import RentDryRunDialog from "@/components/land-manager/bulk-operations/RentDryRunDialog";
 import { useRentEmptyWorkersAction } from "@/hooks/useRentEmptyWorkersAction";
+import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { RentalConfig } from "@/types/landManager";
 import { Storefront } from "@mui/icons-material";
 import {
@@ -19,6 +20,8 @@ interface Props {
   username: string;
   enabledRegions: number[];
   rental: RentalConfig;
+  authorityStatus?: RentalAuthorityStatus | null;
+  eligiblePlotCount?: number | null;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onSuccess: () => void;
@@ -35,6 +38,8 @@ export default function RentEmptyWorkersRow({
   username,
   enabledRegions,
   rental,
+  authorityStatus,
+  eligiblePlotCount,
   anyBusy,
   onBusyChange,
   onSuccess,
@@ -43,12 +48,44 @@ export default function RentEmptyWorkersRow({
     username,
     rental,
     enabledRegions,
+    eligiblePlotCount,
     onSuccess,
   });
+  const authority = authorityStatus ?? null;
 
   useEffect(() => {
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
+
+  // Renting is server-side only — the configured land-service account signs
+  // sm_market_rent on the player's behalf. The buttons are only usable when
+  // the service is configured AND the player has granted rental authority.
+  const blockedByAuthority = Boolean(
+    authority && !(authority.serviceConfigured && authority.authorized)
+  );
+
+  const rentDisabled =
+    anyBusy || action.eligiblePlotCount === 0 || blockedByAuthority;
+
+  const getRentTooltip = () => {
+    if (!authority) return "";
+
+    if (!authority.serviceConfigured) {
+      return "Server-side renting is not configured.";
+    }
+
+    if (!authority.authorized) {
+      return "Grant rental authority to the land-service account first (see the panel above).";
+    }
+
+    if (action.eligiblePlotCount === 0) {
+      return "No plots with empty worker slots";
+    }
+
+    return "Show planned rentals without broadcasting";
+  };
+
+  const rentTooltip = getRentTooltip();
 
   return (
     <>
@@ -59,43 +96,36 @@ export default function RentEmptyWorkersRow({
         alignItems="center"
         mb={1.5}
       >
-        <ButtonGroup
-          size="small"
-          disabled={anyBusy || action.eligiblePlotCount === 0}
-        >
-          <Button
-            variant="contained"
-            color="info"
-            startIcon={
-              action.busy ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <Storefront fontSize="small" />
-              )
-            }
-            onClick={() => action.prepareExecution()}
-          >
-            Rent Empty Workers
-          </Button>
-          <Tooltip
-            title={
-              action.eligiblePlotCount === 0
-                ? "No plots with empty worker slots"
-                : "Show planned rentals without broadcasting"
-            }
-          >
-            <span>
+        <Tooltip title={blockedByAuthority ? rentTooltip : ""}>
+          <span>
+            <ButtonGroup size="small" disabled={rentDisabled}>
               <Button
-                variant="outlined"
+                variant="contained"
                 color="info"
-                disabled={anyBusy || action.eligiblePlotCount === 0}
-                onClick={() => action.preview()}
+                startIcon={
+                  action.busy ? (
+                    <CircularProgress size={14} color="inherit" />
+                  ) : (
+                    <Storefront fontSize="small" />
+                  )
+                }
+                onClick={() => action.prepareExecution()}
               >
-                Dry Run
+                Rent Empty Workers
               </Button>
-            </span>
-          </Tooltip>
-        </ButtonGroup>
+              <span>
+                <Button
+                  variant="outlined"
+                  color="info"
+                  disabled={rentDisabled}
+                  onClick={() => action.preview()}
+                >
+                  Dry Run
+                </Button>
+              </span>
+            </ButtonGroup>
+          </span>
+        </Tooltip>
       </Stack>
 
       {action.result?.success && (

@@ -8,6 +8,7 @@ import ProcessResourcesRow from "@/components/land-manager/bulk-operations/Proce
 import RentEmptyWorkersRow from "@/components/land-manager/bulk-operations/RentEmptyWorkersRow";
 import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
+import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   DryRunResult,
@@ -31,6 +32,7 @@ interface Props {
   mythicFeeAccepted: boolean;
   hasMythics: boolean;
   rental: RentalConfig;
+  authorityStatus?: RentalAuthorityStatus | null;
   refreshKey?: number;
   onSuccess?: () => void;
 }
@@ -46,18 +48,22 @@ export default function BulkActionPanel({
   mythicFeeAccepted,
   hasMythics,
   rental,
+  authorityStatus,
   refreshKey = 0,
   onSuccess,
 }: Props) {
   const router = useRouter();
-  const { alerts } = useLandManagerRegionData(enabledRegions, refreshKey);
+  const { stakedDEC, eligibility } = useLandManagerRegionData(
+    enabledRegions,
+    refreshKey
+  );
   const stakeShortfall = useMemo(
     () =>
-      alerts.reduce(
+      stakedDEC.reduce(
         (s, a) => s + Math.max(0, a.dec_stake_needed - a.dec_stake_in_use),
         0
       ),
-    [alerts]
+    [stakedDEC]
   );
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
   const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
@@ -172,6 +178,8 @@ export default function BulkActionPanel({
           username={username}
           enabledRegions={enabledRegions}
           rental={rental}
+          authorityStatus={authorityStatus}
+          eligiblePlotCount={eligibility?.eligible.length ?? null}
           anyBusy={anyBusy}
           onBusyChange={onRentEmptyWorkersBusy}
           onSuccess={afterSuccess}

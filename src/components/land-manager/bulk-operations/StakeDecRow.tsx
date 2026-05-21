@@ -93,7 +93,6 @@ export default function StakeDecRow({
                 onClick={openConfirm}
               >
                 Stake DEC{" "}
-                {shortfallTotal > 0 ? `(${fmtInt(shortfallTotal)})` : ""}
               </Button>
             </span>
           </Tooltip>

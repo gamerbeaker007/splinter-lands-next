@@ -208,22 +208,22 @@ export function buildSellResourceForDecOp(
 }
 
 /**
- * Rent cards from the market by `market_id`. Multiple market_ids can be bundled
- * into a single op. Uses ACTIVE key (DEC moves out of the user's balance).
+ * Grants/revokes rental authority by replacing the player's `rental[]` list.
+ * Pass the new full list (smart-merge upstream so other granted accounts stay).
+ * Uses ACTIVE key — modifies on-chain authority state.
  */
-export function buildMarketRentOp(
+export function buildSetAuthorityOp(
   username: string,
-  marketIds: string[]
+  rental: string[]
 ): [string, object] {
   return [
     "custom_json",
     {
       required_auths: [username],
       required_posting_auths: [],
-      id: "sm_market_rent",
+      id: "sm_set_authority",
       json: JSON.stringify({
-        currency: "DEC",
-        items: marketIds,
+        rental,
         app: APP,
         n: generateNonce(),
       }),

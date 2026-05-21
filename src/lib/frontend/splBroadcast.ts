@@ -1,5 +1,6 @@
 import type { SplTrxResult, TrxLookupOutcome } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
+import { formatError } from "./errorFormat";
 export {
   buildBuyWithDecOp,
   buildFeeTransferOp,
@@ -106,12 +107,12 @@ export async function broadcastOperations(
     });
 
     if (!result?.success) {
+      // Keychain may return either a string message or an object (e.g.
+      // `{ message: "user_cancel" }`); formatError handles both.
       return {
         success: false,
         txIds,
-        error:
-          (result as unknown as { message?: string })?.message ??
-          "Keychain rejected",
+        error: formatError(result ?? "Keychain rejected"),
       };
     }
 
