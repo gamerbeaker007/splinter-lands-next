@@ -1,11 +1,14 @@
 "use client";
 
+import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
 import type { MythicDeed } from "@/types/landManager";
+import { OpenInNew as OpenInNewIcon } from "@mui/icons-material";
 import {
   Box,
   Card,
   CardContent,
   Chip,
+  IconButton,
   Skeleton,
   Stack,
   Table,
@@ -13,6 +16,7 @@ import {
   TableCell,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from "@mui/material";
 
@@ -20,10 +24,7 @@ interface Props {
   deeds: MythicDeed[] | null;
 }
 
-function formatDateTime(date: Date | null): string {
-  if (!date) return "Never";
-  return new Date(date).toLocaleString();
-}
+
 
 export default function MythicOverview({ deeds }: Props) {
   if (deeds === null) {
@@ -47,11 +48,11 @@ export default function MythicOverview({ deeds }: Props) {
             <TableHead>
               <TableRow>
                 <TableCell>Type</TableCell>
-                <TableCell>Deed UID</TableCell>
                 <TableCell>Region</TableCell>
                 <TableCell>Last Harvest</TableCell>
                 <TableCell>Totem Chance</TableCell>
                 <TableCell>Available Resources</TableCell>
+                <TableCell>History</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -69,17 +70,10 @@ export default function MythicOverview({ deeds }: Props) {
                     />
                   </TableCell>
                   <TableCell>
-                    <Typography variant="caption" fontFamily="monospace">
-                      {deed.deed_uid.slice(-12)}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
                     <Typography variant="caption">{deed.region_uid}</Typography>
                   </TableCell>
                   <TableCell>
-                    <Typography variant="caption">
-                      {formatDateTime(deed.last_action_time)}
-                    </Typography>
+                    <LastHarvestAgeChip date={deed.last_action_time} emptyLabel="Never" />
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption">
@@ -106,6 +100,20 @@ export default function MythicOverview({ deeds }: Props) {
                         ))}
                       </Stack>
                     )}
+                  </TableCell>
+                  <TableCell>
+                    <Tooltip title="View deed history on spl-stats.com">
+                      <IconButton
+                      
+                        size="small"
+                        component="a"
+                        href={`https://land.spl-stats.com/player-overview/deed-history/${deed.deed_uid}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <OpenInNewIcon sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}

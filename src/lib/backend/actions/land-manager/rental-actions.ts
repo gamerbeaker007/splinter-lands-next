@@ -134,6 +134,7 @@ export interface RentedCardEntry {
   owner: string;
   rental_type: string;
   rental_days: number;
+  rental_date: string | null;
   dec_per_day: number;
   total_dec: number;
   stake_plot: number;
@@ -217,6 +218,7 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       owner: c.player,
       rental_type: c.rental_type ?? "",
       rental_days: days,
+      rental_date: c.rental_date ?? null,
       dec_per_day: perDay,
       total_dec: total,
       stake_plot: c.stake_plot as number,

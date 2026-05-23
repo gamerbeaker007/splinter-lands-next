@@ -14,6 +14,33 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.5.0] - 2026-05-23
+
+### Changed
+
+#### Land Manager — visual improvements
+
+- **Last Claimed / Last Harvest age chip** — dates in the Region Overview and
+  Mythic Deeds table now display as a coloured age chip instead of a plain
+  timestamp. Colouring follows the 7-day resource-loss cap:
+  - < 5 d → green (safe)
+  - 5–7 d → yellow (approaching cap)
+  - > 7 d → red (past safe window)
+  Hours are included in the label (e.g. `3d 14h`) so you can tell exactly how
+  close you are to the cap. Extracted into a shared `LastHarvestAgeChip`
+  component reused in both tables.
+- **Rental — real days remaining** — the *Days left* column in the Rented Cards
+  table now shows the time remaining from today instead of the fixed duration
+  at the moment of rental. Format follows the same `Xd Yh` pattern; expired
+  rentals show *Expired*.
+- **Mythic Deeds — Deed UID column removed** — the partial UID column has been
+  removed to reduce clutter.
+- **Mythic Deeds — History link** — each row now has an external link icon that
+  opens the deed's history page on
+  [land.spl-stats.com](https://land.spl-stats.com).
+
+---
+
 ## [v1.4.0] - 2026-05-21
 
 ### Added

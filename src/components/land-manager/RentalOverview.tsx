@@ -47,6 +47,28 @@ function fmtInt(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
+/** Remaining days from rental_date + rental_days vs now. Returns null when date is absent. */
+function calcDaysRemaining(
+  rentalDate: string | null,
+  rentalDays: number
+): number | null {
+  if (!rentalDate) return null;
+  const end = new Date(rentalDate).getTime() + rentalDays * 86_400_000;
+  return Math.max(0, (end - Date.now()) / 86_400_000);
+}
+
+function fmtDaysRemaining(days: number | null): string {
+  if (days === null) return "—";
+  if (days === 0) return "Expired";
+  const wholeDays = Math.floor(days);
+  const hours = Math.floor((days - wholeDays) * 24);
+  return wholeDays > 0
+    ? hours > 0
+      ? `${wholeDays}d ${hours}h`
+      : `${wholeDays}d`
+    : `${hours}h`;
+}
+
 function BiomeChips({ modifiers }: { modifiers: BiomeModifiers }) {
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap">
@@ -399,7 +421,9 @@ export default function RentalOverview({
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="caption">
-                            {c.rental_days}
+                            {fmtDaysRemaining(
+                              calcDaysRemaining(c.rental_date, c.rental_days)
+                            )}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">

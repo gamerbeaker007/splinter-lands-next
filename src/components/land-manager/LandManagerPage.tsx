@@ -243,15 +243,15 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
       <MythicOverview deeds={enabledMythicDeeds} />
 
-      <RentalOverview
-        enabledRegions={currentConfig.enabled_regions}
-        refreshKey={regionRefreshKey}
-      />
-
       {/* Per-region overview with harvestable resources */}
       <RegionOverview
         username={auth.username ?? ""}
         regions={allRegions}
+        enabledRegions={currentConfig.enabled_regions}
+        refreshKey={regionRefreshKey}
+      />
+
+      <RentalOverview
         enabledRegions={currentConfig.enabled_regions}
         refreshKey={regionRefreshKey}
       />

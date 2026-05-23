@@ -1,6 +1,7 @@
 "use client";
 
 import HarvestButton from "@/components/land-manager/HarvestButton";
+import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
 import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   getRegionResourceBalance,
@@ -204,11 +205,7 @@ function RegionRow({
       </TableCell>
 
       <TableCell>
-        <Typography variant="caption" color="text.secondary">
-          {region.last_claimed
-            ? new Date(region.last_claimed).toLocaleString()
-            : "—"}
-        </Typography>
+        <LastHarvestAgeChip date={region.last_claimed} />
       </TableCell>
 
       <TableCell>
@@ -264,7 +261,7 @@ export default function RegionOverview({
   }
 
   return (
-    <TableContainer component={Paper} sx={{ mt: 2 }}>
+    <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
       <Table size="small">
         <TableHead>
           <TableRow>
