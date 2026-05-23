@@ -24,8 +24,6 @@ interface Props {
   deeds: MythicDeed[] | null;
 }
 
-
-
 export default function MythicOverview({ deeds }: Props) {
   if (deeds === null) {
     return (
@@ -73,7 +71,10 @@ export default function MythicOverview({ deeds }: Props) {
                     <Typography variant="caption">{deed.region_uid}</Typography>
                   </TableCell>
                   <TableCell>
-                    <LastHarvestAgeChip date={deed.last_action_time} emptyLabel="Never" />
+                    <LastHarvestAgeChip
+                      date={deed.last_action_time}
+                      emptyLabel="Never"
+                    />
                   </TableCell>
                   <TableCell>
                     <Typography variant="caption">
@@ -104,7 +105,6 @@ export default function MythicOverview({ deeds }: Props) {
                   <TableCell>
                     <Tooltip title="View deed history on spl-stats.com">
                       <IconButton
-                      
                         size="small"
                         component="a"
                         href={`https://land.spl-stats.com/player-overview/deed-history/${deed.deed_uid}`}

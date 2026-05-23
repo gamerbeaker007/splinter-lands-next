@@ -7,6 +7,7 @@ import {
   landElementLabel,
 } from "@/lib/utils/cardUtil";
 import { BiomeModifiers, RentalEligiblePlot } from "@/types/landManager";
+import { cardElementOptions } from "@/types/planner";
 import { Bolt, BoltOutlined } from "@mui/icons-material";
 import {
   Avatar,
@@ -26,7 +27,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo, useState } from "react";
-import { cardElementOptions } from "@/types/planner";
 
 interface Props {
   enabledRegions: number[];

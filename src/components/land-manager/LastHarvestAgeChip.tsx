@@ -19,10 +19,7 @@ interface Props {
  *   5–7 d → yellow  (approaching cap)
  *   > 7 d → red     (past safe window)
  */
-export default function LastHarvestAgeChip({
-  date,
-  emptyLabel = "—",
-}: Props) {
+export default function LastHarvestAgeChip({ date, emptyLabel = "—" }: Props) {
   if (!date) {
     return (
       <Typography variant="caption" color="text.secondary">
@@ -42,11 +39,7 @@ export default function LastHarvestAgeChip({
         ? `${wholeDays}d ${hours}h`
         : `${wholeDays}d`;
   const color: "success" | "warning" | "error" =
-      diffDays >= 7
-        ? "error"
-        : diffDays >= 5
-          ? "warning"
-          : "success";
+    diffDays >= 7 ? "error" : diffDays >= 5 ? "warning" : "success";
 
   return (
     <Chip
