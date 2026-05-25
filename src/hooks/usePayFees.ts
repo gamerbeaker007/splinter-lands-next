@@ -1,8 +1,10 @@
+import { getTodayPaidFees } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   getBulkRegionData,
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
+  applyDailyCaps,
   buildFeeOps,
   capFeesAtBalance,
   DesiredFee,
@@ -32,12 +34,11 @@ export interface UsePayFees {
   clear: () => void;
   /**
    * Settle the supplied fees:
-   *   1. Refetch region balances so caps are based on what's actually
+   *   1. Fetch today’s already-paid fees and apply the daily cap.
+   *   2. Refetch region balances so caps are based on what’s actually
    *      available now.
-   *   2. capFeesAtBalance — drops/zeroes regions that don't have enough.
-   *   3. Broadcast resource transfers (posting key) and SPS transfer
-   *      (active key) in separate batches, awaiting confirmation between
-   *      each.
+   *   3. capFeesAtBalance — drops/zeroes regions that don’t have enough.
+   *   4. Broadcast resource transfers (posting key), awaiting confirmation.
    * Returns paid + unpaid totals so the caller can persist them.
    */
   execute: (
@@ -77,17 +78,49 @@ export function usePayFees(username: string): UsePayFees {
         return r;
       }
 
-      // Refresh balances so caps are based on the post-harvest state.
+      // Apply daily fee caps using fees already paid today.
+      let alreadyPaid: Record<string, number> = {};
+      try {
+        alreadyPaid = await getTodayPaidFees(username);
+      } catch {
+        // Non-fatal: if we can't read the daily total, proceed without capping.
+        log.push(
+          "⚠ Could not read today's paid fees — daily cap not applied this run."
+        );
+      }
+      const dailyCapped = applyDailyCaps(desired, alreadyPaid);
+      if (dailyCapped.length < desired.length) {
+        const dropped = desired
+          .filter(
+            (f) =>
+              !dailyCapped.some(
+                (c) => c.region_uid === f.region_uid && c.symbol === f.symbol
+              )
+          )
+          .map((f) => `${f.symbol} (${f.region_name})`);
+        log.push(`  ℹ Daily cap reached — skipping: ${dropped.join(", ")}`);
+      }
+      if (dailyCapped.length === 0) {
+        log.push(
+          "Daily fee cap reached for all resources — no fees owed this run."
+        );
+        const r = { ...EMPTY_RESULT, log };
+        setResult(r);
+        setBusy(false);
+        return r;
+      }
+
+      // Refresh balances so balance caps are based on the post-harvest state.
       let balances: Record<string, Record<string, number>> = {};
       try {
-        const regionUids = [...new Set(desired.map((f) => f.region_uid))];
+        const regionUids = [...new Set(dailyCapped.map((f) => f.region_uid))];
         const refreshed = await getBulkRegionData(regionUids, true);
         balances = refreshed.balances;
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Balance refresh failed";
         log.push(`⚠ ${message} — cannot determine capped fees`);
-        const desiredTotals = summarizeFees(desired);
+        const desiredTotals = summarizeFees(dailyCapped);
         const r: PayFeesResult = {
           success: false,
           paidFees: {},
@@ -101,7 +134,7 @@ export function usePayFees(username: string): UsePayFees {
         return r;
       }
 
-      const plan = capFeesAtBalance(desired, balances);
+      const plan = capFeesAtBalance(dailyCapped, balances);
       for (const fee of plan) {
         if (fee.capped) {
           log.push(
@@ -117,7 +150,7 @@ export function usePayFees(username: string): UsePayFees {
         const r: PayFeesResult = {
           success: true,
           paidFees: {},
-          unpaidFees: summarizeFees(desired),
+          unpaidFees: summarizeFees(dailyCapped),
           feeError: "All fees capped to zero (insufficient region balances)",
           txIds: [],
           log,
@@ -127,11 +160,7 @@ export function usePayFees(username: string): UsePayFees {
         return r;
       }
 
-      const {
-        postingOps,
-        activeOps,
-        log: feeLog,
-      } = buildFeeOps(username, pools, plan);
+      const { postingOps, log: feeLog } = buildFeeOps(username, pools, plan);
       log.push(...feeLog);
 
       const txIds: string[] = [];
@@ -152,24 +181,6 @@ export function usePayFees(username: string): UsePayFees {
           }
         } catch (err) {
           feeError = err instanceof Error ? err.message : "Resource fee failed";
-        }
-      }
-
-      if (feeError === null && activeOps.length > 0) {
-        try {
-          const res = await broadcastOperations(
-            username,
-            activeOps,
-            KeychainKeyTypes.active
-          );
-          if (res.success) {
-            txIds.push(...res.txIds);
-            await waitForTransactions(res.txIds, lookupTransaction);
-          } else {
-            feeError = res.error ?? "SPS fee broadcast rejected";
-          }
-        } catch (err) {
-          feeError = err instanceof Error ? err.message : "SPS fee failed";
         }
       }
 

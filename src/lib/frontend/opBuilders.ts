@@ -159,35 +159,6 @@ export function buildTaxCollectionOp(
   });
 }
 
-/**
- * Send the SPS service-fee to Splinterlands via the standard sm_token_transfer
- * op. Routed through `sl-hive` with the recipient username in the memo.
- *
- * Unlike sm_land_operation, this op requires the user's ACTIVE key (not
- * posting), so it must be broadcast in its own batch with the right method.
- */
-export function buildSpsFeeTransferOp(
-  username: string,
-  qty: number
-): [string, object] {
-  return [
-    "custom_json",
-    {
-      required_auths: [username],
-      required_posting_auths: [],
-      id: "sm_token_transfer",
-      json: JSON.stringify({
-        token: "SPS",
-        to: SERVICE_FEE_RECIPIENT,
-        qty,
-        memo: "service fee for splinter-lands tool",
-        app: APP,
-        n: generateNonce(),
-      }),
-    },
-  ];
-}
-
 /** Sell a resource into the trade hub in a region, receiving DEC ("on hop" sell direction). */
 export function buildSellResourceForDecOp(
   username: string,

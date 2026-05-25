@@ -14,6 +14,34 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.6.0] - 2026-05-25
+
+### Added
+
+#### Land Manager — Daily harvest fee caps
+
+Per-symbol daily maximum fee enforced account-wide (cumulative across regions, castles, keeps):
+
+| Resource | Daily max fee |
+|----------|---------------|
+| Grain | 40,000 |
+| Wood | 10,000 |
+| Stone | 4,000 |
+| Iron | 1,000 |
+
+Ratios follow in-game resource values (1 Iron = 40 Grain, 1 Stone = 10 Grain, 1 Wood = 4 Grain).
+Caps are applied before every run using today's already-paid fees from the DB. Dry runs reflect the cap.
+
+### Changed
+
+#### Land Manager — SPS fee removed
+
+SPS is no longer subject to the 2% service fee. Only natural resources (Grain, Wood, Stone, Iron)
+are charged. This also removes the active-key Keychain prompt that SPS payment previously required —
+all fee ops now use the posting key only.
+
+---
+
 ## [v1.5.0] - 2026-05-23
 
 ### Changed

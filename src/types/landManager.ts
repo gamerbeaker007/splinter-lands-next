@@ -15,6 +15,21 @@ export const SERVICE_FEE_PCT = 2;
 export const SERVICE_FEE_RECIPIENT = "beaker007";
 export const SERVICE_FEE_RECIPIENT_REGION = "PR-CEF-65"; // beaker007's fee collection region
 
+/**
+ * Daily maximum fee per resource per account.
+ *
+ * Ratios follow in-game relative values:
+ *   1 Iron = 40 Grain, 1 Stone = 10 Grain, 1 Wood = 4 Grain
+ *
+ * Symbols not listed (e.g. SPS, AURA) have no daily cap.
+ */
+export const DAILY_FEE_CAPS: Record<string, number> = {
+  GRAIN: 40_000,
+  WOOD: 10_000,
+  STONE: 4_000,
+  IRON: 1_000,
+};
+
 // === Make Harvestable strategy ===
 
 export type MakeHarvestableStrategy = "transfer" | "swap" | "buy_dec";

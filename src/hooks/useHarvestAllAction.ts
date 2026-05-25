@@ -1,4 +1,7 @@
-import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
+import {
+  getFeeApplicableRegionNumbers,
+  getTodayPaidFees,
+} from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   acknowledgeHarvest,
   recordFeesLog,
@@ -13,6 +16,7 @@ import {
   HarvestBroadcastResult,
 } from "@/lib/frontend/executeHarvestFlow";
 import {
+  applyDailyCaps,
   buildFeeOps,
   capFeesAtBalance,
   planDesiredFees,
@@ -123,7 +127,11 @@ export function useHarvestAllAction({
           const desired = planDesiredFees(eligibleRegions, harvestable, (n) =>
             feeApplicable.has(n)
           );
-          const capped = capFeesAtBalance(desired, adjustedBalances);
+          const alreadyPaid = await getTodayPaidFees(username).catch(
+            () => ({})
+          );
+          const dailyCapped = applyDailyCaps(desired, alreadyPaid);
+          const capped = capFeesAtBalance(dailyCapped, adjustedBalances);
           const { log: feeLog } = buildFeeOps(username, pools, capped);
           log.push(...feeLog);
           return { title: "Dry Run — Harvest All", log };
