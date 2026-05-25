@@ -20,6 +20,7 @@ import {
   cardRarityOptions,
 } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
 // ----------------------------------
 // Types
@@ -405,4 +406,27 @@ export function determineLandBoosts(
     }
   }
   return landboost;
+}
+
+// ----------------------------------
+// Rental helpers
+// ----------------------------------
+
+/**
+ * Returns true when a card in the player's collection was rented FROM another
+ * player and is currently staked on one of the authenticated player's plots.
+ *
+ * Conditions:
+ * - `rental_type` is set  (card is on a market rental)
+ * - `stake_plot` is set   (card is staked on a plot)
+ * - `c.player !== username` (owner is someone else — player is the renter)
+ */
+export function isRentedByPlayer(
+  c: SplPlayerCardCollection,
+  username: string
+): boolean {
+  if (!c.rental_type) return false;
+  if (c.stake_plot == null) return false;
+  if (!c.player || c.player === username) return false;
+  return true;
 }

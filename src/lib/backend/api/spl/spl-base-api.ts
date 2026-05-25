@@ -524,6 +524,18 @@ export async function fetchTransactionLookup(
         result = { type: "market_rent", data: parseMarketRent(outer as Raw) };
         break;
       }
+      case "market_renew_rental": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "Renew rental transaction failed";
+          return { status: "failed", error };
+        }
+        result = {
+          type: "market_renew_rental",
+          data: parseMarketRent(outer as Raw),
+        };
+        break;
+      }
       case "stake_change": {
         const code = outer?.result_code;
         if (typeof code === "number" && code !== 0) {

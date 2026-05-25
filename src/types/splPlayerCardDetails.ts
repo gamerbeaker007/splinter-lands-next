@@ -32,14 +32,17 @@ export type SplPlayerCardCollection = {
   rental_date?: string;
   rental_type?: string | null;
   buy_price?: string | null;
+  market_id?: string | null;
+  /** ISO date of the next scheduled rental payment. When this is past the current season end, the rental has already been renewed into the next season. */
+  next_rental_payment?: string | null;
+  cancel_tx?: string;
+  cancel_date?: string;
 
   //unused in this app
   //  "gold": boolean,
-  //   "market_id"?: string,
   //   "market_listing_type"?: string,
   //   "market_listing_status"?: string,
   //   "market_created_date"?: string,
-  //   "next_rental_payment"?: string,
   //   "cancel_tx"?: string,
   //   "cancel_date"?: string,
   //   "cancel_player"?: string,

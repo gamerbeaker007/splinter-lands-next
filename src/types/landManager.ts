@@ -206,6 +206,39 @@ export interface MythicHarvestResult {
   fragment_chance: number;
 }
 
+// === Renew rentals ===
+
+export interface RenewRentalItem {
+  card_uid: string;
+  market_id: string;
+  card_detail_id: number;
+  dec_per_day: number;
+  renewal_days: number;
+  total_dec: number;
+  /** ISO date when the current rental expires. Null when rental_date is absent. */
+  current_rental_end: string | null;
+  stake_plot: number;
+  stake_region: number | null;
+  /** The card owner (not the authenticated player). */
+  owner: string;
+}
+
+export interface RenewRentalPlan {
+  items: RenewRentalItem[];
+  /** Rented cards whose rental already extends past the current season end. */
+  skipped_already_renewed: number;
+  /** Rented cards that had no market_id and could not be renewed. */
+  skipped_no_market_id: number;
+  /** Rented cards that have a pending cancellation (cancel_tx set). */
+  skipped_cancel_tx: number;
+  total_dec: number;
+  dec_balance: number;
+  sufficient_balance: boolean;
+  season_days_remaining: number;
+  current_season_end: string;
+  next_season_end: string | null;
+}
+
 // === Action summary for make-harvestable log ===
 
 export interface ActionSummary {

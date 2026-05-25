@@ -18,6 +18,22 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Added
 
+#### Land Manager — Renew Rentals
+
+New **Renew Rentals** button in the Bulk Action Panel (alongside Rent Workers).
+Renews active worker card rentals that are approaching the end of the season using
+Hive Keychain active key (`sm_market_renew_rental`).
+
+- Button enabled when season has < 7 days remaining and the player has active rentals.
+- Fetches a fresh card collection on every open to avoid stale renewal state.
+- Per-card **extend days** calculated from `next_rental_payment → next_season_end`
+  so only the added days are charged (not a full new rental period).
+- Cards are skipped when: already renewed (next payment > season end + 2d buffer),
+  no `market_id`, or a pending cancellation (`cancel_tx` set).
+- Confirm dialog shows per-card breakdown (owner, DEC/day, extend days, total DEC,
+  current end, plot) plus balance check before broadcasting.
+- Broadcasts in batches of 4 per Hive block limit; waits for on-chain confirmation.
+
 #### Land Manager — Daily harvest fee caps
 
 Per-symbol daily maximum fee enforced account-wide (cumulative across regions, castles, keeps):

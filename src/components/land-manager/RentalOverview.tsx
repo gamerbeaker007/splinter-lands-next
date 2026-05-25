@@ -8,7 +8,7 @@ import {
 } from "@/lib/utils/cardUtil";
 import { BiomeModifiers, RentalEligiblePlot } from "@/types/landManager";
 import { cardElementOptions } from "@/types/planner";
-import { Bolt, BoltOutlined } from "@mui/icons-material";
+import { Bolt, BoltOutlined, Cancel } from "@mui/icons-material";
 import {
   Avatar,
   Box,
@@ -393,6 +393,7 @@ export default function RentalOverview({
                       <TableCell align="right">Days left</TableCell>
                       <TableCell align="right">DEC/day</TableCell>
                       <TableCell align="right">Total DEC</TableCell>
+                      <TableCell align="center">Cancelled</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -435,6 +436,13 @@ export default function RentalOverview({
                           <Typography variant="caption">
                             {fmtDec(c.total_dec)}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          {c.cancel_tx && (
+                            <Tooltip title="Cancellation pending">
+                              <Cancel fontSize="small" color="error" />
+                            </Tooltip>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

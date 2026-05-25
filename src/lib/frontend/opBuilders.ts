@@ -285,3 +285,28 @@ export function buildBuyWithDecOp(
     resource_symbol: resourceSymbol,
   });
 }
+
+/**
+ * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
+ * `marketIds` — the market listing IDs of the cards to renew.
+ * Batches are handled upstream (max 4 ops per tx).
+ */
+export function buildRenewRentalOp(
+  username: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [username],
+      required_posting_auths: [],
+      id: "sm_market_renew_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        currency: "DEC",
+        market: APP,
+        app: APP,
+      }),
+    },
+  ];
+}

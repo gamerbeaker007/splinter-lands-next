@@ -5,7 +5,7 @@ import HarvestAllRow from "@/components/land-manager/bulk-operations/HarvestAllR
 import HarvestMythicsRow from "@/components/land-manager/bulk-operations/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
-import RentEmptyWorkersRow from "@/components/land-manager/bulk-operations/RentEmptyWorkersRow";
+import RentWorkersRow from "@/components/land-manager/bulk-operations/RentWorkersRow";
 import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
@@ -74,7 +74,7 @@ export default function BulkActionPanel({
     makeHarvestable: false,
     processResources: false,
     mythicHarvest: false,
-    rentEmptyWorkers: false,
+    rentWorkers: false,
     stakeDec: false,
   });
 
@@ -111,8 +111,8 @@ export default function BulkActionPanel({
     (b: boolean) => setBusyMap((m) => ({ ...m, processResources: b })),
     []
   );
-  const onRentEmptyWorkersBusy = useCallback(
-    (b: boolean) => setBusyMap((m) => ({ ...m, rentEmptyWorkers: b })),
+  const onRentWorkersBusy = useCallback(
+    (b: boolean) => setBusyMap((m) => ({ ...m, rentWorkers: b })),
     []
   );
   const onStakeDecBusy = useCallback(
@@ -174,14 +174,14 @@ export default function BulkActionPanel({
           onSuccess={afterSuccess}
         />
 
-        <RentEmptyWorkersRow
+        <RentWorkersRow
           username={username}
           enabledRegions={enabledRegions}
           rental={rental}
           authorityStatus={authorityStatus}
           eligiblePlotCount={eligibility?.eligible.length ?? null}
           anyBusy={anyBusy}
-          onBusyChange={onRentEmptyWorkersBusy}
+          onBusyChange={onRentWorkersBusy}
           onSuccess={afterSuccess}
         />
 
