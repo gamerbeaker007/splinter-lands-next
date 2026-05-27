@@ -68,7 +68,8 @@ all fee ops now use the posting key only.
 ### Fixed
 
 - **Land Manager — Rent Workers**: `waitForTransactions` polling now uses `pLimit(5)` to avoid concurrent `lookupTransaction` floods on large transaction sets.
-
+- **Land Manager – Rent Workers**: DEC balance check 
+- **Land Manager – Rent Overview**: Add pagination for PlotTable(s)
 ---
 
 ## [v1.5.0] - 2026-05-23

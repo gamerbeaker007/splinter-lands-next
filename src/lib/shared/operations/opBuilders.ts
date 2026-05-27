@@ -1,11 +1,11 @@
-import { SERVICE_FEE_RECIPIENT } from "@/types/landManager";
-
 // Resources that are soulbound on Splinterlands and cannot be transferred
 // between regions/players. Fees in these resources are skipped entirely.
-export const NON_TRANSFERRABLE_FEE_RESOURCES = new Set(["RESEARCH", "AURA"]);
+import { SERVICE_FEE_RECIPIENT } from "@/types/landManager";
 
-export function isFeeResourceTransferrable(symbol: string): boolean {
-  return !NON_TRANSFERRABLE_FEE_RESOURCES.has(symbol);
+export const NON_TRANSFERABLE_FEE_RESOURCES = new Set(["RESEARCH", "AURA"]);
+
+export function isFeeResourceTransferable(symbol: string): boolean {
+  return !NON_TRANSFERABLE_FEE_RESOURCES.has(symbol);
 }
 
 const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
@@ -306,6 +306,34 @@ export function buildRenewRentalOp(
         currency: "DEC",
         market: APP,
         app: APP,
+      }),
+    },
+  ];
+}
+
+/**
+ * Rent cards via the SPL market on behalf of `player`. Signed by the
+ * `serviceAccount`'s ACTIVE key — the player must have granted purchase
+ * authority to that account on Splinterlands Account Security.
+ * Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
+ */
+export function buildRentOnBehalfOp(
+  serviceAccount: string,
+  player: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [serviceAccount],
+      required_posting_auths: [],
+      id: "sm_market_rent",
+      json: JSON.stringify({
+        currency: "DEC",
+        items: marketIds,
+        player,
+        app: APP,
+        n: generateNonce(),
       }),
     },
   ];

@@ -20,6 +20,7 @@ import {
 
 interface Props {
   plan: RentalPlan;
+  decBalance: number | null;
   onClose: () => void;
 }
 
@@ -84,8 +85,12 @@ const COLUMNS: RentalPlotColumn[] = [
   },
 ];
 
-export default function RentDryRunDialog({ plan, onClose }: Props) {
+export default function RentDryRunDialog({ plan, decBalance, onClose }: Props) {
   const { totals } = plan;
+  const insufficientDec =
+    decBalance !== null &&
+    totals.total_dec > 0 &&
+    decBalance < totals.total_dec;
 
   return (
     <Dialog open onClose={onClose} maxWidth="lg" fullWidth>
@@ -107,7 +112,25 @@ export default function RentDryRunDialog({ plan, onClose }: Props) {
             size="small"
             color="primary"
           />
+          {decBalance !== null && (
+            <Chip
+              label={`${fmtDec(decBalance)} DEC available`}
+              size="small"
+              color={insufficientDec ? "error" : "default"}
+              variant="outlined"
+            />
+          )}
         </Stack>
+
+        {insufficientDec && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            Insufficient DEC — this plan needs{" "}
+            <strong>{fmtDec(totals.total_dec)} DEC</strong> but your balance is{" "}
+            <strong>{fmtDec(decBalance!)} DEC</strong>. Top up{" "}
+            <strong>{fmtDec(totals.total_dec - decBalance!)} DEC</strong> before
+            renting.
+          </Alert>
+        )}
 
         {plan.warnings.length > 0 && (
           <Alert severity="warning" sx={{ mb: 2 }}>

@@ -15,7 +15,7 @@ import {
   capFeesAtBalance,
   planMythicFees,
 } from "@/lib/frontend/feePayment";
-import { buildTaxCollectionOp } from "@/lib/frontend/opBuilders";
+import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
   BroadcastResult,
   broadcastOperations,

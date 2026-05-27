@@ -8,12 +8,8 @@ import {
 } from "@/lib/backend/services/splAuthorityService";
 import { Operation } from "@hiveio/dhive";
 import { getAuthStatus } from "../auth-actions";
-import { generateNonce } from "@/lib/frontend/opBuilders";
-
-const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
-// Match the client-side cap in useRentEmptyWorkersAction so plans built for
-// either path produce equivalent on-chain shape.
-const MAX_ITEMS_PER_RENT_OP = 100;
+import { buildRentOnBehalfOp } from "@/lib/shared/operations/opBuilders";
+import { MAX_ITEM_SIZE_IN_OPERATION } from "@/types/landManager";
 
 function chunk<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];
@@ -72,23 +68,10 @@ export async function rentOnBehalfOf(
     };
   }
 
-  const operations: Operation[] = chunk(marketIds, MAX_ITEMS_PER_RENT_OP).map(
-    (ids) => [
-      "custom_json",
-      {
-        required_auths: [service],
-        required_posting_auths: [],
-        id: "sm_market_rent",
-        json: JSON.stringify({
-          currency: "DEC",
-          items: ids,
-          player,
-          app: APP,
-          n: generateNonce(),
-        }),
-      },
-    ]
-  );
+  const operations: Operation[] = chunk(
+    marketIds,
+    MAX_ITEM_SIZE_IN_OPERATION
+  ).map((ids) => buildRentOnBehalfOp(service, player, ids) as Operation);
 
   return broadcastOpsAsService(operations);
 }

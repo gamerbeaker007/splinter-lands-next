@@ -1,7 +1,7 @@
 import {
   buildBuyWithDecOp,
   buildSwapTokensOp,
-} from "@/lib/frontend/opBuilders";
+} from "@/lib/shared/operations/opBuilders";
 import {
   aggregateCosts,
   computeDecNeededForResource,

@@ -23,6 +23,7 @@ import {
 interface Props {
   exec: RentalExecutionPlan;
   busy: boolean;
+  decBalance: number | null;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -70,6 +71,7 @@ function buildConfirmColumns(): RentalPlotColumn[] {
 export default function RentConfirmDialog({
   exec,
   busy,
+  decBalance,
   onConfirm,
   onCancel,
 }: Props) {
@@ -85,6 +87,10 @@ export default function RentConfirmDialog({
   const noPicks = totals.slots_filled === 0;
   const itemsWithPicks = plan.items.filter((i) => i.picks.length > 0);
   const columns = buildConfirmColumns();
+  const insufficientDec =
+    decBalance !== null &&
+    totals.total_dec > 0 &&
+    decBalance < totals.total_dec;
 
   return (
     <Dialog open onClose={busy ? undefined : onCancel} maxWidth="lg" fullWidth>
@@ -106,6 +112,14 @@ export default function RentConfirmDialog({
             size="small"
             color="primary"
           />
+          {decBalance !== null && (
+            <Chip
+              label={`${fmtDec(decBalance)} DEC available`}
+              size="small"
+              color={insufficientDec ? "error" : "default"}
+              variant="outlined"
+            />
+          )}
         </Stack>
 
         {noPicks ? (
@@ -114,6 +128,16 @@ export default function RentConfirmDialog({
           </Alert>
         ) : (
           <>
+            {insufficientDec && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                Insufficient DEC — this rental needs{" "}
+                <strong>{fmtDec(totals.total_dec)} DEC</strong> but your balance
+                is <strong>{fmtDec(decBalance!)} DEC</strong>. Top up{" "}
+                <strong>{fmtDec(totals.total_dec - decBalance!)} DEC</strong>{" "}
+                before confirming.
+              </Alert>
+            )}
+
             <Alert severity="warning" icon={<WarningAmber />} sx={{ mb: 2 }}>
               You are about to spend{" "}
               <strong>{fmtDec(totals.total_dec)} DEC</strong> to rent{" "}
@@ -156,7 +180,7 @@ export default function RentConfirmDialog({
         <Button
           variant="contained"
           color="info"
-          disabled={busy || noPicks}
+          disabled={busy || noPicks || insufficientDec}
           onClick={onConfirm}
           startIcon={
             busy ? <CircularProgress size={14} color="inherit" /> : null

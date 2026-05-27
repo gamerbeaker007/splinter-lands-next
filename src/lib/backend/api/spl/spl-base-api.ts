@@ -21,7 +21,7 @@ import type {
   TrxLookupOutcome,
 } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { SplMarketCardData } from "@/types/splMarketCardData copy";
+import { SplMarketCardData } from "../../../../types/splMarketCardData";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import axios from "axios";

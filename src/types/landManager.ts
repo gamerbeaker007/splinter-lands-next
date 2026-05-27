@@ -2,15 +2,20 @@
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 
-export type { BiomeModifiers };
-
 export interface DryRunResult {
   title: string;
   log: string[];
 }
 
-// === App-level constants (not stored per player) ===
+export const MAX_ITEM_SIZE_IN_OPERATION = 100;
+// Hive blocks allow at most 5 custom_json ops per account per block.
+// 4 keeps us safely under that limit.
+export const MAX_OPS_PER_BROADCAST = 4;
+// Hive produces a new block every ~3 seconds. Waiting this long between
+// consecutive broadcast batches guarantees they land in different blocks.
+export const HIVE_BLOCK_MS = 3_000;
 
+// === App-level constants (not stored per player) ===
 export const SERVICE_FEE_PCT = 2;
 export const SERVICE_FEE_RECIPIENT = "beaker007";
 export const SERVICE_FEE_RECIPIENT_REGION = "PR-CEF-65"; // beaker007's fee collection region

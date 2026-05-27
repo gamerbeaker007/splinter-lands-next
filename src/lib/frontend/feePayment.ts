@@ -1,7 +1,7 @@
 import {
   buildFeeTransferOp,
-  isFeeResourceTransferrable,
-} from "@/lib/frontend/opBuilders";
+  isFeeResourceTransferable,
+} from "@/lib/shared/operations/opBuilders";
 import { computeSwapAmounts } from "@/lib/shared/landManagerUtils";
 import {
   DAILY_FEE_CAPS,
@@ -57,7 +57,7 @@ export function planDesiredFees(
   for (const region of regions) {
     if (!feeFilter(region.region_number)) continue;
     for (const resource of harvestable[region.region_uid] ?? []) {
-      if (!isFeeResourceTransferrable(resource.token_symbol)) continue;
+      if (!isFeeResourceTransferable(resource.token_symbol)) continue;
       const amount = round3(
         (resource.amount_claimable * SERVICE_FEE_PCT) / 100
       );
@@ -182,7 +182,7 @@ export function planMythicFees(
   for (const [region_uid, { regionNumber, tokens }] of byRegion) {
     const region_name = regionNameMap.get(region_uid) ?? region_uid;
     for (const [symbol, total] of tokens) {
-      if (!isFeeResourceTransferrable(symbol)) continue;
+      if (!isFeeResourceTransferable(symbol)) continue;
       const amount = round3((total * SERVICE_FEE_PCT) / 100);
       if (amount <= 0) continue;
       if (amount < MIN_RESOURCE_FEE_AMOUNT) continue;

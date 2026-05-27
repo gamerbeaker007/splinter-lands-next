@@ -1,4 +1,4 @@
-import { buildHarvestOp } from "@/lib/frontend/opBuilders";
+import { buildHarvestOp } from "@/lib/shared/operations/opBuilders";
 import { SplHarvestableResource } from "@/types/spl/landManager";
 
 interface HarvestRegion {

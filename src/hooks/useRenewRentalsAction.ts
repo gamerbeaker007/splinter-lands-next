@@ -4,12 +4,15 @@ import {
   getRenewRentalsEligibility,
   refreshCardCollection,
 } from "@/lib/backend/actions/land-manager/renew-rental-actions";
-import { buildRenewRentalOp } from "@/lib/frontend/opBuilders";
+import { buildRenewRentalOp } from "@/lib/shared/operations/opBuilders";
 import {
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
-import { RenewRentalPlan } from "@/types/landManager";
+import {
+  MAX_ITEM_SIZE_IN_OPERATION,
+  RenewRentalPlan,
+} from "@/types/landManager";
 import { KeychainKeyTypes } from "keychain-sdk";
 import { useCallback, useEffect, useState } from "react";
 
@@ -105,11 +108,13 @@ export function useRenewRentalsAction({
       try {
         const marketIds = currentPlan.items.map((i) => i.market_id);
 
-        const MAX_RENEWAL_ITEM_SIZE = 100;
         const ops: [string, object][] = [];
-        for (let i = 0; i < marketIds.length; i += MAX_RENEWAL_ITEM_SIZE) {
+        for (let i = 0; i < marketIds.length; i += MAX_ITEM_SIZE_IN_OPERATION) {
           ops.push(
-            buildRenewRentalOp(username, marketIds.slice(i, i + MAX_RENEWAL_ITEM_SIZE))
+            buildRenewRentalOp(
+              username,
+              marketIds.slice(i, i + MAX_ITEM_SIZE_IN_OPERATION)
+            )
           );
         }
 

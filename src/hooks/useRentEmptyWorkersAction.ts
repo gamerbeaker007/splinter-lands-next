@@ -13,7 +13,7 @@ import {
 import {
   buildStakeWorkersOp,
   StakeWorkerCard,
-} from "@/lib/frontend/opBuilders";
+} from "@/lib/shared/operations/opBuilders";
 import {
   broadcastOperations,
   waitForTransactions,
@@ -43,6 +43,8 @@ export interface UseRentEmptyWorkersAction {
   eligiblePlotCount: number | null;
   dryRunPlan: RentalPlan | null;
   executionPlan: RentalExecutionPlan | null;
+  /** Player DEC balance fetched alongside the dry-run / execution plan. */
+  decBalance: number | null;
   result: RentExecuteResult | null;
   error: string | null;
   clearDryRunPlan: () => void;
@@ -65,6 +67,7 @@ export function useRentEmptyWorkersAction({
   const [dryRunPlan, setDryRunPlan] = useState<RentalPlan | null>(null);
   const [executionPlan, setExecutionPlan] =
     useState<RentalExecutionPlan | null>(null);
+  const [decBalance, setDecBalance] = useState<number | null>(null);
   const [result, setResult] = useState<RentExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,29 +75,39 @@ export function useRentEmptyWorkersAction({
     setBusy(true);
     setError(null);
     setDryRunPlan(null);
+    setDecBalance(null);
     try {
-      const plan = await getRentalDryRunPlan(enabledRegions, rental);
+      const [plan, balance] = await Promise.all([
+        getRentalDryRunPlan(enabledRegions, rental),
+        username ? getDecBalance(username) : Promise.resolve(0),
+      ]);
       setDryRunPlan(plan);
+      setDecBalance(balance);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setBusy(false);
     }
-  }, [enabledRegions, rental]);
+  }, [enabledRegions, rental, username]);
 
   const prepareExecution = useCallback(async () => {
     setBusy(true);
     setError(null);
     setExecutionPlan(null);
+    setDecBalance(null);
     try {
-      const plan = await getRentalExecutionPlan(enabledRegions, rental);
+      const [plan, balance] = await Promise.all([
+        getRentalExecutionPlan(enabledRegions, rental),
+        username ? getDecBalance(username) : Promise.resolve(0),
+      ]);
       setExecutionPlan(plan);
+      setDecBalance(balance);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setBusy(false);
     }
-  }, [enabledRegions, rental]);
+  }, [enabledRegions, rental, username]);
 
   const execute = useCallback(async () => {
     if (!username) {
@@ -128,6 +141,7 @@ export function useRentEmptyWorkersAction({
     // Keep the on-screen confirm/dialog state in sync with what we'll
     // actually broadcast.
     setExecutionPlan(exec);
+    setDecBalance(decBalance);
 
     const allMarketIds: string[] = [];
     for (const item of exec.plan.items) {
@@ -267,10 +281,17 @@ export function useRentEmptyWorkersAction({
     eligiblePlotCount,
     dryRunPlan,
     executionPlan,
+    decBalance,
     result,
     error,
-    clearDryRunPlan: () => setDryRunPlan(null),
-    clearExecutionPlan: () => setExecutionPlan(null),
+    clearDryRunPlan: () => {
+      setDryRunPlan(null);
+      setDecBalance(null);
+    },
+    clearExecutionPlan: () => {
+      setExecutionPlan(null);
+      setDecBalance(null);
+    },
     clearResult: () => setResult(null),
     clearError: () => setError(null),
     preview,

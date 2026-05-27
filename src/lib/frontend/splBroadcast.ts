@@ -2,21 +2,16 @@ import type { SplTrxResult, TrxLookupOutcome } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import pLimit from "p-limit";
 import { formatError } from "./errorFormat";
+import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 export {
   buildBuyWithDecOp,
   buildFeeTransferOp,
   buildHarvestOp,
   buildSwapTokensOp,
   generateNonce,
-} from "./opBuilders";
+} from "@/lib/shared/operations/opBuilders";
 export { KeychainKeyTypes } from "keychain-sdk";
 
-// Hive blocks allow at most 5 custom_json ops per account per block.
-// 4 keeps us safely under that limit.
-export const MAX_OPS_PER_BROADCAST = 4;
-// Hive produces a new block every ~3 seconds. Waiting this long between
-// consecutive broadcast batches guarantees they land in different blocks.
-const HIVE_BLOCK_MS = 3_000;
 const VERIFY_POLL_MS = 3000;
 const VERIFY_TIMEOUT_MS = 30_000;
 // Max concurrent SPL lookup calls per poll cycle — prevents rate-limiting

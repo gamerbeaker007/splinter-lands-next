@@ -19,7 +19,7 @@ import {
 } from "@/types/planner/market/market";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketAsset } from "@/types/splMarketAsset";
-import { SplMarketCardData } from "@/types/splMarketCardData copy";
+import { SplMarketCardData } from "../../../types/splMarketCardData";
 import { fetchMarketCardData } from "../api/spl/spl-base-api";
 import {
   fetchAssetsPrices,

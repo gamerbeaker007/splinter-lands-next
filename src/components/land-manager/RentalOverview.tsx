@@ -2,11 +2,12 @@
 
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
+  BiomeModifiers,
   landElementBgColor,
   landElementIconUrl,
   landElementLabel,
 } from "@/lib/utils/cardUtil";
-import { BiomeModifiers, RentalEligiblePlot } from "@/types/landManager";
+import { RentalEligiblePlot } from "@/types/landManager";
 import { cardElementOptions } from "@/types/planner";
 import { Bolt, BoltOutlined, Cancel } from "@mui/icons-material";
 import {
@@ -201,6 +202,8 @@ function PlotRow({
   );
 }
 
+const PLOT_TABLE_ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
+
 function PlotTable({
   plots,
   rentByPlot,
@@ -210,6 +213,9 @@ function PlotTable({
   rentByPlot: Map<number, PlotRentSummary>;
   emptyMessage: string;
 }) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   if (plots.length === 0) {
     return (
       <Typography variant="body2" color="text.disabled">
@@ -222,31 +228,49 @@ function PlotTable({
     decPerDay: 0,
     totalDec: 0,
   };
+  const paginated = plots.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
   return (
-    <Box sx={{ overflowX: "auto" }}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Plot</TableCell>
-            <TableCell>Resource</TableCell>
-            <TableCell>Workers</TableCell>
-            <TableCell>Empty</TableCell>
-            <TableCell align="right">DEC/day</TableCell>
-            <TableCell align="right">Total DEC</TableCell>
-            <TableCell>Biome boost</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {plots.map((p) => (
-            <PlotRow
-              key={p.deed_uid}
-              plot={p}
-              rentSummary={rentByPlot.get(p.plot_id) ?? empty}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+    <>
+      <Box sx={{ overflowX: "auto" }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Plot</TableCell>
+              <TableCell>Resource</TableCell>
+              <TableCell>Workers</TableCell>
+              <TableCell>Empty</TableCell>
+              <TableCell align="right">DEC/day</TableCell>
+              <TableCell align="right">Total DEC</TableCell>
+              <TableCell>Biome boost</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginated.map((p) => (
+              <PlotRow
+                key={p.deed_uid}
+                plot={p}
+                rentSummary={rentByPlot.get(p.plot_id) ?? empty}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+      <TablePagination
+        component="div"
+        count={plots.length}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={PLOT_TABLE_ROWS_PER_PAGE_OPTIONS}
+      />
+    </>
   );
 }
 

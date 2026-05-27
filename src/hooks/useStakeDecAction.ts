@@ -9,7 +9,7 @@ import {
   recordStakeDecLog,
   StakeDecPlan,
 } from "@/lib/backend/actions/land-manager/stake-dec-actions";
-import { buildStakeDecRegionOp } from "@/lib/frontend/opBuilders";
+import { buildStakeDecRegionOp } from "@/lib/shared/operations/opBuilders";
 import {
   broadcastOperations,
   KeychainKeyTypes,

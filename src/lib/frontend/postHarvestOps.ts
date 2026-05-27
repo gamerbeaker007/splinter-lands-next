@@ -1,7 +1,7 @@
 import {
   buildAddLiquidityOp,
   buildSellResourceForDecOp,
-} from "@/lib/frontend/opBuilders";
+} from "@/lib/shared/operations/opBuilders";
 import { computeResourceToDec } from "@/lib/shared/landManagerUtils";
 import {
   PostHarvestActionSummary,
@@ -85,7 +85,7 @@ export function buildPostHarvestOps(
           dec_amount: decOut,
         });
       } else if (strategy === "add_to_pool") {
-        const half = parseFloat((amount / 2).toFixed(3));
+        const half = Number.parseFloat((amount / 2).toFixed(3));
         const { out_amount_2: decOut } = computeResourceToDec(
           pools,
           symbol,

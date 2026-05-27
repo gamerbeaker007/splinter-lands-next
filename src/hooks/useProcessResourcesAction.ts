@@ -4,7 +4,7 @@ import {
   getLandPools,
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
-import { buildAddLiquidityOp } from "@/lib/frontend/opBuilders";
+import { buildAddLiquidityOp } from "@/lib/shared/operations/opBuilders";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
 import {
   BroadcastResult,

@@ -8,7 +8,7 @@ import {
 } from "@/lib/backend/actions/land-manager/authority-actions";
 import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatError } from "@/lib/frontend/errorFormat";
-import { buildSetAuthorityOp } from "@/lib/frontend/opBuilders";
+import { buildSetAuthorityOp } from "@/lib/shared/operations/opBuilders";
 import {
   broadcastOperations,
   KeychainKeyTypes,

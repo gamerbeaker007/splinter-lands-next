@@ -203,6 +203,7 @@ export default function RentWorkersRow({
       {rentAction.dryRunPlan && (
         <RentDryRunDialog
           plan={rentAction.dryRunPlan}
+          decBalance={rentAction.decBalance}
           onClose={rentAction.clearDryRunPlan}
         />
       )}
@@ -210,6 +211,7 @@ export default function RentWorkersRow({
         <RentConfirmDialog
           exec={rentAction.executionPlan}
           busy={rentAction.busy}
+          decBalance={rentAction.decBalance}
           onConfirm={() => rentAction.execute()}
           onCancel={rentAction.clearExecutionPlan}
         />
