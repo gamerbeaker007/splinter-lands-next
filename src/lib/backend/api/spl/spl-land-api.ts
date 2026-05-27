@@ -92,6 +92,51 @@ export async function fetchStakedAssets(deed_uid: string) {
   return data;
 }
 
+/**
+ * Returns the number of unstaked Power Core items owned by `player`.
+ * Uses the /grouped endpoint which is unauthenticated.
+ */
+export async function fetchPowerCoreCount(player: string): Promise<number> {
+  const url = "/land/stake/items/STK-LND-PCR/grouped";
+  const res = await splLandClient.get(url, {
+    params: {
+      deedUid: '""',
+      player,
+      offset: 0,
+      limit: 100,
+      order_by: 1,
+      order_by_asc: 0,
+    },
+  });
+  const items: { name: string; item_count: number }[] =
+    res.data?.data?.items ?? [];
+  const pc = items.find((i) => i.name === "Power Core");
+  return pc?.item_count ?? 0;
+}
+
+/**
+ * Returns a page of available (unstaked) Power Core UIDs for `player`.
+ * Paginate with `offset` in steps of `limit` until fewer than `limit` items
+ * are returned.
+ */
+export async function fetchPowerCoreAvailableIds(
+  player: string,
+  offset = 0,
+  limit = 100
+): Promise<string[]> {
+  const url = "/land/stake/items/STK-LND-PCR/available";
+  const res = await splLandClient.get(url, {
+    params: {
+      deedUid: '""',
+      player,
+      offset,
+      limit,
+    },
+  });
+  const ids: { uid: string }[] = res.data?.data?.ids ?? [];
+  return ids.map((i) => i.uid);
+}
+
 export async function fetchPlayerPoolInfo(
   player: string
 ): Promise<PlayerTradeHubPosition[]> {

@@ -115,6 +115,7 @@ export interface RentalEligiblePlot {
   max_workers: number;
   empty_slots: number;
   is_powered: boolean;
+  listed_for_sale: boolean;
   biome_modifiers: BiomeModifiers;
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import StakePowerCoreButton from "@/components/land-manager/StakePowerCoreButton";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
   BiomeModifiers,
@@ -30,8 +31,10 @@ import {
 import { useMemo, useState } from "react";
 
 interface Props {
+  username: string;
   enabledRegions: number[];
   refreshKey?: number;
+  onSuccess?: () => void;
 }
 
 interface PlotRentSummary {
@@ -148,9 +151,11 @@ function WorkerCount({
 function PlotRow({
   plot,
   rentSummary,
+  action,
 }: {
   plot: RentalEligiblePlot;
   rentSummary: PlotRentSummary;
+  action?: React.ReactNode;
 }) {
   return (
     <TableRow>
@@ -198,6 +203,7 @@ function PlotRow({
       <TableCell>
         <BiomeChips modifiers={plot.biome_modifiers} />
       </TableCell>
+      {action !== undefined && <TableCell>{action}</TableCell>}
     </TableRow>
   );
 }
@@ -208,10 +214,12 @@ function PlotTable({
   plots,
   rentByPlot,
   emptyMessage,
+  renderAction,
 }: {
   plots: RentalEligiblePlot[];
   rentByPlot: Map<number, PlotRentSummary>;
   emptyMessage: string;
+  renderAction?: (plot: RentalEligiblePlot) => React.ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -245,6 +253,7 @@ function PlotTable({
               <TableCell align="right">DEC/day</TableCell>
               <TableCell align="right">Total DEC</TableCell>
               <TableCell>Biome boost</TableCell>
+              {renderAction && <TableCell>Action</TableCell>}
             </TableRow>
           </TableHead>
           <TableBody>
@@ -253,6 +262,7 @@ function PlotTable({
                 key={p.deed_uid}
                 plot={p}
                 rentSummary={rentByPlot.get(p.plot_id) ?? empty}
+                action={renderAction?.(p)}
               />
             ))}
           </TableBody>
@@ -275,14 +285,23 @@ function PlotTable({
 }
 
 export default function RentalOverview({
+  username,
   enabledRegions,
   refreshKey = 0,
+  onSuccess,
 }: Props) {
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const combinedRefreshKey = refreshKey + internalRefreshKey;
   const {
     eligibility: data,
     rentedCards,
     loading,
-  } = useLandManagerRegionData(enabledRegions, refreshKey);
+  } = useLandManagerRegionData(enabledRegions, combinedRefreshKey);
+
+  const handleStakeSuccess = () => {
+    setInternalRefreshKey((k) => k + 1);
+    onSuccess?.();
+  };
 
   const rentByPlot = useMemo(() => {
     const map = new Map<number, PlotRentSummary>();
@@ -395,6 +414,13 @@ export default function RentalOverview({
                 plots={data.unpoweredSkipped}
                 rentByPlot={rentByPlot}
                 emptyMessage="No unpowered plots"
+                renderAction={(plot) => (
+                  <StakePowerCoreButton
+                    username={username}
+                    plot={plot}
+                    onSuccess={handleStakeSuccess}
+                  />
+                )}
               />
             </Box>
           )}

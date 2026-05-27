@@ -18,6 +18,22 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Added
 
+#### Land Manager — Harvest/Rental tabs + Power Core staking
+
+Land Manager now uses two dedicated views:
+
+- **Harvest** tab: bulk harvest operations, alerts, mythic overview, and per-region status.
+- **Rental** tab: rental authority status, rental bulk actions, and rental plot overview.
+
+Both tabs share a common top section (config access, Region Resource Summary, and Today panel).
+
+Unpowered plots in Rental Overview now include a **Stake Power Core** action:
+
+- Loads available Power Core inventory from unauthenticated VAPI stake-item endpoints.
+- Fetches grouped count and paginated available IDs for `STK-LND-PCR`.
+- Broadcasts `sm_stake_change` using Hive Keychain **posting key**.
+- Waits for on-chain transaction confirmation before refreshing rental data.
+
 #### Land Manager — Renew Rentals
 
 New **Renew Rentals** button in the Bulk Action Panel (alongside Rent Workers).
@@ -68,7 +84,7 @@ all fee ops now use the posting key only.
 ### Fixed
 
 - **Land Manager — Rent Workers**: `waitForTransactions` polling now uses `pLimit(5)` to avoid concurrent `lookupTransaction` floods on large transaction sets.
-- **Land Manager – Rent Workers**: DEC balance check 
+- **Land Manager – Rent Workers**: DEC balance check
 - **Land Manager – Rent Overview**: Add pagination for PlotTable(s)
 ---
 

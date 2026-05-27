@@ -242,6 +242,43 @@ export function buildStakeWorkersOp(
   ];
 }
 
+export const STAKE_TYPE_UID_LAND_POWER_CORE = "STK-LND-PCR";
+
+/**
+ * Stake a Power Core item onto a deed. One op per deed. Uses POSTING key.
+ * `itemUid` — the UID of the Power Core item (e.g. "I-322-xxxxxxxx").
+ */
+export function buildStakePowerCoreOp(
+  username: string,
+  deedUid: string,
+  itemUid: string
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: { cards: [], items: [] },
+        stake: {
+          cards: [],
+          items: [
+            {
+              item_uid: itemUid,
+              stake_type_uid: STAKE_TYPE_UID_LAND_POWER_CORE,
+            },
+          ],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
 /**
  * Stake DEC into a region's power-up pool. Uses POSTING key.
  * Maps to the SPL `sm_dec_powerup_region` custom_json.

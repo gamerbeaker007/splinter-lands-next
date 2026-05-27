@@ -61,6 +61,7 @@ export async function getRentalEligibility(
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
+      listed_for_sale: Boolean(deed.listed),
       biome_modifiers: {
         fire: staking.red_biome_modifier ?? 0,
         water: staking.blue_biome_modifier ?? 0,
