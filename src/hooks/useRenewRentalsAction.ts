@@ -105,11 +105,11 @@ export function useRenewRentalsAction({
       try {
         const marketIds = currentPlan.items.map((i) => i.market_id);
 
-        const BATCH_SIZE = 4;
+        const MAX_RENEWAL_ITEM_SIZE = 100;
         const ops: [string, object][] = [];
-        for (let i = 0; i < marketIds.length; i += BATCH_SIZE) {
+        for (let i = 0; i < marketIds.length; i += MAX_RENEWAL_ITEM_SIZE) {
           ops.push(
-            buildRenewRentalOp(username, marketIds.slice(i, i + BATCH_SIZE))
+            buildRenewRentalOp(username, marketIds.slice(i, i + MAX_RENEWAL_ITEM_SIZE))
           );
         }
 

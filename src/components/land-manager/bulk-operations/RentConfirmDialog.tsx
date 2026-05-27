@@ -1,10 +1,14 @@
 "use client";
 
+import CardPicksCell from "@/components/land-manager/bulk-operations/CardPicksCell";
+import RentalPlotTable, {
+  RentalPlotColumn,
+} from "@/components/land-manager/bulk-operations/RentalPlotTable";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
+import { RentalPlanItem } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
   Alert,
-  Box,
   Button,
   Chip,
   CircularProgress,
@@ -12,7 +16,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Divider,
   Stack,
   Typography,
 } from "@mui/material";
@@ -31,6 +34,39 @@ function fmtDec(value: number): string {
   });
 }
 
+function buildConfirmColumns(): RentalPlotColumn[] {
+  return [
+    {
+      header: "Plot",
+      render: (item) => (
+        <Typography variant="caption" fontFamily="monospace" noWrap>
+          R{item.plot.region_number} · T{item.plot.tract_number} · P
+          {item.plot.plot_number}
+        </Typography>
+      ),
+    },
+    {
+      header: "Resource",
+      render: (item) => (
+        <Typography variant="caption">
+          {item.plot.resource_symbol ?? "—"}
+        </Typography>
+      ),
+    },
+    {
+      header: "DEC",
+      align: "right",
+      render: (item) => (
+        <Typography variant="caption">{fmtDec(item.plot_total_dec)}</Typography>
+      ),
+    },
+    {
+      header: "Workers",
+      render: (item: RentalPlanItem) => <CardPicksCell picks={item.picks} />,
+    },
+  ];
+}
+
 export default function RentConfirmDialog({
   exec,
   busy,
@@ -47,9 +83,11 @@ export default function RentConfirmDialog({
   );
 
   const noPicks = totals.slots_filled === 0;
+  const itemsWithPicks = plan.items.filter((i) => i.picks.length > 0);
+  const columns = buildConfirmColumns();
 
   return (
-    <Dialog open onClose={busy ? undefined : onCancel} maxWidth="sm" fullWidth>
+    <Dialog open onClose={busy ? undefined : onCancel} maxWidth="lg" fullWidth>
       <DialogTitle>Confirm — Rent Empty Workers</DialogTitle>
       <DialogContent dividers>
         <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
@@ -107,59 +145,7 @@ export default function RentConfirmDialog({
               </Alert>
             )}
 
-            <Stack gap={1} divider={<Divider />}>
-              {plan.items
-                .filter((i) => i.picks.length > 0)
-                .map((item) => (
-                  <Box key={item.plot.deed_uid}>
-                    <Stack
-                      direction="row"
-                      gap={1}
-                      alignItems="center"
-                      flexWrap="wrap"
-                    >
-                      <Typography
-                        variant="caption"
-                        fontWeight="bold"
-                        fontFamily="monospace"
-                      >
-                        R{item.plot.region_number} · T{item.plot.tract_number} ·
-                        P{item.plot.plot_number}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {item.plot.resource_symbol ?? "—"}
-                      </Typography>
-                      <Chip
-                        label={`${item.picks.length} card${item.picks.length === 1 ? "" : "s"}`}
-                        size="small"
-                        variant="outlined"
-                        sx={{ fontSize: "0.65rem", height: 18 }}
-                      />
-                      <Chip
-                        label={`${fmtDec(item.plot_total_dec)} DEC`}
-                        size="small"
-                        color="primary"
-                        variant="outlined"
-                        sx={{ fontSize: "0.65rem", height: 18 }}
-                      />
-                    </Stack>
-                    <Stack gap={0.25} mt={0.5}>
-                      {item.picks.map((pick) => (
-                        <Typography
-                          key={pick.market_id}
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          • {pick.card_name} lvl {pick.level} —{" "}
-                          {fmtDec(pick.total_dec)} DEC ({pick.rental_days}d ·{" "}
-                          {fmtDec(pick.buy_price_per_day)} DEC/d)
-                        </Typography>
-                      ))}
-                    </Stack>
-                  </Box>
-                ))}
-            </Stack>
+            <RentalPlotTable items={itemsWithPicks} columns={columns} />
           </>
         )}
       </DialogContent>

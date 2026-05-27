@@ -50,11 +50,24 @@ Caps are applied before every run using today's already-paid fees from the DB. D
 
 ### Changed
 
+#### Maintenance Mode
+
+- **Auth**: login dialog shows a dedicated maintenance warning banner instead of a generic error when the SPL API is under maintenance.
+
 #### Land Manager — SPS fee removed
 
 SPS is no longer subject to the 2% service fee. Only natural resources (Grain, Wood, Stone, Iron)
 are charged. This also removes the active-key Keychain prompt that SPS payment previously required —
 all fee ops now use the posting key only.
+
+
+### Land Manager — Rent Workers dialogs
+- Paginated table (20 rows/page) for Dry-Run and Confirm dialogs; extracted shared `RentalPlotTable` component with per-dialog column definitions.
+
+
+### Fixed
+
+- **Land Manager — Rent Workers**: `waitForTransactions` polling now uses `pLimit(5)` to avoid concurrent `lookupTransaction` floods on large transaction sets.
 
 ---
 

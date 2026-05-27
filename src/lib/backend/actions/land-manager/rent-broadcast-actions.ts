@@ -13,7 +13,7 @@ import { generateNonce } from "@/lib/frontend/opBuilders";
 const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
 // Match the client-side cap in useRentEmptyWorkersAction so plans built for
 // either path produce equivalent on-chain shape.
-const MAX_ITEMS_PER_RENT_OP = 10;
+const MAX_ITEMS_PER_RENT_OP = 100;
 
 function chunk<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];

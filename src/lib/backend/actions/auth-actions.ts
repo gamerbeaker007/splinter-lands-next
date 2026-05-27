@@ -1,9 +1,22 @@
 "use server";
 
-import { splLogin } from "@/lib/backend/api/spl/spl-base-api";
+import { fetchSettings, splLogin } from "@/lib/backend/api/spl/spl-base-api";
 import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
 import { cookies } from "next/headers";
 import { invalidatePlayerCaches } from "../services/playerService";
+
+/** Returns whether Splinterlands is currently in maintenance mode.
+ *  Treats a failed /settings fetch as maintenance (API unreachable). */
+export async function getSplMaintenanceStatus(): Promise<{
+  maintenance: boolean;
+}> {
+  try {
+    const settings = await fetchSettings();
+    return { maintenance: settings?.maintenance_mode ?? false };
+  } catch {
+    return { maintenance: true };
+  }
+}
 
 export async function getAuthStatus() {
   try {
