@@ -1,9 +1,11 @@
 "use client";
 
+import { getSplMaintenanceStatus } from "@/lib/backend/actions/auth-actions";
 import { useAuth } from "@/lib/frontend/context/AuthContext";
-import { Logout as LogoutIcon } from "@mui/icons-material";
+import { Construction, Logout as LogoutIcon } from "@mui/icons-material";
 import {
   Alert,
+  AlertTitle,
   Avatar,
   Box,
   Button,
@@ -42,6 +44,7 @@ export default function LoginComponent({
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
   const [username, setUsername] = useState("");
   const [error, setError] = useState<Error | null>(null);
+  const [isMaintenance, setIsMaintenance] = useState(false);
   const [signingInProgress, setSigningInProgress] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -66,6 +69,7 @@ export default function LoginComponent({
     setLoginDialogOpen(false);
     setUsername("");
     setError(null);
+    setIsMaintenance(false);
     clearError();
     setSigningInProgress(false);
   };
@@ -77,6 +81,7 @@ export default function LoginComponent({
     }
 
     setError(null);
+    setIsMaintenance(false);
     setSigningInProgress(true);
 
     try {
@@ -88,6 +93,9 @@ export default function LoginComponent({
       handleDialogClose();
     } catch (err) {
       setError(err as Error);
+      getSplMaintenanceStatus().then(({ maintenance }) =>
+        setIsMaintenance(maintenance)
+      );
     } finally {
       setSigningInProgress(false);
     }
@@ -192,9 +200,27 @@ export default function LoginComponent({
                 autoFocus
                 placeholder="Enter your Hive username"
               />
-              {error && (
-                <Alert severity="error" variant="outlined">
-                  {error.message}
+              {(error || isMaintenance) && (
+                <Alert
+                  severity={isMaintenance ? "warning" : "error"}
+                  variant="outlined"
+                  icon={
+                    isMaintenance ? (
+                      <Construction fontSize="inherit" />
+                    ) : undefined
+                  }
+                >
+                  {isMaintenance ? (
+                    <>
+                      <AlertTitle>
+                        Splinterlands is under maintenance
+                      </AlertTitle>
+                      The game API is temporarily unavailable. Please try again
+                      later.
+                    </>
+                  ) : (
+                    error?.message
+                  )}
                 </Alert>
               )}
               {signingInProgress && (
@@ -341,9 +367,25 @@ export default function LoginComponent({
               placeholder="Enter your Hive username"
             />
 
-            {error && (
-              <Alert severity="error" variant="outlined">
-                {error.message}
+            {(error || isMaintenance) && (
+              <Alert
+                severity={isMaintenance ? "warning" : "error"}
+                variant="outlined"
+                icon={
+                  isMaintenance ? (
+                    <Construction fontSize="inherit" />
+                  ) : undefined
+                }
+              >
+                {isMaintenance ? (
+                  <>
+                    <AlertTitle>Splinterlands is under maintenance</AlertTitle>
+                    The game API is temporarily unavailable. Please try again
+                    later.
+                  </>
+                ) : (
+                  error?.message
+                )}
               </Alert>
             )}
 

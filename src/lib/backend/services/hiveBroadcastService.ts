@@ -1,10 +1,6 @@
 import logger from "@/lib/backend/log/logger.server";
 import { Client, Operation, PrivateKey } from "@hiveio/dhive";
-
-// Hive: max 5 custom_json ops per account per block. Match the client-side
-// chunking (4 per tx) to leave headroom and reuse the same mental model.
-const MAX_OPS_PER_TX = 4;
-const HIVE_BLOCK_MS = 3_000;
+import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 
 const DEFAULT_RPC_NODES = [
   "https://api.hive.blog",
@@ -71,7 +67,7 @@ export async function broadcastOpsAsService(
   }
 
   const txIds: string[] = [];
-  const batches = chunk(operations, MAX_OPS_PER_TX);
+  const batches = chunk(operations, MAX_OPS_PER_BROADCAST);
   for (let i = 0; i < batches.length; i++) {
     try {
       const tx = await client.broadcast.sendOperations(batches[i], key);

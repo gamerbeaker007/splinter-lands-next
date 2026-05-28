@@ -6,6 +6,8 @@ import {
 } from "@/lib/backend/api/spl/spl-base-api";
 import {
   fetchLandResourcesPools,
+  fetchPowerCoreAvailableIds,
+  fetchPowerCoreCount,
   fetchProductionOverview,
   fetchRegionDataPlayer,
   fetchRegionResourceBalance,
@@ -265,4 +267,39 @@ export async function lookupTransaction(
   trxId: string
 ): Promise<TrxLookupOutcome> {
   return fetchTransactionLookup(trxId);
+}
+
+// ── Power Core inventory ──────────────────────────────────────────────────────
+
+export async function getPowerCoreInfo(): Promise<{
+  count: number;
+  ids: string[];
+  error?: string;
+}> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { count: 0, ids: [], error: "Not authenticated" };
+  }
+  try {
+    const count = await fetchPowerCoreCount(auth.username);
+    if (count === 0) return { count: 0, ids: [] };
+    const allIds: string[] = [];
+    let offset = 0;
+    const limit = 100;
+    while (allIds.length < count) {
+      const batch = await fetchPowerCoreAvailableIds(
+        auth.username,
+        offset,
+        limit
+      );
+      if (batch.length === 0) break;
+      allIds.push(...batch);
+      if (batch.length < limit) break;
+      offset += limit;
+    }
+    return { count, ids: allIds };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    return { count: 0, ids: [], error: msg };
+  }
 }

@@ -1,4 +1,7 @@
-import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
+import {
+  getFeeApplicableRegionNumbers,
+  getTodayPaidFees,
+} from "@/lib/backend/actions/land-manager/fee-actions";
 import { recordMythicHarvestLog } from "@/lib/backend/actions/land-manager/log-actions";
 import {
   getBulkRegionData,
@@ -7,11 +10,12 @@ import {
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
+  applyDailyCaps,
   buildFeeOps,
   capFeesAtBalance,
   planMythicFees,
 } from "@/lib/frontend/feePayment";
-import { buildTaxCollectionOp } from "@/lib/frontend/opBuilders";
+import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -98,7 +102,11 @@ export function useHarvestMythicsAction({
           const desired = planMythicFees(mythicDeeds, regionNameMap, (n) =>
             feeApplicable.has(n)
           );
-          const capped = capFeesAtBalance(desired, balances);
+          const alreadyPaid = await getTodayPaidFees(username).catch(
+            () => ({})
+          );
+          const dailyCapped = applyDailyCaps(desired, alreadyPaid);
+          const capped = capFeesAtBalance(dailyCapped, balances);
           const { log: feeLog } = buildFeeOps(username, pools, capped);
           log.push(...feeLog);
           return { title: "Dry Run — Harvest Mythics", log };

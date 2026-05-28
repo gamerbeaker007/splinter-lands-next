@@ -1,10 +1,10 @@
 import {
   buildFeeTransferOp,
-  buildSpsFeeTransferOp,
-  isFeeResourceTransferrable,
-} from "@/lib/frontend/opBuilders";
+  isFeeResourceTransferable,
+} from "@/lib/shared/operations/opBuilders";
 import { computeSwapAmounts } from "@/lib/shared/landManagerUtils";
 import {
+  DAILY_FEE_CAPS,
   MythicDeed,
   SERVICE_FEE_PCT,
   SERVICE_FEE_RECIPIENT,
@@ -18,9 +18,7 @@ const round3 = (n: number): number => Number.parseFloat(n.toFixed(3));
 /**
  * Minimum fee amount (per region+resource) for natural-resource transfers.
  * Anything below this is skipped — too small to be worth a Hive op and a
- * trade-hub round-trip. Does NOT apply to SPS, which is consolidated into
- * a single op across all regions so even tiny per-region contributions
- * can sum into a meaningful payment.
+ * trade-hub round-trip.
  */
 export const MIN_RESOURCE_FEE_AMOUNT = 5;
 
@@ -59,17 +57,12 @@ export function planDesiredFees(
   for (const region of regions) {
     if (!feeFilter(region.region_number)) continue;
     for (const resource of harvestable[region.region_uid] ?? []) {
-      if (!isFeeResourceTransferrable(resource.token_symbol)) continue;
+      if (!isFeeResourceTransferable(resource.token_symbol)) continue;
       const amount = round3(
         (resource.amount_claimable * SERVICE_FEE_PCT) / 100
       );
       if (amount <= 0) continue;
-      // Drop dust fees per resource. SPS is exempt — small per-region amounts
-      // are consolidated across regions in buildFeeOps so they still add up
-      // to something meaningful.
-      if (resource.token_symbol !== "SPS" && amount < MIN_RESOURCE_FEE_AMOUNT) {
-        continue;
-      }
+      if (amount < MIN_RESOURCE_FEE_AMOUNT) continue;
       fees.push({
         region_uid: region.region_uid,
         region_number: region.region_number,
@@ -109,20 +102,13 @@ export function capFeesAtBalance(
 export interface FeeOpBuckets {
   /** Region swap_tokens fee ops (posting key). One per region+resource. */
   postingOps: [string, object][];
-  /**
-   * Active-key ops. SPS is global (not region-scoped) so all regions'
-   * SPS amounts are consolidated into a single sm_token_transfer here —
-   * the user only has to approve one active-key Keychain prompt.
-   */
-  activeOps: [string, object][];
   /** Human-readable lines describing each planned fee, including caps. */
   log: string[];
 }
 
 /**
- * Convert a capped plan into Hive ops, split by required key type. Same-symbol
- * fees go through buildFeeTransferOp (posting key); SPS amounts are summed
- * across regions and emitted as a single buildSpsFeeTransferOp (active key).
+ * Convert a capped plan into Hive ops (posting key only).
+ * One swap_tokens op is emitted per region+resource.
  */
 export function buildFeeOps(
   username: string,
@@ -130,21 +116,12 @@ export function buildFeeOps(
   plan: CappedFee[]
 ): FeeOpBuckets {
   const postingOps: [string, object][] = [];
-  const activeOps: [string, object][] = [];
   const log: string[] = [];
-
-  let spsTotal = 0;
 
   for (const fee of plan) {
     const cappedNote = fee.capped
       ? ` (capped from ${fee.desired_amount} — region balance too low)`
       : "";
-    if (fee.symbol === "SPS") {
-      spsTotal = round3(spsTotal + fee.amount);
-      log.push(`  fee: ${fee.amount} SPS from ${fee.region_name}${cappedNote}`);
-      continue;
-    }
-
     const { out_amount_1, out_amount_2 } = computeSwapAmounts(
       pools,
       fee.symbol,
@@ -167,14 +144,7 @@ export function buildFeeOps(
     );
   }
 
-  if (spsTotal > 0) {
-    activeOps.push(buildSpsFeeTransferOp(username, spsTotal));
-    log.push(
-      `  → SPS consolidated: ${spsTotal} SPS → ${SERVICE_FEE_RECIPIENT} (single sm_token_transfer, active key)`
-    );
-  }
-
-  return { postingOps, activeOps, log };
+  return { postingOps, log };
 }
 
 /**
@@ -212,10 +182,10 @@ export function planMythicFees(
   for (const [region_uid, { regionNumber, tokens }] of byRegion) {
     const region_name = regionNameMap.get(region_uid) ?? region_uid;
     for (const [symbol, total] of tokens) {
-      if (!isFeeResourceTransferrable(symbol)) continue;
+      if (!isFeeResourceTransferable(symbol)) continue;
       const amount = round3((total * SERVICE_FEE_PCT) / 100);
       if (amount <= 0) continue;
-      if (symbol !== "SPS" && amount < MIN_RESOURCE_FEE_AMOUNT) continue;
+      if (amount < MIN_RESOURCE_FEE_AMOUNT) continue;
       fees.push({
         region_uid,
         region_number: regionNumber,
@@ -226,6 +196,42 @@ export function planMythicFees(
     }
   }
   return fees;
+}
+
+/**
+ * Reduce desired fees so that the cumulative total paid today (alreadyPaid +
+ * this run) does not exceed the per-symbol daily cap defined in DAILY_FEE_CAPS.
+ *
+ * - Symbols not listed in DAILY_FEE_CAPS (e.g. SPS, AURA) are passed through.
+ * - Fees are processed in order; headroom is consumed greedily so the first
+ *   regions in the list are preferred when the cap is tight.
+ * - Entries whose amount is reduced to zero are dropped.
+ */
+export function applyDailyCaps(
+  desired: DesiredFee[],
+  alreadyPaid: Record<string, number>
+): DesiredFee[] {
+  // Compute remaining headroom per capped symbol.
+  const headroom: Record<string, number> = {};
+  for (const [sym, cap] of Object.entries(DAILY_FEE_CAPS)) {
+    headroom[sym] = Math.max(0, round3(cap - (alreadyPaid[sym] ?? 0)));
+  }
+
+  const out: DesiredFee[] = [];
+  for (const fee of desired) {
+    if (!(fee.symbol in DAILY_FEE_CAPS)) {
+      // No daily cap for this symbol — pass through unchanged.
+      out.push(fee);
+      continue;
+    }
+    const remaining = headroom[fee.symbol] ?? 0;
+    if (remaining <= 0) continue; // Daily cap fully consumed.
+    const amount = round3(Math.min(fee.amount, remaining));
+    headroom[fee.symbol] = round3(remaining - amount);
+    if (amount <= 0) continue;
+    out.push({ ...fee, amount });
+  }
+  return out;
 }
 
 /** Sum a fee plan into a { symbol: total } map for persistence. */

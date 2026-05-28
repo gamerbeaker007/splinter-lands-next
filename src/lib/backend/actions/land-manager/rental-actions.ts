@@ -6,6 +6,7 @@ import {
 } from "@/lib/backend/api/spl/spl-land-api";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
+import { isRentedByPlayer } from "@/lib/utils/cardUtil";
 import {
   DEFAULT_RENTAL_CONFIG,
   RentalConfig,
@@ -60,6 +61,7 @@ export async function getRentalEligibility(
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
+      listed_for_sale: Boolean(deed.listed),
       biome_modifiers: {
         fire: staking.red_biome_modifier ?? 0,
         water: staking.blue_biome_modifier ?? 0,
@@ -139,22 +141,14 @@ export interface RentedCardEntry {
   total_dec: number;
   stake_plot: number;
   stake_region: number | null;
+  /** Present when the renter has queued a cancellation. */
+  cancel_tx: string | null;
 }
 
 export interface RentedCardsList {
   cards: RentedCardEntry[];
   total_dec_per_day: number;
   total_dec_for_duration: number;
-}
-
-function isPlayerRentedCard(
-  c: import("@/types/splPlayerCardDetails").SplPlayerCardCollection,
-  username: string
-): boolean {
-  if (!c.rental_type) return false;
-  if (c.stake_plot == null) return false;
-  if (!c.player || c.player === username) return false;
-  return true;
 }
 
 /**
@@ -174,7 +168,7 @@ export async function getRentedCardsSpend(): Promise<RentedCardsSpendSummary> {
   let total_dec_per_day = 0;
   let total_dec_for_duration = 0;
   for (const c of cards) {
-    if (!isPlayerRentedCard(c, auth.username)) continue;
+    if (!isRentedByPlayer(c, auth.username)) continue;
     const perDay = Number(c.buy_price);
     if (!Number.isFinite(perDay) || perDay <= 0) continue;
     const days = Number(c.rental_days);
@@ -205,7 +199,7 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
   let total_dec_for_duration = 0;
 
   for (const c of collection) {
-    if (!isPlayerRentedCard(c, auth.username)) continue;
+    if (!isRentedByPlayer(c, auth.username)) continue;
     const perDay = Number(c.buy_price);
     if (!Number.isFinite(perDay) || perDay <= 0) continue;
     const daysNum = Number(c.rental_days);
@@ -223,6 +217,7 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       total_dec: total,
       stake_plot: c.stake_plot as number,
       stake_region: c.stake_region ?? null,
+      cancel_tx: c.cancel_tx ?? null,
     });
     total_dec_per_day += perDay;
     total_dec_for_duration += total;

@@ -21,7 +21,7 @@ import type {
   TrxLookupOutcome,
 } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { SplMarketCardData } from "@/types/splMarketCardData copy";
+import { SplMarketCardData } from "../../../../types/splMarketCardData";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import axios from "axios";
@@ -522,6 +522,18 @@ export async function fetchTransactionLookup(
           return { status: "failed", error };
         }
         result = { type: "market_rent", data: parseMarketRent(outer as Raw) };
+        break;
+      }
+      case "market_renew_rental": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "Renew rental transaction failed";
+          return { status: "failed", error };
+        }
+        result = {
+          type: "market_renew_rental",
+          data: parseMarketRent(outer as Raw),
+        };
         break;
       }
       case "stake_change": {

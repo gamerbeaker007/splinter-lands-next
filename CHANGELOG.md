@@ -14,6 +14,80 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.6.0] - 2026-05-25
+
+### Added
+
+#### Land Manager — Harvest/Rental tabs + Power Core staking
+
+Land Manager now uses two dedicated views:
+
+- **Harvest** tab: bulk harvest operations, alerts, mythic overview, and per-region status.
+- **Rental** tab: rental authority status, rental bulk actions, and rental plot overview.
+
+Both tabs share a common top section (config access, Region Resource Summary, and Today panel).
+
+Unpowered plots in Rental Overview now include a **Stake Power Core** action:
+
+- Loads available Power Core inventory from unauthenticated VAPI stake-item endpoints.
+- Fetches grouped count and paginated available IDs for `STK-LND-PCR`.
+- Broadcasts `sm_stake_change` using Hive Keychain **posting key**.
+- Waits for on-chain transaction confirmation before refreshing rental data.
+
+#### Land Manager — Renew Rentals
+
+New **Renew Rentals** button in the Bulk Action Panel (alongside Rent Workers).
+Renews active worker card rentals that are approaching the end of the season using
+Hive Keychain active key (`sm_market_renew_rental`).
+
+- Button enabled when season has < 7 days remaining and the player has active rentals.
+- Fetches a fresh card collection on every open to avoid stale renewal state.
+- Per-card **extend days** calculated from `next_rental_payment → next_season_end`
+  so only the added days are charged (not a full new rental period).
+- Cards are skipped when: already renewed (next payment > season end + 2d buffer),
+  no `market_id`, or a pending cancellation (`cancel_tx` set).
+- Confirm dialog shows per-card breakdown (owner, DEC/day, extend days, total DEC,
+  current end, plot) plus balance check before broadcasting.
+- Broadcasts in batches of 4 per Hive block limit; waits for on-chain confirmation.
+
+#### Land Manager — Daily harvest fee caps
+
+Per-symbol daily maximum fee enforced account-wide (cumulative across regions, castles, keeps):
+
+| Resource | Daily max fee |
+|----------|---------------|
+| Grain | 40,000 |
+| Wood | 10,000 |
+| Stone | 4,000 |
+| Iron | 1,000 |
+
+Ratios follow in-game resource values (1 Iron = 40 Grain, 1 Stone = 10 Grain, 1 Wood = 4 Grain).
+Caps are applied before every run using today's already-paid fees from the DB. Dry runs reflect the cap.
+
+### Changed
+
+#### Maintenance Mode
+
+- **Auth**: login dialog shows a dedicated maintenance warning banner instead of a generic error when the SPL API is under maintenance.
+
+#### Land Manager — SPS fee removed
+
+SPS is no longer subject to the 2% service fee. Only natural resources (Grain, Wood, Stone, Iron)
+are charged. This also removes the active-key Keychain prompt that SPS payment previously required —
+all fee ops now use the posting key only.
+
+
+### Land Manager — Rent Workers dialogs
+- Paginated table (20 rows/page) for Dry-Run and Confirm dialogs; extracted shared `RentalPlotTable` component with per-dialog column definitions.
+
+
+### Fixed
+
+- **Land Manager — Rent Workers**: `waitForTransactions` polling now uses `pLimit(5)` to avoid concurrent `lookupTransaction` floods on large transaction sets.
+- **Land Manager – Rent Workers**: DEC balance check
+- **Land Manager – Rent Overview**: Add pagination for PlotTable(s)
+---
+
 ## [v1.5.0] - 2026-05-23
 
 ### Changed

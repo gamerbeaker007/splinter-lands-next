@@ -5,16 +5,11 @@ import HarvestAllRow from "@/components/land-manager/bulk-operations/HarvestAllR
 import HarvestMythicsRow from "@/components/land-manager/bulk-operations/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
-import RentEmptyWorkersRow from "@/components/land-manager/bulk-operations/RentEmptyWorkersRow";
-import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
-import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
-import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   DryRunResult,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
-  RentalConfig,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Box, Stack } from "@mui/material";
@@ -31,9 +26,6 @@ interface Props {
   postHarvestExcludedResources: string[];
   mythicFeeAccepted: boolean;
   hasMythics: boolean;
-  rental: RentalConfig;
-  authorityStatus?: RentalAuthorityStatus | null;
-  refreshKey?: number;
   onSuccess?: () => void;
 }
 
@@ -47,24 +39,9 @@ export default function BulkActionPanel({
   postHarvestExcludedResources,
   mythicFeeAccepted,
   hasMythics,
-  rental,
-  authorityStatus,
-  refreshKey = 0,
   onSuccess,
 }: Props) {
   const router = useRouter();
-  const { stakedDEC, eligibility } = useLandManagerRegionData(
-    enabledRegions,
-    refreshKey
-  );
-  const stakeShortfall = useMemo(
-    () =>
-      stakedDEC.reduce(
-        (s, a) => s + Math.max(0, a.dec_stake_needed - a.dec_stake_in_use),
-        0
-      ),
-    [stakedDEC]
-  );
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
   const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
     Set<number>
@@ -74,8 +51,6 @@ export default function BulkActionPanel({
     makeHarvestable: false,
     processResources: false,
     mythicHarvest: false,
-    rentEmptyWorkers: false,
-    stakeDec: false,
   });
 
   useEffect(() => {
@@ -109,14 +84,6 @@ export default function BulkActionPanel({
   );
   const onProcessResourcesBusy = useCallback(
     (b: boolean) => setBusyMap((m) => ({ ...m, processResources: b })),
-    []
-  );
-  const onRentEmptyWorkersBusy = useCallback(
-    (b: boolean) => setBusyMap((m) => ({ ...m, rentEmptyWorkers: b })),
-    []
-  );
-  const onStakeDecBusy = useCallback(
-    (b: boolean) => setBusyMap((m) => ({ ...m, stakeDec: b })),
     []
   );
 
@@ -171,26 +138,6 @@ export default function BulkActionPanel({
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
           onDryRun={setDryRun}
-          onSuccess={afterSuccess}
-        />
-
-        <RentEmptyWorkersRow
-          username={username}
-          enabledRegions={enabledRegions}
-          rental={rental}
-          authorityStatus={authorityStatus}
-          eligiblePlotCount={eligibility?.eligible.length ?? null}
-          anyBusy={anyBusy}
-          onBusyChange={onRentEmptyWorkersBusy}
-          onSuccess={afterSuccess}
-        />
-
-        <StakeDecRow
-          username={username}
-          enabledRegions={enabledRegions}
-          shortfallTotal={stakeShortfall}
-          anyBusy={anyBusy}
-          onBusyChange={onStakeDecBusy}
           onSuccess={afterSuccess}
         />
       </Stack>

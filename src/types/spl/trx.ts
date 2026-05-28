@@ -178,6 +178,7 @@ export type SplTrxResult =
   | { type: "tax_collection"; data: TaxCollectionTrxData }
   | { type: "add_liquidity"; data: AddLiquidityTrxData }
   | { type: "market_rent"; data: MarketRentTrxData }
+  | { type: "market_renew_rental"; data: MarketRentTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
   | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
   | { type: "set_authority"; data: SetAuthorityTrxData };

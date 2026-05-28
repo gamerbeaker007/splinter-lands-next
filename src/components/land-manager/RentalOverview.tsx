@@ -1,14 +1,16 @@
 "use client";
 
+import StakePowerCoreButton from "@/components/land-manager/StakePowerCoreButton";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
+  BiomeModifiers,
   landElementBgColor,
   landElementIconUrl,
   landElementLabel,
 } from "@/lib/utils/cardUtil";
-import { BiomeModifiers, RentalEligiblePlot } from "@/types/landManager";
+import { RentalEligiblePlot } from "@/types/landManager";
 import { cardElementOptions } from "@/types/planner";
-import { Bolt, BoltOutlined } from "@mui/icons-material";
+import { Bolt, BoltOutlined, Cancel } from "@mui/icons-material";
 import {
   Avatar,
   Box,
@@ -29,8 +31,10 @@ import {
 import { useMemo, useState } from "react";
 
 interface Props {
+  username: string;
   enabledRegions: number[];
   refreshKey?: number;
+  onSuccess?: () => void;
 }
 
 interface PlotRentSummary {
@@ -147,9 +151,11 @@ function WorkerCount({
 function PlotRow({
   plot,
   rentSummary,
+  action,
 }: {
   plot: RentalEligiblePlot;
   rentSummary: PlotRentSummary;
+  action?: React.ReactNode;
 }) {
   return (
     <TableRow>
@@ -197,19 +203,27 @@ function PlotRow({
       <TableCell>
         <BiomeChips modifiers={plot.biome_modifiers} />
       </TableCell>
+      {action !== undefined && <TableCell>{action}</TableCell>}
     </TableRow>
   );
 }
+
+const PLOT_TABLE_ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
 
 function PlotTable({
   plots,
   rentByPlot,
   emptyMessage,
+  renderAction,
 }: {
   plots: RentalEligiblePlot[];
   rentByPlot: Map<number, PlotRentSummary>;
   emptyMessage: string;
+  renderAction?: (plot: RentalEligiblePlot) => React.ReactNode;
 }) {
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+
   if (plots.length === 0) {
     return (
       <Typography variant="body2" color="text.disabled">
@@ -222,43 +236,72 @@ function PlotTable({
     decPerDay: 0,
     totalDec: 0,
   };
+  const paginated = plots.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
   return (
-    <Box sx={{ overflowX: "auto" }}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Plot</TableCell>
-            <TableCell>Resource</TableCell>
-            <TableCell>Workers</TableCell>
-            <TableCell>Empty</TableCell>
-            <TableCell align="right">DEC/day</TableCell>
-            <TableCell align="right">Total DEC</TableCell>
-            <TableCell>Biome boost</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {plots.map((p) => (
-            <PlotRow
-              key={p.deed_uid}
-              plot={p}
-              rentSummary={rentByPlot.get(p.plot_id) ?? empty}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </Box>
+    <>
+      <Box sx={{ overflowX: "auto" }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Plot</TableCell>
+              <TableCell>Resource</TableCell>
+              <TableCell>Workers</TableCell>
+              <TableCell>Empty</TableCell>
+              <TableCell align="right">DEC/day</TableCell>
+              <TableCell align="right">Total DEC</TableCell>
+              <TableCell>Biome boost</TableCell>
+              {renderAction && <TableCell>Action</TableCell>}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {paginated.map((p) => (
+              <PlotRow
+                key={p.deed_uid}
+                plot={p}
+                rentSummary={rentByPlot.get(p.plot_id) ?? empty}
+                action={renderAction?.(p)}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </Box>
+      <TablePagination
+        component="div"
+        count={plots.length}
+        page={page}
+        onPageChange={(_, newPage) => setPage(newPage)}
+        rowsPerPage={rowsPerPage}
+        onRowsPerPageChange={(e) => {
+          setRowsPerPage(parseInt(e.target.value, 10));
+          setPage(0);
+        }}
+        rowsPerPageOptions={PLOT_TABLE_ROWS_PER_PAGE_OPTIONS}
+      />
+    </>
   );
 }
 
 export default function RentalOverview({
+  username,
   enabledRegions,
   refreshKey = 0,
+  onSuccess,
 }: Props) {
+  const [internalRefreshKey, setInternalRefreshKey] = useState(0);
+  const combinedRefreshKey = refreshKey + internalRefreshKey;
   const {
     eligibility: data,
     rentedCards,
     loading,
-  } = useLandManagerRegionData(enabledRegions, refreshKey);
+  } = useLandManagerRegionData(enabledRegions, combinedRefreshKey);
+
+  const handleStakeSuccess = () => {
+    setInternalRefreshKey((k) => k + 1);
+    onSuccess?.();
+  };
 
   const rentByPlot = useMemo(() => {
     const map = new Map<number, PlotRentSummary>();
@@ -371,6 +414,13 @@ export default function RentalOverview({
                 plots={data.unpoweredSkipped}
                 rentByPlot={rentByPlot}
                 emptyMessage="No unpowered plots"
+                renderAction={(plot) => (
+                  <StakePowerCoreButton
+                    username={username}
+                    plot={plot}
+                    onSuccess={handleStakeSuccess}
+                  />
+                )}
               />
             </Box>
           )}
@@ -393,6 +443,7 @@ export default function RentalOverview({
                       <TableCell align="right">Days left</TableCell>
                       <TableCell align="right">DEC/day</TableCell>
                       <TableCell align="right">Total DEC</TableCell>
+                      <TableCell align="center">Cancelled</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -435,6 +486,13 @@ export default function RentalOverview({
                           <Typography variant="caption">
                             {fmtDec(c.total_dec)}
                           </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          {c.cancel_tx && (
+                            <Tooltip title="Cancellation pending">
+                              <Cancel fontSize="small" color="error" />
+                            </Tooltip>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

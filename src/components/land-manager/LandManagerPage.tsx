@@ -3,6 +3,7 @@
 import LoginComponent from "@/components/auth/LoginComponent";
 import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
+import BulkRentalPanel from "@/components/land-manager/bulk-operations/BulkRentalPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
 import MythicOverview from "@/components/land-manager/MythicOverview";
 import RegionOverview from "@/components/land-manager/RegionOverview";
@@ -30,6 +31,8 @@ import {
   Divider,
   IconButton,
   Stack,
+  Tab,
+  Tabs,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -86,6 +89,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
   );
   const [configOpen, setConfigOpen] = useState(false);
   const [regionRefreshKey, setRegionRefreshKey] = useState(0);
+  const [activeTab, setActiveTab] = useState(0);
   const authorityHook = useRentalAuthorityStatus();
   const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
     null
@@ -105,6 +109,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
   }
 
   const enabledCount = currentConfig.enabled_regions.length;
+  const handleSuccess = () => setRegionRefreshKey((k) => k + 1);
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
@@ -175,8 +180,6 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </Box>
       </Alert>
 
-      <RentalAuthorityCard authority={authorityHook} />
-
       {/* Region status banner */}
       {enabledCount === 0 ? (
         <Alert
@@ -207,33 +210,16 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </Typography>
       )}
 
-      {/* Resource balance summary + bulk action buttons */}
+      {/* ── Common top sections ─────────────────────────────────────────── */}
+
+      {/* Resource balance summary */}
       <RegionResourceSummary
         regions={allRegions}
         enabledRegions={currentConfig.enabled_regions}
         refreshKey={regionRefreshKey}
       />
 
-      <BulkActionPanel
-        username={auth.username ?? ""}
-        regions={allRegions}
-        enabledRegions={currentConfig.enabled_regions}
-        strategies={currentConfig.make_harvestable_strategies}
-        harvestAck={currentConfig.fee_accepted}
-        postHarvestStrategy={currentConfig.post_harvest_strategy}
-        postHarvestExcludedResources={
-          currentConfig.post_harvest_excluded_resources
-        }
-        mythicFeeAccepted={currentConfig.mythic_fee_accepted}
-        hasMythics={
-          enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
-        }
-        rental={currentConfig.rental}
-        authorityStatus={authorityHook.status}
-        refreshKey={regionRefreshKey}
-        onSuccess={() => setRegionRefreshKey((k) => k + 1)}
-      />
-
+      {/* Today's activity log */}
       <TodayPanel refreshKey={regionRefreshKey} />
 
       <AlertsPanel
@@ -241,20 +227,70 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         refreshKey={regionRefreshKey}
       />
 
-      <MythicOverview deeds={enabledMythicDeeds} />
+      {/* ── Tabs ────────────────────────────────────────────────────────── */}
+      <Tabs
+        value={activeTab}
+        onChange={(_, v) => setActiveTab(v)}
+        sx={{ mb: 2 }}
+      >
+        <Tab label="Harvest" />
+        <Tab label="Rental" />
+      </Tabs>
 
-      {/* Per-region overview with harvestable resources */}
-      <RegionOverview
-        username={auth.username ?? ""}
-        regions={allRegions}
-        enabledRegions={currentConfig.enabled_regions}
-        refreshKey={regionRefreshKey}
-      />
+      {/* ── Harvest tab ─────────────────────────────────────────────────── */}
+      {activeTab === 0 && (
+        <>
+          <BulkActionPanel
+            username={auth.username ?? ""}
+            regions={allRegions}
+            enabledRegions={currentConfig.enabled_regions}
+            strategies={currentConfig.make_harvestable_strategies}
+            harvestAck={currentConfig.fee_accepted}
+            postHarvestStrategy={currentConfig.post_harvest_strategy}
+            postHarvestExcludedResources={
+              currentConfig.post_harvest_excluded_resources
+            }
+            mythicFeeAccepted={currentConfig.mythic_fee_accepted}
+            hasMythics={
+              enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
+            }
+            onSuccess={handleSuccess}
+          />
 
-      <RentalOverview
-        enabledRegions={currentConfig.enabled_regions}
-        refreshKey={regionRefreshKey}
-      />
+          <MythicOverview deeds={enabledMythicDeeds} />
+
+          {/* Per-region overview with harvestable resources */}
+          <RegionOverview
+            username={auth.username ?? ""}
+            regions={allRegions}
+            enabledRegions={currentConfig.enabled_regions}
+            refreshKey={regionRefreshKey}
+          />
+        </>
+      )}
+
+      {/* ── Rental tab ──────────────────────────────────────────────────── */}
+      {activeTab === 1 && (
+        <>
+          <RentalAuthorityCard authority={authorityHook} />
+
+          <BulkRentalPanel
+            username={auth.username ?? ""}
+            enabledRegions={currentConfig.enabled_regions}
+            rental={currentConfig.rental}
+            authorityStatus={authorityHook.status}
+            refreshKey={regionRefreshKey}
+            onSuccess={handleSuccess}
+          />
+
+          <RentalOverview
+            username={auth.username ?? ""}
+            enabledRegions={currentConfig.enabled_regions}
+            refreshKey={regionRefreshKey}
+            onSuccess={handleSuccess}
+          />
+        </>
+      )}
 
       {/* Config dialog */}
       <ConfigDialog

@@ -1,6 +1,6 @@
 "use client";
 
-import { SERVICE_FEE_PCT } from "@/types/landManager";
+import { DAILY_FEE_CAPS, SERVICE_FEE_PCT } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
   Button,
@@ -9,10 +9,16 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
   FormControlLabel,
   List,
   ListItem,
   ListItemText,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -87,6 +93,28 @@ export default function HarvestConfirmDialog({
             </List>
           </>
         )}
+
+        <Divider sx={{ my: 1.5 }} />
+
+        <Typography variant="subtitle2" gutterBottom>
+          Daily fee caps (account-wide, cumulative across regions)
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Resource</TableCell>
+              <TableCell align="right">Daily max fee</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {Object.entries(DAILY_FEE_CAPS).map(([symbol, cap]) => (
+              <TableRow key={symbol}>
+                <TableCell>{symbol}</TableCell>
+                <TableCell align="right">{cap.toLocaleString()}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       </DialogContent>
       <DialogActions>
         <FormControlLabel

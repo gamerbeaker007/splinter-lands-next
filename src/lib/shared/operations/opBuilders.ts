@@ -1,11 +1,11 @@
-import { SERVICE_FEE_RECIPIENT } from "@/types/landManager";
-
 // Resources that are soulbound on Splinterlands and cannot be transferred
 // between regions/players. Fees in these resources are skipped entirely.
-export const NON_TRANSFERRABLE_FEE_RESOURCES = new Set(["RESEARCH", "AURA"]);
+import { SERVICE_FEE_RECIPIENT } from "@/types/landManager";
 
-export function isFeeResourceTransferrable(symbol: string): boolean {
-  return !NON_TRANSFERRABLE_FEE_RESOURCES.has(symbol);
+export const NON_TRANSFERABLE_FEE_RESOURCES = new Set(["RESEARCH", "AURA"]);
+
+export function isFeeResourceTransferable(symbol: string): boolean {
+  return !NON_TRANSFERABLE_FEE_RESOURCES.has(symbol);
 }
 
 const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
@@ -159,35 +159,6 @@ export function buildTaxCollectionOp(
   });
 }
 
-/**
- * Send the SPS service-fee to Splinterlands via the standard sm_token_transfer
- * op. Routed through `sl-hive` with the recipient username in the memo.
- *
- * Unlike sm_land_operation, this op requires the user's ACTIVE key (not
- * posting), so it must be broadcast in its own batch with the right method.
- */
-export function buildSpsFeeTransferOp(
-  username: string,
-  qty: number
-): [string, object] {
-  return [
-    "custom_json",
-    {
-      required_auths: [username],
-      required_posting_auths: [],
-      id: "sm_token_transfer",
-      json: JSON.stringify({
-        token: "SPS",
-        to: SERVICE_FEE_RECIPIENT,
-        qty,
-        memo: "service fee for splinter-lands tool",
-        app: APP,
-        n: generateNonce(),
-      }),
-    },
-  ];
-}
-
 /** Sell a resource into the trade hub in a region, receiving DEC ("on hop" sell direction). */
 export function buildSellResourceForDecOp(
   username: string,
@@ -271,6 +242,43 @@ export function buildStakeWorkersOp(
   ];
 }
 
+export const STAKE_TYPE_UID_LAND_POWER_CORE = "STK-LND-PCR";
+
+/**
+ * Stake a Power Core item onto a deed. One op per deed. Uses POSTING key.
+ * `itemUid` — the UID of the Power Core item (e.g. "I-322-xxxxxxxx").
+ */
+export function buildStakePowerCoreOp(
+  username: string,
+  deedUid: string,
+  itemUid: string
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: { cards: [], items: [] },
+        stake: {
+          cards: [],
+          items: [
+            {
+              item_uid: itemUid,
+              stake_type_uid: STAKE_TYPE_UID_LAND_POWER_CORE,
+            },
+          ],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
 /**
  * Stake DEC into a region's power-up pool. Uses POSTING key.
  * Maps to the SPL `sm_dec_powerup_region` custom_json.
@@ -313,4 +321,57 @@ export function buildBuyWithDecOp(
     max_slippage: maxSlippage,
     resource_symbol: resourceSymbol,
   });
+}
+
+/**
+ * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
+ * `marketIds` — the market listing IDs of the cards to renew.
+ * Batches are handled upstream (max 4 ops per tx).
+ */
+export function buildRenewRentalOp(
+  username: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [username],
+      required_posting_auths: [],
+      id: "sm_market_renew_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        currency: "DEC",
+        market: APP,
+        app: APP,
+      }),
+    },
+  ];
+}
+
+/**
+ * Rent cards via the SPL market on behalf of `player`. Signed by the
+ * `serviceAccount`'s ACTIVE key — the player must have granted purchase
+ * authority to that account on Splinterlands Account Security.
+ * Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
+ */
+export function buildRentOnBehalfOp(
+  serviceAccount: string,
+  player: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [serviceAccount],
+      required_posting_auths: [],
+      id: "sm_market_rent",
+      json: JSON.stringify({
+        currency: "DEC",
+        items: marketIds,
+        player,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
 }
