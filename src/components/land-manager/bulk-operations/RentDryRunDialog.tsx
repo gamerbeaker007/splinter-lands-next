@@ -88,9 +88,7 @@ const COLUMNS: RentalPlotColumn[] = [
 export default function RentDryRunDialog({ plan, decBalance, onClose }: Props) {
   const { totals } = plan;
   const insufficientDec =
-    decBalance !== null &&
-    totals.total_dec > 0 &&
-    decBalance < totals.total_dec;
+    decBalance != null && totals.total_dec > 0 && decBalance < totals.total_dec;
 
   return (
     <Dialog open onClose={onClose} maxWidth="lg" fullWidth>
@@ -112,7 +110,7 @@ export default function RentDryRunDialog({ plan, decBalance, onClose }: Props) {
             size="small"
             color="primary"
           />
-          {decBalance !== null && (
+          {decBalance != null && (
             <Chip
               label={`${fmtDec(decBalance)} DEC available`}
               size="small"

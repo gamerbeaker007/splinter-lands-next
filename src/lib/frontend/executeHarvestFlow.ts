@@ -23,7 +23,7 @@ export interface HarvestBroadcastResult {
  * regions, broadcast under the posting key, and await on-chain confirmation.
  *
  * The caller is responsible for filtering regions (e.g. canHarvestRegion)
- * before calling, and for the phase-2 fee settlement (see usePayFees).
+ * before calling, and for the phase-2 donation settlement (see usePayDonations).
  */
 export async function broadcastHarvest(
   username: string,

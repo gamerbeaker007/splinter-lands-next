@@ -1,4 +1,3 @@
-import React from "react";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { WEB_URL } from "@/lib/shared/statics_icon_urls";
 import FilterIcon from "../FilterIcon";

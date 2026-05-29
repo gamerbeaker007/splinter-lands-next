@@ -24,6 +24,8 @@ interface Props {
   visibleRegions: SplProductionOverviewRegion[];
   postHarvestStrategy: PostHarvestStrategy;
   postHarvestExcludedResources: string[];
+  sellPct: number;
+  poolPct: number;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onDryRun: (result: DryRunResult) => void;
@@ -35,6 +37,8 @@ export default function ProcessResourcesRow({
   visibleRegions,
   postHarvestStrategy,
   postHarvestExcludedResources,
+  sellPct,
+  poolPct,
   anyBusy,
   onBusyChange,
   onDryRun,
@@ -45,6 +49,8 @@ export default function ProcessResourcesRow({
     visibleRegions,
     postHarvestStrategy,
     excludedResources: postHarvestExcludedResources,
+    sellPct,
+    poolPct,
     onSuccess,
   });
 
@@ -56,6 +62,11 @@ export default function ProcessResourcesRow({
     const dr = await action.execute(isDryRun);
     if (dr) onDryRun(dr);
   }
+
+  const strategyLabel =
+    postHarvestStrategy === "sell_and_pool"
+      ? `Sell ${sellPct}% · Pool ${poolPct}%${sellPct + poolPct < 100 ? ` · Accumulate ${100 - sellPct - poolPct}%` : ""}`
+      : POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy];
 
   return (
     <>
@@ -96,7 +107,7 @@ export default function ProcessResourcesRow({
         </ButtonGroup>
 
         <Chip
-          label={POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy]}
+          label={strategyLabel}
           size="small"
           variant="outlined"
           sx={{ fontSize: "0.7rem" }}
@@ -112,6 +123,12 @@ export default function ProcessResourcesRow({
           />
         ))}
       </Stack>
+
+      {action.warning && (
+        <Alert severity="warning" onClose={action.clearWarning} sx={{ mb: 1 }}>
+          {action.warning}
+        </Alert>
+      )}
 
       {action.result?.success && (
         <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>

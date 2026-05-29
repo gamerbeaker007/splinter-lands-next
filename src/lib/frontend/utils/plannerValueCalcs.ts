@@ -16,7 +16,7 @@ export function formatFallbackWarning(
   };
 
   const dropped = preferredKeys.filter(
-    (k, i) => !usedKeys[i] || usedKeys[i].trim() === ""
+    (_k, i) => !usedKeys[i] || usedKeys[i].trim() === ""
   );
 
   if (dropped.length === 0) return null;

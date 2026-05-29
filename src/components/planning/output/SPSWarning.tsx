@@ -1,6 +1,5 @@
-import { Box, Tooltip, Typography } from "@mui/material";
-import React from "react";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+import { Box, Tooltip, Typography } from "@mui/material";
 
 export default function SPSWarning() {
   return (

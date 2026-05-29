@@ -367,10 +367,13 @@ model LandManagerConfig {
   player                          String   @id
   enabled_regions                 Int[]
   make_harvestable_strategies     String[] @default(["transfer", "swap", "buy_dec"])
-  fee_accepted                    Boolean  @default(false)
+  donation_enabled                Boolean  @default(true)
+  donation_pct                    Int      @default(2)
+  donation_daily_caps_json        Json     @default("{\"GRAIN\":40000,\"WOOD\":10000,\"STONE\":4000,\"IRON\":1000}")
   post_harvest_strategy           String   @default("accumulate")
   post_harvest_excluded_resources String[] @default([])
-  mythic_fee_accepted             Boolean  @default(false)
+  post_harvest_sell_pct           Int      @default(0)
+  post_harvest_pool_pct           Int      @default(100)
   rental_strategy                   String  @default("highest_pp_per_dec")
   rental_max_total_dec              Int     @default(0)
   rental_max_dec_per_day_per_worker Int     @default(0)
@@ -387,11 +390,11 @@ model LandHarvestLog {
   player               String
   runs                 Int      @default(1)
   resources_json       Json     // { GRAIN: total, WOOD: total, … } summed across all runs today
-  fees_json            Json     @default("{}")  // { GRAIN: feeTotal, … } fees successfully paid
-  unpaid_fees_json     Json     @default("{}")  // { GRAIN: feeTotal, … } fees that were owed but not paid (cancelled/failed)
-  fee_error            String?                  // last error or cancellation reason when unpaid_fees_json is non-empty
+  donations_json       Json     @default("{}")  // { GRAIN: donationTotal, … } donations successfully paid
+  unpaid_donations_json Json    @default("{}")  // { GRAIN: donationTotal, … } donations owed but not paid (cancelled/failed)
+  donation_error       String?                  // last error or cancellation reason when unpaid_donations_json is non-empty
   harvest_transactions String[]                 // txIds from the harvest phase
-  fee_transactions     String[] @default([])    // txIds from the fee-payment phase
+  donation_transactions String[] @default([])   // txIds from the donation-payment phase
   updated_at           DateTime @updatedAt
 
   @@id([date, player])
@@ -427,11 +430,11 @@ model LandMythicHarvestLog {
   player            String
   runs              Int      @default(1)
   results_json      Json                     // array of MythicHarvestResult
-  fees_json         Json     @default("{}")  // { token: total } fees successfully paid
-  unpaid_fees_json  Json     @default("{}")  // { token: total } fees owed but not paid
-  fee_error         String?                  // last fee error or cancellation reason
+  donations_json    Json     @default("{}")  // { token: total } donations successfully paid
+  unpaid_donations_json Json @default("{}")  // { token: total } donations owed but not paid
+  donation_error    String?                  // last donation error or cancellation reason
   transactions      String[]                 // txIds from tax_collection ops
-  fee_transactions  String[] @default([])    // txIds from fee-payment ops
+  donation_transactions String[] @default([]) // txIds from donation-payment ops
   updated_at        DateTime @updatedAt
 
   @@id([date, player])

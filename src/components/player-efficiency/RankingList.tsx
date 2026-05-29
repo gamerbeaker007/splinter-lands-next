@@ -1,12 +1,11 @@
 "use client";
 
-import React from "react";
-import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { formatNumberWithSuffix } from "@/lib/formatters";
-import { Box } from "@mui/system";
-import Typography from "@mui/material/Typography";
+import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import Card from "@mui/material/Card";
+import Typography from "@mui/material/Typography";
+import { Box } from "@mui/system";
 
 type valueField =
   | "total_dec"

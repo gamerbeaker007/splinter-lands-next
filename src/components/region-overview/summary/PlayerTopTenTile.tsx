@@ -1,11 +1,10 @@
 "use client";
 
+import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
+import { formatNumberWithSuffix } from "@/lib/formatters";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
-import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
-import { formatNumberWithSuffix } from "@/lib/formatters";
-import React from "react";
 
 type Props = {
   players: Record<string, number>;

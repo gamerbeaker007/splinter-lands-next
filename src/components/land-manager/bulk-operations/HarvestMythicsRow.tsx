@@ -1,8 +1,7 @@
 "use client";
 
-import MythicConfirmDialog from "@/components/land-manager/MythicConfirmDialog";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
-import { DryRunResult } from "@/types/landManager";
+import { DonationConfig, DryRunResult } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { AutoAwesome as MythicIcon } from "@mui/icons-material";
 import {
@@ -19,10 +18,9 @@ import { useEffect } from "react";
 interface Props {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
-  mythicFeeAccepted: boolean;
+  donation: DonationConfig;
   hasMythics: boolean;
   anyBusy: boolean;
-  feeApplicableRegionNumbers: Set<number>;
   onBusyChange: (busy: boolean) => void;
   onDryRun: (result: DryRunResult) => void;
   onSuccess: () => void;
@@ -31,10 +29,9 @@ interface Props {
 export default function HarvestMythicsRow({
   username,
   visibleRegions,
-  mythicFeeAccepted,
+  donation,
   hasMythics,
   anyBusy,
-  feeApplicableRegionNumbers,
   onBusyChange,
   onDryRun,
   onSuccess,
@@ -42,7 +39,7 @@ export default function HarvestMythicsRow({
   const action = useHarvestMythicsAction({
     username,
     visibleRegions,
-    mythicFeeAccepted,
+    donation,
     onSuccess,
   });
 
@@ -123,14 +120,6 @@ export default function HarvestMythicsRow({
           {action.error}
         </Alert>
       )}
-
-      <MythicConfirmDialog
-        open={action.showConfirm}
-        visibleRegions={visibleRegions}
-        feeApplicableRegionNumbers={feeApplicableRegionNumbers}
-        onConfirm={action.onConfirm}
-        onCancel={action.onCancelConfirm}
-      />
     </>
   );
 }

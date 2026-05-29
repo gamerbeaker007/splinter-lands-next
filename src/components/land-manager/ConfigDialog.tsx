@@ -1,16 +1,22 @@
 "use client";
 
 import {
+  saveDonationConfig,
   saveLandManagerConfig,
   saveMakeHarvestableStrategies,
   savePostHarvestExcludedResources,
   savePostHarvestStrategy,
   saveRentalConfig,
 } from "@/lib/backend/actions/land-manager/config-actions";
-import { NATURAL_RESOURCES } from "@/lib/shared/statics";
+import { MIN_RESOURCE_DONATION_AMOUNT } from "@/lib/frontend/donationPayment";
+import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { FOIL_IDS, foilLabel } from "@/lib/utils/cardUtil";
 import {
+  DEFAULT_DONATION_DAILY_CAPS,
+  DEFAULT_POST_HARVEST_POOL_PCT,
+  DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
+  DonationConfig,
   LandManagerConfig,
   MAKE_HARVESTABLE_STRATEGY_LABELS,
   MakeHarvestableStrategy,
@@ -21,7 +27,11 @@ import {
   RentalStrategy,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import { KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
+import {
+  InfoOutlined,
+  KeyboardArrowDown,
+  KeyboardArrowUp,
+} from "@mui/icons-material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   Accordion,
@@ -43,6 +53,7 @@ import {
   Radio,
   RadioGroup,
   Select,
+  Slider,
   Stack,
   TextField,
   Tooltip,
@@ -72,6 +83,7 @@ export default function ConfigDialog({
   const [strategies, setStrategies] = useState<MakeHarvestableStrategy[]>(
     config.make_harvestable_strategies
   );
+  const [donation, setDonation] = useState<DonationConfig>(config.donation);
   const [postHarvestStrategy, setPostHarvestStrategy] =
     useState<PostHarvestStrategy>(
       config.post_harvest_strategy ?? DEFAULT_POST_HARVEST_STRATEGY
@@ -79,10 +91,18 @@ export default function ConfigDialog({
   const [excludedResources, setExcludedResources] = useState<string[]>(
     config.post_harvest_excluded_resources ?? []
   );
+  const [sellPct, setSellPct] = useState<number>(
+    config.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT
+  );
+  const [poolPct, setPoolPct] = useState<number>(
+    config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT
+  );
   const [rental, setRental] = useState<RentalConfig>(config.rental);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+
+  const accumulatePct = Math.max(0, 100 - sellPct - poolPct);
 
   // Reset edits to the last-saved config and close. Wired to both the Cancel
   // button and the Dialog's backdrop/escape close so a misclick discards the
@@ -90,10 +110,13 @@ export default function ConfigDialog({
   const handleClose = () => {
     setEnabledRegions(config.enabled_regions);
     setStrategies(config.make_harvestable_strategies);
+    setDonation(config.donation);
     setPostHarvestStrategy(
       config.post_harvest_strategy ?? DEFAULT_POST_HARVEST_STRATEGY
     );
     setExcludedResources(config.post_harvest_excluded_resources ?? []);
+    setSellPct(config.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT);
+    setPoolPct(config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT);
     setRental(config.rental);
     setError(null);
     onClose();
@@ -104,6 +127,22 @@ export default function ConfigDialog({
     setRental((prev) => ({
       ...prev,
       [key]: Number.isFinite(parsed) && parsed >= 0 ? Math.floor(parsed) : 0,
+    }));
+  };
+
+  const MIN_DAILY_CAP = 100;
+
+  const setDonationCap = (symbol: string, value: string) => {
+    const parsed = Number(value);
+    setDonation((prev) => ({
+      ...prev,
+      daily_caps: {
+        ...prev.daily_caps,
+        [symbol]:
+          Number.isFinite(parsed) && parsed >= MIN_DAILY_CAP
+            ? Math.floor(parsed)
+            : MIN_DAILY_CAP,
+      },
     }));
   };
 
@@ -143,13 +182,15 @@ export default function ConfigDialog({
     const [
       regionsResult,
       strategiesResult,
+      donationResult,
       postHarvestResult,
       excludedResult,
       rentalResult,
     ] = await Promise.all([
       saveLandManagerConfig(enabledRegions),
       saveMakeHarvestableStrategies(strategies),
-      savePostHarvestStrategy(postHarvestStrategy),
+      saveDonationConfig(donation),
+      savePostHarvestStrategy(postHarvestStrategy, sellPct, poolPct),
       savePostHarvestExcludedResources(excludedResources),
       saveRentalConfig(rental),
     ]);
@@ -157,12 +198,14 @@ export default function ConfigDialog({
     const err =
       regionsResult.error ??
       strategiesResult.error ??
+      donationResult.error ??
       postHarvestResult.error ??
       excludedResult.error ??
       rentalResult.error;
     if (
       !regionsResult.success ||
       !strategiesResult.success ||
+      !donationResult.success ||
       !postHarvestResult.success ||
       !excludedResult.success ||
       !rentalResult.success
@@ -174,8 +217,11 @@ export default function ConfigDialog({
       ...config,
       enabled_regions: enabledRegions,
       make_harvestable_strategies: strategies,
+      donation,
       post_harvest_strategy: postHarvestStrategy,
       post_harvest_excluded_resources: excludedResources,
+      post_harvest_sell_pct: sellPct,
+      post_harvest_pool_pct: poolPct,
       rental,
     });
     onClose();
@@ -189,7 +235,7 @@ export default function ConfigDialog({
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Land Manager Config</DialogTitle>
       <DialogContent dividers sx={{ p: 0 }}>
-        {/* ── Regions ───────────────────────────────────────── */}
+        {/* -- Regions ------------------------------------------------- */}
         <Accordion defaultExpanded={false} disableGutters elevation={0}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle2">Enabled Regions</Typography>
@@ -247,7 +293,7 @@ export default function ConfigDialog({
           </AccordionDetails>
         </Accordion>
 
-        {/* ── Make Harvestable Strategy ─────────────────────── */}
+        {/* -- Make Harvestable Strategy -------------------------------- */}
         <Accordion defaultExpanded={false} disableGutters elevation={0}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle2">
@@ -330,7 +376,141 @@ export default function ConfigDialog({
           </AccordionDetails>
         </Accordion>
 
-        {/* ── Post-Harvest Strategy ─────────────────────────── */}
+        {/* -- Donation Settings -------------------------------------- */}
+        <Accordion defaultExpanded={false} disableGutters elevation={0}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography variant="subtitle2">Donation Settings</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+              mb={1}
+            >
+              Configure optional donation transfers after harvest. Set daily
+              caps per resource. Use 0 to disable a cap for that resource.
+            </Typography>
+
+            <Stack gap={1.5}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={donation.enabled}
+                    onChange={(e) =>
+                      setDonation((prev) => ({
+                        ...prev,
+                        enabled: e.target.checked,
+                      }))
+                    }
+                  />
+                }
+                label={
+                  <Typography variant="body2">Enable donations</Typography>
+                }
+              />
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems="flex-start"
+              >
+                <Box sx={{ width: { xs: "100%", sm: "42%" } }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                    display="block"
+                    mb={1}
+                  >
+                    Percentage
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="number"
+                    label="Donation %"
+                    value={donation.pct}
+                    onChange={(e) => {
+                      const parsed = Number(e.target.value);
+                      const next = Number.isFinite(parsed)
+                        ? Math.max(0, Math.min(100, Math.floor(parsed)))
+                        : 0;
+                      setDonation((prev) => ({ ...prev, pct: next }));
+                    }}
+                    slotProps={{ htmlInput: { min: 0, max: 100 } }}
+                    helperText="Current default is 2%."
+                  />
+                </Box>
+
+                <Box sx={{ width: { xs: "100%", sm: "58%" } }}>
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                    display="block"
+                    mb={1}
+                  >
+                    Daily caps
+                  </Typography>
+                  <Stack spacing={1}>
+                    {Object.keys(DEFAULT_DONATION_DAILY_CAPS).map((symbol) => (
+                      <Stack
+                        key={symbol}
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                      >
+                        <Tooltip title={symbol}>
+                          <Box
+                            component="img"
+                            src={RESOURCE_ICON_MAP[symbol]}
+                            alt={symbol}
+                            sx={{ width: 22, height: 22, flexShrink: 0 }}
+                          />
+                        </Tooltip>
+                        <TextField
+                          size="small"
+                          type="number"
+                          value={donation.daily_caps[symbol] ?? MIN_DAILY_CAP}
+                          onChange={(e) =>
+                            setDonationCap(symbol, e.target.value)
+                          }
+                          slotProps={{ htmlInput: { min: MIN_DAILY_CAP } }}
+                          helperText={`Min ${MIN_DAILY_CAP}`}
+                          sx={{ flex: 1 }}
+                        />
+                      </Stack>
+                    ))}
+                  </Stack>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    mt={1}
+                  >
+                    Minimum daily cap: {MIN_DAILY_CAP}
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Minimum per transaction:{MIN_RESOURCE_DONATION_AMOUNT},
+                  </Typography>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                  >
+                    Donations below these thresholds are skipped as not worth
+                    the transaction cost.
+                  </Typography>
+                </Box>
+              </Stack>
+            </Stack>
+          </AccordionDetails>
+        </Accordion>
+
+        {/* -- Post-Harvest Strategy ----------------------------------- */}
         <Accordion defaultExpanded={false} disableGutters elevation={0}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle2">
@@ -372,6 +552,81 @@ export default function ConfigDialog({
               </RadioGroup>
             </FormControl>
 
+            {/* Sell & Pool percentage configuration */}
+            {postHarvestStrategy === "sell_and_pool" && (
+              <Box mt={2}>
+                <Typography
+                  variant="caption"
+                  fontWeight="bold"
+                  display="block"
+                  mb={1}
+                >
+                  Split configuration
+                </Typography>
+
+                <Stack gap={1.5}>
+                  <Box>
+                    <Typography variant="body2" gutterBottom>
+                      Sell for DEC: {sellPct}%
+                    </Typography>
+                    <Slider
+                      value={sellPct}
+                      onChange={(_e, v) => {
+                        const val = v as number;
+                        setSellPct(val);
+                        if (val + poolPct > 100) setPoolPct(100 - val);
+                      }}
+                      min={0}
+                      max={100}
+                      step={5}
+                      size="small"
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(v) => `${v}%`}
+                    />
+                  </Box>
+
+                  <Box>
+                    <Typography variant="body2" gutterBottom>
+                      Add to pool (DEC): {poolPct}%
+                    </Typography>
+                    <Slider
+                      value={poolPct}
+                      onChange={(_e, v) => {
+                        const val = v as number;
+                        setPoolPct(val);
+                        if (sellPct + val > 100) setSellPct(100 - val);
+                      }}
+                      min={0}
+                      max={100}
+                      step={5}
+                      size="small"
+                      valueLabelDisplay="auto"
+                      valueLabelFormat={(v) => `${v}%`}
+                    />
+                  </Box>
+
+                  {accumulatePct > 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      Accumulate (do nothing): {accumulatePct}%
+                    </Typography>
+                  )}
+
+                  <Stack direction="row" spacing={0.75} alignItems="flex-start">
+                    <InfoOutlined
+                      sx={{ fontSize: 14, color: "text.secondary", mt: 0.3 }}
+                    />
+                    <Typography variant="caption" color="text.secondary">
+                      Pool operations use DEC from your wallet. When sell% ≥
+                      pool%, sell proceeds typically cover the pool side
+                      automatically. If pool% exceeds sell%, ensure you hold
+                      enough DEC — amounts are scaled down proportionally if
+                      your balance falls short.
+                    </Typography>
+                  </Stack>
+                </Stack>
+              </Box>
+            )}
+
             {postHarvestStrategy !== "accumulate" && (
               <Box mt={2}>
                 <Typography
@@ -393,24 +648,32 @@ export default function ConfigDialog({
                 </Typography>
                 <Stack direction="row" flexWrap="wrap" gap={0}>
                   {NATURAL_RESOURCES.map((r) => (
-                    <FormControlLabel
-                      key={r}
-                      control={
-                        <Checkbox
-                          checked={excludedResources.includes(r)}
-                          onChange={() =>
-                            setExcludedResources((prev) =>
-                              prev.includes(r)
-                                ? prev.filter((x) => x !== r)
-                                : [...prev, r]
-                            )
-                          }
-                          size="small"
-                        />
-                      }
-                      label={<Typography variant="body2">{r}</Typography>}
-                      sx={{ mr: 1 }}
-                    />
+                    <Tooltip key={r} title={r}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={excludedResources.includes(r)}
+                            onChange={() =>
+                              setExcludedResources((prev) =>
+                                prev.includes(r)
+                                  ? prev.filter((x) => x !== r)
+                                  : [...prev, r]
+                              )
+                            }
+                            size="small"
+                          />
+                        }
+                        label={
+                          <Box
+                            component="img"
+                            src={RESOURCE_ICON_MAP[r]}
+                            alt={r}
+                            sx={{ width: 18, height: 18 }}
+                          />
+                        }
+                        sx={{ mr: 1 }}
+                      />
+                    </Tooltip>
                   ))}
                 </Stack>
               </Box>
@@ -418,7 +681,7 @@ export default function ConfigDialog({
           </AccordionDetails>
         </Accordion>
 
-        {/* ── Rent Empty Workers ────────────────────────────── */}
+        {/* -- Rent Empty Workers -------------------------------------- */}
         <Accordion defaultExpanded={false} disableGutters elevation={0}>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography variant="subtitle2">

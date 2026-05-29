@@ -1,5 +1,4 @@
 import { Box, Tooltip, Typography } from "@mui/material";
-import React from "react";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 export default function TaxSimulationWarning() {

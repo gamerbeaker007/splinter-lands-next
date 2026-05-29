@@ -4,7 +4,6 @@ import {
   land_plot_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { Avatar, Box, Stack, Tooltip, Typography } from "@mui/material";
-import React from "react";
 
 type Props = {
   regionNumber: number;

@@ -13,8 +13,12 @@ import RentalOverview from "@/components/land-manager/RentalOverview";
 import TodayPanel from "@/components/land-manager/TodayPanel";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
+import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
+  DEFAULT_DONATION_CONFIG,
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
+  DEFAULT_POST_HARVEST_POOL_PCT,
+  DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
   DEFAULT_RENTAL_CONFIG,
   LandManagerConfig,
@@ -80,10 +84,11 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       player: auth.username ?? "",
       enabled_regions: [],
       make_harvestable_strategies: DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
-      fee_accepted: false,
+      donation: DEFAULT_DONATION_CONFIG,
       post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
       post_harvest_excluded_resources: [],
-      mythic_fee_accepted: false,
+      post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
+      post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
       rental: DEFAULT_RENTAL_CONFIG,
     }
   );
@@ -110,6 +115,8 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
   const enabledCount = currentConfig.enabled_regions.length;
   const handleSuccess = () => setRegionRefreshKey((k) => k + 1);
+  const donation = currentConfig.donation;
+  const donationEnabled = donation.enabled && donation.pct > 0;
 
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
@@ -240,17 +247,82 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       {/* ── Harvest tab ─────────────────────────────────────────────────── */}
       {activeTab === 0 && (
         <>
+          <Stack direction="row" alignItems="center" mb={1.5}>
+            {donationEnabled ? (
+              <Tooltip
+                title={
+                  <Stack spacing={1} sx={{ py: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700}>
+                      Donation {donation.pct}%
+                    </Typography>
+                    <Typography variant="caption" fontWeight={700}>
+                      Daily caps
+                    </Typography>
+                    <Stack spacing={0.5}>
+                      {NATURAL_RESOURCES.map((symbol) => {
+                        const cap = Number(donation.daily_caps?.[symbol] ?? 0);
+                        return (
+                          <Stack
+                            key={symbol}
+                            direction="row"
+                            alignItems="center"
+                            spacing={0.75}
+                          >
+                            <Box
+                              component="img"
+                              src={RESOURCE_ICON_MAP[symbol]}
+                              alt={symbol}
+                              sx={{ width: 16, height: 16 }}
+                            />
+                            <Typography variant="caption">
+                              {cap.toLocaleString()}
+                            </Typography>
+                          </Stack>
+                        );
+                      })}
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      Donation applies to all harvest operations and can be
+                      adjusted in the config.
+                    </Typography>
+                  </Stack>
+                }
+              >
+                <Chip
+                  size="small"
+                  label="Donation Enabled"
+                  sx={{
+                    fontWeight: 600,
+                    bgcolor: "success.main",
+                    color: "common.white",
+                  }}
+                />
+              </Tooltip>
+            ) : (
+              <Chip
+                size="small"
+                label="Donation Disabled"
+                sx={{
+                  fontWeight: 600,
+                  bgcolor: "warning.main",
+                  color: "common.white",
+                }}
+              />
+            )}
+          </Stack>
+
           <BulkActionPanel
             username={auth.username ?? ""}
             regions={allRegions}
             enabledRegions={currentConfig.enabled_regions}
             strategies={currentConfig.make_harvestable_strategies}
-            harvestAck={currentConfig.fee_accepted}
+            donation={currentConfig.donation}
             postHarvestStrategy={currentConfig.post_harvest_strategy}
             postHarvestExcludedResources={
               currentConfig.post_harvest_excluded_resources
             }
-            mythicFeeAccepted={currentConfig.mythic_fee_accepted}
+            postHarvestSellPct={currentConfig.post_harvest_sell_pct}
+            postHarvestPoolPct={currentConfig.post_harvest_pool_pct}
             hasMythics={
               enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
             }
@@ -264,6 +336,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
             username={auth.username ?? ""}
             regions={allRegions}
             enabledRegions={currentConfig.enabled_regions}
+            donation={currentConfig.donation}
             refreshKey={regionRefreshKey}
           />
         </>

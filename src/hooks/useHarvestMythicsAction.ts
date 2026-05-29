@@ -1,7 +1,4 @@
-import {
-  getFeeApplicableRegionNumbers,
-  getTodayPaidFees,
-} from "@/lib/backend/actions/land-manager/fee-actions";
+import { getTodayPaidDonations } from "@/lib/backend/actions/land-manager/donation-actions";
 import { recordMythicHarvestLog } from "@/lib/backend/actions/land-manager/log-actions";
 import {
   getBulkRegionData,
@@ -11,25 +8,30 @@ import {
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   applyDailyCaps,
-  buildFeeOps,
-  capFeesAtBalance,
-  planMythicFees,
-} from "@/lib/frontend/feePayment";
-import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
+  buildDonationOps,
+  capDonationsAtBalance,
+  planMythicDonations,
+} from "@/lib/frontend/donationPayment";
 import {
   BroadcastResult,
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
-import { DryRunResult, MythicHarvestResult } from "@/types/landManager";
+import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
+import {
+  DEFAULT_DONATION_RECIPIENT,
+  DonationConfig,
+  DryRunResult,
+  MythicHarvestResult,
+} from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
-import { PayFeesResult, usePayFees } from "./usePayFees";
+import { PayDonationsResult, usePayDonations } from "./usePayDonations";
 
 interface Params {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
-  mythicFeeAccepted: boolean;
+  donation: DonationConfig;
   onSuccess?: () => void;
 }
 
@@ -40,9 +42,6 @@ interface UseHarvestMythicsAction {
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
-  showConfirm: boolean;
-  onConfirm: (ack: boolean) => void;
-  onCancelConfirm: () => void;
   execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
 }
 
@@ -51,15 +50,18 @@ type InternalBusy = "running" | "verifying" | null;
 export function useHarvestMythicsAction({
   username,
   visibleRegions,
-  mythicFeeAccepted,
+  donation,
   onSuccess,
 }: Params): UseHarvestMythicsAction {
   const [internalBusy, setInternalBusy] = useState<InternalBusy>(null);
   const [result, setResult] = useState<BroadcastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingDryRun, setPendingDryRun] = useState(false);
-  const payFees = usePayFees(username);
+  const payDonations = usePayDonations(username);
+
+  const donationEnabled =
+    donation.enabled &&
+    donation.pct > 0 &&
+    username.toLowerCase() !== DEFAULT_DONATION_RECIPIENT.toLowerCase();
 
   const doExecute = useCallback(
     async (isDryRun: boolean): Promise<DryRunResult | null> => {
@@ -77,18 +79,13 @@ export function useHarvestMythicsAction({
         );
 
         if (isDryRun) {
-          const [{ pools }, { balances }, feeApplicableNums] =
-            await Promise.all([
-              getLandPools(),
-              getBulkRegionData(
-                visibleRegions.map((r) => r.region_uid),
-                !isDryRun
-              ),
-              getFeeApplicableRegionNumbers(username, [
-                ...new Set(mythicDeeds.map((d) => d.region_number)),
-              ]),
-            ]);
-          const feeApplicable = new Set(feeApplicableNums);
+          const [{ pools }, { balances }] = await Promise.all([
+            getLandPools(),
+            getBulkRegionData(
+              visibleRegions.map((r) => r.region_uid),
+              !isDryRun
+            ),
+          ]);
           const log = mythicDeeds.map((d) => {
             const taxes =
               d.taxes.map((t) => `${t.token} ${t.balance}`).join(", ") ||
@@ -99,16 +96,27 @@ export function useHarvestMythicsAction({
                 : `region(${d.region_number})`;
             return `${d.kingdom_type} ${loc}: ${taxes}`;
           });
-          const desired = planMythicFees(mythicDeeds, regionNameMap, (n) =>
-            feeApplicable.has(n)
+          const desired = planMythicDonations(
+            mythicDeeds,
+            regionNameMap,
+            () => donationEnabled,
+            donation.pct
           );
-          const alreadyPaid = await getTodayPaidFees(username).catch(
+          const alreadyPaid = await getTodayPaidDonations(username).catch(
             () => ({})
           );
-          const dailyCapped = applyDailyCaps(desired, alreadyPaid);
-          const capped = capFeesAtBalance(dailyCapped, balances);
-          const { log: feeLog } = buildFeeOps(username, pools, capped);
-          log.push(...feeLog);
+          const dailyCapped = applyDailyCaps(
+            desired,
+            alreadyPaid,
+            donation.daily_caps
+          );
+          const capped = capDonationsAtBalance(dailyCapped, balances);
+          const { log: donationLog } = buildDonationOps(
+            username,
+            pools,
+            capped
+          );
+          log.push(...donationLog);
           return { title: "Dry Run — Harvest Mythics", log };
         }
 
@@ -149,38 +157,40 @@ export function useHarvestMythicsAction({
           fragment_chance: d.estimated_totem_chance ?? 0,
         }));
 
-        // ── Phase 2: fees ──
+        // ── Phase 2: donations ──
         setInternalBusy("running");
-        const [{ pools }, feeApplicableNums] = await Promise.all([
-          getLandPools(),
-          getFeeApplicableRegionNumbers(username, [
-            ...new Set(mythicDeeds.map((d) => d.region_number)),
-          ]),
-        ]);
-        const feeApplicable = new Set(feeApplicableNums);
-        const desired = planMythicFees(mythicDeeds, regionNameMap, (n) =>
-          feeApplicable.has(n)
+        const { pools } = await getLandPools();
+        const desired = planMythicDonations(
+          mythicDeeds,
+          regionNameMap,
+          () => donationEnabled,
+          donation.pct
         );
-        let feeOutcome: PayFeesResult;
+        let donationOutcome: PayDonationsResult;
         if (desired.length === 0) {
-          feeOutcome = {
+          donationOutcome = {
             success: true,
-            paidFees: {},
-            unpaidFees: {},
-            feeError: null,
+            paidDonations: {},
+            unpaidDonations: {},
+            donationError: null,
             txIds: [],
-            log: ["No transferrable fees to pay."],
+            log: ["No transferrable donations to pay."],
           };
         } else {
-          feeOutcome = await payFees.execute(desired, pools);
-          if (feeOutcome.feeError) setError(feeOutcome.feeError);
+          donationOutcome = await payDonations.execute(
+            desired,
+            pools,
+            donation
+          );
+          if (donationOutcome.donationError)
+            setError(donationOutcome.donationError);
         }
 
         await recordMythicHarvestLog(username, harvestResults, res.txIds, {
-          paidFees: feeOutcome.paidFees,
-          unpaidFees: feeOutcome.unpaidFees,
-          feeError: feeOutcome.feeError,
-          feeTxIds: feeOutcome.txIds,
+          paidDonations: donationOutcome.paidDonations,
+          unpaidDonations: donationOutcome.unpaidDonations,
+          donationError: donationOutcome.donationError,
+          donationTxIds: donationOutcome.txIds,
         }).catch(() => {});
         setResult(res);
         onSuccess?.();
@@ -191,35 +201,21 @@ export function useHarvestMythicsAction({
       }
       return null;
     },
-    [username, visibleRegions, onSuccess, payFees]
+    [
+      username,
+      visibleRegions,
+      onSuccess,
+      payDonations,
+      donation,
+      donationEnabled,
+    ]
   );
 
   const execute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> => {
-      if (!isDryRun && !mythicFeeAccepted) {
-        setPendingDryRun(false);
-        setShowConfirm(true);
-        return null;
-      }
-      return doExecute(isDryRun);
-    },
-    [mythicFeeAccepted, doExecute]
+    async (isDryRun: boolean): Promise<DryRunResult | null> =>
+      doExecute(isDryRun),
+    [doExecute]
   );
-
-  const onConfirm = useCallback(
-    (ack: boolean) => {
-      setShowConfirm(false);
-      if (ack) {
-        import("@/lib/backend/actions/land-manager/config-actions").then((m) =>
-          m.saveMythicFeeAccepted().catch(() => {})
-        );
-      }
-      doExecute(pendingDryRun);
-    },
-    [doExecute, pendingDryRun]
-  );
-
-  const onCancelConfirm = useCallback(() => setShowConfirm(false), []);
 
   return {
     busy: internalBusy !== null,
@@ -228,9 +224,6 @@ export function useHarvestMythicsAction({
     error,
     clearResult: () => setResult(null),
     clearError: () => setError(null),
-    showConfirm,
-    onConfirm,
-    onCancelConfirm,
     execute,
   };
 }

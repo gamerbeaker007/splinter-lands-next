@@ -1,8 +1,7 @@
 "use client";
 
-import HarvestConfirmDialog from "@/components/land-manager/HarvestConfirmDialog";
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
-import { DryRunResult } from "@/types/landManager";
+import { DonationConfig, DryRunResult } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
 import {
@@ -18,9 +17,8 @@ import { useEffect } from "react";
 interface Props {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
-  harvestAck: boolean;
+  donation: DonationConfig;
   anyBusy: boolean;
-  feeApplicableRegionNumbers: Set<number>;
   onBusyChange: (busy: boolean) => void;
   onDryRun: (result: DryRunResult) => void;
   onSuccess: () => void;
@@ -29,9 +27,8 @@ interface Props {
 export default function HarvestAllRow({
   username,
   visibleRegions,
-  harvestAck,
+  donation,
   anyBusy,
-  feeApplicableRegionNumbers,
   onBusyChange,
   onDryRun,
   onSuccess,
@@ -39,7 +36,7 @@ export default function HarvestAllRow({
   const action = useHarvestAllAction({
     username,
     visibleRegions,
-    harvestAck,
+    donation,
     onSuccess,
   });
 
@@ -103,14 +100,6 @@ export default function HarvestAllRow({
           {action.error}
         </Alert>
       )}
-
-      <HarvestConfirmDialog
-        open={action.showConfirm}
-        visibleRegions={visibleRegions}
-        feeApplicableRegionNumbers={feeApplicableRegionNumbers}
-        onConfirm={action.onConfirm}
-        onCancel={action.onCancelConfirm}
-      />
     </>
   );
 }

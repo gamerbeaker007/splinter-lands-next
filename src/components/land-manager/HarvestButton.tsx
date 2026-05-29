@@ -1,15 +1,18 @@
 "use client";
 
-import { usePayFees } from "@/hooks/usePayFees";
+import { usePayDonations } from "@/hooks/usePayDonations";
 import {
-  recordFeesLog,
+  recordDonationsLog,
   recordHarvestLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
 import { getLandPools } from "@/lib/backend/actions/land-manager/overview-actions";
+import { planDesiredDonations } from "@/lib/frontend/donationPayment";
 import { broadcastHarvest } from "@/lib/frontend/executeHarvestFlow";
-import { planDesiredFees } from "@/lib/frontend/feePayment";
 import { summarizeHarvestedResources } from "@/lib/frontend/harvestOps";
-import { SERVICE_FEE_PCT } from "@/types/landManager";
+import {
+  DEFAULT_DONATION_RECIPIENT,
+  DonationConfig,
+} from "@/types/landManager";
 import { SplHarvestableResource } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
 import {
@@ -30,7 +33,7 @@ interface Props {
   regionName: string;
   harvestable: SplHarvestableResource[];
   canAfford: boolean;
-  applyFee: boolean;
+  donation: DonationConfig;
   onSuccess: () => void;
 }
 
@@ -47,13 +50,17 @@ export default function HarvestButton({
   regionName,
   harvestable,
   canAfford,
-  applyFee,
+  donation,
   onSuccess,
 }: Props) {
+  const applyDonation =
+    donation.enabled &&
+    donation.pct > 0 &&
+    username.toLowerCase() !== DEFAULT_DONATION_RECIPIENT.toLowerCase();
   const [status, setStatus] = useState<Status>("idle");
   const [runResult, setRunResult] = useState<RunResult | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const payFees = usePayFees(username);
+  const payDonations = usePayDonations(username);
 
   const hasAnything = harvestable.length > 0;
 
@@ -85,27 +92,36 @@ export default function HarvestButton({
         txIds: harvestRes.txIds,
       }).catch(() => {});
 
-      // ── Phase 2: fees ──
-      const desired = planDesiredFees([region], harvestableMap, () => applyFee);
-      let feeTxIds: string[] = [];
-      let feeError: string | null = null;
+      // ── Phase 2: donations ──
+      const desired = planDesiredDonations(
+        [region],
+        harvestableMap,
+        () => applyDonation,
+        donation.pct
+      );
+      let donationTxIds: string[] = [];
+      let donationError: string | null = null;
       if (desired.length > 0) {
-        const fee = await payFees.execute(desired, pools);
-        feeTxIds = fee.txIds;
-        feeError = fee.feeError;
-        await recordFeesLog({
+        const donationResult = await payDonations.execute(
+          desired,
+          pools,
+          donation
+        );
+        donationTxIds = donationResult.txIds;
+        donationError = donationResult.donationError;
+        await recordDonationsLog({
           player: username,
-          paidFees: fee.paidFees,
-          unpaidFees: fee.unpaidFees,
-          feeError: fee.feeError,
-          txIds: fee.txIds,
+          paidDonations: donationResult.paidDonations,
+          unpaidDonations: donationResult.unpaidDonations,
+          donationError: donationResult.donationError,
+          txIds: donationResult.txIds,
         }).catch(() => {});
       }
 
-      setRunResult({ txIds: [...harvestRes.txIds, ...feeTxIds] });
-      if (feeError) {
+      setRunResult({ txIds: [...harvestRes.txIds, ...donationTxIds] });
+      if (donationError) {
         setStatus("error");
-        setErrorMessage(feeError);
+        setErrorMessage(donationError);
       } else {
         setStatus("done");
       }
@@ -116,7 +132,8 @@ export default function HarvestButton({
     }
   };
 
-  const feeLabel = applyFee && hasAnything ? ` + ${SERVICE_FEE_PCT}% fee` : "";
+  const donationLabel =
+    applyDonation && hasAnything ? ` + ${donation.pct}% donation` : "";
 
   return (
     <Box>
@@ -126,7 +143,7 @@ export default function HarvestButton({
             ? "Nothing to harvest"
             : !canAfford
               ? "Insufficient resources to cover harvest cost"
-              : `Harvest all resources${feeLabel}`
+              : `Harvest all resources${donationLabel}`
         }
       >
         <span>
@@ -138,18 +155,20 @@ export default function HarvestButton({
               !hasAnything ||
               !canAfford ||
               status === "broadcasting" ||
-              payFees.busy
+              payDonations.busy
             }
             onClick={handleHarvest}
             startIcon={
-              status === "broadcasting" || payFees.busy ? (
+              status === "broadcasting" || payDonations.busy ? (
                 <CircularProgress size={14} color="inherit" />
               ) : (
                 <HarvestIcon fontSize="small" />
               )
             }
           >
-            {status === "broadcasting" || payFees.busy ? "Sending…" : "Harvest"}
+            {status === "broadcasting" || payDonations.busy
+              ? "Sending…"
+              : "Harvest"}
           </Button>
         </span>
       </Tooltip>
@@ -162,7 +181,7 @@ export default function HarvestButton({
         >
           {status === "done" ? (
             <Typography variant="caption">
-              Harvested{feeLabel} · TX:{" "}
+              Harvested{donationLabel} · TX:{" "}
               {runResult?.txIds?.at(-1) ?? "confirmed"}
             </Typography>
           ) : (

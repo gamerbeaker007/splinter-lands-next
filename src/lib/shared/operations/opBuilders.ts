@@ -1,11 +1,13 @@
 // Resources that are soulbound on Splinterlands and cannot be transferred
-// between regions/players. Fees in these resources are skipped entirely.
-import { SERVICE_FEE_RECIPIENT } from "@/types/landManager";
+// between regions/players. Donations in these resources are skipped entirely.
 
-export const NON_TRANSFERABLE_FEE_RESOURCES = new Set(["RESEARCH", "AURA"]);
+export const NON_TRANSFERABLE_DONATION_RESOURCES = new Set([
+  "RESEARCH",
+  "AURA",
+]);
 
-export function isFeeResourceTransferable(symbol: string): boolean {
-  return !NON_TRANSFERABLE_FEE_RESOURCES.has(symbol);
+export function isDonationResourceTransferable(symbol: string): boolean {
+  return !NON_TRANSFERABLE_DONATION_RESOURCES.has(symbol);
 }
 
 const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
@@ -63,7 +65,7 @@ export function buildHarvestOp(
  * legitimately reject a fair trade at 2.5.
  */
 const DEFAULT_SWAP_MAX_SLIPPAGE = 2.5;
-const FEE_TRANSFER_MAX_SLIPPAGE = 50;
+const DONATION_TRANSFER_MAX_SLIPPAGE = 50;
 
 export interface SwapTokensOpInput {
   username: string;
@@ -104,9 +106,10 @@ export function buildSwapTokensOp(input: SwapTokensOpInput): [string, object] {
  * Uses a relaxed slippage tolerance because per-hub pool prices can
  * legitimately diverge from the global aggregate for shallow pools.
  */
-export function buildFeeTransferOp(
+export function buildDonationTransferOp(
   username: string,
   fromRegionUid: string,
+  toPlayer: string,
   toRegionUid: string,
   symbol: string,
   inAmount: number,
@@ -122,9 +125,9 @@ export function buildFeeTransferOp(
     inAmount,
     outAmount1,
     outAmount2,
-    toPlayer: SERVICE_FEE_RECIPIENT,
+    toPlayer,
     notifyTransport: true,
-    maxSlippage: FEE_TRANSFER_MAX_SLIPPAGE,
+    maxSlippage: DONATION_TRANSFER_MAX_SLIPPAGE,
   });
 }
 

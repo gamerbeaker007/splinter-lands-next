@@ -53,11 +53,11 @@ export default function TodayPanel({
     if (!data) return;
     const allTxIds = [
       ...(data.harvest?.harvest_transactions ?? []),
-      ...(data.harvest?.fee_transactions ?? []),
+      ...(data.harvest?.donation_transactions ?? []),
       ...(data.makeHarvestable?.transactions ?? []),
       ...(data.postHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.transactions ?? []),
-      ...(data.mythicHarvest?.fee_transactions ?? []),
+      ...(data.mythicHarvest?.donation_transactions ?? []),
       ...(data.rental?.rent_transactions ?? []),
       ...(data.rental?.stake_transactions ?? []),
       ...(data.stakeDec?.transactions ?? []),
@@ -164,37 +164,37 @@ export default function TodayPanel({
   const anyFailed = (txIds: string[]) =>
     txIds.some((id) => failedTxIds.has(id));
 
-  const feeSummary = (
-    fees: Record<string, number>,
-    unpaidFees: Record<string, number>,
-    feeError: string | null | undefined
+  const donationSummary = (
+    donations: Record<string, number>,
+    unpaidDonations: Record<string, number>,
+    donationError: string | null | undefined
   ) => (
     <>
-      {Object.keys(fees).length > 0 && (
+      {Object.keys(donations).length > 0 && (
         <Typography
           variant="caption"
           color="text.secondary"
           display="block"
           mt={0.5}
         >
-          Fees paid:{" "}
-          {Object.entries(fees)
+          Donations paid:{" "}
+          {Object.entries(donations)
             .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
             .join(", ")}
         </Typography>
       )}
-      {Object.keys(unpaidFees).length > 0 && (
+      {Object.keys(unpaidDonations).length > 0 && (
         <Typography
           variant="caption"
           color="error.main"
           display="block"
           mt={0.5}
         >
-          Unpaid fees:{" "}
-          {Object.entries(unpaidFees)
+          Unpaid donations:{" "}
+          {Object.entries(unpaidDonations)
             .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
             .join(", ")}
-          {feeError ? ` — ${feeError}` : ""}
+          {donationError ? ` — ${donationError}` : ""}
         </Typography>
       )}
     </>
@@ -238,11 +238,11 @@ export default function TodayPanel({
                   </Typography>
                   {anyFailed([
                     ...data.harvest.harvest_transactions,
-                    ...data.harvest.fee_transactions,
+                    ...data.harvest.donation_transactions,
                   ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
                   {allVerified([
                     ...data.harvest.harvest_transactions,
-                    ...data.harvest.fee_transactions,
+                    ...data.harvest.donation_transactions,
                   ]) && (
                     <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
                   )}
@@ -260,14 +260,14 @@ export default function TodayPanel({
                     />
                   ))}
                 </Stack>
-                {feeSummary(
-                  data.harvest.fees_json as Record<string, number>,
-                  data.harvest.unpaid_fees_json as Record<string, number>,
-                  data.harvest.fee_error
+                {donationSummary(
+                  data.harvest.donations_json as Record<string, number>,
+                  data.harvest.unpaid_donations_json as Record<string, number>,
+                  data.harvest.donation_error
                 )}
                 {txList([
                   ...data.harvest.harvest_transactions,
-                  ...data.harvest.fee_transactions,
+                  ...data.harvest.donation_transactions,
                 ])}
               </Box>
             )}
@@ -384,11 +384,11 @@ export default function TodayPanel({
                   </Typography>
                   {anyFailed([
                     ...data.mythicHarvest.transactions,
-                    ...data.mythicHarvest.fee_transactions,
+                    ...data.mythicHarvest.donation_transactions,
                   ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
                   {allVerified([
                     ...data.mythicHarvest.transactions,
-                    ...data.mythicHarvest.fee_transactions,
+                    ...data.mythicHarvest.donation_transactions,
                   ]) && (
                     <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
                   )}
@@ -417,14 +417,17 @@ export default function TodayPanel({
                     </Typography>
                   ))}
                 </Stack>
-                {feeSummary(
-                  data.mythicHarvest.fees_json as Record<string, number>,
-                  data.mythicHarvest.unpaid_fees_json as Record<string, number>,
-                  data.mythicHarvest.fee_error
+                {donationSummary(
+                  data.mythicHarvest.donations_json as Record<string, number>,
+                  data.mythicHarvest.unpaid_donations_json as Record<
+                    string,
+                    number
+                  >,
+                  data.mythicHarvest.donation_error
                 )}
                 {txList([
                   ...data.mythicHarvest.transactions,
-                  ...data.mythicHarvest.fee_transactions,
+                  ...data.mythicHarvest.donation_transactions,
                 ])}
               </Box>
             )}

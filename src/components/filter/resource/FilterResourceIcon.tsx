@@ -1,4 +1,3 @@
-import React from "react";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import FilterIcon from "../FilterIcon";
