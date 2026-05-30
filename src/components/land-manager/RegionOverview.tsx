@@ -2,6 +2,7 @@
 
 import HarvestButton from "@/components/land-manager/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
+import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import {
   getRegionResourceBalance,
   getSplHarvestableResources,
@@ -11,16 +12,21 @@ import {
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { getHarvestRegion } from "@/lib/utils/deedUtil";
 import { DonationConfig } from "@/types/landManager";
 import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
 } from "@/types/spl/landManager";
-import { WarningAmber as WarnIcon } from "@mui/icons-material";
+import {
+  AgricultureOutlined as HarvestIcon,
+  WarningAmber as WarnIcon,
+} from "@mui/icons-material";
 import {
   Box,
   Chip,
   CircularProgress,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -33,6 +39,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import RegionAnalysisCell from "./RegionAnalysisCell";
 
 interface Props {
   username: string;
@@ -129,6 +136,7 @@ function RegionRow({
   donation,
   externalRefreshKey,
 }: RowProps) {
+  const { landPoolData } = useLandLiquidityPools();
   const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
   const [regionBalance, setRegionBalance] = useState<Record<string, number>>({
     GRAIN: 0,
@@ -206,21 +214,42 @@ function RegionRow({
       </TableCell>
 
       <TableCell>
+        {loading ? (
+          <CircularProgress size={14} />
+        ) : (
+          <RegionAnalysisCell resources={harvestable} pools={landPoolData} />
+        )}
+      </TableCell>
+
+      <TableCell>
         <LastHarvestAgeChip date={region.last_claimed} />
       </TableCell>
 
       <TableCell>
         {!loading && (
-          <HarvestButton
-            username={username}
-            regionUid={region.region_uid}
-            regionNumber={region.region_number}
-            regionName={region.name}
-            harvestable={harvestable}
-            canAfford={canAfford}
-            donation={donation}
-            onSuccess={() => setRefreshKey((k) => k + 1)}
-          />
+          <Stack direction="row" alignItems="center" spacing={0.5}>
+            <HarvestButton
+              username={username}
+              regionUid={region.region_uid}
+              regionNumber={region.region_number}
+              regionName={region.name}
+              harvestable={harvestable}
+              canAfford={canAfford}
+              donation={donation}
+              onSuccess={() => setRefreshKey((k) => k + 1)}
+            />
+            <Tooltip title="Open harvest page on Splinterlands">
+              <IconButton
+                size="small"
+                component="a"
+                href={getHarvestRegion(region.region_number)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <HarvestIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Stack>
         )}
       </TableCell>
     </TableRow>
@@ -258,6 +287,7 @@ export default function RegionOverview({
             <TableCell>Region</TableCell>
             <TableCell>Harvestable</TableCell>
             <TableCell>Cost to Harvest</TableCell>
+            <TableCell>Natural Resource Analysis</TableCell>
             <TableCell>Last Claimed</TableCell>
             <TableCell>Action</TableCell>
           </TableRow>
