@@ -15,24 +15,37 @@ export const MAX_OPS_PER_BROADCAST = 4;
 // consecutive broadcast batches guarantees they land in different blocks.
 export const HIVE_BLOCK_MS = 3_000;
 
-// === App-level constants (not stored per player) ===
-export const SERVICE_FEE_PCT = 2;
-export const SERVICE_FEE_RECIPIENT = "beaker007";
-export const SERVICE_FEE_RECIPIENT_REGION = "PR-CEF-65"; // beaker007's fee collection region
+// === Donation defaults (stored per player config) ===
+export const DEFAULT_DONATION_ENABLED = true;
+export const DEFAULT_DONATION_PCT = 2;
+export const DEFAULT_DONATION_RECIPIENT = "beaker007";
+export const DEFAULT_DONATION_RECIPIENT_REGION = "PR-CEF-65";
 
 /**
- * Daily maximum fee per resource per account.
+ * Daily maximum donation per resource per account.
  *
  * Ratios follow in-game relative values:
  *   1 Iron = 40 Grain, 1 Stone = 10 Grain, 1 Wood = 4 Grain
  *
  * Symbols not listed (e.g. SPS, AURA) have no daily cap.
  */
-export const DAILY_FEE_CAPS: Record<string, number> = {
+export const DEFAULT_DONATION_DAILY_CAPS: Record<string, number> = {
   GRAIN: 40_000,
   WOOD: 10_000,
   STONE: 4_000,
   IRON: 1_000,
+};
+
+export interface DonationConfig {
+  enabled: boolean;
+  pct: number;
+  daily_caps: Record<string, number>;
+}
+
+export const DEFAULT_DONATION_CONFIG: DonationConfig = {
+  enabled: DEFAULT_DONATION_ENABLED,
+  pct: DEFAULT_DONATION_PCT,
+  daily_caps: DEFAULT_DONATION_DAILY_CAPS,
 };
 
 // === Make Harvestable strategy ===
@@ -56,14 +69,15 @@ export const MAKE_HARVESTABLE_STRATEGY_LABELS: Record<
 
 // === Post-Harvest strategy ===
 
-export type PostHarvestStrategy = "accumulate" | "add_to_pool" | "sell_for_dec";
+export type PostHarvestStrategy = "accumulate" | "sell_and_pool";
 export const DEFAULT_POST_HARVEST_STRATEGY: PostHarvestStrategy = "accumulate";
 export const DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES: string[] = [];
+export const DEFAULT_POST_HARVEST_SELL_PCT = 0;
+export const DEFAULT_POST_HARVEST_POOL_PCT = 100;
 export const POST_HARVEST_STRATEGY_LABELS: Record<PostHarvestStrategy, string> =
   {
     accumulate: "Accumulate (do nothing)",
-    add_to_pool: "Add to liquidity pool (sell 50% for DEC, add both to pool)",
-    sell_for_dec: "Sell all for DEC",
+    sell_and_pool: "Sell % & add % to pool",
   };
 
 export interface PostHarvestActionSummary {
@@ -180,10 +194,11 @@ export interface LandManagerConfig {
   player: string;
   enabled_regions: number[];
   make_harvestable_strategies: MakeHarvestableStrategy[];
-  fee_accepted: boolean;
+  donation: DonationConfig;
   post_harvest_strategy: PostHarvestStrategy;
   post_harvest_excluded_resources: string[];
-  mythic_fee_accepted: boolean;
+  post_harvest_sell_pct: number;
+  post_harvest_pool_pct: number;
   rental: RentalConfig;
 }
 

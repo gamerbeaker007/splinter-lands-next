@@ -138,6 +138,7 @@ const meta: Meta<typeof RentConfirmDialog> = {
   title: "Land Manager/Bulk Operations/RentConfirmDialog",
   component: RentConfirmDialog,
   args: {
+    decBalance: 5000,
     busy: false,
     onConfirm: () => {},
     onCancel: () => {},

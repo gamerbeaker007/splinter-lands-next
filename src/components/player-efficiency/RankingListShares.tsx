@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { Box } from "@mui/system";

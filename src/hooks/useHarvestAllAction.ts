@@ -1,10 +1,6 @@
+import { getTodayPaidDonations } from "@/lib/backend/actions/land-manager/donation-actions";
 import {
-  getFeeApplicableRegionNumbers,
-  getTodayPaidFees,
-} from "@/lib/backend/actions/land-manager/fee-actions";
-import {
-  acknowledgeHarvest,
-  recordFeesLog,
+  recordDonationsLog,
   recordHarvestLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
 import {
@@ -12,16 +8,15 @@ import {
   getLandPools,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
+  applyDailyCaps,
+  buildDonationOps,
+  capDonationsAtBalance,
+  planDesiredDonations,
+} from "@/lib/frontend/donationPayment";
+import {
   broadcastHarvest,
   HarvestBroadcastResult,
 } from "@/lib/frontend/executeHarvestFlow";
-import {
-  applyDailyCaps,
-  buildFeeOps,
-  capFeesAtBalance,
-  planDesiredFees,
-  summarizeFees,
-} from "@/lib/frontend/feePayment";
 import {
   buildRegionHarvestOnlyOp,
   summarizeHarvestedResources,
@@ -30,15 +25,19 @@ import {
   canHarvestRegion,
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
-import { DryRunResult } from "@/types/landManager";
+import {
+  DEFAULT_DONATION_RECIPIENT,
+  DonationConfig,
+  DryRunResult,
+} from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
-import { PayFeesResult, usePayFees } from "./usePayFees";
+import { PayDonationsResult, usePayDonations } from "./usePayDonations";
 
 interface Params {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
-  harvestAck: boolean;
+  donation: DonationConfig;
   onSuccess?: () => void;
 }
 
@@ -46,7 +45,7 @@ export interface HarvestAllResult {
   success: boolean;
   txIds: string[];
   harvestTxIds: string[];
-  fees: PayFeesResult | null;
+  donations: PayDonationsResult | null;
   log: string[];
 }
 
@@ -56,9 +55,6 @@ interface UseHarvestAllAction {
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
-  showConfirm: boolean;
-  onConfirm: (ack: boolean) => void;
-  onCancelConfirm: () => void;
   execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
 }
 
@@ -73,15 +69,18 @@ const EMPTY_BALANCE: Record<string, number> = {
 export function useHarvestAllAction({
   username,
   visibleRegions,
-  harvestAck,
+  donation,
   onSuccess,
 }: Params): UseHarvestAllAction {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<HarvestAllResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingDryRun, setPendingDryRun] = useState(false);
-  const payFees = usePayFees(username);
+  const payDonations = usePayDonations(username);
+
+  const donationEnabled =
+    donation.enabled &&
+    donation.pct > 0 &&
+    username.toLowerCase() !== DEFAULT_DONATION_RECIPIENT.toLowerCase();
 
   const doExecute = useCallback(
     async (isDryRun: boolean): Promise<DryRunResult | null> => {
@@ -116,24 +115,29 @@ export function useHarvestAllAction({
             const built = buildRegionHarvestOnlyOp(username, region);
             log.push(...built.log);
           }
-          const feeApplicable = new Set(
-            await getFeeApplicableRegionNumbers(
-              username,
-              eligibleRegions.map((r) => r.region_number)
-            )
-          );
           // For preview, cap against the pre-harvest effective balance — best
           // estimate we have without actually broadcasting.
-          const desired = planDesiredFees(eligibleRegions, harvestable, (n) =>
-            feeApplicable.has(n)
+          const desired = planDesiredDonations(
+            eligibleRegions,
+            harvestable,
+            () => donationEnabled,
+            donation.pct
           );
-          const alreadyPaid = await getTodayPaidFees(username).catch(
+          const alreadyPaid = await getTodayPaidDonations(username).catch(
             () => ({})
           );
-          const dailyCapped = applyDailyCaps(desired, alreadyPaid);
-          const capped = capFeesAtBalance(dailyCapped, adjustedBalances);
-          const { log: feeLog } = buildFeeOps(username, pools, capped);
-          log.push(...feeLog);
+          const dailyCapped = applyDailyCaps(
+            desired,
+            alreadyPaid,
+            donation.daily_caps
+          );
+          const capped = capDonationsAtBalance(dailyCapped, adjustedBalances);
+          const { log: donationLog } = buildDonationOps(
+            username,
+            pools,
+            capped
+          );
+          log.push(...donationLog);
           return { title: "Dry Run — Harvest All", log };
         }
 
@@ -158,50 +162,48 @@ export function useHarvestAllAction({
           txIds: harvestRes.txIds,
         }).catch(() => {});
 
-        // ── Phase 2: fees ──
-        const feeApplicable = new Set(
-          await getFeeApplicableRegionNumbers(
-            username,
-            eligibleRegions.map((r) => r.region_number)
-          )
+        // ── Phase 2: donations ──
+        const desired = planDesiredDonations(
+          eligibleRegions,
+          harvestable,
+          () => donationEnabled,
+          donation.pct
         );
-        const desired = planDesiredFees(eligibleRegions, harvestable, (n) =>
-          feeApplicable.has(n)
-        );
-        let feeOutcome: PayFeesResult | null = null;
+        let donationOutcome: PayDonationsResult | null = null;
         if (desired.length === 0) {
-          // Nothing to pay — clean run, skip the fee log entirely.
-          feeOutcome = {
+          donationOutcome = {
             success: true,
-            paidFees: {},
-            unpaidFees: {},
-            feeError: null,
+            paidDonations: {},
+            unpaidDonations: {},
+            donationError: null,
             txIds: [],
-            log: ["No transferrable fees to pay this run."],
+            log: ["No transferrable donations to pay this run."],
           };
         } else {
-          feeOutcome = await payFees.execute(desired, pools);
-          // Always persist what was attempted — paid and/or unpaid plus reason.
-          await recordFeesLog({
+          donationOutcome = await payDonations.execute(
+            desired,
+            pools,
+            donation
+          );
+          await recordDonationsLog({
             player: username,
-            paidFees: feeOutcome.paidFees,
-            unpaidFees: feeOutcome.unpaidFees,
-            feeError: feeOutcome.feeError,
-            txIds: feeOutcome.txIds,
+            paidDonations: donationOutcome.paidDonations,
+            unpaidDonations: donationOutcome.unpaidDonations,
+            donationError: donationOutcome.donationError,
+            txIds: donationOutcome.txIds,
           }).catch(() => {});
-          if (feeOutcome.feeError) setError(feeOutcome.feeError);
+          if (donationOutcome.donationError)
+            setError(donationOutcome.donationError);
         }
 
         setResult({
-          success: feeOutcome.success,
-          txIds: [...harvestRes.txIds, ...feeOutcome.txIds],
+          success: donationOutcome.success,
+          txIds: [...harvestRes.txIds, ...donationOutcome.txIds],
           harvestTxIds: harvestRes.txIds,
-          fees: feeOutcome,
-          log: [...harvestRes.log, ...feeOutcome.log],
+          donations: donationOutcome,
+          log: [...harvestRes.log, ...donationOutcome.log],
         });
         onSuccess?.();
-        // Silence unused-var lint in case payFees is later replaced.
-        void summarizeFees;
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
@@ -209,44 +211,31 @@ export function useHarvestAllAction({
       }
       return null;
     },
-    [username, visibleRegions, onSuccess, payFees]
+    [
+      username,
+      visibleRegions,
+      onSuccess,
+      payDonations,
+      donation,
+      donationEnabled,
+    ]
   );
 
   const execute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> => {
-      if (!isDryRun && !harvestAck) {
-        setPendingDryRun(false);
-        setShowConfirm(true);
-        return null;
-      }
-      return doExecute(isDryRun);
-    },
-    [harvestAck, doExecute]
+    async (isDryRun: boolean): Promise<DryRunResult | null> =>
+      doExecute(isDryRun),
+    [doExecute]
   );
-
-  const onConfirm = useCallback(
-    (ack: boolean) => {
-      setShowConfirm(false);
-      if (ack) acknowledgeHarvest().catch(() => {});
-      doExecute(pendingDryRun);
-    },
-    [doExecute, pendingDryRun]
-  );
-
-  const onCancelConfirm = useCallback(() => setShowConfirm(false), []);
 
   return {
-    busy: busy || payFees.busy,
+    busy: busy || payDonations.busy,
     result,
     error,
     clearResult: () => {
       setResult(null);
-      payFees.clear();
+      payDonations.clear();
     },
     clearError: () => setError(null),
-    showConfirm,
-    onConfirm,
-    onCancelConfirm,
     execute,
   };
 }

@@ -17,7 +17,7 @@ const NATURAL_RESOURCE_SET = new Set<string>(NATURAL_RESOURCES);
 export interface PostHarvestOpsResult {
   /** All ops in execution order (sell phase then liquidity phase). Used for dry-run display. */
   ops: [string, object][];
-  /** Phase 1: resource → DEC sells. Always present for sell_for_dec; also phase-1 of add_to_pool. */
+  /** Phase 1: resource → DEC sells. Phase-1 of add_to_pool and sell portion of sell_and_pool. */
   sellOps: [string, object][];
   /**
    * Phase 2: add_liquidity ops estimated from PRE-SELL pool spot prices.
@@ -34,7 +34,9 @@ export function buildPostHarvestOps(
   balances: Record<string, Record<string, number>>, // region_uid → { GRAIN, WOOD, ... }
   pools: SplLandPool[],
   strategy: PostHarvestStrategy,
-  excludedResources: string[] = []
+  excludedResources: string[] = [],
+  sellPct: number = 0,
+  poolPct: number = 100
 ): PostHarvestOpsResult {
   if (strategy === "accumulate")
     return {
@@ -59,64 +61,78 @@ export function buildPostHarvestOps(
       if (excludedSet.has(symbol)) continue;
       if (amount < MIN_RESOURCE) continue;
 
-      if (strategy === "sell_for_dec") {
-        const { out_amount_2: decOut } = computeResourceToDec(
-          pools,
-          symbol,
-          amount
+      if (strategy === "sell_and_pool") {
+        // Sell portion
+        const sellAmount = Number.parseFloat(
+          ((amount * sellPct) / 100).toFixed(3)
         );
-        if (decOut <= 0) continue;
-        sellOps.push(
-          buildSellResourceForDecOp(
-            username,
-            region.region_uid,
-            amount,
-            decOut,
+        if (sellAmount >= MIN_RESOURCE) {
+          const { out_amount_2: decOut } = computeResourceToDec(
+            pools,
             symbol,
-            50 // post-harvest sales can be more tolerant of slippage since they won't cause a failed harvest
-          )
-        );
-        log.push(`[${region.name}] sell ${amount} ${symbol} → ${decOut} DEC`);
-        actions.push({
-          type: "sell_for_dec",
-          region_uid: region.region_uid,
-          symbol,
-          resource_in: amount,
-          dec_amount: decOut,
-        });
-      } else if (strategy === "add_to_pool") {
-        const half = Number.parseFloat((amount / 2).toFixed(3));
-        const { out_amount_2: decOut } = computeResourceToDec(
-          pools,
-          symbol,
-          half
-        );
-        if (decOut <= 0) continue;
-        // Phase 1: sell half to DEC
-        sellOps.push(
-          buildSellResourceForDecOp(
-            username,
-            region.region_uid,
-            half,
-            decOut,
-            symbol
-          )
-        );
-        // Dry-run display: estimate liquidity op from pre-sell spot price.
+            sellAmount
+          );
+          if (decOut > 0) {
+            sellOps.push(
+              buildSellResourceForDecOp(
+                username,
+                region.region_uid,
+                sellAmount,
+                decOut,
+                symbol,
+                50
+              )
+            );
+            log.push(
+              `[${region.name}] sell ${sellAmount} ${symbol} → ${decOut} DEC (${sellPct}%)`
+            );
+            actions.push({
+              type: "sell_for_dec",
+              region_uid: region.region_uid,
+              symbol,
+              resource_in: sellAmount,
+              dec_amount: decOut,
+            });
+          }
+        }
 
-        liquidityOps.push(
-          buildAddLiquidityOp(username, region.region_uid, symbol, half, decOut)
+        // Pool portion — DEC comes from wallet, not from selling
+        const poolAmount = Number.parseFloat(
+          ((amount * poolPct) / 100).toFixed(3)
         );
-        log.push(
-          `[${region.name}] add_to_pool ${half} ${symbol} + ${decOut} DEC (incl. sell ${half} ${symbol} → ${decOut} DEC)`
-        );
-        actions.push({
-          type: "add_to_pool",
-          region_uid: region.region_uid,
-          symbol,
-          resource_in: amount,
-          dec_amount: decOut,
-        });
+        if (poolAmount >= MIN_RESOURCE) {
+          const pool = pools.find((p) => p.token_symbol === symbol);
+          if (pool) {
+            const decQty = Number.parseFloat(pool.dec_quantity);
+            const resourceQty = Number.parseFloat(pool.resource_quantity);
+            if (resourceQty > 0) {
+              const decNeeded = Number.parseFloat(
+                (poolAmount * (decQty / resourceQty)).toFixed(3)
+              );
+              if (decNeeded > 0) {
+                liquidityOps.push(
+                  buildAddLiquidityOp(
+                    username,
+                    region.region_uid,
+                    symbol,
+                    poolAmount,
+                    decNeeded
+                  )
+                );
+                log.push(
+                  `[${region.name}] add_to_pool ${poolAmount} ${symbol} + ${decNeeded} DEC (${poolPct}%)`
+                );
+                actions.push({
+                  type: "add_to_pool",
+                  region_uid: region.region_uid,
+                  symbol,
+                  resource_in: poolAmount,
+                  dec_amount: decNeeded,
+                });
+              }
+            }
+          }
+        }
       }
     }
   }

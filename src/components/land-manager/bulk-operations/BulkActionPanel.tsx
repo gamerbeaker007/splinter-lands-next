@@ -5,8 +5,8 @@ import HarvestAllRow from "@/components/land-manager/bulk-operations/HarvestAllR
 import HarvestMythicsRow from "@/components/land-manager/bulk-operations/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
-import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
+  DonationConfig,
   DryRunResult,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
@@ -14,17 +14,18 @@ import {
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Box, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 interface Props {
   username: string;
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
   strategies: MakeHarvestableStrategy[];
-  harvestAck: boolean;
+  donation: DonationConfig;
   postHarvestStrategy: PostHarvestStrategy;
   postHarvestExcludedResources: string[];
-  mythicFeeAccepted: boolean;
+  postHarvestSellPct: number;
+  postHarvestPoolPct: number;
   hasMythics: boolean;
   onSuccess?: () => void;
 }
@@ -34,32 +35,22 @@ export default function BulkActionPanel({
   regions,
   enabledRegions,
   strategies,
-  harvestAck,
+  donation,
   postHarvestStrategy,
   postHarvestExcludedResources,
-  mythicFeeAccepted,
+  postHarvestSellPct,
+  postHarvestPoolPct,
   hasMythics,
   onSuccess,
 }: Props) {
   const router = useRouter();
   const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
-  const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
-    Set<number>
-  >(new Set());
   const [busyMap, setBusyMap] = useState({
     harvest: false,
     makeHarvestable: false,
     processResources: false,
     mythicHarvest: false,
   });
-
-  useEffect(() => {
-    if (!username) return;
-    const regionNumbers = regions.map((r) => r.region_number);
-    getFeeApplicableRegionNumbers(username, regionNumbers).then((nums) =>
-      setFeeApplicableRegionNumbers(new Set(nums))
-    );
-  }, [username, regions]);
 
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
@@ -100,9 +91,8 @@ export default function BulkActionPanel({
         <HarvestAllRow
           username={username}
           visibleRegions={visibleRegions}
-          harvestAck={harvestAck}
+          donation={donation}
           anyBusy={anyBusy}
-          feeApplicableRegionNumbers={feeApplicableRegionNumbers}
           onBusyChange={onHarvestBusy}
           onDryRun={setDryRun}
           onSuccess={afterSuccess}
@@ -121,10 +111,9 @@ export default function BulkActionPanel({
         <HarvestMythicsRow
           username={username}
           visibleRegions={visibleRegions}
-          mythicFeeAccepted={mythicFeeAccepted}
+          donation={donation}
           hasMythics={hasMythics}
           anyBusy={anyBusy}
-          feeApplicableRegionNumbers={feeApplicableRegionNumbers}
           onBusyChange={onMythicHarvestBusy}
           onDryRun={setDryRun}
           onSuccess={afterSuccess}
@@ -135,6 +124,8 @@ export default function BulkActionPanel({
           visibleRegions={visibleRegions}
           postHarvestStrategy={postHarvestStrategy}
           postHarvestExcludedResources={postHarvestExcludedResources}
+          sellPct={postHarvestSellPct}
+          poolPct={postHarvestPoolPct}
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
           onDryRun={setDryRun}

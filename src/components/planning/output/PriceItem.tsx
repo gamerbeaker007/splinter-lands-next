@@ -1,5 +1,4 @@
 import { Box, Tooltip, Typography } from "@mui/material";
-import React from "react";
 
 type Props = {
   title: string;

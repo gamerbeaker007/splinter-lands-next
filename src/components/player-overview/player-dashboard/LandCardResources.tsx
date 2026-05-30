@@ -141,7 +141,7 @@ export function LandCardResources({ playerOverview }: Props) {
   };
 
   const buildTooltip = (
-    card: LandCard,
+    _card: LandCard,
     resource: Resource,
     data: {
       percentage: number;

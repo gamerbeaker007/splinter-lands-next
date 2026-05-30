@@ -2,7 +2,6 @@
 
 import HarvestButton from "@/components/land-manager/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
-import { getFeeApplicableRegionNumbers } from "@/lib/backend/actions/land-manager/fee-actions";
 import {
   getRegionResourceBalance,
   getSplHarvestableResources,
@@ -12,6 +11,7 @@ import {
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { DonationConfig } from "@/types/landManager";
 import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
@@ -38,6 +38,7 @@ interface Props {
   username: string;
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
+  donation: DonationConfig;
   refreshKey?: number;
 }
 
@@ -118,14 +119,14 @@ function HarvestCostsCell({
 interface RowProps {
   region: SplProductionOverviewRegion;
   username: string;
-  applyFee: boolean;
+  donation: DonationConfig;
   externalRefreshKey?: number;
 }
 
 function RegionRow({
   region,
   username,
-  applyFee,
+  donation,
   externalRefreshKey,
 }: RowProps) {
   const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
@@ -217,7 +218,7 @@ function RegionRow({
             regionName={region.name}
             harvestable={harvestable}
             canAfford={canAfford}
-            applyFee={applyFee}
+            donation={donation}
             onSuccess={() => setRefreshKey((k) => k + 1)}
           />
         )}
@@ -232,23 +233,12 @@ export default function RegionOverview({
   username,
   regions,
   enabledRegions,
+  donation,
   refreshKey,
 }: Props) {
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
   );
-
-  const [feeApplicableRegionNumbers, setFeeApplicableRegionNumbers] = useState<
-    Set<number>
-  >(new Set());
-
-  useEffect(() => {
-    if (!username) return;
-    const regionNumbers = regions.map((r) => r.region_number);
-    getFeeApplicableRegionNumbers(username, regionNumbers).then((nums) =>
-      setFeeApplicableRegionNumbers(new Set(nums))
-    );
-  }, [username, regions]);
 
   if (visibleRegions.length === 0) {
     return (
@@ -278,7 +268,7 @@ export default function RegionOverview({
               key={region.region_uid}
               region={region}
               username={username}
-              applyFee={feeApplicableRegionNumbers.has(region.region_number)}
+              donation={donation}
               externalRefreshKey={refreshKey}
             />
           ))}

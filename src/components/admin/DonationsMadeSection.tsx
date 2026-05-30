@@ -1,4 +1,4 @@
-import { getFeesPaidByDay } from "@/lib/backend/actions/land-manager/log-actions";
+import { getDonationsPaidByDay } from "@/lib/backend/actions/land-manager/log-actions";
 import {
   Card,
   CardContent,
@@ -23,8 +23,8 @@ const fmt = (n: number) =>
     maximumFractionDigits: 3,
   });
 
-export default async function FeesPaidSection() {
-  const rows = await getFeesPaidByDay(30);
+export default async function DonationsMadeSection() {
+  const rows = await getDonationsPaidByDay(30);
 
   // Collect every resource symbol seen so we can render stable columns.
   const symbolSet = new Set<string>();
@@ -49,13 +49,13 @@ export default async function FeesPaidSection() {
               textUnderlineOffset: 3,
             }}
           >
-            Fees Received (daily totals)
+            Donations Made (daily totals)
           </Typography>
         </Tooltip>
 
         {rows.length === 0 ? (
           <Typography variant="body2" color="text.secondary">
-            No fee payments recorded yet.
+            No donations made yet.
           </Typography>
         ) : (
           <Stack spacing={2}>

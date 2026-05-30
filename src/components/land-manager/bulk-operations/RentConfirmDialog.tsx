@@ -88,9 +88,7 @@ export default function RentConfirmDialog({
   const itemsWithPicks = plan.items.filter((i) => i.picks.length > 0);
   const columns = buildConfirmColumns();
   const insufficientDec =
-    decBalance !== null &&
-    totals.total_dec > 0 &&
-    decBalance < totals.total_dec;
+    decBalance != null && totals.total_dec > 0 && decBalance < totals.total_dec;
 
   return (
     <Dialog open onClose={busy ? undefined : onCancel} maxWidth="lg" fullWidth>
@@ -112,7 +110,7 @@ export default function RentConfirmDialog({
             size="small"
             color="primary"
           />
-          {decBalance !== null && (
+          {decBalance != null && (
             <Chip
               label={`${fmtDec(decBalance)} DEC available`}
               size="small"

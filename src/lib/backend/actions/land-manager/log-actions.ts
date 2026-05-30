@@ -69,23 +69,26 @@ export async function recordHarvestLog(
   }
 }
 
-// ── Fees log ──────────────────────────────────────────────────────────────────
+// ── Donations log ─────────────────────────────────────────────────────────────
 
-export interface RecordFeesLogInput {
+export interface RecordDonationsLogInput {
   player: string;
-  paidFees: Record<string, number>; // fees broadcast & confirmed
-  unpaidFees: Record<string, number>; // fees owed but not paid (cancelled / failed)
-  feeError: string | null; // cancellation or error message when unpaidFees is non-empty
-  txIds: string[]; // tx ids from the fee broadcast(s)
+  paidDonations: Record<string, number>; // donations broadcast & confirmed
+  unpaidDonations: Record<string, number>; // donations owed but not paid (cancelled / failed)
+  donationError: string | null; // cancellation or error message when unpaidDonations is non-empty
+  txIds: string[]; // tx ids from the donation broadcast(s)
 }
 
 /**
- * Persist the fee-payment portion of a run. Writes paid/unpaid/error and
- * appends fee tx ids. Upserts onto the same (date, player) row recorded by
+ * Persist the donation-payment portion of a run. Writes paid/unpaid/error and
+ * appends donation tx ids. Upserts onto the same (date, player) row recorded by
  * recordHarvestLog so a single day for a player stays one row.
  */
-export async function recordFeesLog(input: RecordFeesLogInput): Promise<void> {
-  const { player, paidFees, unpaidFees, feeError, txIds } = input;
+export async function recordDonationsLog(
+  input: RecordDonationsLogInput
+): Promise<void> {
+  const { player, paidDonations, unpaidDonations, donationError, txIds } =
+    input;
   const date = today();
 
   const existing = await prisma.landHarvestLog.findUnique({
@@ -96,58 +99,60 @@ export async function recordFeesLog(input: RecordFeesLogInput): Promise<void> {
     await prisma.landHarvestLog.update({
       where: { date_player: { date, player } },
       data: {
-        fees_json: mergeAmounts(
-          existing.fees_json as Record<string, number>,
-          paidFees
+        donations_json: mergeAmounts(
+          existing.donations_json as Record<string, number>,
+          paidDonations
         ),
-        unpaid_fees_json: mergeAmounts(
-          existing.unpaid_fees_json as Record<string, number>,
-          unpaidFees
+        unpaid_donations_json: mergeAmounts(
+          existing.unpaid_donations_json as Record<string, number>,
+          unpaidDonations
         ),
         // Only overwrite the error when this run actually has one — keeps prior context if a later run was clean.
-        ...(feeError ? { fee_error: feeError } : {}),
-        fee_transactions: { push: txIds },
+        ...(donationError ? { donation_error: donationError } : {}),
+        donation_transactions: { push: txIds },
       },
     });
   } else {
-    // No harvest row yet — unusual, but write a stub so the fee data isn't lost.
+    // No harvest row yet — unusual, but write a stub so the donation data isn't lost.
     await prisma.landHarvestLog.create({
       data: {
         date,
         player,
         resources_json: {},
-        fees_json: paidFees,
-        unpaid_fees_json: unpaidFees,
-        fee_error: feeError,
+        donations_json: paidDonations,
+        unpaid_donations_json: unpaidDonations,
+        donation_error: donationError,
         harvest_transactions: [],
-        fee_transactions: txIds,
+        donation_transactions: txIds,
       },
     });
   }
 }
 
-// ── Fees-paid aggregation (admin) ─────────────────────────────────────────────
+// ── Donations-paid aggregation (admin) ────────────────────────────────────────
 
-export interface FeesPaidDayRow {
+export interface DonationsPaidDayRow {
   date: string; // ISO yyyy-mm-dd
   totals: Record<string, number>; // summed across all players for the date
   contributors: string[]; // distinct players who paid that day, alphabetical
 }
 
 /**
- * Aggregate paid fees across all players by date. Returns most recent days
+ * Aggregate paid donations across all players by date. Returns most recent days
  * first, limited to `limit` rows.
  */
-export async function getFeesPaidByDay(limit = 30): Promise<FeesPaidDayRow[]> {
+export async function getDonationsPaidByDay(
+  limit = 30
+): Promise<DonationsPaidDayRow[]> {
   const [harvestRows, mythicRows] = await Promise.all([
     prisma.landHarvestLog.findMany({
       orderBy: { date: "desc" },
-      select: { date: true, player: true, fees_json: true },
+      select: { date: true, player: true, donations_json: true },
       take: limit * 50,
     }),
     prisma.landMythicHarvestLog.findMany({
       orderBy: { date: "desc" },
-      select: { date: true, player: true, fees_json: true },
+      select: { date: true, player: true, donations_json: true },
       take: limit * 50,
     }),
   ]);
@@ -161,14 +166,14 @@ export async function getFeesPaidByDay(limit = 30): Promise<FeesPaidDayRow[]> {
 
   for (const row of allRows) {
     const key = row.date.toISOString().slice(0, 10);
-    const fees = row.fees_json as Record<string, number>;
+    const donations = row.donations_json as Record<string, number>;
     let bucket = byDate.get(key);
     if (!bucket) {
       bucket = { totals: {}, contributors: new Set() };
       byDate.set(key, bucket);
     }
     let paidAnything = false;
-    for (const [sym, amount] of Object.entries(fees ?? {})) {
+    for (const [sym, amount] of Object.entries(donations ?? {})) {
       if (amount <= 0) continue;
       bucket.totals[sym] = Number.parseFloat(
         ((bucket.totals[sym] ?? 0) + amount).toFixed(3)
@@ -308,11 +313,11 @@ export async function recordMythicHarvestLog(
   player: string,
   results: MythicHarvestResult[],
   txIds: string[],
-  fees?: {
-    paidFees: Record<string, number>;
-    unpaidFees: Record<string, number>;
-    feeError: string | null;
-    feeTxIds: string[];
+  donations?: {
+    paidDonations: Record<string, number>;
+    unpaidDonations: Record<string, number>;
+    donationError: string | null;
+    donationTxIds: string[];
   }
 ): Promise<void> {
   const date = today();
@@ -321,12 +326,14 @@ export async function recordMythicHarvestLog(
     where: { date_player: { date, player } },
   });
 
-  const feeData = fees
+  const donationData = donations
     ? {
-        fees_json: fees.paidFees as unknown as Prisma.InputJsonValue,
-        unpaid_fees_json: fees.unpaidFees as unknown as Prisma.InputJsonValue,
-        fee_error: fees.feeError,
-        fee_transactions: fees.feeTxIds,
+        donations_json:
+          donations.paidDonations as unknown as Prisma.InputJsonValue,
+        unpaid_donations_json:
+          donations.unpaidDonations as unknown as Prisma.InputJsonValue,
+        donation_error: donations.donationError,
+        donation_transactions: donations.donationTxIds,
       }
     : {};
 
@@ -337,9 +344,9 @@ export async function recordMythicHarvestLog(
         runs: { increment: 1 },
         results_json: results as unknown as Prisma.InputJsonValue,
         transactions: { push: txIds },
-        ...(fees && {
-          ...feeData,
-          fee_transactions: { push: fees.feeTxIds },
+        ...(donations && {
+          ...donationData,
+          donation_transactions: { push: donations.donationTxIds },
         }),
       },
     });
@@ -350,7 +357,7 @@ export async function recordMythicHarvestLog(
         player,
         results_json: results as unknown as Prisma.InputJsonValue,
         transactions: txIds,
-        ...feeData,
+        ...donationData,
       },
     });
   }
@@ -362,11 +369,11 @@ export async function getTodayLogs(): Promise<{
   harvest: {
     runs: number;
     resources_json: unknown;
-    fees_json: unknown;
-    unpaid_fees_json: unknown;
-    fee_error: string | null;
+    donations_json: unknown;
+    unpaid_donations_json: unknown;
+    donation_error: string | null;
     harvest_transactions: string[];
-    fee_transactions: string[];
+    donation_transactions: string[];
   } | null;
   makeHarvestable: {
     runs: number;
@@ -381,11 +388,11 @@ export async function getTodayLogs(): Promise<{
   mythicHarvest: {
     runs: number;
     results_json: unknown;
-    fees_json: unknown;
-    unpaid_fees_json: unknown;
-    fee_error: string | null;
+    donations_json: unknown;
+    unpaid_donations_json: unknown;
+    donation_error: string | null;
     transactions: string[];
-    fee_transactions: string[];
+    donation_transactions: string[];
   } | null;
   rental: {
     runs: number;
@@ -453,11 +460,11 @@ export async function getTodayLogs(): Promise<{
       ? {
           runs: harvest.runs,
           resources_json: harvest.resources_json,
-          fees_json: harvest.fees_json,
-          unpaid_fees_json: harvest.unpaid_fees_json,
-          fee_error: harvest.fee_error,
+          donations_json: harvest.donations_json,
+          unpaid_donations_json: harvest.unpaid_donations_json,
+          donation_error: harvest.donation_error,
           harvest_transactions: harvest.harvest_transactions,
-          fee_transactions: harvest.fee_transactions,
+          donation_transactions: harvest.donation_transactions,
         }
       : null,
     makeHarvestable: makeHarvestable
@@ -478,11 +485,11 @@ export async function getTodayLogs(): Promise<{
       ? {
           runs: mythicHarvest.runs,
           results_json: mythicHarvest.results_json,
-          fees_json: mythicHarvest.fees_json,
-          unpaid_fees_json: mythicHarvest.unpaid_fees_json,
-          fee_error: mythicHarvest.fee_error,
+          donations_json: mythicHarvest.donations_json,
+          unpaid_donations_json: mythicHarvest.unpaid_donations_json,
+          donation_error: mythicHarvest.donation_error,
           transactions: mythicHarvest.transactions,
-          fee_transactions: mythicHarvest.fee_transactions,
+          donation_transactions: mythicHarvest.donation_transactions,
         }
       : null,
     rental: rental
@@ -557,17 +564,4 @@ export async function recordRentalLog(
       },
     });
   }
-}
-
-// ── Acknowledge harvest ───────────────────────────────────────────────────────
-
-export async function acknowledgeHarvest(): Promise<void> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) return;
-
-  await prisma.landManagerConfig.upsert({
-    where: { player: auth.username },
-    update: { fee_accepted: true },
-    create: { player: auth.username, enabled_regions: [], fee_accepted: true },
-  });
 }

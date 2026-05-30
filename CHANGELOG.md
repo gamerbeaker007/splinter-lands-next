@@ -14,6 +14,57 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.7.0] - 2026-05-29
+
+### Changed
+
+#### Land Manager — Post-harvest strategy: configurable sell/pool split
+
+The three previous strategies (`accumulate`, `sell_for_dec`, `add_to_pool`) are consolidated
+into two: **Accumulate** and **Sell & Pool**.
+
+**Sell & Pool** lets you set independent percentages for selling resources to DEC and adding
+resources to the liquidity pool (DEC comes from your wallet). The remainder is accumulated.
+
+- Two sliders in Config dialog (5 % step, 0–100 % each).
+- Phase 1: sell ops; Phase 2: add-liquidity ops with re-fetched prices.
+- **DEC balance protection**: pool amounts are scaled down proportionally when wallet DEC
+  (plus sell proceeds) would be insufficient. Warning shown with a split-adjustment tip.
+- Dry run reports estimated DEC needed, current balance, and expected sell proceeds.
+
+#### Land Manager — Service fee replaced with per-player donation config
+
+The hardcoded 2 % app-level service fee and server-side exemption list (`FEE_EXEMPT_USERS`,
+`FEE_EXEMPT_REGIONS`) have been removed. Donation participation is now fully opt-out and
+configurable per player.
+
+- **Donation Config** section in the Config dialog: toggle on/off, set percentage (default 2 %),
+  and set per-symbol daily caps (default: GRAIN 40 000 / WOOD 10 000 / STONE 4 000 / IRON 1 000).
+- Donation recipient (`beaker007`) and region remain the defaults but the transfer op now
+  accepts `toPlayer` dynamically, making future multi-recipient support straightforward.
+- The `HarvestConfirmDialog` and `MythicConfirmDialog` (one-time fee-acceptance flows) are removed.
+- Admin page: `FeesPaidSection` replaced by `DonationsMadeSection` (shows received amounts after
+  the 10 % Splinterlands transport fee).
+- Harvest log DB columns renamed: `fees_json → donations_json`, `fee_transactions → donation_transactions`, etc.
+
+### Added
+
+- `donation_enabled`, `donation_pct`, `donation_daily_caps_json` columns on `land_manager_config`.
+- `post_harvest_sell_pct`, `post_harvest_pool_pct` columns on `land_manager_config`.
+- `saveDonationConfig` server action for persisting donation settings.
+- `usePayDonations` hook encapsulating the full donation broadcast + logging flow.
+- `DonationsMadeSection` admin component (daily totals table, shows net received amount).
+- Warning alert in Process Resources row when pool amounts are scaled down due to low DEC.
+
+### Removed
+
+- `feeExemptionService` and `FEE_EXEMPT_USERS` / `FEE_EXEMPT_REGIONS` env vars.
+- `acknowledgeHarvest` / `saveMythicFeeAccepted` server actions.
+- `fee_accepted`, `mythic_fee_accepted` columns from `land_manager_config`.
+- Unused and dead code (cleanup)
+
+---
+
 ## [v1.6.0] - 2026-05-25
 
 ### Added

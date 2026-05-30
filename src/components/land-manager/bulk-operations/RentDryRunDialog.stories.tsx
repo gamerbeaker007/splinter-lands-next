@@ -4,7 +4,7 @@ import {
   RentalPlan,
   RentalPlanItem,
   RentalPlanPick,
-} from "@/types/landManager";
+} from "../../../types/landManager";
 import type { Meta, StoryObj } from "@storybook/react";
 import RentDryRunDialog from "./RentDryRunDialog";
 
@@ -37,6 +37,7 @@ function makePlot(
     worker_count: 0,
     max_workers: 5,
     empty_slots: emptySlots,
+    listed_for_sale: false,
     is_powered: true,
     biome_modifiers: {
       fire: (region + tract) % 3 === 0 ? 0.25 : 0,
@@ -128,6 +129,7 @@ const meta: Meta<typeof RentDryRunDialog> = {
   title: "Land Manager/Bulk Operations/RentDryRunDialog",
   component: RentDryRunDialog,
   args: {
+    decBalance: 5000,
     onClose: () => {},
   },
 };
