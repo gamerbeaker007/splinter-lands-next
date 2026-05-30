@@ -177,7 +177,7 @@ export default function TodayPanel({
           display="block"
           mt={0.5}
         >
-          Donations paid:{" "}
+          Donations made:{" "}
           {Object.entries(donations)
             .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
             .join(", ")}
@@ -190,7 +190,7 @@ export default function TodayPanel({
           display="block"
           mt={0.5}
         >
-          Unpaid donations:{" "}
+          Donations not sent:{" "}
           {Object.entries(unpaidDonations)
             .map(([sym, amt]) => `${sym} ${amt.toFixed(3)}`)
             .join(", ")}

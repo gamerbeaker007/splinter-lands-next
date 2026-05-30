@@ -80,7 +80,7 @@ export function usePayDonations(username: string): UsePayDonations {
         alreadyPaid = await getTodayPaidDonations(username);
       } catch {
         log.push(
-          "Could not read today's paid donations - daily cap not applied this run."
+          "Could not read today's donation history — daily cap not applied this run."
         );
       }
 
