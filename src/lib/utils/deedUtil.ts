@@ -9,6 +9,10 @@ export function getManageLinkPlot(regionNumber: number, plotId: number) {
   return `https://splinterlands.com/land/overview/praetoria/${regionNumber}/${plotId}`;
 }
 
+export function getWorksiteLink(regionNumber: number, plotId: number) {
+  return `https://splinterlands.com/land/overview/praetoria/${regionNumber}/${plotId}/worksite`;
+}
+
 export function getHarvestRegion(region_number: number) {
   return `https://splinterlands.com/land/praetoria/${region_number}/production/claim`;
 }

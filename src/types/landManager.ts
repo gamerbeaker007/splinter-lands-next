@@ -124,7 +124,16 @@ export interface RentalEligiblePlot {
   tract_number: number;
   region_uid: string;
   region_number: number;
-  resource_symbol: string | null;
+  /** May be null for undeveloped plots. */
+  worksite: string | null;
+  /**
+   * Deed resources this land can produce, parsed from deed.land_stats.resources.
+   * Use as a fallback when worksite is null (unpowered / undeveloped plots).
+   */
+  resources: string[];
+  rarity: string | null;
+  deed_type: string | null;
+  plot_status: string | null;
   worker_count: number;
   max_workers: number;
   empty_slots: number;

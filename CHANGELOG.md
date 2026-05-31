@@ -14,6 +14,27 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.8.0] - 2026-05-31
+
+### Added
+
+#### Land Manager — Worksites tab
+
+A new **Worksites** tab in the Land Manager lets you browse and switch worksites across all your plots.
+
+- **List view / Grouped-by-region view** — toggle between a flat list and accordion-style region groups.
+- **Live data** — always fetches fresh data from the Splinterlands API (no cache).
+- **Land filter** — the same filter drawer used in Region Overview (regions, tracts, plots, rarity, deed type, plot status, resource, worksite, PP ranges) is available on the right side. The player filter is omitted since the tab always shows the signed-in player's plots.
+- **Per-plot worksite card** — each card shows:
+  - Plot reference (region/tract/plot), rarity, terrain type, plot status, and magic type.
+  - Current worksite icon + name, and a *Developed* badge when fully operational.
+  - **Under construction** section: progress bar with time remaining and what is being built. A **Cancel construction** button triggers the `cancel_construction` Hive op via Keychain.
+  - **Switch worksite** buttons — only terrains that are valid for the plot's deed type are shown (`allowedTerrainsByWorksite`). Worksites that receive a production bonus for the plot's status (`deedResourceBoostRules`) are highlighted with a ⭐ badge.
+- **Broadcast via Keychain** — both construction and cancel ops use the player's posting key through Hive Keychain, consistent with the harvest flow.
+- New constants added to `primitives.ts`: `worksiteConstructionOpName` (op → Hive custom_json id) and `worksiteSelectIconMap` (picker button images).
+- New select-icon URLs added to `statics_icon_urls.ts` (`land_worksite_select_*`).
+- New op builders in `opBuilders.ts`: `buildWorksiteConstructionOp`, `buildCancelConstructionOp`.
+
 ## [v1.7.1] - 2026-05-30
 
 ### Added

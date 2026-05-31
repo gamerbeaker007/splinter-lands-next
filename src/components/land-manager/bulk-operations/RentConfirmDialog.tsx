@@ -50,8 +50,14 @@ function buildConfirmColumns(): RentalPlotColumn[] {
       header: "Resource",
       render: (item) => (
         <Typography variant="caption">
-          {item.plot.resource_symbol ?? "—"}
+          {item.plot.resources[0] ?? "—"}
         </Typography>
+      ),
+    },
+    {
+      header: "Worksite",
+      render: (item) => (
+        <Typography variant="caption">{item.plot.worksite ?? "—"}</Typography>
       ),
     },
     {

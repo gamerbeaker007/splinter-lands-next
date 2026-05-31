@@ -6,6 +6,7 @@ import {
 } from "@/lib/backend/api/spl/spl-land-api";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
+import { parseLandStatsResources } from "@/lib/filters";
 import { isRentedByPlayer } from "@/lib/utils/cardUtil";
 import {
   DEFAULT_RENTAL_CONFIG,
@@ -35,6 +36,9 @@ export async function getRentalEligibility(
   const stakingByDeed = new Map(
     regionData.staking_details.map((s) => [s.deed_uid, s])
   );
+  const worksiteByDeed = new Map(
+    regionData.worksite_details.map((s) => [s.deed_uid, s])
+  );
   const enabledSet = new Set(enabledRegions);
 
   const eligible: RentalEligiblePlot[] = [];
@@ -44,6 +48,7 @@ export async function getRentalEligibility(
     if (!enabledSet.has(deed.region_number)) continue;
 
     const staking = stakingByDeed.get(deed.deed_uid);
+    const worksiteDetails = worksiteByDeed.get(deed.deed_uid);
     if (!staking) continue;
 
     const maxWorkers = staking.max_workers_allowed ?? 0;
@@ -56,7 +61,11 @@ export async function getRentalEligibility(
       tract_number: deed.tract_number,
       region_uid: deed.region_uid,
       region_number: deed.region_number,
-      resource_symbol: deed.resource_symbol ?? null,
+      worksite: worksiteDetails?.worksite_type ?? null,
+      resources: parseLandStatsResources(deed.land_stats),
+      rarity: deed.rarity ?? null,
+      deed_type: deed.deed_type ?? null,
+      plot_status: deed.plot_status ?? null,
       worker_count: workerCount,
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,

@@ -14,6 +14,14 @@ export const land_keep_icon_url = `https://files.peakd.com/file/peakd-hive/beake
 export const land_castle_icon_url = `https://files.peakd.com/file/peakd-hive/beaker007/23uFKKCjmeLHRVFz2EKnf8EazaPX7Ep1RhTiqWS6Hbv2HTLnsW1LFLg2jmTafgQQDdkEy.png`;
 export const land_under_construction_icon_url = `https://files.peakd.com/file/peakd-hive/beaker007/AJg3Ws5boAJF5cdekBgVCzVRbBcLKjVuDYqXqTLAbgo6XoAVXTGuVYh8Ggn22S1.png`;
 
+export const land_worksite_select_grain_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_grain.jpg`;
+export const land_worksite_select_wood_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_wood.jpg`;
+export const land_worksite_select_iron_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_iron.jpg`;
+export const land_worksite_select_stone_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_stone.jpg`;
+export const land_worksite_select_research_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_research.jpg`;
+export const land_worksite_select_aura_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_aura.jpg`;
+export const land_worksite_select_sps_icon_url = `${WEB_URL}website/land/worksite/select/img_worksite-select_sps.jpg`;
+
 export const resource_grain_icon_url = `${WEB_URL}website/land/resources/grain.png`;
 export const resource_stone_icon_url = `${WEB_URL}website/land/resources/stone_500.webp`;
 export const resource_wood_icon_url = `${WEB_URL}website/land/resources/wood_500.webp`;

@@ -11,9 +11,10 @@ import {
 } from "@mui/material";
 import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
+import { PPRangeFilter } from "./PPRangeFilter";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
-import { PPRangeFilter } from "./PPRangeFilter";
+import FilterWorksiteGroup from "./worksite/FilterWorksiteGroup";
 
 type Props = {
   options: FilterInput;
@@ -63,6 +64,7 @@ export default function AttributeFilter({ options }: Props) {
 
       <FilterRarityGroup options={options.filter_rarity ?? []} />
       <FilterResourceGroup options={options.filter_resources ?? []} />
+      <FilterWorksiteGroup options={options.filter_worksites ?? []} />
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
 

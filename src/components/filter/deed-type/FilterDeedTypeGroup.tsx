@@ -6,6 +6,7 @@ type Props = {
 };
 
 export default function FilterDeedTypeGroup({ options }: Props) {
+  if (options.length === 0) return null;
   return (
     <>
       <Typography variant="body2">Geography:</Typography>

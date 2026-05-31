@@ -99,7 +99,7 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
           flexShrink: 0,
           "& .MuiDrawer-paper": {
             width: 300,
-            top: "100px",
+            top: "55px",
             height: "calc(100vh - 100px)",
             boxSizing: "border-box",
             p: 2,

@@ -1,6 +1,26 @@
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
+import { RentalEligiblePlot } from "@/types/landManager";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
+
+/**
+ * Parse deed.land_stats (Json? — may be a string or already an object) into a list
+ * of upper-cased resource symbols, e.g. ["WOOD"]. Returns [] on any parse failure.
+ */
+export function parseLandStatsResources(landStats: unknown): string[] {
+  if (!landStats) return [];
+  try {
+    const obj =
+      typeof landStats === "string" ? JSON.parse(landStats) : landStats;
+    const resources = (obj as Record<string, unknown>)?.resources;
+    if (Array.isArray(resources)) {
+      return resources.map((r) => String(r).toUpperCase());
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return [];
+}
 
 function isInFilter(
   filter: ReadonlyArray<string | number> | undefined,
@@ -40,10 +60,9 @@ export function filterDeeds(
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
     if (!isInFilter(filters.filter_plots, deed.plot_number)) return false;
     if (!isInFilter(filters.filter_rarity, deed.rarity)) return false;
-    if (
-      !isInFilter(filters.filter_resources, deed.worksiteDetail?.token_symbol)
-    )
-      return false;
+    const effectiveResource =
+      deed.resource_symbol ?? parseLandStatsResources(deed.land_stats)[0];
+    if (!isInFilter(filters.filter_resources, effectiveResource)) return false;
     if (!isInFilter(filters.filter_worksites, deed.worksite_type)) return false;
     if (!isInFilter(filters.filter_deed_type, deed.deed_type)) return false;
     if (!isInFilter(filters.filter_plot_status, deed.plot_status)) return false;
@@ -146,4 +165,55 @@ function getSortValue(
     default:
       return undefined;
   }
+}
+
+/**
+ * Client-side filter for RentalEligiblePlot lists.
+ * Mirrors the filterDeeds logic but operates on the rental-specific type.
+ * Centralized here to avoid duplicating filter logic across components.
+ */
+export function filterRentalPlots(
+  plots: RentalEligiblePlot[],
+  filters: FilterInput
+): RentalEligiblePlot[] {
+  return plots.filter((p) => {
+    if (
+      filters.filter_regions?.length &&
+      !filters.filter_regions.includes(p.region_number)
+    )
+      return false;
+
+    // Natural resource: from land_stats (the canonical "what this land produces")
+    const resource = p.resources[0] ?? undefined;
+    if (
+      filters.filter_resources?.length &&
+      !filters.filter_resources.includes(resource ?? "")
+    )
+      return false;
+
+    // Worksite: the built structure type (e.g. "Grain Farm")
+    if (
+      filters.filter_worksites?.length &&
+      !filters.filter_worksites.includes(p.worksite ?? "")
+    )
+      return false;
+
+    if (
+      filters.filter_rarity?.length &&
+      !filters.filter_rarity.includes(p.rarity ?? "")
+    )
+      return false;
+    if (
+      filters.filter_deed_type?.length &&
+      !filters.filter_deed_type.includes(p.deed_type ?? "")
+    )
+      return false;
+    if (
+      filters.filter_plot_status?.length &&
+      !filters.filter_plot_status.includes(p.plot_status ?? "")
+    )
+      return false;
+
+    return true;
+  });
 }

@@ -25,6 +25,13 @@ import {
   land_quarry_icon_url,
   land_research_hut_icon_url,
   land_shard_mine_icon_url,
+  land_worksite_select_aura_icon_url,
+  land_worksite_select_grain_icon_url,
+  land_worksite_select_iron_icon_url,
+  land_worksite_select_research_icon_url,
+  land_worksite_select_sps_icon_url,
+  land_worksite_select_stone_icon_url,
+  land_worksite_select_wood_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CardSetNameLandValid } from "../editions";
 import { PlotPlannerData } from "./domain";
@@ -324,9 +331,34 @@ export const allowedTerrainsByWorksite: Partial<
   KEEP: undefined,
 };
 
-export const deedResourceBoostRules: Record<PlotStatus, WorksiteType[]> = {
+export const deedResourceBoostRules: Partial<
+  Record<PlotStatus, WorksiteType[]>
+> = {
   magical: ["Research Hut", "Aura Lab"],
   occupied: ["Shard Mine", "Aura Lab"],
+};
+
+/** Maps WorksiteType to the Hive custom_json op name used for construction. */
+export const worksiteConstructionOpName: Partial<Record<WorksiteType, string>> =
+  {
+    "Grain Farm": "worksite_grain_construction",
+    "Logging Camp": "worksite_wood_construction",
+    "Ore Mine": "worksite_iron_construction",
+    Quarry: "worksite_stone_construction",
+    "Research Hut": "worksite_research_construction",
+    "Aura Lab": "worksite_aura_construction",
+    "Shard Mine": "worksite_sps_construction",
+  };
+
+/** Icon map for the worksite-selection buttons (picker UI). */
+export const worksiteSelectIconMap: Partial<Record<WorksiteType, string>> = {
+  "Grain Farm": land_worksite_select_grain_icon_url,
+  "Logging Camp": land_worksite_select_wood_icon_url,
+  "Ore Mine": land_worksite_select_iron_icon_url,
+  Quarry: land_worksite_select_stone_icon_url,
+  "Research Hut": land_worksite_select_research_icon_url,
+  "Aura Lab": land_worksite_select_aura_icon_url,
+  "Shard Mine": land_worksite_select_sps_icon_url,
 };
 
 export const CARD_BLOODLINES = [
