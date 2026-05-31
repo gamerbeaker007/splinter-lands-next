@@ -146,8 +146,7 @@ export default function DonationSettingsSection({ donation, onChange }: Props) {
                 spacing={0.5}
                 alignItems="flex-start"
                 mt={1}
-              >
-              </Stack>
+              ></Stack>
             </Box>
           </Stack>
         </Stack>
@@ -155,20 +154,58 @@ export default function DonationSettingsSection({ donation, onChange }: Props) {
         {/* How donations work — info box */}
         <Paper variant="outlined" sx={{ mt: 1.5, p: 1.5, borderRadius: 1 }}>
           <Stack direction="row" spacing={0.75} alignItems="flex-start" mb={1}>
-            <InfoOutlined sx={{ fontSize: 14, color: "text.secondary", mt: 0.25, flexShrink: 0 }} />
-            <Typography variant="caption" fontWeight="bold" color="text.secondary">
+            <InfoOutlined
+              sx={{
+                fontSize: 14,
+                color: "text.secondary",
+                mt: 0.25,
+                flexShrink: 0,
+              }}
+            />
+            <Typography
+              variant="caption"
+              fontWeight="bold"
+              color="text.secondary"
+            >
               How donations work
             </Typography>
           </Stack>
           <Stack spacing={0.75} sx={{ pl: 2.5 }}>
-            {([
-              <><strong>10% land tax</strong> (Castles &amp; Keeps) is deducted by the game before harvest — donation % is applied to the post-tax harvestable amount.</>,
-              <><strong>Daily cap is cumulative across all regions</strong>. If Region A uses 38,000 of a 40,000 GRAIN cap, Region B&apos;s donation is trimmed to the remaining 2,000 — not dropped entirely.</>,
-              <>Donations below <strong>5 units</strong> per resource per region are automatically skipped as too small to be worth the transaction cost.</>,
-            ] as React.ReactNode[]).map((text, i) => (
+            {(
+              [
+                <>
+                  <strong>10% land tax</strong> (Castles &amp; Keeps) is
+                  deducted by the game before harvest — donation % is applied to
+                  the post-tax harvestable amount.
+                </>,
+                <>
+                  <strong>Daily cap is cumulative across all regions</strong>.
+                  If Region A uses 38,000 of a 40,000 GRAIN cap, Region B&apos;s
+                  donation is trimmed to the remaining 2,000 — not dropped
+                  entirely.
+                </>,
+                <>
+                  Donations below <strong>5 units</strong> per resource per
+                  region are automatically skipped as too small to be worth the
+                  transaction cost.
+                </>,
+              ] as React.ReactNode[]
+            ).map((text, i) => (
               <Stack key={i} direction="row" spacing={0.75}>
-                <Typography variant="caption" color="text.secondary" sx={{ flexShrink: 0, lineHeight: 1.6 }}>•</Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.6 }}>{text}</Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ flexShrink: 0, lineHeight: 1.6 }}
+                >
+                  •
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ lineHeight: 1.6 }}
+                >
+                  {text}
+                </Typography>
               </Stack>
             ))}
           </Stack>
