@@ -14,6 +14,21 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.7.1] - 2026-05-30
+
+### Added
+
+#### Land Manager — Swap profitability analysis in Region Overview
+
+A new **Swap Analysis** column in the Region Overview table highlights when it would be more profitable to swap GRAIN via the AMM than to harvest a natural resource (WOOD, STONE, IRON) directly.
+
+- For each harvestable non-GRAIN resource, computes the two-hop AMM swap (GRAIN → DEC → resource) using live pool data and compares the output to the harvestable amount.
+- When swapping yields more, a warning icon labelled with the resource symbol is shown. Hovering reveals a tooltip, e.g. *"Harvest IRON: 600 (consumes 10 000 GRAIN) | Swap 10 000 GRAIN → 800 IRON (swap is better)"*.
+- A ✓ indicator is shown when all resources are profitable to harvest.
+- A new **Open harvest page** icon button in the Action column links directly to the region's harvest page on Splinterlands (`/land/praetoria/{region}/production/claim`).
+
+---
+
 ## [v1.7.0] - 2026-05-29
 
 ### Changed
