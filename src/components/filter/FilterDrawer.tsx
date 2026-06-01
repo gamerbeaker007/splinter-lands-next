@@ -1,12 +1,13 @@
 "use client";
 
 import { getAvailableFilterValues } from "@/lib/backend/actions/filter/filter-actions";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { EnableFilterOptions, FilterInput } from "@/types/filters";
 import { Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AttributeFilter from "./AttributeFilter";
 import LocationFilter from "./LocationFilter";
 import PlayerFilter from "./PlayerFilter";
@@ -22,6 +23,7 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
     null
   );
   const [drawerOpen, setDrawerOpen] = useState(true);
+  const { locationOverride } = useFilters();
 
   useEffect(() => {
     (async () => {
@@ -41,9 +43,17 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
     })();
   }, []);
 
+  // Merge any location override on top of the fetched (site-wide) options.
+  // Categorical filters always use the fetched options.
+  const effectiveOptions = useMemo<FilterInput | null>(() => {
+    if (!availableOptions) return null;
+    if (!locationOverride) return availableOptions;
+    return { ...availableOptions, ...locationOverride };
+  }, [availableOptions, locationOverride]);
+
   const toggleDrawer = () => setDrawerOpen((prev) => !prev);
 
-  if (!availableOptions) return <div>Loading filters...</div>;
+  if (!effectiveOptions) return <div>Loading filters...</div>;
 
   return (
     <>
@@ -51,7 +61,7 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
       <Box
         sx={{
           position: "fixed",
-          top: "100px",
+          top: "55px",
           right: drawerOpen ? 300 : 0,
           zIndex: 1301,
           height: 100,
@@ -100,7 +110,7 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
           "& .MuiDrawer-paper": {
             width: 300,
             top: "55px",
-            height: "calc(100vh - 100px)",
+            height: "calc(100vh - 55px)",
             boxSizing: "border-box",
             p: 2,
           },
@@ -115,20 +125,20 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
           }}
         >
           {(filtersEnabled?.regions !== false ||
-            filtersEnabled.tracts !== false ||
-            filtersEnabled.plots !== false) && (
+            filtersEnabled?.tracts !== false ||
+            filtersEnabled?.plots !== false) && (
             <LocationFilter
-              options={availableOptions}
+              options={effectiveOptions}
               showRegion={filtersEnabled?.regions ?? true}
               showTract={filtersEnabled?.tracts ?? true}
               showPlot={filtersEnabled?.plots ?? true}
             />
           )}
           {filtersEnabled?.attributes !== false && (
-            <AttributeFilter options={availableOptions} />
+            <AttributeFilter options={effectiveOptions} />
           )}
           {filtersEnabled?.player !== false && (
-            <PlayerFilter options={availableOptions} />
+            <PlayerFilter options={effectiveOptions} />
           )}
 
           {filtersEnabled?.sorting !== false && <Sorting />}

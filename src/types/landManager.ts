@@ -1,6 +1,7 @@
 // === Dry-run result (shared across bulk action hooks) ===
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
+import { DeedComplete } from "@/types/deed";
 
 export interface DryRunResult {
   title: string;
@@ -117,28 +118,16 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
 };
 
 // === Rental eligibility (computed from region data) ===
-export interface RentalEligiblePlot {
-  deed_uid: string;
-  plot_id: number;
-  plot_number: number;
-  tract_number: number;
-  region_uid: string;
-  region_number: number;
-  /** May be null for undeveloped plots. */
-  worksite: string | null;
-  /**
-   * Deed resources this land can produce, parsed from deed.land_stats.resources.
-   * Use as a fallback when worksite is null (unpowered / undeveloped plots).
-   */
-  resources: string[];
-  rarity: string | null;
-  deed_type: string | null;
-  plot_status: string | null;
+/**
+ * A deed plus the staking-derived fields the rental flow needs. Carries the
+ * full DeedComplete so the shared `filterDeeds` and the standard filter UI
+ * work directly on it — no parallel filter implementation needed.
+ */
+export interface RentalEligiblePlot extends DeedComplete {
   worker_count: number;
   max_workers: number;
   empty_slots: number;
   is_powered: boolean;
-  listed_for_sale: boolean;
   biome_modifiers: BiomeModifiers;
 }
 

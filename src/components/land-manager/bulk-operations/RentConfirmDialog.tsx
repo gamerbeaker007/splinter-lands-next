@@ -5,6 +5,7 @@ import RentalPlotTable, {
   RentalPlotColumn,
 } from "@/components/land-manager/bulk-operations/RentalPlotTable";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
+import { parseLandStatsResources } from "@/lib/filters";
 import { RentalPlanItem } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
@@ -50,14 +51,18 @@ function buildConfirmColumns(): RentalPlotColumn[] {
       header: "Resource",
       render: (item) => (
         <Typography variant="caption">
-          {item.plot.resources[0] ?? "—"}
+          {item.plot.resource_symbol ??
+            parseLandStatsResources(item.plot.land_stats)[0] ??
+            "—"}
         </Typography>
       ),
     },
     {
       header: "Worksite",
       render: (item) => (
-        <Typography variant="caption">{item.plot.worksite ?? "—"}</Typography>
+        <Typography variant="caption">
+          {item.plot.worksite_type ?? "—"}
+        </Typography>
       ),
     },
     {

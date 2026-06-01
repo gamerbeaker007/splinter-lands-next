@@ -349,8 +349,10 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       {/* ── Rental tab ──────────────────────────────────────────────────── */}
       {activeTab === 1 && (
         <FilterProvider>
+          {/* player=null → categorical filters show site-wide options;
+              RentalOverview narrows regions/tracts/plots via locationOverride. */}
           <FilterDrawer
-            player={auth.username ?? null}
+            player={null}
             filtersEnabled={{
               regions: true,
               attributes: true,

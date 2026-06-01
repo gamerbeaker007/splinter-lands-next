@@ -4,7 +4,7 @@ import {
   RentalPlan,
   RentalPlanItem,
   RentalPlanPick,
-} from "../../../types/landManager";
+} from "@/types/landManager";
 import type { Meta, StoryObj } from "@storybook/react";
 import RentDryRunDialog from "./RentDryRunDialog";
 
@@ -27,17 +27,54 @@ function makePlot(
   emptySlots = 5
 ): RentalEligiblePlot {
   return {
+    // ── Deed fields (only the ones referenced by the dialog UI / filters) ──
     deed_uid: `${region}-${tract}-${plot}`,
+    map_name: "praetoria",
+    region_id: region,
+    tract_id: tract,
     plot_id: region * 10000 + tract * 100 + plot,
     plot_number: plot,
     tract_number: tract,
     region_uid: `region-${region}`,
     region_number: region,
+    territory: "centerra",
+    resource_id: null,
     resource_symbol: RESOURCES[(region + tract + plot) % RESOURCES.length],
+    magic_type: null,
+    stats: null,
+    player: "story-user",
+    created_date: null,
+    listed: false,
+    lock_days: null,
+    unlock_date: null,
+    in_use: null,
+    deed_type: null,
+    land_stats: null,
+    region_name: `Region ${region}`,
+    market_updated_date: null,
+    market_id: null,
+    listing_price: null,
+    market_listing_id: null,
+    market_listing_status_id: null,
+    castle: null,
+    keep: null,
+    rarity: null,
+    plot_status: null,
+    hex_code: null,
+    tax_rate: null,
+    item_detail_id: null,
+    created_block_num: null,
+    created_tx: null,
+    worksite_type: "Grain Farm",
+    time_crystal_value: null,
+    rarity_sort_value: null,
+    is_construction: false,
+    worksiteDetail: null,
+    stakingDetail: null,
+    // ── Staking-derived fields ──
     worker_count: 0,
     max_workers: 5,
     empty_slots: emptySlots,
-    listed_for_sale: false,
     is_powered: true,
     biome_modifiers: {
       fire: (region + tract) % 3 === 0 ? 0.25 : 0,

@@ -184,6 +184,8 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
   // worksiteDetail != null && is_construction == false → developed (buttons enabled)
   const isActivelyBuilding = deed.worksiteDetail?.is_construction === true;
   const isUndeveloped = !deed.worksiteDetail;
+  // Mythic deeds (KEEP / CASTLE) have a fixed worksite — no swap possible.
+  const isMythic = deed.plot_status === "kingdom";
   const currentWorksite =
     (deed.worksiteDetail?.worksite_type as WorksiteType | null | undefined) ??
     null;
@@ -495,20 +497,31 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
         )}
         <Divider orientation="vertical" flexItem sx={{ mx: 0.5 }} />
 
-        {/* 5. Worksite selector buttons — takes remaining space, scrollable */}
+        {/* 5. Worksite selector buttons — takes remaining space, scrollable.
+            Mythic (kingdom) deeds have a fixed worksite, so no swap UI. */}
         <Box sx={{ flex: 1, minWidth: 0, overflowX: "auto" }}>
-          <Stack direction="row" gap={0.5} sx={{ flexWrap: "nowrap" }}>
-            {allowedWorksites.map((ws) => (
-              <WorksiteButton
-                key={ws}
-                worksite={ws}
-                isBeingBuilt={isActivelyBuilding && buildingWorksite === ws}
-                hasBonus={boostWorksites.includes(ws)}
-                disabled={action.busy || isActivelyBuilding}
-                onClick={() => handleBuildWorksite(ws)}
-              />
-            ))}
-          </Stack>
+          {isMythic ? (
+            <Typography
+              variant="caption"
+              color="text.disabled"
+              sx={{ fontStyle: "italic", fontSize: "0.65rem" }}
+            >
+              Mythic deed — No worksite
+            </Typography>
+          ) : (
+            <Stack direction="row" gap={0.5} sx={{ flexWrap: "nowrap" }}>
+              {allowedWorksites.map((ws) => (
+                <WorksiteButton
+                  key={ws}
+                  worksite={ws}
+                  isBeingBuilt={isActivelyBuilding && buildingWorksite === ws}
+                  hasBonus={boostWorksites.includes(ws)}
+                  disabled={action.busy || isActivelyBuilding}
+                  onClick={() => handleBuildWorksite(ws)}
+                />
+              ))}
+            </Stack>
+          )}
         </Box>
 
         {/* 6. Divider + Cancel button — only while actively building */}

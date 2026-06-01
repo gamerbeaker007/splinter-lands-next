@@ -2,7 +2,7 @@
 
 import StakePowerCoreButton from "@/components/land-manager/StakePowerCoreButton";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
-import { filterRentalPlots } from "@/lib/filters";
+import { filterDeeds, parseLandStatsResources } from "@/lib/filters";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
   BiomeModifiers,
@@ -30,7 +30,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   username: string;
@@ -167,11 +167,13 @@ function PlotRow({
         </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="caption">{plot.resources[0] ?? "—"}</Typography>
+        <Typography variant="caption">
+          {parseLandStatsResources(plot.land_stats)[0] ?? "—"}
+        </Typography>
       </TableCell>
 
       <TableCell>
-        <Typography variant="caption">{plot.worksite ?? "—"}</Typography>
+        <Typography variant="caption">{plot.worksite_type ?? "—"}</Typography>
       </TableCell>
       <TableCell>
         <Stack direction="row" alignItems="center" gap={0.5}>
@@ -310,7 +312,26 @@ export default function RentalOverview({
     onSuccess?.();
   };
 
-  const { filters } = useFilters();
+  const { filters, setLocationOverride } = useFilters();
+
+  // Push live region/tract/plot lists into the FilterDrawer so the location
+  // filter reflects this player's plots (rather than the global DB cache).
+  useEffect(() => {
+    if (!data) return;
+    const regions = new Set<number>();
+    const tracts = new Set<number>();
+    const plots = new Set<number>();
+    for (const p of [...data.eligible, ...data.unpoweredSkipped]) {
+      regions.add(p.region_number);
+      tracts.add(p.tract_number);
+      plots.add(p.plot_number);
+    }
+    setLocationOverride({
+      filter_regions: [...regions].sort((a, b) => a - b),
+      filter_tracts: [...tracts].sort((a, b) => a - b),
+      filter_plots: [...plots].sort((a, b) => a - b),
+    });
+  }, [data, setLocationOverride]);
 
   const rentByPlot = useMemo(() => {
     const map = new Map<number, PlotRentSummary>();
@@ -332,11 +353,11 @@ export default function RentalOverview({
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const filteredEligible = useMemo(
-    () => filterRentalPlots(data?.eligible ?? [], filters),
+    () => filterDeeds(data?.eligible ?? [], filters),
     [data?.eligible, filters]
   );
   const filteredUnpowered = useMemo(
-    () => filterRentalPlots(data?.unpoweredSkipped ?? [], filters),
+    () => filterDeeds(data?.unpoweredSkipped ?? [], filters),
     [data?.unpoweredSkipped, filters]
   );
 

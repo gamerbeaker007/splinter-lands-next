@@ -4,6 +4,7 @@ import CardPicksCell from "@/components/land-manager/bulk-operations/CardPicksCe
 import RentalPlotTable, {
   RentalPlotColumn,
 } from "@/components/land-manager/bulk-operations/RentalPlotTable";
+import { parseLandStatsResources } from "@/lib/filters";
 import { RentalPlan, RentalPlanItem } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
@@ -44,13 +45,19 @@ const COLUMNS: RentalPlotColumn[] = [
   {
     header: "Resource",
     render: (item) => (
-      <Typography variant="caption">{item.plot.resources[0] ?? "—"}</Typography>
+      <Typography variant="caption">
+        {item.plot.resource_symbol ??
+          parseLandStatsResources(item.plot.land_stats)[0] ??
+          "—"}
+      </Typography>
     ),
   },
   {
     header: "Worksite",
     render: (item) => (
-      <Typography variant="caption">{item.plot.worksite ?? "—"}</Typography>
+      <Typography variant="caption">
+        {item.plot.worksite_type ?? "—"}
+      </Typography>
     ),
   },
   {

@@ -6,7 +6,6 @@ import {
 } from "@/lib/backend/api/spl/spl-land-api";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
-import { parseLandStatsResources } from "@/lib/filters";
 import { isRentedByPlayer } from "@/lib/utils/cardUtil";
 import {
   DEFAULT_RENTAL_CONFIG,
@@ -48,29 +47,20 @@ export async function getRentalEligibility(
     if (!enabledSet.has(deed.region_number)) continue;
 
     const staking = stakingByDeed.get(deed.deed_uid);
-    const worksiteDetails = worksiteByDeed.get(deed.deed_uid);
     if (!staking) continue;
+    const worksiteDetails = worksiteByDeed.get(deed.deed_uid) ?? null;
 
     const maxWorkers = staking.max_workers_allowed ?? 0;
     const workerCount = staking.worker_count ?? 0;
 
     const plot: RentalEligiblePlot = {
-      deed_uid: deed.deed_uid,
-      plot_id: deed.plot_id,
-      plot_number: deed.plot_number,
-      tract_number: deed.tract_number,
-      region_uid: deed.region_uid,
-      region_number: deed.region_number,
-      worksite: worksiteDetails?.worksite_type ?? null,
-      resources: parseLandStatsResources(deed.land_stats),
-      rarity: deed.rarity ?? null,
-      deed_type: deed.deed_type ?? null,
-      plot_status: deed.plot_status ?? null,
+      ...deed,
+      worksiteDetail: worksiteDetails,
+      stakingDetail: staking,
       worker_count: workerCount,
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
-      listed_for_sale: Boolean(deed.listed),
       biome_modifiers: {
         fire: staking.red_biome_modifier ?? 0,
         water: staking.blue_biome_modifier ?? 0,

@@ -1,11 +1,19 @@
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { RentalEligiblePlot } from "@/types/landManager";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
 
 /**
+ * land_stats.resources uses raw names that don't always match the canonical
+ * resource symbols (e.g. "ore" → IRON). Aliases live here.
+ */
+const LAND_STATS_RESOURCE_ALIASES: Record<string, string> = {
+  ORE: "IRON",
+};
+
+/**
  * Parse deed.land_stats (Json? — may be a string or already an object) into a list
- * of upper-cased resource symbols, e.g. ["WOOD"]. Returns [] on any parse failure.
+ * of upper-cased resource symbols normalized to canonical names (e.g. "ORE" → "IRON").
+ * Returns [] on any parse failure.
  */
 export function parseLandStatsResources(landStats: unknown): string[] {
   if (!landStats) return [];
@@ -14,7 +22,10 @@ export function parseLandStatsResources(landStats: unknown): string[] {
       typeof landStats === "string" ? JSON.parse(landStats) : landStats;
     const resources = (obj as Record<string, unknown>)?.resources;
     if (Array.isArray(resources)) {
-      return resources.map((r) => String(r).toUpperCase());
+      return resources.map((r) => {
+        const upper = String(r).toUpperCase();
+        return LAND_STATS_RESOURCE_ALIASES[upper] ?? upper;
+      });
     }
   } catch {
     // ignore parse errors
@@ -51,10 +62,10 @@ function inRange(
   return true;
 }
 
-export function filterDeeds(
-  data: DeedComplete[],
+export function filterDeeds<T extends DeedComplete>(
+  data: T[],
   filters: FilterInput
-): DeedComplete[] {
+): T[] {
   return data.filter((deed) => {
     if (!isInFilter(filters.filter_regions, deed.region_number)) return false;
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
@@ -165,55 +176,4 @@ function getSortValue(
     default:
       return undefined;
   }
-}
-
-/**
- * Client-side filter for RentalEligiblePlot lists.
- * Mirrors the filterDeeds logic but operates on the rental-specific type.
- * Centralized here to avoid duplicating filter logic across components.
- */
-export function filterRentalPlots(
-  plots: RentalEligiblePlot[],
-  filters: FilterInput
-): RentalEligiblePlot[] {
-  return plots.filter((p) => {
-    if (
-      filters.filter_regions?.length &&
-      !filters.filter_regions.includes(p.region_number)
-    )
-      return false;
-
-    // Natural resource: from land_stats (the canonical "what this land produces")
-    const resource = p.resources[0] ?? undefined;
-    if (
-      filters.filter_resources?.length &&
-      !filters.filter_resources.includes(resource ?? "")
-    )
-      return false;
-
-    // Worksite: the built structure type (e.g. "Grain Farm")
-    if (
-      filters.filter_worksites?.length &&
-      !filters.filter_worksites.includes(p.worksite ?? "")
-    )
-      return false;
-
-    if (
-      filters.filter_rarity?.length &&
-      !filters.filter_rarity.includes(p.rarity ?? "")
-    )
-      return false;
-    if (
-      filters.filter_deed_type?.length &&
-      !filters.filter_deed_type.includes(p.deed_type ?? "")
-    )
-      return false;
-    if (
-      filters.filter_plot_status?.length &&
-      !filters.filter_plot_status.includes(p.plot_status ?? "")
-    )
-      return false;
-
-    return true;
-  });
 }

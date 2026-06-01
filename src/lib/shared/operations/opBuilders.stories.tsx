@@ -15,7 +15,7 @@ import { expect } from "storybook/test";
 import {
   buildAddLiquidityOp,
   buildBuyWithDecOp,
-  buildFeeTransferOp,
+  buildDonationTransferOp,
   buildHarvestOp,
   buildRenewRentalOp,
   buildRentOnBehalfOp,
@@ -114,10 +114,11 @@ const FIXED_ROWS: OpRow[] = [
   {
     label: "buildFeeTransferOp",
     inputDescription: "same-symbol fee transfer",
-    op: buildFeeTransferOp(
+    op: buildDonationTransferOp(
       USER,
       REGION_A,
       REGION_B,
+      "ToPlayer",
       "GRAIN",
       100,
       50,

@@ -130,29 +130,11 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
   const [loading, setLoading] = useState(true); // true on mount; set back to true in handleRefresh
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grouped">("list");
-  const [devFilter, setDevFilter] = useState<
-    "all" | "developed" | "undeveloped"
-  >("all");
   const [refreshKey, setRefreshKey] = useState(0);
   const [pageSize, setPageSize] = useState<number>(10);
-  const [regionResetKey, setRegionResetKey] = useState(0);
+  const [listPage, setListPage] = useState(1);
 
-  const { filters } = useFilters();
-
-  // Derive a stable filter key; when it changes the list page resets to 1 automatically
-  const filterKey = useMemo(
-    () => JSON.stringify({ filters, devFilter }),
-    [filters, devFilter]
-  );
-  const [listPageByKey, setListPageByKey] = useState<Record<string, number>>(
-    {}
-  );
-  // Effective list page: if no entry for current filterKey, default to 1
-  const effectiveListPage = listPageByKey[filterKey] ?? 1;
-  const setEffectiveListPage = useCallback(
-    (p: number) => setListPageByKey((prev) => ({ ...prev, [filterKey]: p })),
-    [filterKey]
-  );
+  const { filters, setLocationOverride } = useFilters();
 
   // Fetch fresh data on mount and on refresh
   useEffect(() => {
@@ -170,6 +152,25 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
     };
   }, [refreshKey]);
 
+  // Push live region/tract/plot lists into the FilterDrawer so the location
+  // filter reflects this player's plots (rather than the global DB cache).
+  useEffect(() => {
+    if (allDeeds.length === 0) return;
+    const regions = new Set<number>();
+    const tracts = new Set<number>();
+    const plots = new Set<number>();
+    for (const d of allDeeds) {
+      regions.add(d.region_number);
+      tracts.add(d.tract_number);
+      plots.add(d.plot_number);
+    }
+    setLocationOverride({
+      filter_regions: [...regions].sort((a, b) => a - b),
+      filter_tracts: [...tracts].sort((a, b) => a - b),
+      filter_plots: [...plots].sort((a, b) => a - b),
+    });
+  }, [allDeeds, setLocationOverride]);
+
   const handleRefresh = useCallback(() => {
     setLoading(true);
     setFetchError(null);
@@ -180,15 +181,6 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
     setFetchError(null);
     setRefreshKey((k) => k + 1);
   }, []);
-
-  // Increment regionResetKey when dev-filter or refresh changes so RegionGroups remount
-  const handleDevFilterChange = useCallback(
-    (v: "all" | "developed" | "undeveloped") => {
-      setDevFilter(v);
-      setRegionResetKey((k) => k + 1);
-    },
-    []
-  );
 
   // Apply filter client-side
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
@@ -201,16 +193,16 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
     if (enabledRegions && enabledRegions.length > 0) {
       result = result.filter((d) => enabledRegions.includes(d.region_number));
     }
-    // Local developed / undeveloped quick filter — use worksiteDetail.is_construction
-    if (devFilter === "developed") {
-      result = result.filter(
-        (d) => !!d.worksiteDetail && d.worksiteDetail.is_construction === false
-      );
-    } else if (devFilter === "undeveloped") {
-      result = result.filter((d) => !d.worksiteDetail);
-    }
     return result;
-  }, [allDeeds, filters, devFilter, enabledRegions]);
+  }, [allDeeds, filters, enabledRegions]);
+
+  // Reset list pagination when the filtered set changes (render-phase reset:
+  // React.dev/reference/react/useState#resetting-state).
+  const [lastFilteredLen, setLastFilteredLen] = useState(filteredDeeds.length);
+  if (lastFilteredLen !== filteredDeeds.length) {
+    setLastFilteredLen(filteredDeeds.length);
+    setListPage(1);
+  }
 
   // Group by region for grouped view
   const groupedByRegion = useMemo<Map<string, DeedComplete[]>>(() => {
@@ -225,8 +217,8 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
 
   const listPageCount = Math.ceil(filteredDeeds.length / pageSize);
   const listPageDeeds = filteredDeeds.slice(
-    (effectiveListPage - 1) * pageSize,
-    effectiveListPage * pageSize
+    (listPage - 1) * pageSize,
+    listPage * pageSize
   );
 
   return (
@@ -265,7 +257,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               value={pageSize}
               onChange={(e) => {
                 setPageSize(Number(e.target.value));
-                setRegionResetKey((k) => k + 1);
+                setListPage(1);
               }}
               sx={{ fontSize: "0.8rem" }}
             >
@@ -276,19 +268,6 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               ))}
             </Select>
           </FormControl>
-
-          <ToggleButtonGroup
-            value={devFilter}
-            exclusive
-            size="small"
-            onChange={(_, v) => {
-              if (v) handleDevFilterChange(v);
-            }}
-          >
-            <ToggleButton value="all">All</ToggleButton>
-            <ToggleButton value="developed">Developed</ToggleButton>
-            <ToggleButton value="undeveloped">Undeveloped</ToggleButton>
-          </ToggleButtonGroup>
 
           <ToggleButtonGroup
             value={viewMode}
@@ -341,9 +320,9 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
             <Stack direction="row" justifyContent="center" mt={1.5}>
               <Pagination
                 count={listPageCount}
-                page={effectiveListPage}
+                page={listPage}
                 size="small"
-                onChange={(_, p) => setEffectiveListPage(p)}
+                onChange={(_, p) => setListPage(p)}
               />
             </Stack>
           )}
@@ -353,7 +332,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
         <Box>
           {[...groupedByRegion.entries()].map(([regionUid, deeds]) => (
             <RegionGroup
-              key={`${regionUid}-${regionResetKey}`}
+              key={regionUid}
               regionUid={regionUid}
               deeds={deeds}
               username={username}
@@ -372,8 +351,10 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
 export default function WorksiteTab({ username, enabledRegions }: Props) {
   return (
     <FilterProvider>
+      {/* player=null → categorical filters show site-wide options;
+          WorksiteTabContent narrows regions/tracts/plots via locationOverride. */}
       <FilterDrawer
-        player={username}
+        player={null}
         filtersEnabled={{
           regions: true,
           tracts: true,
