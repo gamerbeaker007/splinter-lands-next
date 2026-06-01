@@ -21,12 +21,12 @@ import type {
   TrxLookupOutcome,
 } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { SplMarketCardData } from "../../../../types/splMarketCardData";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import axios from "axios";
 import { cookies } from "next/headers";
 import * as rax from "retry-axios";
+import { SplMarketCardData } from "../../../../types/splMarketCardData";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
@@ -568,6 +568,49 @@ export async function fetchTransactionLookup(
             purchase: Array.isArray(auth.purchase) ? auth.purchase : [],
             delegation: Array.isArray(auth.delegation) ? auth.delegation : [],
           } satisfies SetAuthorityTrxData,
+        };
+        break;
+      }
+      case "worksite_grain_construction":
+      case "worksite_wood_construction":
+      case "worksite_iron_construction":
+      case "worksite_stone_construction":
+      case "worksite_research_construction":
+      case "worksite_aura_construction":
+      case "worksite_sps_construction": {
+        if (outer?.result?.success === false) {
+          const error: string =
+            outer?.result?.error ?? outer?.error ?? "Construction failed";
+          return { status: "failed", error };
+        }
+        const d = outer?.result?.data as Raw | null;
+        if (!d) return { status: "pending" };
+        result = {
+          type: "worksite_construction",
+          data: {
+            project_type: op,
+            deed_uid: (d.deed_uid as string | undefined) ?? "",
+            project_id: (d.project_id as number | undefined) ?? 0,
+          },
+        };
+        break;
+      }
+      case "cancel_construction": {
+        if (outer?.result?.success === false) {
+          const error: string =
+            outer?.result?.error ??
+            outer?.error ??
+            "Cancel construction failed";
+          return { status: "failed", error };
+        }
+        const d = outer?.result?.data as Raw | null;
+        if (!d) return { status: "pending" };
+        result = {
+          type: "cancel_construction",
+          data: {
+            deed_uid: (d.deed_uid as string | undefined) ?? "",
+            project_id: (d.project_id as number | undefined) ?? 0,
+          },
         };
         break;
       }

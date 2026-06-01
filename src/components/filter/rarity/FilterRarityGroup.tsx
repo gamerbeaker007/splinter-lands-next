@@ -15,6 +15,7 @@ const rarityOrder: Record<string, number> = {
 };
 
 export default function FilterRarityGroup({ options }: Props) {
+  if (options.length === 0) return null;
   const sortedOptions = [...options].sort((a, b) => {
     const aRank = rarityOrder[a.toLowerCase()] ?? Infinity;
     const bRank = rarityOrder[b.toLowerCase()] ?? Infinity;

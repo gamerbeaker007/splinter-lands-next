@@ -148,6 +148,22 @@ export interface DecPowerupRegionTrxData {
   harvest_results: HarvestAllDeedResult[];
 }
 
+// ── worksite_*_construction ──────────────────────────────────────────────────
+
+export interface WorksiteConstructionTrxData {
+  /** e.g. "worksite_wood_construction" */
+  project_type: string;
+  deed_uid: string;
+  project_id: number;
+}
+
+// ── cancel_construction ───────────────────────────────────────────────────────
+
+export interface CancelConstructionTrxData {
+  deed_uid: string;
+  project_id: number;
+}
+
 // ── set_authority ────────────────────────────────────────────────────────────
 // Result of sm_set_authority (grant/revoke rental/purchase/delegation).
 // The `result` envelope is `{ success, authority: { rental, purchase, delegation } }`.
@@ -181,6 +197,8 @@ export type SplTrxResult =
   | { type: "market_renew_rental"; data: MarketRentTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
   | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
+  | { type: "worksite_construction"; data: WorksiteConstructionTrxData }
+  | { type: "cancel_construction"; data: CancelConstructionTrxData }
   | { type: "set_authority"; data: SetAuthorityTrxData };
 
 /**

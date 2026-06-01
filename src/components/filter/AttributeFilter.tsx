@@ -4,16 +4,17 @@ import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { FilterInput } from "@/types/filters";
 import {
   Box,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
+  Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
+import { PPRangeFilter } from "./PPRangeFilter";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
-import { PPRangeFilter } from "./PPRangeFilter";
+import FilterWorksiteGroup from "./worksite/FilterWorksiteGroup";
 
 type Props = {
   options: FilterInput;
@@ -24,16 +25,29 @@ type BooleanFilterKey =
   | "filter_under_construction"
   | "filter_has_land_ability";
 
+const BOOLEAN_FILTER_LABELS: Record<BooleanFilterKey, string> = {
+  filter_developed: "Developed",
+  filter_under_construction: "Under construction",
+  filter_has_land_ability: "Has land ability",
+};
+
+/** undefined = "any" (no filter), true = "yes", false = "no" */
+function triStateValue(v: boolean | undefined): "any" | "yes" | "no" {
+  if (v === true) return "yes";
+  if (v === false) return "no";
+  return "any";
+}
+
 export default function AttributeFilter({ options }: Props) {
   const { filters, setFilters } = useFilters();
 
-  const toggleBoolean = (key: BooleanFilterKey) => {
+  const setBoolean = (key: BooleanFilterKey, next: "any" | "yes" | "no") => {
     setFilters((prev) => {
       const newFilters = { ...prev };
-      if (prev[key]) {
+      if (next === "any") {
         delete newFilters[key];
       } else {
-        newFilters[key] = true;
+        newFilters[key] = next === "yes";
       }
       return newFilters;
     });
@@ -63,6 +77,7 @@ export default function AttributeFilter({ options }: Props) {
 
       <FilterRarityGroup options={options.filter_rarity ?? []} />
       <FilterResourceGroup options={options.filter_resources ?? []} />
+      <FilterWorksiteGroup options={options.filter_worksites ?? []} />
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
 
@@ -84,7 +99,7 @@ export default function AttributeFilter({ options }: Props) {
         onChange={updateBoostedPP}
       />
 
-      <FormGroup sx={{ mt: 2 }}>
+      <Stack gap={1.5} sx={{ mt: 2 }}>
         {(
           [
             "filter_developed",
@@ -92,22 +107,26 @@ export default function AttributeFilter({ options }: Props) {
             "filter_has_land_ability",
           ] as BooleanFilterKey[]
         ).map((key) => (
-          <FormControlLabel
-            key={key}
-            control={
-              <Checkbox
-                checked={filters?.[key] === true}
-                onChange={() => toggleBoolean(key)}
-                size="small"
-              />
-            }
-            label={key
-              .replace("filter_", "")
-              .replace(/_/g, " ")
-              .replace(/(^\w|\s\w)/g, (m) => m.toUpperCase())}
-          />
+          <Box key={key}>
+            <Typography variant="caption" color="text.secondary">
+              {BOOLEAN_FILTER_LABELS[key]}
+            </Typography>
+            <ToggleButtonGroup
+              size="small"
+              exclusive
+              fullWidth
+              value={triStateValue(filters[key])}
+              onChange={(_, v) => {
+                if (v) setBoolean(key, v as "any" | "yes" | "no");
+              }}
+            >
+              <ToggleButton value="any">Any</ToggleButton>
+              <ToggleButton value="yes">Yes</ToggleButton>
+              <ToggleButton value="no">No</ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         ))}
-      </FormGroup>
+      </Stack>
     </Box>
   );
 }

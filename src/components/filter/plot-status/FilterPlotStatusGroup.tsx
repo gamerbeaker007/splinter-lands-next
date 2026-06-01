@@ -15,6 +15,7 @@ const plotStatusOrder: Record<string, number> = {
 };
 
 export default function FilterPlotStatusGroup({ options }: Props) {
+  if (options.length === 0) return null;
   const sortedOptions = [...options].sort((a, b) => {
     const aRank = plotStatusOrder[a.toLowerCase()] ?? Infinity;
     const bRank = plotStatusOrder[b.toLowerCase()] ?? Infinity;

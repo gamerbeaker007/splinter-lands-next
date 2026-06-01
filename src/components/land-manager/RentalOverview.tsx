@@ -2,6 +2,8 @@
 
 import StakePowerCoreButton from "@/components/land-manager/StakePowerCoreButton";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
+import { filterDeeds, parseLandStatsResources } from "@/lib/filters";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
   BiomeModifiers,
   landElementBgColor,
@@ -28,7 +30,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface Props {
   username: string;
@@ -165,7 +167,13 @@ function PlotRow({
         </Typography>
       </TableCell>
       <TableCell>
-        <Typography variant="caption">{plot.resource_symbol ?? "—"}</Typography>
+        <Typography variant="caption">
+          {parseLandStatsResources(plot.land_stats)[0] ?? "—"}
+        </Typography>
+      </TableCell>
+
+      <TableCell>
+        <Typography variant="caption">{plot.worksite_type ?? "—"}</Typography>
       </TableCell>
       <TableCell>
         <Stack direction="row" alignItems="center" gap={0.5}>
@@ -248,6 +256,7 @@ function PlotTable({
             <TableRow>
               <TableCell>Plot</TableCell>
               <TableCell>Resource</TableCell>
+              <TableCell>Worksite</TableCell>
               <TableCell>Workers</TableCell>
               <TableCell>Empty</TableCell>
               <TableCell align="right">DEC/day</TableCell>
@@ -303,6 +312,27 @@ export default function RentalOverview({
     onSuccess?.();
   };
 
+  const { filters, setLocationOverride } = useFilters();
+
+  // Push live region/tract/plot lists into the FilterDrawer so the location
+  // filter reflects this player's plots (rather than the global DB cache).
+  useEffect(() => {
+    if (!data) return;
+    const regions = new Set<number>();
+    const tracts = new Set<number>();
+    const plots = new Set<number>();
+    for (const p of [...data.eligible, ...data.unpoweredSkipped]) {
+      regions.add(p.region_number);
+      tracts.add(p.tract_number);
+      plots.add(p.plot_number);
+    }
+    setLocationOverride({
+      filter_regions: [...regions].sort((a, b) => a - b),
+      filter_tracts: [...tracts].sort((a, b) => a - b),
+      filter_plots: [...plots].sort((a, b) => a - b),
+    });
+  }, [data, setLocationOverride]);
+
   const rentByPlot = useMemo(() => {
     const map = new Map<number, PlotRentSummary>();
     for (const c of rentedCards?.cards ?? []) {
@@ -322,6 +352,15 @@ export default function RentalOverview({
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
+  const filteredEligible = useMemo(
+    () => filterDeeds(data?.eligible ?? [], filters),
+    [data?.eligible, filters]
+  );
+  const filteredUnpowered = useMemo(
+    () => filterDeeds(data?.unpoweredSkipped ?? [], filters),
+    [data?.unpoweredSkipped, filters]
+  );
+
   if (enabledRegions.length === 0) return null;
 
   if (loading || data === null) {
@@ -331,15 +370,6 @@ export default function RentalOverview({
       </Box>
     );
   }
-
-  const totalEmptyEligible = data.eligible.reduce(
-    (sum, p) => sum + p.empty_slots,
-    0
-  );
-  const totalEmptyUnpowered = data.unpoweredSkipped.reduce(
-    (sum, p) => sum + p.empty_slots,
-    0
-  );
 
   const hasRented = (rentedCards?.cards.length ?? 0) > 0;
   if (
@@ -390,12 +420,16 @@ export default function RentalOverview({
           <Box>
             <Typography variant="caption" color="text.secondary" gutterBottom>
               Eligible plots — powered with empty worker slots ·{" "}
-              {data.eligible.length} plot
-              {data.eligible.length === 1 ? "" : "s"} · {totalEmptyEligible}{" "}
-              empty slot{totalEmptyEligible === 1 ? "" : "s"}
+              {filteredEligible.length} plot
+              {filteredEligible.length === 1 ? "" : "s"} ·{" "}
+              {filteredEligible.reduce((sum, p) => sum + p.empty_slots, 0)}{" "}
+              empty slot
+              {filteredEligible.reduce((sum, p) => sum + p.empty_slots, 0) === 1
+                ? ""
+                : "s"}
             </Typography>
             <PlotTable
-              plots={data.eligible}
+              plots={filteredEligible}
               rentByPlot={rentByPlot}
               emptyMessage="No plots with empty worker slots"
             />
@@ -404,14 +438,20 @@ export default function RentalOverview({
           {data.unpoweredSkipped.length > 0 && (
             <Box>
               <Typography variant="caption" color="warning.main" gutterBottom>
-                Unpowered plots — skipped · {data.unpoweredSkipped.length} plot
-                {data.unpoweredSkipped.length === 1 ? "" : "s"} ·{" "}
-                {totalEmptyUnpowered} empty slot
-                {totalEmptyUnpowered === 1 ? "" : "s"} (power these to make them
-                eligible)
+                Unpowered plots — skipped · {filteredUnpowered.length} plot
+                {filteredUnpowered.length === 1 ? "" : "s"} ·{" "}
+                {filteredUnpowered.reduce((sum, p) => sum + p.empty_slots, 0)}{" "}
+                empty slot
+                {filteredUnpowered.reduce(
+                  (sum, p) => sum + p.empty_slots,
+                  0
+                ) === 1
+                  ? ""
+                  : "s"}{" "}
+                (power these to make them eligible)
               </Typography>
               <PlotTable
-                plots={data.unpoweredSkipped}
+                plots={filteredUnpowered}
                 rentByPlot={rentByPlot}
                 emptyMessage="No unpowered plots"
                 renderAction={(plot) => (

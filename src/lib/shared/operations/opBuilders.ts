@@ -352,6 +352,48 @@ export function buildRenewRentalOp(
 }
 
 /**
+ * Start construction of a new worksite on a deed. Uses POSTING key.
+ * `opName` maps to one of: worksite_grain_construction, worksite_wood_construction,
+ * worksite_iron_construction, worksite_stone_construction, worksite_research_construction,
+ * worksite_aura_construction, worksite_sps_construction.
+ */
+export function buildWorksiteConstructionOp(
+  username: string,
+  regionUid: string,
+  deedUid: string,
+  opName: string,
+  timeCrystals = 0
+): [string, object] {
+  return customJsonOp(username, {
+    op: opName,
+    region_uid: regionUid,
+    deed_uids: [deedUid],
+    time_crystals: timeCrystals,
+  });
+}
+
+/**
+ * Cancel an in-progress worksite construction on a deed. Uses POSTING key.
+ * `projectId` is the `project_id` returned in the original construction result.
+ */
+export function buildCancelConstructionOp(
+  username: string,
+  regionUid: string,
+  deedUid: string,
+  projectId: number,
+  timeCrystals = 0
+): [string, object] {
+  return customJsonOp(username, {
+    op: "cancel_construction",
+    region_uid: regionUid,
+    deed_uids: [deedUid],
+    time_crystals: timeCrystals,
+    project_id: projectId,
+    auto_buy_grain: false,
+  });
+}
+
+/**
  * Rent cards via the SPL market on behalf of `player`. Signed by the
  * `serviceAccount`'s ACTIVE key — the player must have granted purchase
  * authority to that account on Splinterlands Account Security.

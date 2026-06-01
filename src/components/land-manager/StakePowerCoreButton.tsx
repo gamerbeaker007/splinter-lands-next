@@ -29,7 +29,7 @@ export default function StakePowerCoreButton({
   onSuccess,
 }: Props) {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const isListedForSale = plot.listed_for_sale;
+  const isListedForSale = Boolean(plot.listed);
 
   const action = useStakePowerCoreAction({
     username,

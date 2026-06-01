@@ -35,6 +35,9 @@ export async function getRentalEligibility(
   const stakingByDeed = new Map(
     regionData.staking_details.map((s) => [s.deed_uid, s])
   );
+  const worksiteByDeed = new Map(
+    regionData.worksite_details.map((s) => [s.deed_uid, s])
+  );
   const enabledSet = new Set(enabledRegions);
 
   const eligible: RentalEligiblePlot[] = [];
@@ -45,23 +48,19 @@ export async function getRentalEligibility(
 
     const staking = stakingByDeed.get(deed.deed_uid);
     if (!staking) continue;
+    const worksiteDetails = worksiteByDeed.get(deed.deed_uid) ?? null;
 
     const maxWorkers = staking.max_workers_allowed ?? 0;
     const workerCount = staking.worker_count ?? 0;
 
     const plot: RentalEligiblePlot = {
-      deed_uid: deed.deed_uid,
-      plot_id: deed.plot_id,
-      plot_number: deed.plot_number,
-      tract_number: deed.tract_number,
-      region_uid: deed.region_uid,
-      region_number: deed.region_number,
-      resource_symbol: deed.resource_symbol ?? null,
+      ...deed,
+      worksiteDetail: worksiteDetails,
+      stakingDetail: staking,
       worker_count: workerCount,
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
-      listed_for_sale: Boolean(deed.listed),
       biome_modifiers: {
         fire: staking.red_biome_modifier ?? 0,
         water: staking.blue_biome_modifier ?? 0,

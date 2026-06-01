@@ -12,7 +12,7 @@ import { ProductionPoints } from "@/types/productionPoints";
 import { ProgressInfo } from "@/types/progressInfo";
 import { RegionSummary } from "@/types/regionSummary";
 import { RegionTax } from "@/types/regionTax";
-import { filterDeeds } from "../../filters";
+import { filterDeeds, parseLandStatsResources } from "../../filters";
 import { getCachedRegionDataSSR } from "../api/internal/deed-data";
 import { getCachedTaxes } from "./playerService";
 
@@ -250,8 +250,9 @@ export async function getAvailableFilterValues(
     if (deed.tract_number != null) values.filter_tracts.add(deed.tract_number);
     if (deed.plot_number != null) values.filter_plots.add(deed.plot_number);
     if (deed.rarity != null) values.filter_rarity.add(deed.rarity);
-    if (deed.worksiteDetail?.token_symbol)
-      values.filter_resources.add(deed.worksiteDetail.token_symbol);
+    const resource =
+      deed.resource_symbol ?? parseLandStatsResources(deed.land_stats)[0];
+    if (resource) values.filter_resources.add(resource);
     if (deed.worksite_type) values.filter_worksites.add(deed.worksite_type);
     if (deed.deed_type) values.filter_deed_type.add(deed.deed_type);
     if (deed.plot_status) values.filter_plot_status.add(deed.plot_status);

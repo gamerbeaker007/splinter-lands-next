@@ -18,6 +18,7 @@ const resourceOrder: Record<string, number> = {
 };
 
 export default function FilterResourceGroup({ options }: Props) {
+  if (options.length === 0) return null;
   const sortedOptions = [...options].sort((a, b) => {
     const aRank = resourceOrder[a.toLowerCase()] ?? Infinity;
     const bRank = resourceOrder[b.toLowerCase()] ?? Infinity;

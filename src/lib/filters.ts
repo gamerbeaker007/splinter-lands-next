@@ -2,6 +2,37 @@ import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
 
+/**
+ * land_stats.resources uses raw names that don't always match the canonical
+ * resource symbols (e.g. "ore" → IRON). Aliases live here.
+ */
+const LAND_STATS_RESOURCE_ALIASES: Record<string, string> = {
+  ORE: "IRON",
+};
+
+/**
+ * Parse deed.land_stats (Json? — may be a string or already an object) into a list
+ * of upper-cased resource symbols normalized to canonical names (e.g. "ORE" → "IRON").
+ * Returns [] on any parse failure.
+ */
+export function parseLandStatsResources(landStats: unknown): string[] {
+  if (!landStats) return [];
+  try {
+    const obj =
+      typeof landStats === "string" ? JSON.parse(landStats) : landStats;
+    const resources = (obj as Record<string, unknown>)?.resources;
+    if (Array.isArray(resources)) {
+      return resources.map((r) => {
+        const upper = String(r).toUpperCase();
+        return LAND_STATS_RESOURCE_ALIASES[upper] ?? upper;
+      });
+    }
+  } catch {
+    // ignore parse errors
+  }
+  return [];
+}
+
 function isInFilter(
   filter: ReadonlyArray<string | number> | undefined,
   value: unknown
@@ -31,19 +62,18 @@ function inRange(
   return true;
 }
 
-export function filterDeeds(
-  data: DeedComplete[],
+export function filterDeeds<T extends DeedComplete>(
+  data: T[],
   filters: FilterInput
-): DeedComplete[] {
+): T[] {
   return data.filter((deed) => {
     if (!isInFilter(filters.filter_regions, deed.region_number)) return false;
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
     if (!isInFilter(filters.filter_plots, deed.plot_number)) return false;
     if (!isInFilter(filters.filter_rarity, deed.rarity)) return false;
-    if (
-      !isInFilter(filters.filter_resources, deed.worksiteDetail?.token_symbol)
-    )
-      return false;
+    const effectiveResource =
+      deed.resource_symbol ?? parseLandStatsResources(deed.land_stats)[0];
+    if (!isInFilter(filters.filter_resources, effectiveResource)) return false;
     if (!isInFilter(filters.filter_worksites, deed.worksite_type)) return false;
     if (!isInFilter(filters.filter_deed_type, deed.deed_type)) return false;
     if (!isInFilter(filters.filter_plot_status, deed.plot_status)) return false;

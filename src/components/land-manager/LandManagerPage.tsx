@@ -1,6 +1,7 @@
 "use client";
 
 import LoginComponent from "@/components/auth/LoginComponent";
+import FilterDrawer from "@/components/filter/FilterDrawer";
 import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
 import BulkRentalPanel from "@/components/land-manager/bulk-operations/BulkRentalPanel";
@@ -11,8 +12,10 @@ import RegionResourceSummary from "@/components/land-manager/RegionResourceSumma
 import RentalAuthorityCard from "@/components/land-manager/RentalAuthorityCard";
 import RentalOverview from "@/components/land-manager/RentalOverview";
 import TodayPanel from "@/components/land-manager/TodayPanel";
+import WorksiteTab from "@/components/land-manager/worksites/WorksiteTab";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
+import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   DEFAULT_DONATION_CONFIG,
@@ -242,6 +245,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       >
         <Tab label="Harvest" />
         <Tab label="Rental" />
+        <Tab label="Worksites" />
       </Tabs>
 
       {/* ── Harvest tab ─────────────────────────────────────────────────── */}
@@ -344,7 +348,18 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
       {/* ── Rental tab ──────────────────────────────────────────────────── */}
       {activeTab === 1 && (
-        <>
+        <FilterProvider>
+          {/* player=null → categorical filters show site-wide options;
+              RentalOverview narrows regions/tracts/plots via locationOverride. */}
+          <FilterDrawer
+            player={null}
+            filtersEnabled={{
+              regions: true,
+              attributes: true,
+              player: false,
+              sorting: false,
+            }}
+          />
           <RentalAuthorityCard authority={authorityHook} />
 
           <BulkRentalPanel
@@ -362,7 +377,15 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
             refreshKey={regionRefreshKey}
             onSuccess={handleSuccess}
           />
-        </>
+        </FilterProvider>
+      )}
+
+      {/* ── Worksites tab ─────────────────────────────────────────────── */}
+      {activeTab === 2 && (
+        <WorksiteTab
+          username={auth.username ?? ""}
+          enabledRegions={currentConfig.enabled_regions}
+        />
       )}
 
       {/* Config dialog */}

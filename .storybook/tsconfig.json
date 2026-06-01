@@ -3,7 +3,11 @@
   "compilerOptions": {
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": "..",
+    "paths": {
+      "@/*": ["src/*"]
+    }
   },
   "include": [
     "**/*",

@@ -27,7 +27,7 @@ export default function FilterIcon({
         cursor: "pointer",
         display: "inline-block",
         padding: "2px",
-        margin: "5px",
+        mr: "5px",
       }}
       title={name}
     >
