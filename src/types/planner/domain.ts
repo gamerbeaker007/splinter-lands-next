@@ -36,6 +36,8 @@ export interface SlotInput {
   bcx: number; // 0..400
   foil: CardFoil;
   element: CardElement;
+  /** Secondary element for dual-element cards; used to take the best terrain boost. */
+  secondaryElement?: CardElement | null;
   bloodline: CardBloodline;
   landBoosts?: LandBoost;
   uid?: string; // Optional: card UID for playground tracking

@@ -154,6 +154,7 @@ export default function DeedGridRow({
       bcx: card.bcx,
       foil: card.foil,
       element: card.element,
+      secondaryElement: card.subElement,
       bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
       uid: card.uid,
     };

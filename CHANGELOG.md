@@ -12,6 +12,39 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+### Fixed
+
+#### Land Manager — DEC stake shortfall judged from the global pool
+
+The DEC stake alert no longer reports a false shortfall while a building is in progress.
+
+- A region's `dark_energy_staked` can temporarily read `0` during construction even though that DEC is still staked in the account-wide `dark_energy` pool. The alert previously summed per-region gaps and flagged a shortfall that did not exist.
+- Sufficiency is now decided from the global pool: `total_dec_staked` vs the sum of `dark_energy_required` across **all** regions.
+- The **Stake DEC** action only stakes the genuine global shortfall (`max(0, totalRequired − totalStaked)`), so it no longer offers to over-stake during construction.
+
+#### Terrain boost — dual-element cards use their best element
+
+Cards with a secondary color now receive the terrain boost from whichever of their two elements the terrain favours most (or penalises least), matching how Splinterlands applies it.
+
+- A new shared `bestTerrainBonusPct(terrain, element, secondaryElement)` helper picks the best of the primary and secondary element modifiers; the previous per-element `terrainBonusPct` is now centralized (removing duplicate copies in the planner calcs and the element selector).
+- Applied wherever the boost was computed ourselves: the **Terrain boost alerts** (negative / zero), the **planner**, and the **playground** worker slots.
+- Fixed a latent bug where a card's `subElement` defaulted to `red`/fire when it had no secondary color — single-color cards would otherwise have picked up a phantom fire terrain boost.
+- Card tiles continue to show the boost reported directly by the Splinterlands API.
+
+### Added
+
+#### Land Manager — Feed workers (activate a ready worksite)
+
+When a worksite finishes construction it shows as *"Worksite Ready …"* and must be activated by feeding its workers grain. The Worksites tab now has a per-plot **Feed workers** button for this.
+
+- Shown only on ready worksites. A confirm dialog states the grain cost (the plot's `grain_required`) and the grain currently held in the region.
+- Disabled when the region doesn't hold enough grain to cover the cost (tooltip shows have / need); `auto_buy_grain` stays off so it never buys grain.
+- Broadcasts the `update_worksite` Hive op via Keychain (posting key) and verifies the transaction, then refreshes the tab — mirroring the existing build / cancel-construction flow.
+
+#### Land Manager — Over-staked DEC alert
+
+When more DEC is staked than required across your regions, the Alerts panel now shows an informational note with the excess amount and how much you could safely unstake. Both the over-staked and shortfall alerts list the specific regions involved (in use / needed / over-by or shortfall per region).
+
 ---
 
 ## [v1.8.0] - 2026-05-31

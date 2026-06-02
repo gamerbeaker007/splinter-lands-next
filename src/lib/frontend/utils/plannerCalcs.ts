@@ -9,15 +9,14 @@ import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import {
   basePPMax,
+  bestTerrainBonusPct,
   CardBloodline,
-  CardElement,
   CardFoil,
   cardFoilModifiers,
   cardFoilModifiersLandCard,
   CardRarity,
   cardSetModifiers,
   deedResourceBoostRules,
-  DeedType,
   PlotPlannerData,
   plotRarityModifiers,
   PlotStatus,
@@ -26,7 +25,6 @@ import {
   runiModifiers,
   SlotComputedPP,
   SlotInput,
-  TERRAIN_BONUS,
   titleModifiers,
   totemModifiers,
   WorksiteType,
@@ -35,14 +33,6 @@ import { Prices } from "@/types/price";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
 import { CardSetNameLandValid } from "@/types/editions";
-
-export function terrainBonusPct(
-  terrain: DeedType,
-  element: CardElement
-): number {
-  if (!terrain) return 0;
-  return TERRAIN_BONUS[terrain]?.[element] ?? 0;
-}
 
 export function determineDeedResourceBoost(
   plotStatus: PlotStatus,
@@ -109,7 +99,11 @@ export function computeSlot(
     isCapped = basePP < rawBasePP;
   }
 
-  const terrainBoost = terrainBonusPct(plot.deedType, slot.element);
+  const terrainBoost = bestTerrainBonusPct(
+    plot.deedType,
+    slot.element,
+    slot.secondaryElement
+  );
   const boostedPP = calcBoostedPP(basePP, plot, terrainBoost);
 
   return {

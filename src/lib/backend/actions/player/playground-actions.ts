@@ -143,6 +143,9 @@ export async function getPlaygroundData(
       const foil = cardFoilOptions[card.foil] || "regular";
       const color = splCard?.color.toLowerCase() ?? "red";
       const element = cardElementColorMap[color];
+      const secondaryElement = splCard?.secondary_color
+        ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
+        : null;
       const bcx = determineBcxCap(setName, rarity, card.foil, card.bcx);
       const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
       const landBoosts = determineLandBoosts(rarity, foil, bcx, splCard);
@@ -153,6 +156,7 @@ export async function getPlaygroundData(
         bcx,
         foil,
         element,
+        secondaryElement,
         bloodline,
         landBoosts,
         uid, // Store the card UID for tracking
@@ -209,9 +213,13 @@ export async function getPlaygroundData(
         element: cardElementColorMap[
           splCard?.color?.toLowerCase() ?? "red"
         ] as CardElement,
-        subElement: cardElementColorMap[
-          splCard?.secondary_color?.toLowerCase() ?? "red"
-        ] as CardElement,
+        // null when the card has no secondary color — defaulting to a real
+        // element here would give single-color cards a phantom terrain boost.
+        subElement: splCard?.secondary_color
+          ? ((cardElementColorMap[
+              splCard.secondary_color.toLowerCase()
+            ] as CardElement) ?? null)
+          : null,
         landBasePP: basePP,
         lastUsedDate: card.last_used_date || null,
         bcx: card.bcx,

@@ -7,6 +7,7 @@ import {
 } from "@/lib/frontend/splBroadcast";
 import {
   buildCancelConstructionOp,
+  buildUpdateWorksiteOp,
   buildWorksiteConstructionOp,
 } from "@/lib/shared/operations/opBuilders";
 import { useCallback, useState } from "react";
@@ -29,6 +30,12 @@ interface UseWorksiteActionReturn {
     opName: string
   ) => Promise<WorksiteActionResult>;
   cancelConstruction: (
+    username: string,
+    regionUid: string,
+    deedUid: string,
+    projectId: number
+  ) => Promise<WorksiteActionResult>;
+  feedWorkers: (
     username: string,
     regionUid: string,
     deedUid: string,
@@ -139,6 +146,55 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
     []
   );
 
+  const feedWorkers = useCallback(
+    async (
+      username: string,
+      regionUid: string,
+      deedUid: string,
+      projectId: number
+    ): Promise<WorksiteActionResult> => {
+      setBusy(true);
+      setError(null);
+      try {
+        const op = buildUpdateWorksiteOp(
+          username,
+          regionUid,
+          deedUid,
+          projectId
+        );
+        const res = await broadcastOperations(username, [op]);
+        if (!res.success) {
+          const msg = res.error ?? "Broadcast failed";
+          setError(msg);
+          const r: WorksiteActionResult = {
+            success: false,
+            txIds: res.txIds,
+            error: msg,
+          };
+          setResult(r);
+          return r;
+        }
+        await waitForTransactions(res.txIds, lookupTransaction);
+        const r: WorksiteActionResult = { success: true, txIds: res.txIds };
+        setResult(r);
+        return r;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        setError(msg);
+        const r: WorksiteActionResult = {
+          success: false,
+          txIds: [],
+          error: msg,
+        };
+        setResult(r);
+        return r;
+      } finally {
+        setBusy(false);
+      }
+    },
+    []
+  );
+
   return {
     busy,
     result,
@@ -146,5 +202,6 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
     clearResult: () => setResult(null),
     buildWorksite,
     cancelConstruction,
+    feedWorkers,
   };
 }

@@ -176,6 +176,9 @@ export default function Planner({
     const foil = card.foil;
     const color = splCard?.color.toLowerCase() ?? "red";
     const element = cardElementColorMap[color];
+    const secondaryElement = splCard?.secondary_color
+      ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
+      : null;
     const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
@@ -198,6 +201,7 @@ export default function Planner({
       bcx,
       foil: cardFoilOptions[foil],
       element,
+      secondaryElement,
       bloodline,
       landBoosts: landboost,
     };
@@ -395,6 +399,7 @@ export default function Planner({
 
     let bloodline = next.bloodline;
     let element = next.element;
+    let secondaryElement = next.secondaryElement ?? null;
 
     if (next.set === "land") {
       const id = {
@@ -407,6 +412,7 @@ export default function Planner({
       const landCard = cardDetails.find((cd) => cd.id === id);
       bloodline = landCard?.sub_type as CardBloodline;
       element = cardElementColorMap[landCard?.color.toLowerCase() ?? "red"];
+      secondaryElement = null;
 
       landBoost = determineLandBoosts(
         next.rarity,
@@ -425,6 +431,7 @@ export default function Planner({
               landBoosts: landBoost,
               bloodline: bloodline,
               element: element,
+              secondaryElement: secondaryElement,
             }
           : v
       ),

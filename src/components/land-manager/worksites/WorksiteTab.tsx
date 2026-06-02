@@ -2,6 +2,7 @@
 
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import WorksitePlotCard from "@/components/land-manager/worksites/WorksitePlotCard";
+import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
 import { getPlayerWorksiteData } from "@/lib/backend/actions/land-manager/worksite-actions";
 import { filterDeeds } from "@/lib/filters";
 import {
@@ -51,6 +52,8 @@ interface RegionGroupProps {
   username: string;
   onSuccess: () => void;
   pageSize: number;
+  /** Grain currently held in this region — gates the Feed workers button. */
+  regionGrain?: number;
 }
 
 function RegionGroup({
@@ -59,6 +62,7 @@ function RegionGroup({
   username,
   onSuccess,
   pageSize,
+  regionGrain,
 }: RegionGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, setPage] = useState(1);
@@ -105,6 +109,7 @@ function RegionGroup({
               deed={deed}
               username={username}
               onSuccess={onSuccess}
+              regionGrain={regionGrain}
             />
           ))}
           {pageCount > 1 && (
@@ -127,6 +132,8 @@ function RegionGroup({
 
 function WorksiteTabContent({ username, enabledRegions }: Props) {
   const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
+  // Grain held per region_uid — gates the Feed workers button on each plot.
+  const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true); // true on mount; set back to true in handleRefresh
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grouped">("list");
@@ -151,6 +158,23 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
       cancelled = true;
     };
   }, [refreshKey]);
+
+  // Fetch current grain per region (gates the Feed workers button). Forced so it
+  // reflects grain consumed after a feed action; re-runs whenever deeds reload.
+  useEffect(() => {
+    if (allDeeds.length === 0) return;
+    const regionUids = [...new Set(allDeeds.map((d) => d.region_uid))];
+    let cancelled = false;
+    getBulkRegionData(regionUids, true).then(({ balances }) => {
+      if (cancelled) return;
+      const grain: Record<string, number> = {};
+      for (const uid of regionUids) grain[uid] = balances[uid]?.GRAIN ?? 0;
+      setRegionGrain(grain);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [allDeeds]);
 
   // Push live region/tract/plot lists into the FilterDrawer so the location
   // filter reflects this player's plots (rather than the global DB cache).
@@ -314,6 +338,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               deed={deed}
               username={username}
               onSuccess={handleSuccess}
+              regionGrain={regionGrain[deed.region_uid] ?? 0}
             />
           ))}
           {listPageCount > 1 && (
@@ -338,6 +363,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               username={username}
               onSuccess={handleSuccess}
               pageSize={pageSize}
+              regionGrain={regionGrain[regionUid] ?? 0}
             />
           ))}
         </Box>

@@ -270,6 +270,31 @@ export const TERRAIN_BONUS: Record<
   },
 };
 
+/** Terrain production modifier for a single element on a deed (0 if none). */
+export function terrainBonusPct(
+  terrain: DeedType | null | undefined,
+  element: CardElement
+): number {
+  if (!terrain) return 0;
+  return TERRAIN_BONUS[terrain]?.[element] ?? 0;
+}
+
+/**
+ * Terrain modifier for a card, taking the BEST of its primary and (optional)
+ * secondary element. Dual-element cards benefit from whichever of their
+ * elements the terrain favours most (or penalises least), matching how
+ * Splinterlands applies the terrain bonus.
+ */
+export function bestTerrainBonusPct(
+  terrain: DeedType | null | undefined,
+  element: CardElement,
+  secondaryElement?: CardElement | null
+): number {
+  const primary = terrainBonusPct(terrain, element);
+  if (!secondaryElement || secondaryElement === element) return primary;
+  return Math.max(primary, terrainBonusPct(terrain, secondaryElement));
+}
+
 export const TERRAIN_OPTIONS: DeedType[] = Object.keys(
   TERRAIN_BONUS
 ) as DeedType[];

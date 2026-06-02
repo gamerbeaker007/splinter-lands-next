@@ -25,19 +25,15 @@ export default function BulkRentalPanel({
   refreshKey = 0,
   onSuccess,
 }: Props) {
-  const { stakedDEC, eligibility } = useLandManagerRegionData(
+  const { globalShortfall, eligibility } = useLandManagerRegionData(
     enabledRegions,
     refreshKey
   );
 
-  const stakeShortfall = useMemo(
-    () =>
-      stakedDEC.reduce(
-        (s, a) => s + Math.max(0, a.dec_stake_needed - a.dec_stake_in_use),
-        0
-      ),
-    [stakedDEC]
-  );
+  // Drive the stake amount off the global DEC pool, not the sum of per-region
+  // gaps: a region's staked DEC can read 0 while a building is in progress even
+  // though that DEC is still staked overall, which would over-state the amount.
+  const stakeShortfall = Math.ceil(globalShortfall);
 
   const [busyMap, setBusyMap] = useState({
     rentWorkers: false,

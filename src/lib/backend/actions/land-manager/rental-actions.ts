@@ -97,21 +97,51 @@ export interface RegionDECInfo {
   dec_stake_in_use: number;
 }
 
+export interface RegionStakedDEC {
+  /** Per-region rows for the enabled regions, sorted by region number. */
+  regions: RegionDECInfo[];
+  /**
+   * Account-wide DEC currently staked (the global `dark_energy` pool). This is
+   * the source of truth for whether enough DEC is staked overall — a region's
+   * `dec_stake_in_use` can temporarily read 0 while a building is in progress,
+   * even though that DEC is still staked in the global pool.
+   */
+  totalStaked: number;
+  /** Sum of `dark_energy_required` across ALL of the player's regions. */
+  totalRequired: number;
+}
+
+const EMPTY_STAKED_DEC: RegionStakedDEC = {
+  regions: [],
+  totalStaked: 0,
+  totalRequired: 0,
+};
+
 export async function getRegionStakedDEC(
   enabledRegions: number[]
-): Promise<RegionDECInfo[]> {
+): Promise<RegionStakedDEC> {
   const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) return [];
-  if (enabledRegions.length === 0) return [];
+  if (!auth.authenticated || !auth.username) return EMPTY_STAKED_DEC;
+  if (enabledRegions.length === 0) return EMPTY_STAKED_DEC;
 
   const cookieStore = await cookies();
   const jwt = cookieStore.get("jwt_token")?.value ?? null;
-  if (!jwt) return [];
+  if (!jwt) return EMPTY_STAKED_DEC;
 
-  const regions = await fetchProductionOverview(auth.username, jwt);
+  const { regions, totalDecStaked } = await fetchProductionOverview(
+    auth.username,
+    jwt
+  );
   const enabledSet = new Set(enabledRegions);
 
-  return regions
+  // Required is summed across ALL regions so it lines up with the global
+  // `totalDecStaked` pool, regardless of which regions are enabled in the tool.
+  const totalRequired = regions.reduce(
+    (sum, r) => sum + r.dark_energy_required,
+    0
+  );
+
+  const enabled = regions
     .filter((r) => enabledSet.has(r.region_number))
     .map((r) => ({
       region_number: r.region_number,
@@ -121,6 +151,8 @@ export async function getRegionStakedDEC(
       dec_stake_in_use: r.dark_energy_staked,
     }))
     .sort((a, b) => a.region_number - b.region_number);
+
+  return { regions: enabled, totalStaked: totalDecStaked, totalRequired };
 }
 
 export interface RentedCardsSpendSummary {

@@ -11,6 +11,8 @@ export function isDonationResourceTransferable(symbol: string): boolean {
 }
 
 const APP = `${process.env.NEXT_PUBLIC_APP_NAME ?? "splinter-lands"}/${process.env.NEXT_PUBLIC_APP_VERSION ?? "dev"}`;
+const MARKET = "spl-stats.com";
+
 export function generateNonce(length = 10): string {
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -344,7 +346,7 @@ export function buildRenewRentalOp(
       json: JSON.stringify({
         items: marketIds,
         currency: "DEC",
-        market: APP,
+        market: MARKET,
         app: APP,
       }),
     },
@@ -394,6 +396,28 @@ export function buildCancelConstructionOp(
 }
 
 /**
+ * Feed the workers of a "ready" worksite (activate it after construction). Uses
+ * POSTING key. `projectId` is the deed's active `project_id`. Pays the worksite's
+ * grain cost from the region's grain; `autoBuyGrain` stays false so it never buys.
+ */
+export function buildUpdateWorksiteOp(
+  username: string,
+  regionUid: string,
+  deedUid: string,
+  projectId: number,
+  { timeCrystals = 0, autoBuyGrain = false } = {}
+): [string, object] {
+  return customJsonOp(username, {
+    op: "update_worksite",
+    region_uid: regionUid,
+    deed_uids: [deedUid],
+    time_crystals: timeCrystals,
+    project_id: projectId,
+    auto_buy_grain: autoBuyGrain,
+  });
+}
+
+/**
  * Rent cards via the SPL market on behalf of `player`. Signed by the
  * `serviceAccount`'s ACTIVE key — the player must have granted purchase
  * authority to that account on Splinterlands Account Security.
@@ -414,6 +438,7 @@ export function buildRentOnBehalfOp(
         currency: "DEC",
         items: marketIds,
         player,
+        market: MARKET,
         app: APP,
         n: generateNonce(),
       }),

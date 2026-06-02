@@ -10,7 +10,7 @@ import {
   SplHarvestableResource,
   SplHarvestableResponse,
   SplPlayerResourceBalance,
-  SplProductionOverviewRegion,
+  SplProductionOverview,
   SplProductionOverviewResponse,
   SplRegionOverviewResponse,
 } from "@/types/spl/landManager";
@@ -422,7 +422,7 @@ export async function fetchAllDeedHarvestActions(
 export async function fetchProductionOverview(
   player: string,
   jwtToken: string
-): Promise<SplProductionOverviewRegion[]> {
+): Promise<SplProductionOverview> {
   const url = `/land/resources/production/overview`;
   const res = await splLandClient.get(url, {
     params: { player },
@@ -433,7 +433,10 @@ export async function fetchProductionOverview(
   const response = res.data as SplProductionOverviewResponse;
   if (!response) throw new Error("Invalid response from Splinterlands API");
 
-  return response.data.regions.items ?? [];
+  return {
+    regions: response.data.regions.items ?? [],
+    totalDecStaked: response.data.dark_energy?.total_dec_staked ?? 0,
+  };
 }
 
 export async function fetchSplHarvestableResources(

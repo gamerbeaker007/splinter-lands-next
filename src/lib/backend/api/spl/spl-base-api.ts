@@ -614,6 +614,26 @@ export async function fetchTransactionLookup(
         };
         break;
       }
+      case "update_worksite": {
+        if (outer?.result?.success === false) {
+          const error: string =
+            outer?.result?.error ?? outer?.error ?? "Feed workers failed";
+          return { status: "failed", error };
+        }
+        const d = outer?.result?.data as Raw | null;
+        if (!d) return { status: "pending" };
+        result = {
+          type: "update_worksite",
+          data: {
+            deed_uid: (d.deed_uid as string | undefined) ?? "",
+            region_number: (d.region_number as number | undefined) ?? 0,
+            plot_number: (d.plot_number as number | undefined) ?? 0,
+            dec_spent: (d.dec_spent as number | undefined) ?? 0,
+            result_message: (d.result_message as string | undefined) ?? "",
+          },
+        };
+        break;
+      }
       default:
         return { status: "pending" };
     }
