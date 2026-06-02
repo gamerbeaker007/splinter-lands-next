@@ -18,8 +18,17 @@ export interface StakeDecPlan {
 }
 
 /**
- * For each enabled region with a DEC stake shortfall, return how much DEC must
- * be staked to fully cover it. Rows with no shortfall are filtered out.
+ * Build the plan of how much DEC to newly stake, and where.
+ *
+ * The amount that genuinely needs staking is the GLOBAL shortfall —
+ * `max(0, totalRequired - totalStaked)` — not the sum of per-region gaps. A
+ * region's `dec_stake_in_use` can read 0 while a building is in progress even
+ * though that DEC is still staked in the global pool, which would otherwise
+ * produce a false shortfall. When the global pool already covers (or exceeds)
+ * total requirements, the plan is empty.
+ *
+ * The global shortfall is then distributed across the enabled regions that
+ * still show an apparent gap, so the user knows where to stake.
  */
 export async function getStakeDecPlan(
   enabledRegions: number[]
@@ -32,14 +41,23 @@ export async function getStakeDecPlan(
     return { items: [], total_dec: 0 };
   }
 
-  const regions = await getRegionStakedDEC(enabledRegions);
+  const { regions, totalStaked, totalRequired } =
+    await getRegionStakedDEC(enabledRegions);
+
+  let remaining = Math.max(0, Math.ceil(totalRequired - totalStaked));
+  if (remaining <= 0) {
+    return { items: [], total_dec: 0 };
+  }
 
   const items: StakeDecRegionPlanItem[] = [];
   let total_dec = 0;
-  for (const r of regions) {
-    const shortfall = Math.max(0, r.dec_stake_needed - r.dec_stake_in_use);
-    if (shortfall <= 0) continue;
-    const amount = Math.ceil(shortfall);
+  for (const r of [...regions].sort(
+    (a, b) => a.region_number - b.region_number
+  )) {
+    if (remaining <= 0) break;
+    const gap = Math.ceil(Math.max(0, r.dec_stake_needed - r.dec_stake_in_use));
+    if (gap <= 0) continue;
+    const amount = Math.min(gap, remaining);
     items.push({
       region_uid: r.region_uid,
       region_number: r.region_number,
@@ -48,9 +66,9 @@ export async function getStakeDecPlan(
       shortfall: amount,
     });
     total_dec += amount;
+    remaining -= amount;
   }
 
-  items.sort((a, b) => a.region_number - b.region_number);
   return { items, total_dec };
 }
 

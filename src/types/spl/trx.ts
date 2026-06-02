@@ -164,6 +164,16 @@ export interface CancelConstructionTrxData {
   project_id: number;
 }
 
+// ── update_worksite (feed workers / activate a ready worksite) ─────────────────
+
+export interface UpdateWorksiteTrxData {
+  deed_uid: string;
+  region_number: number;
+  plot_number: number;
+  dec_spent: number;
+  result_message: string;
+}
+
 // ── set_authority ────────────────────────────────────────────────────────────
 // Result of sm_set_authority (grant/revoke rental/purchase/delegation).
 // The `result` envelope is `{ success, authority: { rental, purchase, delegation } }`.
@@ -199,6 +209,7 @@ export type SplTrxResult =
   | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
   | { type: "worksite_construction"; data: WorksiteConstructionTrxData }
   | { type: "cancel_construction"; data: CancelConstructionTrxData }
+  | { type: "update_worksite"; data: UpdateWorksiteTrxData }
   | { type: "set_authority"; data: SetAuthorityTrxData };
 
 /**

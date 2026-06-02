@@ -46,7 +46,7 @@ export async function getProductionOverview(): Promise<{
   if (!jwt) return { regions: [], error: "No session token" };
 
   try {
-    const regions = await fetchProductionOverview(auth.username, jwt);
+    const { regions } = await fetchProductionOverview(auth.username, jwt);
     return { regions };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";

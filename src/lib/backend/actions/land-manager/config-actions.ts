@@ -55,6 +55,7 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       max_dec_per_day_per_worker: row?.rental_max_dec_per_day_per_worker ?? 0,
       min_land_base_pp: row?.rental_min_land_base_pp ?? 0,
       min_foil: row?.rental_min_foil ?? 0,
+      rental_batch_size: row?.rental_batch_size ?? null,
     },
   };
 }
@@ -115,6 +116,7 @@ export async function saveRentalConfig(
         rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
+        rental_batch_size: rental.rental_batch_size ?? null,
       },
       create: {
         player: auth.username,
@@ -124,6 +126,7 @@ export async function saveRentalConfig(
         rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
+        rental_batch_size: rental.rental_batch_size ?? null,
       },
     });
     return { success: true };

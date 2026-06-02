@@ -1,7 +1,6 @@
 "use client";
 
 import RentWorkersRow from "@/components/land-manager/bulk-operations/RentWorkersRow";
-import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { RentalConfig } from "@/types/landManager";
@@ -25,23 +24,10 @@ export default function BulkRentalPanel({
   refreshKey = 0,
   onSuccess,
 }: Props) {
-  const { stakedDEC, eligibility } = useLandManagerRegionData(
-    enabledRegions,
-    refreshKey
-  );
-
-  const stakeShortfall = useMemo(
-    () =>
-      stakedDEC.reduce(
-        (s, a) => s + Math.max(0, a.dec_stake_needed - a.dec_stake_in_use),
-        0
-      ),
-    [stakedDEC]
-  );
+  const { eligibility } = useLandManagerRegionData(enabledRegions, refreshKey);
 
   const [busyMap, setBusyMap] = useState({
     rentWorkers: false,
-    stakeDec: false,
   });
 
   const anyBusy = useMemo(
@@ -51,10 +37,6 @@ export default function BulkRentalPanel({
 
   const onRentWorkersBusy = useCallback(
     (b: boolean) => setBusyMap((m) => ({ ...m, rentWorkers: b })),
-    []
-  );
-  const onStakeDecBusy = useCallback(
-    (b: boolean) => setBusyMap((m) => ({ ...m, stakeDec: b })),
     []
   );
 
@@ -71,15 +53,6 @@ export default function BulkRentalPanel({
           eligiblePlotCount={eligibility?.eligible.length ?? null}
           anyBusy={anyBusy}
           onBusyChange={onRentWorkersBusy}
-          onSuccess={onSuccess ?? (() => {})}
-        />
-
-        <StakeDecRow
-          username={username}
-          enabledRegions={enabledRegions}
-          shortfallTotal={stakeShortfall}
-          anyBusy={anyBusy}
-          onBusyChange={onStakeDecBusy}
           onSuccess={onSuccess ?? (() => {})}
         />
       </Stack>

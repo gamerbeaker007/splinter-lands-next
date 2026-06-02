@@ -20,6 +20,7 @@ import {
   Build as BuildIcon,
   Cancel as CancelIcon,
   OpenInNew as OpenInNewIcon,
+  Restaurant as RestaurantIcon,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -64,6 +65,8 @@ interface Props {
   deed: DeedComplete;
   username: string;
   onSuccess?: () => void;
+  /** Grain currently held in this plot's region — gates the Feed workers button. */
+  regionGrain?: number;
 }
 
 function formatDuration(ms: number): string {
@@ -170,13 +173,21 @@ function WorksiteButton({
   );
 }
 
-export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
+export default function WorksitePlotCard({
+  deed,
+  username,
+  onSuccess,
+  regionGrain,
+}: Props) {
   const action = useWorksiteAction();
   // Capture mount time once to avoid impure renders
   const [now] = useState(() => Date.now());
   // Pending confirm: set when the user clicks a button, cleared on dismiss
   const [pendingAction, setPendingAction] = useState<
-    { type: "build"; worksite: WorksiteType } | { type: "cancel" } | null
+    | { type: "build"; worksite: WorksiteType }
+    | { type: "cancel" }
+    | { type: "feed" }
+    | null
   >(null);
 
   // worksiteDetail == null → undeveloped (buttons enabled)
@@ -196,6 +207,18 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
         | WorksiteType
         | null
         | undefined) ?? null);
+
+  // A worksite that finished construction shows as "Worksite Ready X" and must
+  // be activated by feeding its workers grain (the update_worksite op).
+  const isReadyToFeed =
+    !isActivelyBuilding &&
+    (deed.worksiteDetail?.worksite_type ?? "")
+      .toLowerCase()
+      .startsWith("worksite ready") &&
+    deed.worksiteDetail?.project_id != null &&
+    (deed.worksiteDetail?.grain_required ?? 0) > 0;
+  const grainCost = Math.ceil(deed.worksiteDetail?.grain_required ?? 0);
+  const enoughGrain = (regionGrain ?? 0) >= grainCost;
 
   // Inline construction progress values
   const { constructionPct, constructionRemaining } = useMemo(() => {
@@ -257,6 +280,10 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
     setPendingAction({ type: "cancel" });
   }, []);
 
+  const handleFeedClick = useCallback(() => {
+    setPendingAction({ type: "feed" });
+  }, []);
+
   const handleConfirm = useCallback(async () => {
     if (!pendingAction) return;
     setPendingAction(null);
@@ -268,6 +295,16 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
         deed.region_uid,
         deed.deed_uid,
         opName
+      );
+      if (res.success) onSuccess?.();
+    } else if (pendingAction.type === "feed") {
+      const projectId = deed.worksiteDetail?.project_id;
+      if (!projectId) return;
+      const res = await action.feedWorkers(
+        username,
+        deed.region_uid,
+        deed.deed_uid,
+        projectId
       );
       if (res.success) onSuccess?.();
     } else {
@@ -547,6 +584,41 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
             </Button>
           </>
         )}
+
+        {/* 7. Divider + Feed workers button — only when the worksite is ready */}
+        {isReadyToFeed && (
+          <>
+            <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
+            <Tooltip
+              title={
+                enoughGrain
+                  ? ""
+                  : `Not enough grain in region (have ${(regionGrain ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })} / need ${grainCost.toLocaleString("en-US")})`
+              }
+            >
+              {/* span wrapper so the tooltip works on a disabled button */}
+              <span style={{ flexShrink: 0 }}>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="success"
+                  startIcon={
+                    action.busy ? (
+                      <CircularProgress size={12} />
+                    ) : (
+                      <RestaurantIcon sx={{ fontSize: "0.9rem !important" }} />
+                    )
+                  }
+                  onClick={handleFeedClick}
+                  disabled={action.busy || !enoughGrain}
+                  sx={{ whiteSpace: "nowrap", fontSize: "0.65rem" }}
+                >
+                  Feed workers
+                </Button>
+              </span>
+            </Tooltip>
+          </>
+        )}
       </Stack>
 
       {/* Confirm dialog */}
@@ -559,11 +631,26 @@ export default function WorksitePlotCard({ deed, username, onSuccess }: Props) {
         <DialogTitle sx={{ pb: 1 }}>
           {pendingAction?.type === "cancel"
             ? "Cancel construction?"
-            : `Build ${pendingAction?.type === "build" ? pendingAction.worksite : ""}?`}
+            : pendingAction?.type === "feed"
+              ? "Feed workers?"
+              : `Build ${pendingAction?.type === "build" ? pendingAction.worksite : ""}?`}
         </DialogTitle>
         <DialogContent sx={{ pt: "0 !important" }}>
           <Typography variant="body2" color="text.secondary">
-            {pendingAction?.type === "cancel" ? (
+            {pendingAction?.type === "feed" ? (
+              <>
+                Feed the workers on <strong>{plotLabel}</strong> to activate
+                this worksite?
+                <br />
+                This pays{" "}
+                <strong>{grainCost.toLocaleString("en-US")} GRAIN</strong> from
+                the region (held:{" "}
+                {(regionGrain ?? 0).toLocaleString("en-US", {
+                  maximumFractionDigits: 0,
+                })}
+                ).
+              </>
+            ) : pendingAction?.type === "cancel" ? (
               <>
                 Cancel the ongoing construction of{" "}
                 <strong>{buildingWorksite ?? "this worksite"}</strong> on{" "}

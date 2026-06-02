@@ -50,6 +50,18 @@ export interface SplProductionOverviewRegion {
   grain_req_per_hour: number;
 }
 
+/**
+ * Result of {@link fetchProductionOverview}: the per-region rows plus the
+ * account-wide total of DEC currently staked. `totalDecStaked` is the global
+ * pool figure (`data.dark_energy.total_dec_staked`) and is the source of truth
+ * for whether enough DEC is staked overall — per-region `dark_energy_staked`
+ * can temporarily read 0 while a building is in progress.
+ */
+export interface SplProductionOverview {
+  regions: SplProductionOverviewRegion[];
+  totalDecStaked: number;
+}
+
 export interface SplProductionOverviewResponse {
   status: string;
   data: {

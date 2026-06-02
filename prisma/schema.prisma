@@ -379,6 +379,7 @@ model LandManagerConfig {
   rental_max_dec_per_day_per_worker Int     @default(0)
   rental_min_land_base_pp           Int     @default(0)
   rental_min_foil                   Int     @default(0)
+  rental_batch_size                 Int?    @default(10)
   created_at                      DateTime @default(now())
   updated_at                      DateTime @updatedAt
 

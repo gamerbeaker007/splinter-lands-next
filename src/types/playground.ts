@@ -51,7 +51,8 @@ export type PlaygroundCard = {
   set: CardSetName;
   rarity: CardRarity;
   element: CardElement;
-  subElement: CardElement;
+  /** Secondary element for dual-element cards; null when single-color. */
+  subElement: CardElement | null;
   landBasePP: number;
   lastUsedDate: string | null;
   bcx: number;

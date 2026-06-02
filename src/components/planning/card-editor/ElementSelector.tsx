@@ -4,7 +4,7 @@ import {
   CardElement,
   cardElementOptions,
   DeedType,
-  TERRAIN_BONUS,
+  terrainBonusPct,
 } from "@/types/planner";
 import {
   Box,
@@ -24,14 +24,6 @@ export type Props = {
   deedType: DeedType;
   onChange: (tier: CardElement) => void;
 };
-
-export function terrainBonusPct(
-  terrain: DeedType,
-  element: CardElement
-): number {
-  if (!terrain) return 0;
-  return TERRAIN_BONUS[terrain]?.[element] ?? 0;
-}
 
 /** Helper: 0 -> null, 0.15 -> +15%, -0.1 -> -10%  */
 function formatBoostPct(pct: number): string | null {

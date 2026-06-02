@@ -13,9 +13,10 @@ import {
 } from "@/types/cardAlerts";
 import { DeedComplete } from "@/types/deed";
 import {
+  bestTerrainBonusPct,
   CardElement,
   cardElementColorMap,
-  TERRAIN_BONUS,
+  DeedType,
 } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
@@ -332,11 +333,16 @@ function analyzeTerrainBonuses(
     const rarity = findCardRarity([cardDetail], card.card_detail_id);
     const maxBcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 
-    const elementColor = cardDetail.color.toLowerCase();
-    const deedType = deed.deed_type!.toLowerCase();
+    const deedType = deed.deed_type!.toLowerCase() as DeedType;
     const element: CardElement =
-      cardElementColorMap[elementColor] ?? ("neutral" as CardElement);
-    const boost = TERRAIN_BONUS[deedType]?.[element] ?? 0;
+      cardElementColorMap[cardDetail.color.toLowerCase()] ??
+      ("neutral" as CardElement);
+    // Dual-element cards take the best of their two elements, so a secondary
+    // color can lift an otherwise negative/zero primary-color terrain boost.
+    const secondaryElement: CardElement | null = cardDetail.secondary_color
+      ? (cardElementColorMap[cardDetail.secondary_color.toLowerCase()] ?? null)
+      : null;
+    const boost = bestTerrainBonusPct(deedType, element, secondaryElement);
 
     const item: TerrainCardInfo = {
       uid: card.uid,

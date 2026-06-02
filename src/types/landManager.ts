@@ -107,6 +107,12 @@ export interface RentalConfig {
   min_land_base_pp: number;
   /** Minimum foil rank (0=Regular). Cards below this are skipped. */
   min_foil: number;
+  /**
+   * Max plots to process per run. null = process all eligible plots at once.
+   * Smaller batches allow re-evaluation of market conditions between runs
+   * for potentially better matches; larger batches process more in one go.
+   */
+  rental_batch_size: number | null;
 }
 
 export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
@@ -115,6 +121,7 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   max_dec_per_day_per_worker: 0,
   min_land_base_pp: 0,
   min_foil: 0,
+  rental_batch_size: 10,
 };
 
 // === Rental eligibility (computed from region data) ===
