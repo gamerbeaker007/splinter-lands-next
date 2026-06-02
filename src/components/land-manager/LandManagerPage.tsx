@@ -4,6 +4,7 @@ import LoginComponent from "@/components/auth/LoginComponent";
 import FilterDrawer from "@/components/filter/FilterDrawer";
 import AlertsPanel from "@/components/land-manager/AlertsPanel";
 import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
+import BulkDecActionsPanel from "@/components/land-manager/bulk-operations/BulkDecActionsPanel";
 import BulkRentalPanel from "@/components/land-manager/bulk-operations/BulkRentalPanel";
 import ConfigDialog from "@/components/land-manager/ConfigDialog";
 import MythicOverview from "@/components/land-manager/MythicOverview";
@@ -245,6 +246,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       >
         <Tab label="Harvest" />
         <Tab label="Rental" />
+        <Tab label="DEC Actions" />
         <Tab label="Worksites" />
       </Tabs>
 
@@ -380,8 +382,18 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </FilterProvider>
       )}
 
-      {/* ── Worksites tab ─────────────────────────────────────────────── */}
+      {/* ── DEC Actions tab ───────────────────────────────────────────── */}
       {activeTab === 2 && (
+        <BulkDecActionsPanel
+          username={auth.username ?? ""}
+          enabledRegions={currentConfig.enabled_regions}
+          refreshKey={regionRefreshKey}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {/* ── Worksites tab ─────────────────────────────────────────────── */}
+      {activeTab === 3 && (
         <WorksiteTab
           username={auth.username ?? ""}
           enabledRegions={currentConfig.enabled_regions}

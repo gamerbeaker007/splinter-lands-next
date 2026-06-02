@@ -5,18 +5,12 @@ import {
 } from "@/lib/backend/api/spl/spl-base-api";
 import logger from "@/lib/backend/log/logger.server";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
+import { calcLandPpPerBcx } from "@/lib/frontend/utils/plannerCalcs";
 import {
   findCardElement,
   findCardSet,
   getCardImgV2,
 } from "@/lib/utils/cardUtil";
-import {
-  CardElement,
-  CardFoil,
-  cardFoilOptions,
-  CardRarity,
-  cardRarityOptions,
-} from "@/types/planner";
 import {
   RentalConfig,
   RentalEligiblePlot,
@@ -25,11 +19,17 @@ import {
   RentalPlanPick,
 } from "@/types/landManager";
 import {
+  CardElement,
+  CardFoil,
+  cardFoilOptions,
+  CardRarity,
+  cardRarityOptions,
+} from "@/types/planner";
+import {
   SplMarketListing,
   SplMarketRentGrouped,
 } from "@/types/spl/marketRental";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { calcLandPpPerBcx } from "@/lib/frontend/utils/plannerCalcs";
 
 // ──────────────────────────────────────────────────────────────────────────
 // Constants
@@ -511,7 +511,23 @@ export async function buildRentalPlan(
   config: RentalConfig
 ): Promise<RentalPlan> {
   const warnings: string[] = [];
-  const items: RentalPlanItem[] = eligible.map((plot) => ({
+
+  // Apply batch size cap: simple slice of eligible plots. If rental_batch_size
+  // is set, only the first N plots are processed this run regardless of how many
+  // empty slots each plot has. Running again will pick up the next plots, letting
+  // you re-evaluate market conditions between batches for fresher matches.
+  let batchedEligible = eligible;
+  if (config.rental_batch_size !== null && config.rental_batch_size > 0) {
+    const cap = config.rental_batch_size;
+    batchedEligible = eligible.slice(0, cap);
+    if (batchedEligible.length < eligible.length) {
+      warnings.push(
+        `Batch size ${cap}: processing first ${batchedEligible.length} of ${eligible.length} eligible plots this run.`
+      );
+    }
+  }
+
+  const items: RentalPlanItem[] = batchedEligible.map((plot) => ({
     plot,
     picks: [],
     slots_filled: 0,
@@ -520,7 +536,7 @@ export async function buildRentalPlan(
     skip_reason: null,
   }));
 
-  if (eligible.length === 0) {
+  if (batchedEligible.length === 0) {
     return emptyPlan(eligible, config, items, warnings);
   }
 
@@ -569,7 +585,7 @@ export async function buildRentalPlan(
   // ── Phase 4: lazy fetch + greedy assignment ──
   const result = await fetchAndAssignLazy(
     cands.tuples,
-    eligible,
+    batchedEligible,
     cardById,
     config,
     seasonDays.rental_days,
@@ -589,7 +605,7 @@ export async function buildRentalPlan(
   }
 
   const totals = {
-    plots_total: eligible.length,
+    plots_total: batchedEligible.length,
     plots_with_picks: items.filter((i) => i.picks.length > 0).length,
     slots_total: items.reduce((s, i) => s + i.plot.empty_slots, 0),
     slots_filled: items.reduce((s, i) => s + i.slots_filled, 0),

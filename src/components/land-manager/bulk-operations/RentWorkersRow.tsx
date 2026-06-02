@@ -2,19 +2,21 @@
 
 import RenewRentalsDialog from "@/components/land-manager/bulk-operations/RenewRentalsDialog";
 import RentConfirmDialog from "@/components/land-manager/bulk-operations/RentConfirmDialog";
-import RentDryRunDialog from "@/components/land-manager/bulk-operations/RentDryRunDialog";
 import { useRenewRentalsAction } from "@/hooks/useRenewRentalsAction";
 import { useRentEmptyWorkersAction } from "@/hooks/useRentEmptyWorkersAction";
 import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
-import { RentalConfig } from "@/types/landManager";
+import { foilLabel } from "@/lib/utils/cardUtil";
+import { RENTAL_STRATEGY_LABELS, RentalConfig } from "@/types/landManager";
 import { Autorenew, Storefront } from "@mui/icons-material";
 import {
   Alert,
+  Box,
   Button,
-  ButtonGroup,
+  Chip,
   CircularProgress,
   Stack,
   Tooltip,
+  Typography,
 } from "@mui/material";
 import { useEffect } from "react";
 
@@ -34,6 +36,68 @@ function fmtDec(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+/** Summarise the active rental config as compact chips for display. */
+function RentalConfigChips({ rental }: { rental: RentalConfig }) {
+  const chips: { key: string; label: string }[] = [];
+
+  chips.push({
+    key: "strategy",
+    label: RENTAL_STRATEGY_LABELS[rental.strategy],
+  });
+
+  chips.push({
+    key: "batch",
+    label:
+      rental.rental_batch_size !== null
+        ? `Batch: ${rental.rental_batch_size} plots`
+        : "Batch: all plots",
+  });
+
+  if (rental.max_total_dec > 0) {
+    chips.push({
+      key: "total",
+      label: `≤ ${fmtDec(rental.max_total_dec)} DEC total per plot`,
+    });
+  }
+  if (rental.max_dec_per_day_per_worker > 0) {
+    chips.push({
+      key: "rate",
+      label: `≤ ${fmtDec(rental.max_dec_per_day_per_worker)} DEC/day per worker`,
+    });
+  }
+  if (rental.min_land_base_pp > 0) {
+    chips.push({
+      key: "pp",
+      label: `≥ ${rental.min_land_base_pp} PP per card`,
+    });
+  }
+  if (rental.min_foil > 0) {
+    chips.push({ key: "foil", label: `${foilLabel(rental.min_foil)} Foil+` });
+  }
+
+  return (
+    <Stack direction="row" gap={0.5} flexWrap="wrap" alignItems="center">
+      <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
+        Config:
+      </Typography>
+      {chips.map(({ key, label }) => (
+        <Chip key={key} label={label} size="small" variant="outlined" />
+      ))}
+    </Stack>
+  );
+}
+
+interface Props {
+  username: string;
+  enabledRegions: number[];
+  rental: RentalConfig;
+  authorityStatus?: RentalAuthorityStatus | null;
+  eligiblePlotCount?: number | null;
+  anyBusy: boolean;
+  onBusyChange: (busy: boolean) => void;
+  onSuccess: () => void;
 }
 
 export default function RentWorkersRow({
@@ -96,35 +160,50 @@ export default function RentWorkersRow({
         gap={2}
         flexWrap="wrap"
         alignItems="center"
-        mb={1.5}
+        mb={0.5}
       >
-        {/* Rent Empty Workers */}
+        {/* Rent Empty Workers — single action button (plan is reviewed in confirm dialog) */}
         <Tooltip title={blockedByAuthority ? getRentTooltip() : ""}>
           <span>
-            <ButtonGroup size="small" disabled={rentDisabled}>
-              <Button
-                variant="contained"
-                color="info"
-                startIcon={
-                  rentAction.busy ? (
-                    <CircularProgress size={14} color="inherit" />
-                  ) : (
-                    <Storefront fontSize="small" />
-                  )
-                }
-                onClick={() => rentAction.prepareExecution()}
+            <Button
+              size="small"
+              variant="contained"
+              color="info"
+              disabled={rentDisabled}
+              startIcon={
+                rentAction.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <Storefront fontSize="small" />
+                )
+              }
+              onClick={() => rentAction.prepareExecution()}
+              sx={{ textTransform: "none" }}
+            >
+              <Box
+                component="span"
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  lineHeight: 1.2,
+                }}
               >
-                Rent Workers
-              </Button>
-              <Button
-                variant="outlined"
-                color="info"
-                disabled={rentDisabled}
-                onClick={() => rentAction.preview()}
-              >
-                Dry Run
-              </Button>
-            </ButtonGroup>
+                <Typography
+                  variant="caption"
+                  fontWeight="bold"
+                  lineHeight={1.3}
+                >
+                  Find Rental Workers
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{ fontSize: "0.65rem", opacity: 0.85, lineHeight: 1.2 }}
+                >
+                  for empty worker slots on plot
+                </Typography>
+              </Box>
+            </Button>
           </span>
         </Tooltip>
 
@@ -150,6 +229,11 @@ export default function RentWorkersRow({
           </span>
         </Tooltip>
       </Stack>
+
+      {/* Active config summary */}
+      <Box mb={1.5}>
+        <RentalConfigChips rental={rental} />
+      </Box>
 
       {/* Rent Workers feedback */}
       {rentAction.result?.success && (
@@ -200,13 +284,6 @@ export default function RentWorkersRow({
       )}
 
       {/* Rent Workers dialogs */}
-      {rentAction.dryRunPlan && (
-        <RentDryRunDialog
-          plan={rentAction.dryRunPlan}
-          decBalance={rentAction.decBalance}
-          onClose={rentAction.clearDryRunPlan}
-        />
-      )}
       {rentAction.executionPlan && (
         <RentConfirmDialog
           exec={rentAction.executionPlan}
