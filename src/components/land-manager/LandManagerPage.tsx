@@ -397,6 +397,8 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         <WorksiteTab
           username={auth.username ?? ""}
           enabledRegions={currentConfig.enabled_regions}
+          strategies={currentConfig.make_harvestable_strategies}
+          onSuccess={handleSuccess}
         />
       )}
 

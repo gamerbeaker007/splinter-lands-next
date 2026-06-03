@@ -14,6 +14,29 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.10.0] - 2026-06-03
+
+### Fixed
+
+#### Land Manager — Feed workers button now appears once a build is finished
+
+A worksite that had finished construction but not yet been fed showed no actions at all — the Feed workers button never appeared.
+
+- Splinterlands keeps `is_construction === true` even after a build completes; it only flips to `false` once the workers are fed. The tab treated that flag alone as "still building", so a finished plot stayed greyed out forever.
+- Construction is now considered finished once its `projected_end` has passed. A finished-but-unfed plot still shows its progress bar (at 100% / `0m` left) with the worksite-change icons disabled, and now also surfaces the **Feed workers** button (and **Fix grain deficit** when the region is short on grain).
+
+### Added
+
+#### Land Manager — Fix grain deficit (cover worker food from other regions)
+
+When a ready worksite's region doesn't hold enough grain to feed its workers, a per-plot **Fix grain deficit** button now proposes a plan to bring grain in from your other regions.
+
+- Uses your configured Make-Harvestable strategy order — **transfer** surplus grain from another region, else **swap** a surplus resource into grain, else **buy** grain with DEC — to cover exactly the worker food requirement, while reserving each donor region's own harvest needs.
+- Opens a confirm dialog showing the proposed operations and whether they fully cover the shortfall (confirm is disabled if they can't). It only moves grain — once it lands, use the **Feed workers** button to activate the worksite.
+- The grain moves are broadcast and recorded in the make-harvestable log — they show in the **Today** panel under **Make Harvestable** (the panel now refreshes after worksite actions), mirroring the **Make All Harvestable** flow.
+
+---
+
 ## [v1.9.0] - 2026-06-02
 
 ### Fixed

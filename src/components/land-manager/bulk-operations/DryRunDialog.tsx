@@ -1,5 +1,6 @@
 "use client";
 
+import PlanLogBox from "@/components/land-manager/PlanLogBox";
 import { DryRunResult } from "@/types/landManager";
 import {
   Button,
@@ -7,7 +8,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Paper,
   Typography,
 } from "@mui/material";
 
@@ -24,20 +24,7 @@ export default function DryRunDialog({ result, onClose }: Props) {
         <Typography variant="subtitle2" gutterBottom>
           Plan
         </Typography>
-        <Paper
-          variant="outlined"
-          sx={{
-            p: 1.5,
-            fontFamily: "monospace",
-            fontSize: "0.75rem",
-            whiteSpace: "pre-wrap",
-            bgcolor: "action.hover",
-            maxHeight: 400,
-            overflow: "auto",
-          }}
-        >
-          {result.log.join("\n") || "(nothing to do)"}
-        </Paper>
+        <PlanLogBox lines={result.log} />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>

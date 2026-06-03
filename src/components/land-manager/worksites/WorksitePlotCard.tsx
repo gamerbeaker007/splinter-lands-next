@@ -17,6 +17,7 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import {
+  AutoFixHigh as AutoFixHighIcon,
   Build as BuildIcon,
   Cancel as CancelIcon,
   OpenInNew as OpenInNewIcon,
@@ -41,6 +42,8 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
+import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
+import { MakeHarvestableStrategy } from "@/types/landManager";
 
 /** Worksite types selectable from the picker (excludes KEEP/CASTLE which are mythic). */
 const SELECTABLE_WORKSITES: WorksiteType[] = [
@@ -67,6 +70,8 @@ interface Props {
   onSuccess?: () => void;
   /** Grain currently held in this plot's region — gates the Feed workers button. */
   regionGrain?: number;
+  /** Configured make-harvestable strategy order — used by the Fix grain deficit proposal. */
+  strategies: MakeHarvestableStrategy[];
 }
 
 function formatDuration(ms: number): string {
@@ -178,10 +183,13 @@ export default function WorksitePlotCard({
   username,
   onSuccess,
   regionGrain,
+  strategies,
 }: Props) {
   const action = useWorksiteAction();
   // Capture mount time once to avoid impure renders
   const [now] = useState(() => Date.now());
+  // Fix-grain-deficit proposal dialog (shown when the region lacks grain to feed)
+  const [coverOpen, setCoverOpen] = useState(false);
   // Pending confirm: set when the user clicks a button, cleared on dismiss
   const [pendingAction, setPendingAction] = useState<
     | { type: "build"; worksite: WorksiteType }
@@ -190,39 +198,65 @@ export default function WorksitePlotCard({
     | null
   >(null);
 
-  // worksiteDetail == null → undeveloped (buttons enabled)
-  // worksiteDetail != null && is_construction == true → actively building (buttons disabled)
-  // worksiteDetail != null && is_construction == false → developed (buttons enabled)
-  const isActivelyBuilding = deed.worksiteDetail?.is_construction === true;
   const isUndeveloped = !deed.worksiteDetail;
+
+  // SPL keeps `is_construction === true` even AFTER the build completes — it only
+  // flips to false once the workers have been fed (update_worksite). So a project
+  // is "still building" only while its projected_end is in the future; once that
+  // moment passes the construction is finished and the plot is waiting to be fed.
+  const constructionEndMs = deed.worksiteDetail?.projected_end
+    ? new Date(deed.worksiteDetail.projected_end).getTime()
+    : null;
+  const constructionFinished =
+    deed.worksiteDetail?.is_construction === true &&
+    constructionEndMs != null &&
+    constructionEndMs <= now;
+
+  // worksiteDetail == null → undeveloped (buttons enabled)
+  // is_construction == true && projected_end > now → actively building (buttons disabled)
+  // is_construction == true && projected_end <= now → finished, ready to feed
+  // is_construction == false → developed (buttons enabled)
+  const isActivelyBuilding =
+    deed.worksiteDetail?.is_construction === true && !constructionFinished;
+  // True whenever a construction project exists (still building OR finished but
+  // not yet fed). Switching the worksite is blocked the whole time.
+  const isConstruction = deed.worksiteDetail?.is_construction === true;
   // Mythic deeds (KEEP / CASTLE) have a fixed worksite — no swap possible.
   const isMythic = deed.plot_status === "kingdom";
   const currentWorksite =
     (deed.worksiteDetail?.worksite_type as WorksiteType | null | undefined) ??
     null;
-  // During construction, worksiteDetail.worksite_type is empty — derive target from project_type
-  const buildingWorksite: WorksiteType | null = isActivelyBuilding
+  // While a construction project exists (building OR finished-but-unfed),
+  // worksiteDetail.worksite_type is empty — derive the target from project_type.
+  const buildingWorksite: WorksiteType | null = isConstruction
     ? (projectTypeToWorksite[deed.worksiteDetail?.project_type ?? ""] ?? null)
     : ((deed.worksiteDetail?.worksite_type as
         | WorksiteType
         | null
         | undefined) ?? null);
 
-  // A worksite that finished construction shows as "Worksite Ready X" and must
-  // be activated by feeding its workers grain (the update_worksite op).
+  // A worksite that finished construction must be activated by feeding its
+  // workers grain (the update_worksite op). Two ways a plot reaches this state:
+  //   • is_construction still true but projected_end has passed (constructionFinished)
+  //   • worksite_type surfaces as "Worksite Ready X"
+  // In both cases it needs a project_id and a grain requirement to feed.
   const isReadyToFeed =
-    !isActivelyBuilding &&
-    (deed.worksiteDetail?.worksite_type ?? "")
-      .toLowerCase()
-      .startsWith("worksite ready") &&
-    deed.worksiteDetail?.project_id != null &&
-    (deed.worksiteDetail?.grain_required ?? 0) > 0;
+    !!deed.worksiteDetail &&
+    (constructionFinished ||
+      (deed.worksiteDetail.worksite_type ?? "")
+        .toLowerCase()
+        .startsWith("worksite ready")) &&
+    deed.worksiteDetail.project_id != null &&
+    (deed.worksiteDetail.grain_required ?? 0) > 0;
   const grainCost = Math.ceil(deed.worksiteDetail?.grain_required ?? 0);
   const enoughGrain = (regionGrain ?? 0) >= grainCost;
 
-  // Inline construction progress values
+  const plotLabel = `P-${deed.region_number}-${deed.tract_number}-${deed.plot_number}`;
+
+  // Inline construction progress values. Shown for the whole construction —
+  // when finished-but-unfed, elapsed >= total so the bar reads 100% and 0m left.
   const { constructionPct, constructionRemaining } = useMemo(() => {
-    if (!isActivelyBuilding || !deed.worksiteDetail)
+    if (!isConstruction || !deed.worksiteDetail)
       return { constructionPct: 0, constructionRemaining: "" };
     const wd = deed.worksiteDetail;
     const start = wd.project_created_date
@@ -248,7 +282,7 @@ export default function WorksitePlotCard({
       };
     }
     return { constructionPct: 0, constructionRemaining: "" };
-  }, [isActivelyBuilding, deed.worksiteDetail, now]);
+  }, [isConstruction, deed.worksiteDetail, now]);
 
   // Worksites that get a production bonus for this plot's status
   const boostWorksites: WorksiteType[] = useMemo(() => {
@@ -330,8 +364,6 @@ export default function WorksitePlotCard({
 
   const handleDialogClose = useCallback(() => setPendingAction(null), []);
 
-  const plotLabel = `P-${deed.region_number}-${deed.tract_number}-${deed.plot_number}`;
-
   const worksiteIcon = isUndeveloped
     ? land_under_construction_icon_url
     : currentWorksite && worksiteIconMap[currentWorksite]
@@ -340,7 +372,7 @@ export default function WorksitePlotCard({
 
   const worksiteLabel = isUndeveloped
     ? "Undeveloped"
-    : (currentWorksite ?? (isActivelyBuilding ? "" : "—"));
+    : (currentWorksite ?? (isConstruction ? "" : "—"));
 
   return (
     <Card variant="outlined" sx={{ mb: 0.75 }}>
@@ -471,8 +503,9 @@ export default function WorksitePlotCard({
             />
           )}
 
-        {/* 4. Under-construction inline progress */}
-        {isActivelyBuilding && (
+        {/* 4. Construction inline progress (also shown at 100% / 0m when the
+            build is finished but the workers haven't been fed yet) */}
+        {isConstruction && (
           <Stack
             direction="row"
             alignItems="center"
@@ -551,9 +584,9 @@ export default function WorksitePlotCard({
                 <WorksiteButton
                   key={ws}
                   worksite={ws}
-                  isBeingBuilt={isActivelyBuilding && buildingWorksite === ws}
+                  isBeingBuilt={isConstruction && buildingWorksite === ws}
                   hasBonus={boostWorksites.includes(ws)}
-                  disabled={action.busy || isActivelyBuilding}
+                  disabled={action.busy || isConstruction}
                   onClick={() => handleBuildWorksite(ws)}
                 />
               ))}
@@ -617,6 +650,28 @@ export default function WorksitePlotCard({
                 </Button>
               </span>
             </Tooltip>
+            {/* Not enough grain in the region → propose moving grain in from
+                other regions (transfer → swap → buy with DEC). Only fixes the
+                deficit; feeding is the separate Feed workers button above. */}
+            {!enoughGrain && (
+              <Tooltip title="Move grain from your other regions to cover the worker food (transfer → swap → buy with DEC). Then use Feed workers.">
+                <span style={{ flexShrink: 0 }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    startIcon={
+                      <AutoFixHighIcon sx={{ fontSize: "0.9rem !important" }} />
+                    }
+                    onClick={() => setCoverOpen(true)}
+                    disabled={action.busy}
+                    sx={{ whiteSpace: "nowrap", fontSize: "0.65rem" }}
+                  >
+                    Fix grain deficit
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
           </>
         )}
       </Stack>
@@ -699,6 +754,22 @@ export default function WorksitePlotCard({
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Fix-grain-deficit proposal dialog (moves grain in; does not feed) */}
+      {isReadyToFeed && (
+        <FixGrainDeficitDialog
+          open={coverOpen}
+          deed={deed}
+          username={username}
+          strategies={strategies}
+          plotLabel={plotLabel}
+          onClose={() => setCoverOpen(false)}
+          onSuccess={() => {
+            setCoverOpen(false);
+            onSuccess?.();
+          }}
+        />
+      )}
 
       {/* Feedback alert (below the row) */}
       {(action.result || action.error) && (

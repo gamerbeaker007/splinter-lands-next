@@ -8,6 +8,7 @@ import {
   computeInputForDesiredOutput,
   computeSwapAmounts,
   CostEntry,
+  EMPTY_BALANCE,
 } from "@/lib/shared/landManagerUtils";
 import { calculatePriceImpact } from "@/lib/shared/priceUtils";
 import { TRADE_HUB_FEE } from "@/lib/shared/statics";
@@ -19,14 +20,6 @@ import {
 import { SplLandPool } from "@/types/spl/landPools";
 
 export const DEFICIT_BUFFER = 1.02;
-
-const EMPTY_BALANCE: Record<string, number> = {
-  GRAIN: 0,
-  WOOD: 0,
-  STONE: 0,
-  IRON: 0,
-  AURA: 0,
-};
 
 interface Ctx {
   username: string;
@@ -370,7 +363,13 @@ export function buildMakeHarvestableOps(
   balances: RegionBalances,
   strategies: MakeHarvestableStrategy[],
   initialDecBalance: number,
-  pools: SplLandPool[]
+  pools: SplLandPool[],
+  // When set, only resolve deficits for these region_uids. Every region still
+  // contributes its costs as a donor reserve (so we never strip grain another
+  // region needs for its own harvest) — we just don't try to *make harvestable*
+  // the regions outside this set. Used by the worksite-feed cover flow, which
+  // only needs to top up grain in the single region being fed.
+  onlyRegionUids?: string[]
 ): { ops: [string, object][]; log: string[]; actions: ActionSummary[] } {
   const ctx: Ctx = {
     username,
@@ -401,6 +400,7 @@ export function buildMakeHarvestableOps(
   };
 
   for (const region of visibleRegions) {
+    if (onlyRegionUids && !onlyRegionUids.includes(region.region_uid)) continue;
     const missing = ctx.costsMap[region.region_uid].filter(
       ({ symbol, amount }) =>
         (ctx.working[region.region_uid][symbol] ?? 0) < amount

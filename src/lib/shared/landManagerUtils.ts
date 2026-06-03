@@ -12,6 +12,15 @@ export interface CostEntry {
   amount: number;
 }
 
+/** Zeroed natural-resource balance, used as a fallback for regions with no data. */
+export const EMPTY_BALANCE: Record<string, number> = {
+  GRAIN: 0,
+  WOOD: 0,
+  STONE: 0,
+  IRON: 0,
+  AURA: 0,
+};
+
 export function aggregateCosts(
   resources: SplHarvestableResource[]
 ): CostEntry[] {

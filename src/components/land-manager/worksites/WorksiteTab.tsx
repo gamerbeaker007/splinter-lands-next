@@ -11,6 +11,7 @@ import {
 } from "@/lib/frontend/context/FilterContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
+import { MakeHarvestableStrategy } from "@/types/landManager";
 import {
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
@@ -42,6 +43,10 @@ interface Props {
   username: string;
   /** Region numbers from the land manager config — pre-filters deeds to these regions when set. */
   enabledRegions?: number[];
+  /** Configured make-harvestable strategy order — used by the Fix grain deficit proposal. */
+  strategies: MakeHarvestableStrategy[];
+  /** Bubbled up after any worksite action so page-level panels (e.g. Today) refresh too. */
+  onSuccess?: () => void;
 }
 
 // ── Collapsible paginated region group ───────────────────────────────────────
@@ -54,6 +59,7 @@ interface RegionGroupProps {
   pageSize: number;
   /** Grain currently held in this region — gates the Feed workers button. */
   regionGrain?: number;
+  strategies: MakeHarvestableStrategy[];
 }
 
 function RegionGroup({
@@ -63,6 +69,7 @@ function RegionGroup({
   onSuccess,
   pageSize,
   regionGrain,
+  strategies,
 }: RegionGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, setPage] = useState(1);
@@ -110,6 +117,7 @@ function RegionGroup({
               username={username}
               onSuccess={onSuccess}
               regionGrain={regionGrain}
+              strategies={strategies}
             />
           ))}
           {pageCount > 1 && (
@@ -130,7 +138,12 @@ function RegionGroup({
 
 // ── Inner component (uses FilterContext) ─────────────────────────────────────
 
-function WorksiteTabContent({ username, enabledRegions }: Props) {
+function WorksiteTabContent({
+  username,
+  enabledRegions,
+  strategies,
+  onSuccess,
+}: Props) {
   const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
   // Grain held per region_uid — gates the Feed workers button on each plot.
   const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
@@ -204,7 +217,10 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
     setLoading(true);
     setFetchError(null);
     setRefreshKey((k) => k + 1);
-  }, []);
+    // Bubble up so page-level panels (Today log, alerts) reflect grain moves /
+    // feeds too — they don't share this tab's local refresh key.
+    onSuccess?.();
+  }, [onSuccess]);
 
   // Apply filter client-side
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
@@ -339,6 +355,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               username={username}
               onSuccess={handleSuccess}
               regionGrain={regionGrain[deed.region_uid] ?? 0}
+              strategies={strategies}
             />
           ))}
           {listPageCount > 1 && (
@@ -364,6 +381,7 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
               onSuccess={handleSuccess}
               pageSize={pageSize}
               regionGrain={regionGrain[regionUid] ?? 0}
+              strategies={strategies}
             />
           ))}
         </Box>
@@ -374,7 +392,12 @@ function WorksiteTabContent({ username, enabledRegions }: Props) {
 
 // ── Outer component — provides FilterContext ──────────────────────────────────
 
-export default function WorksiteTab({ username, enabledRegions }: Props) {
+export default function WorksiteTab({
+  username,
+  enabledRegions,
+  strategies,
+  onSuccess,
+}: Props) {
   return (
     <FilterProvider>
       {/* player=null → categorical filters show site-wide options;
@@ -390,7 +413,12 @@ export default function WorksiteTab({ username, enabledRegions }: Props) {
           sorting: false,
         }}
       />
-      <WorksiteTabContent username={username} enabledRegions={enabledRegions} />
+      <WorksiteTabContent
+        username={username}
+        enabledRegions={enabledRegions}
+        strategies={strategies}
+        onSuccess={onSuccess}
+      />
     </FilterProvider>
   );
 }
