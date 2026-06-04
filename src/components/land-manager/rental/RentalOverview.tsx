@@ -1,6 +1,6 @@
 "use client";
 
-import StakePowerCoreButton from "@/components/land-manager/StakePowerCoreButton";
+import StakePowerCoreButton from "@/components/land-manager/rental/StakePowerCoreButton";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { filterDeeds, parseLandStatsResources } from "@/lib/filters";
 import { useFilters } from "@/lib/frontend/context/FilterContext";

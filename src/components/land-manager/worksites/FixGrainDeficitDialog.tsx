@@ -1,6 +1,6 @@
 "use client";
 
-import PlanLogBox from "@/components/land-manager/PlanLogBox";
+import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
 import { useCoverGrainAction } from "@/hooks/useCoverGrainAction";
 import { DeedComplete } from "@/types/deed";
 import { MakeHarvestableStrategy } from "@/types/landManager";

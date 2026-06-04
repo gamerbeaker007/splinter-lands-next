@@ -1,6 +1,6 @@
 "use client";
 
-import PlanLogBox from "@/components/land-manager/PlanLogBox";
+import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
 import { DryRunResult } from "@/types/landManager";
 import {
   Button,

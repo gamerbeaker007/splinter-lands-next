@@ -1,6 +1,6 @@
 "use client";
 
-import RentWorkersRow from "@/components/land-manager/bulk-operations/RentWorkersRow";
+import RentWorkersRow from "@/components/land-manager/rental/RentWorkersRow";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
 import { RentalConfig } from "@/types/landManager";

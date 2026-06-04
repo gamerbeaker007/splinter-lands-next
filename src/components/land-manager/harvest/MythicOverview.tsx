@@ -1,6 +1,6 @@
 "use client";
 
-import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
+import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
 import type { MythicDeed } from "@/types/landManager";
 import { OpenInNew as OpenInNewIcon } from "@mui/icons-material";
 import {

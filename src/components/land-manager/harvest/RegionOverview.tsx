@@ -1,7 +1,7 @@
 "use client";
 
-import HarvestButton from "@/components/land-manager/HarvestButton";
-import LastHarvestAgeChip from "@/components/land-manager/LastHarvestAgeChip";
+import HarvestButton from "@/components/land-manager/harvest/HarvestButton";
+import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
 import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import {
   getRegionResourceBalance,

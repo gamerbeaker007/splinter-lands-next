@@ -1,5 +1,6 @@
 "use client";
 
+import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
   CheckCircleOutline,
   FlashOffOutlined,
@@ -19,7 +20,6 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useLandManagerRegionData } from "../../hooks/useLandManagerRegionData";
 
 interface Props {
   enabledRegions: number[];

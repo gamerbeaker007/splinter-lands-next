@@ -1,10 +1,10 @@
 "use client";
 
-import DryRunDialog from "@/components/land-manager/bulk-operations/DryRunDialog";
-import HarvestAllRow from "@/components/land-manager/bulk-operations/HarvestAllRow";
-import HarvestMythicsRow from "@/components/land-manager/bulk-operations/HarvestMythicsRow";
-import MakeHarvestableRow from "@/components/land-manager/bulk-operations/MakeHarvestableRow";
-import ProcessResourcesRow from "@/components/land-manager/bulk-operations/ProcessResourcesRow";
+import DryRunDialog from "@/components/land-manager/harvest/DryRunDialog";
+import HarvestAllRow from "@/components/land-manager/harvest/HarvestAllRow";
+import HarvestMythicsRow from "@/components/land-manager/harvest/HarvestMythicsRow";
+import MakeHarvestableRow from "@/components/land-manager/harvest/MakeHarvestableRow";
+import ProcessResourcesRow from "@/components/land-manager/harvest/ProcessResourcesRow";
 import {
   DonationConfig,
   DryRunResult,

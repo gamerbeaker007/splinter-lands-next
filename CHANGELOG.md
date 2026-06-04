@@ -12,6 +12,11 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+### Updated
+ - Restructure files in land manager
+ - Add Dev testing page
+
+
 ---
 
 ## [v1.10.0] - 2026-06-03

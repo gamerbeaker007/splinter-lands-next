@@ -1,9 +1,9 @@
 "use client";
 
-import CardPicksCell from "@/components/land-manager/bulk-operations/CardPicksCell";
+import CardPicksCell from "@/components/land-manager/rental/CardPicksCell";
 import RentalPlotTable, {
   RentalPlotColumn,
-} from "@/components/land-manager/bulk-operations/RentalPlotTable";
+} from "@/components/land-manager/rental/RentalPlotTable";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import { parseLandStatsResources } from "@/lib/filters";
 import { RentalPlanItem } from "@/types/landManager";
@@ -36,7 +36,7 @@ function fmtDec(value: number): string {
   });
 }
 
-function buildConfirmColumns(): RentalPlotColumn[] {
+export function buildConfirmColumns(): RentalPlotColumn[] {
   return [
     {
       header: "Plot",
