@@ -1,11 +1,7 @@
 "use client";
 import { useAppTheme, type AppTheme } from "@/lib/frontend/context/ThemeSetup";
 import CloseIcon from "@mui/icons-material/Close";
-import {
-  Box,
-  Dialog,
-  IconButton,
-} from "@mui/material";
+import { Box, Dialog, IconButton } from "@mui/material";
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
 
@@ -159,11 +155,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
         </Box>
       )}
 
-      <Dialog
-        fullScreen
-        open={open}
-        onClose={() => setOpen(false)}
-      >
+      <Dialog fullScreen open={open} onClose={() => setOpen(false)}>
         <Box
           sx={{
             position: "absolute",

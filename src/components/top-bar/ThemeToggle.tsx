@@ -49,4 +49,3 @@ export default function ThemeToggle() {
     </Tooltip>
   );
 }
-

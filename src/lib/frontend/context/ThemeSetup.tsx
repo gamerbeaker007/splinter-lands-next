@@ -1,11 +1,17 @@
 "use client";
 
-import CssBaseline from "@mui/material/CssBaseline";
+import theme from "@/lib/frontend/themes/themes";
 import { ThemeProvider } from "@mui/material";
+import CssBaseline from "@mui/material/CssBaseline";
 import { useColorScheme } from "@mui/material/styles";
 import { useServerInsertedHTML } from "next/navigation";
-import { createContext, useCallback, useContext, useReducer, useSyncExternalStore } from "react";
-import theme from "@/lib/frontend/themes/themes";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useReducer,
+  useSyncExternalStore,
+} from "react";
 
 // ─── Public API ──────────────────────────────────────────────────────────────
 
@@ -87,7 +93,9 @@ function ThemeContextBridge({ children }: { children: React.ReactNode }) {
   );
 
   return (
-    <ThemeContext.Provider value={{ theme: actualTheme, setTheme: handleSetTheme }}>
+    <ThemeContext.Provider
+      value={{ theme: actualTheme, setTheme: handleSetTheme }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -97,7 +105,10 @@ function ThemeContextBridge({ children }: { children: React.ReactNode }) {
 
 export function ThemeSetup({ children }: { children: React.ReactNode }) {
   useServerInsertedHTML(() => (
-    <script suppressHydrationWarning dangerouslySetInnerHTML={{ __html: FOUC_SCRIPT }} />
+    <script
+      suppressHydrationWarning
+      dangerouslySetInnerHTML={{ __html: FOUC_SCRIPT }}
+    />
   ));
 
   return (
