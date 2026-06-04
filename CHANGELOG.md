@@ -15,6 +15,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ### Updated
  - Restructure files in land manager
  - Add Dev testing page
+ - Update theme to tri state (to include high-contrast)
 
 
 ---

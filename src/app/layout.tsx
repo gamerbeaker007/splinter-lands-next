@@ -4,14 +4,10 @@ import TopBar from "@/components/top-bar/TopBar";
 import { AuthProvider } from "@/lib/frontend/context/AuthContext";
 import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
 import { PlayerProvider } from "@/lib/frontend/context/PlayerContext";
-import theme from "@/lib/frontend/themes/themes";
-import {
-  CssBaseline,
-  InitColorSchemeScript,
-  ThemeProvider,
-} from "@mui/material";
+import { ThemeSetup } from "@/lib/frontend/context/ThemeSetup";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import Box from "@mui/material/Box";
+import "./globals.css";
 
 export default function RootLayout({
   children,
@@ -20,14 +16,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning={true}>
-      <head>
-        <InitColorSchemeScript attribute="class" />
-      </head>
       <body>
-        <AppRouterCacheProvider options={{ enableCssLayer: true }}>
-          <ThemeProvider theme={theme}>
-            {/* CssBaseline kickstart an elegant, consistent, and simple baseline to build upon. */}
-            <CssBaseline />
+        <AppRouterCacheProvider>
+          <ThemeSetup>
             <AuthProvider>
               <PageTitleProvider>
                 <PlayerProvider>
@@ -43,7 +34,7 @@ export default function RootLayout({
                 </PlayerProvider>
               </PageTitleProvider>
             </AuthProvider>
-          </ThemeProvider>
+          </ThemeSetup>
         </AppRouterCacheProvider>
       </body>
     </html>
