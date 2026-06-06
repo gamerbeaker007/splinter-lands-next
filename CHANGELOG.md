@@ -12,15 +12,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+
+---
+
+## [v1.11.0] - 2026-06-06
+
 ### Updated
  - Restructure files in land manager
  - Add Dev testing page
  - Update theme to tri state (to include high-contrast)
 
-
----
-
-## [v1.11.0] - 2026-06-06
 
 ### Improved
 
@@ -38,7 +39,6 @@ Biome modifiers are applied correctly throughout: a card placed on a plot with a
 
 The effective PP for each rented card is now displayed directly under its card image in the confirm and dry-run dialogs (previously tooltip-only). The first above-the-fold card image loads eagerly to avoid the LCP warning.
 
-Dev-mode logs (`[rental][pick]`) show element, biome modifier, effective PP, and total DEC for every assignment to make the decision auditable.
 
 ---
 

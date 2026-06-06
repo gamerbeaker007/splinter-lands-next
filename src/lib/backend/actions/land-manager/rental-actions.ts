@@ -174,6 +174,12 @@ export interface RentedCardEntry {
   stake_region: number | null;
   /** Present when the renter has queued a cancellation. */
   cancel_tx: string | null;
+  /** land_base_pp from the card's staking data (string → number). */
+  base_pp: number;
+  /** Market listing ID — needed to cancel or renew the rental. */
+  market_id: string | null;
+  /** Deed UID the card is staked on (stake_ref_uid). */
+  deed_uid: string | null;
 }
 
 export interface RentedCardsList {
@@ -249,6 +255,9 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       stake_plot: c.stake_plot as number,
       stake_region: c.stake_region ?? null,
       cancel_tx: c.cancel_tx ?? null,
+      base_pp: Number(c.land_base_pp) || 0,
+      market_id: c.market_id ?? null,
+      deed_uid: c.stake_ref_uid ?? null,
     });
     total_dec_per_day += perDay;
     total_dec_for_duration += total;

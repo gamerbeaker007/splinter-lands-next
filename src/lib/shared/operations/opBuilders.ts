@@ -418,6 +418,63 @@ export function buildUpdateWorksiteOp(
 }
 
 /**
+ * Cancel one or more active rental listings. Uses POSTING key.
+ * `marketIds` — the market listing IDs of the cards to cancel.
+ * Batch upstream if needed.
+ */
+export function buildCancelRentalOp(
+  username: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_market_cancel_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Unstake worker cards from a deed. One op per deed. Uses POSTING key.
+ * `cardUids` — the UIDs of the worker cards to unstake.
+ */
+export function buildUnstakeWorkersOp(
+  username: string,
+  deedUid: string,
+  cardUids: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: {
+          cards: cardUids.map((uid) => ({ card_uid: uid })),
+          items: [],
+        },
+        stake: {
+          cards: [],
+          items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
  * Rent cards via the SPL market on behalf of `player`. Signed by the
  * `serviceAccount`'s ACTIVE key — the player must have granted purchase
  * authority to that account on Splinterlands Account Security.
