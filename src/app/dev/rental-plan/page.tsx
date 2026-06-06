@@ -19,6 +19,7 @@ import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import { RentalConfig, RentalEligiblePlot } from "@/types/landManager";
 import { TERRAIN_BONUS } from "@/types/planner/primitives";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import RentalPlanDevView from "./RentalPlanDevView";
 
 // ── Synthetic test plots ───────────────────────────────────────────────────
@@ -32,6 +33,15 @@ const BIOME_CYCLES: Array<Record<string, number>> = TERRAIN_TYPES.map(
       number
     >
 );
+
+// BIOME overwrite use all the same modifiers to simplify testing — we just want to verify that biome modifiers are applied, not test each individual terrain type
+// const BIOME_CYCLES: Array<Record<string, number>> = TERRAIN_TYPES.map(
+//   () =>
+//     ({ fire: 0.1, life: -0.5, death: 0.1, earth: -0.5 }) as Record<
+//       string,
+//       number
+//     >
+// );
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA"];
 
@@ -98,13 +108,15 @@ interface SearchParams {
   plots?: string;
 }
 
-export default async function RentalPlanDevPage({
+function RentalPlanLoading() {
+  return <div style={{ padding: 16 }}>Building rental plan...</div>;
+}
+
+async function RentalPlanDevContent({
   searchParams,
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  if (process.env.NODE_ENV !== "development") notFound();
-
   const params = await searchParams;
 
   const numPlots = Number(params.plots ?? 3);
@@ -125,4 +137,18 @@ export default async function RentalPlanDevPage({
   const plan = await buildRentalPlan(eligible, config);
 
   return <RentalPlanDevView plan={plan} config={config} />;
+}
+
+export default function RentalPlanDevPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  if (process.env.NODE_ENV !== "development") notFound();
+
+  return (
+    <Suspense fallback={<RentalPlanLoading />}>
+      <RentalPlanDevContent searchParams={searchParams} />
+    </Suspense>
+  );
 }

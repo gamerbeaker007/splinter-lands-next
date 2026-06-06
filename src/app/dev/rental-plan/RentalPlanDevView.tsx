@@ -68,6 +68,7 @@ export default function RentalPlanDevView({ plan, config }: Props) {
       {/* Quick-launch link */}
       <Box mb={3}>
         <Chip
+          suppressHydrationWarning
           component={Link}
           href={DEFAULT_LINK}
           label="Run test (all defaults)"

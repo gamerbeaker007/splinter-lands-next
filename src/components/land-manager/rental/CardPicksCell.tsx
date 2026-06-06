@@ -5,8 +5,8 @@ import { cardElementColorMap } from "@/types/planner/primitives";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 
-const IMG_W = 84;
-const IMG_H = 114;
+const IMG_W = 42;
+const IMG_H = 57;
 
 function fmtDec(value: number): string {
   return value.toLocaleString("en-US", {
@@ -68,60 +68,108 @@ export default function CardPicksCell({ picks }: Props) {
 
   return (
     <Box>
-      <Box sx={{ display: "flex", gap: 0.25 }}>
+      <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
         {picks.map((pick) => (
-          <Tooltip
+          <Box
             key={pick.card_uid}
-            title={<PickTooltip pick={pick} />}
-            placement="top"
-            arrow
+            sx={{
+              width: 75,
+              flexShrink: 0,
+            }}
           >
-            <Box
+            <Tooltip title={<PickTooltip pick={pick} />} placement="top" arrow>
+              <Box
+                sx={{
+                  width: IMG_W,
+                  height: IMG_H,
+                  borderRadius: 0.5,
+                  overflow: "hidden",
+                  flexShrink: 0,
+                  bgcolor: "action.hover",
+                  position: "relative",
+                  cursor: "default",
+                }}
+              >
+                {pick.card_image_url ? (
+                  <Image
+                    src={pick.card_image_url}
+                    alt={pick.card_name}
+                    fill
+                    sizes={`${IMG_W}px`}
+                    style={{ objectFit: "cover" }}
+                    unoptimized
+                  />
+                ) : (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "0.6rem",
+                      color: "text.secondary",
+                    }}
+                  >
+                    {pick.card_name.charAt(0)}
+                  </Typography>
+                )}
+              </Box>
+            </Tooltip>
+            <Typography
+              variant="caption"
               sx={{
-                width: IMG_W,
-                height: IMG_H,
-                borderRadius: 0.5,
-                overflow: "hidden",
-                flexShrink: 0,
-                bgcolor: "action.hover",
-                position: "relative",
-                cursor: "default",
+                display: "block",
+                textAlign: "center",
+                color: "text.secondary",
+                mt: 0.25,
+                fontSize: "0.65rem",
               }}
             >
-              {pick.card_image_url ? (
-                <Image
-                  src={pick.card_image_url}
-                  alt={pick.card_name}
-                  fill
-                  sizes={`${IMG_W}px`}
-                  style={{ objectFit: "cover" }}
-                  unoptimized
-                />
-              ) : (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "0.6rem",
-                    color: "text.secondary",
-                  }}
-                >
-                  {pick.card_name.charAt(0)}
-                </Typography>
-              )}
-            </Box>
-          </Tooltip>
+              {pick.effective_pp.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              })}{" "}
+              eff PP
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                textAlign: "center",
+                color: "text.secondary",
+                mt: 0.25,
+                fontSize: "0.65rem",
+              }}
+            >
+              {pick.buy_price_per_day.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              })}{" "}
+              DEC/day
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                textAlign: "center",
+                color: "text.secondary",
+                mt: 0.25,
+                fontSize: "0.65rem",
+              }}
+            >
+              {pick.pp_per_dec.toLocaleString(undefined, {
+                maximumFractionDigits: 0,
+              })}{" "}
+              PP/DEC
+            </Typography>
+          </Box>
         ))}
       </Box>
       <Typography
         variant="caption"
         sx={{ display: "block", color: "text.secondary", mt: 0.25 }}
       >
-        {fmtDec(totalDecPerDay)} DEC/day
+        {fmtDec(totalDecPerDay)} DEC/day (Total)
       </Typography>
     </Box>
   );

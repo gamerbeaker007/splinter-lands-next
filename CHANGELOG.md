@@ -20,6 +20,28 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.11.0] - 2026-06-06
+
+### Improved
+
+#### Land Manager — Rental worker matching completely redesigned
+
+The algorithm that selects which cards to rent for empty worker slots has been rewritten from scratch. The previous approach processed card types one by one and picked plots inside each loop, which could assign a zero-boost card early and block a higher-value boosted card from the same plot later. The new design avoids this by separating scoring from assignment:
+
+1. **Global candidate selection (Phase 1)** — every entry in the grouped rental market is scored against every eligible plot simultaneously. The top 100 unique `(card, foil, edition)` combinations are selected by their best achievable `effective_pp / DEC/day` across all plots. No per-element cap; fire and water cards compete on the same global leaderboard so the best value always wins regardless of element colour.
+
+2. **Live listing fetch and pair scoring (Phase 2)** — actual rental listings are fetched for each candidate. Every `(listing × plot)` combination is evaluated with the plot's real biome modifier for that card's element. The result is a single flat list of pairs sorted globally by `effective_pp / total_dec` (accounts for rental duration differences).
+
+3. **Greedy assignment (Phase 3)** — the sorted list is scanned once from best to worst. A pair is assigned if the listing hasn't been claimed yet and the target plot still has an empty slot. Because the list is globally sorted, the highest-value pick always lands first — no re-evaluation or inner loops needed.
+
+Biome modifiers are applied correctly throughout: a card placed on a plot with a 10% fire boost yields `land_base_pp × 1.10` effective PP, and that full effective PP drives the ranking. Cards whose element is penalised (`biome_modifier < 0`) on a plot are never paired with it.
+
+The effective PP for each rented card is now displayed directly under its card image in the confirm and dry-run dialogs (previously tooltip-only). The first above-the-fold card image loads eagerly to avoid the LCP warning.
+
+Dev-mode logs (`[rental][pick]`) show element, biome modifier, effective PP, and total DEC for every assignment to make the decision auditable.
+
+---
+
 ## [v1.10.0] - 2026-06-03
 
 ### Fixed
