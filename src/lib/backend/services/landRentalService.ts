@@ -249,7 +249,7 @@ function rentalDaysFromListing(
  * leaderboard - the best value wins regardless of element.
  */
 function selectCandidateTuples(
-  grouped: SplMarketRentGrouped[],
+  rentalMarketGrouped: SplMarketRentGrouped[],
   cardById: Map<number, SplCardDetails>,
   cardDetails: SplCardDetails[],
   eligible: RentalEligiblePlot[],
@@ -260,7 +260,7 @@ function selectCandidateTuples(
   const seen = new Set<string>();
   const scored: { tuple: CandidateTuple; score: number }[] = [];
 
-  for (const g of grouped) {
+  for (const g of rentalMarketGrouped) {
     const card = cardById.get(g.card_detail_id);
     if (!card) continue;
     if (g.foil < minFoil) continue;
@@ -417,23 +417,12 @@ function greedyAssign(
   const maxTotalDec =
     config.max_total_dec > 0 ? config.max_total_dec : Infinity;
   let runningTotal = 0;
-  const logEnabled = process.env.NODE_ENV !== "production";
 
   for (const pair of pairs) {
     if (pickedCards.has(pair.listing.uid)) continue;
     const remaining = remainingSlots.get(pair.plot.deed_uid) ?? 0;
     if (remaining <= 0) continue;
     if (runningTotal + pair.total_dec > maxTotalDec) continue;
-
-    if (logEnabled) {
-      logger.info(
-        `[rental][pick] plot ${pair.plot.deed_uid} - ${pair.card.name}` +
-          ` (${pair.element}, mod=${pair.biomeModifier.toFixed(2)})` +
-          ` effPP=${pair.effective_pp.toFixed(0)}` +
-          ` PP/DEC=${pair.effectivePpPerDec.toFixed(2)}` +
-          ` cost=${pair.total_dec.toFixed(2)} DEC`
-      );
-    }
 
     picksByDeed.get(pair.plot.deed_uid)!.push(buildPick(pair));
     remainingSlots.set(pair.plot.deed_uid, remaining - 1);
@@ -476,13 +465,13 @@ export async function buildRentalPlan(
     return emptyPlan(eligible, config, items, warnings);
   }
 
-  // Phase 1: card details (cached 1 h).
+  // Phase 1: card details (cached 1 day).
   const cardDetails = await getCachedCardDetailsData();
   const cardById = new Map(cardDetails.map((c) => [c.id, c]));
 
   // Phase 2: live grouped-market snapshot.
-  const grouped = await fetchMarketForRentGrouped();
-  logger.info(`[rental] grouped market entries: ${grouped.length}`);
+  const rentalMarketGrouped = await fetchMarketForRentGrouped();
+  logger.info(`[rental] grouped market entries: ${rentalMarketGrouped.length}`);
 
   const maxPerWorkerPerDay =
     config.max_dec_per_day_per_worker > 0
@@ -491,7 +480,7 @@ export async function buildRentalPlan(
 
   // Phase 3: select top candidate tuples globally (no per-element cap).
   const tuples = selectCandidateTuples(
-    grouped,
+    rentalMarketGrouped,
     cardById,
     cardDetails,
     batchedEligible,
@@ -502,7 +491,7 @@ export async function buildRentalPlan(
 
   if (tuples.length === 0) {
     warnings.push(
-      `No candidate tuples found after filtering ${grouped.length} grouped market entries.`
+      `No candidate tuples found after filtering ${rentalMarketGrouped.length} grouped market entries.`
     );
     return emptyPlan(eligible, config, items, warnings);
   }

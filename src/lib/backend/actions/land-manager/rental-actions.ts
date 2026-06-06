@@ -260,14 +260,6 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
   return { cards, total_dec_per_day, total_dec_for_duration };
 }
 
-export async function getRentalDryRunPlan(
-  enabledRegions: number[],
-  rental: RentalConfig = DEFAULT_RENTAL_CONFIG
-): Promise<RentalPlan> {
-  const eligibility = await getRentalEligibility(enabledRegions);
-  return buildRentalPlan(eligibility.eligible, rental);
-}
-
 export interface RentalExecutionPlan {
   plan: RentalPlan;
   // deed_uid -> ordered list of empty slot numbers (1-based).
