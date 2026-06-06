@@ -132,6 +132,7 @@ async function RentalPlanDevContent({
     min_land_base_pp: Number(params.min_pp ?? 0),
     min_foil: Number(params.min_foil ?? 0),
     rental_batch_size: Number(params.batch ?? 3),
+    land_renters_only: false,
   };
 
   const plan = await buildRentalPlan(eligible, config);

@@ -329,31 +329,6 @@ export function buildBuyWithDecOp(
 }
 
 /**
- * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
- * `marketIds` — the market listing IDs of the cards to renew.
- * Batches are handled upstream (max 4 ops per tx).
- */
-export function buildRenewRentalOp(
-  username: string,
-  marketIds: string[]
-): [string, object] {
-  return [
-    "custom_json",
-    {
-      required_auths: [username],
-      required_posting_auths: [],
-      id: "sm_market_renew_rental",
-      json: JSON.stringify({
-        items: marketIds,
-        currency: "DEC",
-        market: MARKET,
-        app: APP,
-      }),
-    },
-  ];
-}
-
-/**
  * Start construction of a new worksite on a deed. Uses POSTING key.
  * `opName` maps to one of: worksite_grain_construction, worksite_wood_construction,
  * worksite_iron_construction, worksite_stone_construction, worksite_research_construction,
@@ -469,6 +444,33 @@ export function buildUnstakeWorkersOp(
         auto_buy_grain: false,
         app: APP,
         n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
+ * `marketIds` — the market listing IDs of the cards to renew.
+ * Batches are handled upstream (max 4 ops per tx).
+ */
+export function buildRenewRentalOnBehalfOp(
+  serviceAccount: string,
+  player: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [serviceAccount],
+      required_posting_auths: [],
+      id: "sm_market_renew_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        currency: "DEC",
+        player,
+        market: MARKET,
+        app: APP,
       }),
     },
   ];
