@@ -5,6 +5,7 @@ import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerServ
 import { isRentedByPlayer } from "@/lib/utils/cardUtil";
 import { RenewRentalItem, RenewRentalPlan } from "@/types/landManager";
 import { getAuthStatus } from "../auth-actions";
+import { getLandManagerConfig } from "./config-actions";
 import { getDecBalance } from "./overview-actions";
 
 const MS_PER_DAY = 86_400_000;
@@ -68,11 +69,14 @@ export async function getRenewRentalPlan(): Promise<RenewRentalPlan> {
 
   // Always force-fetch a fresh card collection — rental state (next_rental_payment,
   // market_id) changes after each renewal and stale cache would cause double-renewals.
-  const [settings, cards, decBalance] = await Promise.all([
+  const [settings, cards, decBalance, config] = await Promise.all([
     fetchSettings(),
     getCachedPlayerCardCollection(auth.username, true),
     getDecBalance(auth.username),
+    getLandManagerConfig(),
   ]);
+
+  const landRentersOnly = config?.rental.land_renters_only ?? false;
 
   const now = Date.now();
 
@@ -101,9 +105,16 @@ export async function getRenewRentalPlan(): Promise<RenewRentalPlan> {
   let skipped_already_renewed = 0;
   let skipped_no_market_id = 0;
   let skipped_cancel_tx = 0;
+  let skipped_not_on_land = 0;
 
   for (const c of cards) {
     if (!isRentedByPlayer(c, auth.username)) continue;
+
+    // land_renters_only: skip cards not currently staked on a land plot.
+    if (landRentersOnly && !(c.stake_plot && c.stake_plot > 0)) {
+      skipped_not_on_land += 1;
+      continue;
+    }
 
     // Skip cards with a pending cancellation — they cannot be renewed.
     if (c.cancel_tx) {
@@ -171,6 +182,8 @@ export async function getRenewRentalPlan(): Promise<RenewRentalPlan> {
     skipped_already_renewed,
     skipped_no_market_id,
     skipped_cancel_tx,
+    skipped_not_on_land,
+    land_renters_only: landRentersOnly,
     total_dec,
     dec_balance: decBalance,
     sufficient_balance: decBalance >= total_dec,
@@ -186,6 +199,8 @@ function emptyPlan(dec_balance: number): RenewRentalPlan {
     skipped_already_renewed: 0,
     skipped_no_market_id: 0,
     skipped_cancel_tx: 0,
+    skipped_not_on_land: 0,
+    land_renters_only: false,
     total_dec: 0,
     dec_balance,
     sufficient_balance: true,

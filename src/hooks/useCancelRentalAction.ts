@@ -52,9 +52,7 @@ export function useCancelRentalAction({
         await refreshCardCollection();
         onSuccess?.();
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Cancel rental failed"
-        );
+        setError(err instanceof Error ? err.message : "Cancel rental failed");
       } finally {
         setBusy(false);
       }

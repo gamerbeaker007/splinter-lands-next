@@ -20,6 +20,7 @@ import {
   RadioGroup,
   Select,
   Stack,
+  Switch,
   TextField,
   ToggleButton,
   ToggleButtonGroup,
@@ -187,6 +188,33 @@ export default function RentEmptyWorkersSection({ rental, onChange }: Props) {
               Skip cards whose foil rank is below this. Regular = include all.
             </Typography>
           </FormControl>
+        </Stack>
+
+        {/* Land renters only */}
+        <Stack
+          direction="row"
+          alignItems="center"
+          justifyContent="space-between"
+          mt={2}
+        >
+          <Stack>
+            <Typography variant="body2" fontWeight="bold">
+              Land renters only (Renew Rentals)
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              When enabled, the Renew Rentals flow skips cards that are rented
+              but not currently staked on a land plot. Useful if you rent cards
+              for multiple purposes and only want to renew those actively
+              working.
+            </Typography>
+          </Stack>
+          <Switch
+            checked={rental.land_renters_only}
+            onChange={(e) =>
+              onChange({ ...rental, land_renters_only: e.target.checked })
+            }
+            size="small"
+          />
         </Stack>
       </AccordionDetails>
     </Accordion>

@@ -1,10 +1,11 @@
 "use client";
 
-import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import StakePowerCoreButton from "@/components/land-manager/rental/StakePowerCoreButton";
+import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { useCancelRentalAction } from "@/hooks/useCancelRentalAction";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { useUnstakeWorkerAction } from "@/hooks/useUnstakeWorkerAction";
+import type { RentedCardEntry } from "@/lib/backend/actions/land-manager/rental-actions";
 import { filterDeeds, parseLandStatsResources } from "@/lib/filters";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import {
@@ -13,7 +14,6 @@ import {
   landElementIconUrl,
   landElementLabel,
 } from "@/lib/utils/cardUtil";
-import type { RentedCardEntry } from "@/lib/backend/actions/land-manager/rental-actions";
 import { RentalEligiblePlot } from "@/types/landManager";
 import { cardElementOptions } from "@/types/planner";
 import {
@@ -36,7 +36,6 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  InputAdornment,
   Skeleton,
   Stack,
   Table,
@@ -402,7 +401,17 @@ export default function RentalOverview({
 
   const [rentedPage, setRentedPage] = useState(0);
   const [rentedRowsPerPage, setRentedRowsPerPage] = useState(10);
-  const [rentedFilter, setRentedFilter] = useState("");
+  // Per-column filters
+  const [fCardUid, setFCardUid] = useState("");
+  const [fOwner, setFOwner] = useState("");
+  const [fType, setFType] = useState("");
+  const [fMinDays, setFMinDays] = useState("");
+  const [fMinBasePP, setFMinBasePP] = useState("");
+  const [fMinDecDay, setFMinDecDay] = useState("");
+  const [fMinTotalDec, setFMinTotalDec] = useState("");
+
+  const resetRentedPage = useCallback(() => setRentedPage(0), []);
+
   const [rentedSortField, setRentedSortField] =
     useState<RentedSortField>("totalDec");
   const [rentedSortDir, setRentedSortDir] = useState<"asc" | "desc">("desc");
@@ -420,23 +429,47 @@ export default function RentalOverview({
     [rentedSortField]
   );
 
-  const filterLower = rentedFilter.trim().toLowerCase();
   const allCards = useMemo(
     () => rentedCards?.cards ?? [],
     [rentedCards?.cards]
   );
 
   const filteredSortedCards = useMemo(() => {
-    const filtered = filterLower
-      ? allCards.filter(
-          (c) =>
-            c.card_uid.toLowerCase().includes(filterLower) ||
-            c.owner.toLowerCase().includes(filterLower) ||
-            c.rental_type.toLowerCase().includes(filterLower)
-        )
-      : allCards;
+    const minDays = parseFloat(fMinDays);
+    const minBasePP = parseFloat(fMinBasePP);
+    const minDecDay = parseFloat(fMinDecDay);
+    const minTotalDec = parseFloat(fMinTotalDec);
+    const cardUidLow = fCardUid.trim().toLowerCase();
+    const ownerLow = fOwner.trim().toLowerCase();
+    const typeLow = fType.trim().toLowerCase();
+    const filtered = allCards.filter((c) => {
+      if (cardUidLow && !c.card_uid.toLowerCase().includes(cardUidLow))
+        return false;
+      if (ownerLow && !c.owner.toLowerCase().includes(ownerLow)) return false;
+      if (typeLow && !c.rental_type.toLowerCase().includes(typeLow))
+        return false;
+      if (!isNaN(minDays)) {
+        const days = calcDaysRemaining(c.rental_date, c.rental_days) ?? 0;
+        if (days < minDays) return false;
+      }
+      if (!isNaN(minBasePP) && c.base_pp < minBasePP) return false;
+      if (!isNaN(minDecDay) && c.dec_per_day < minDecDay) return false;
+      if (!isNaN(minTotalDec) && c.total_dec < minTotalDec) return false;
+      return true;
+    });
     return sortRentedCards(filtered, rentedSortField, rentedSortDir);
-  }, [allCards, filterLower, rentedSortField, rentedSortDir]);
+  }, [
+    allCards,
+    fCardUid,
+    fOwner,
+    fType,
+    fMinDays,
+    fMinBasePP,
+    fMinDecDay,
+    fMinTotalDec,
+    rentedSortField,
+    rentedSortDir,
+  ]);
 
   const rentedPaginated = filteredSortedCards.slice(
     rentedPage * rentedRowsPerPage,
@@ -653,10 +686,8 @@ export default function RentalOverview({
                 {filteredEligible.length === 1 ? "" : "s"} ·{" "}
                 {filteredEligible.reduce((sum, p) => sum + p.empty_slots, 0)}{" "}
                 empty slot
-                {filteredEligible.reduce(
-                  (sum, p) => sum + p.empty_slots,
-                  0
-                ) === 1
+                {filteredEligible.reduce((sum, p) => sum + p.empty_slots, 0) ===
+                1
                   ? ""
                   : "s"}
               </Typography>
@@ -669,17 +700,10 @@ export default function RentalOverview({
 
             {data.unpoweredSkipped.length > 0 && (
               <Box>
-                <Typography
-                  variant="caption"
-                  color="warning.main"
-                  gutterBottom
-                >
+                <Typography variant="caption" color="warning.main" gutterBottom>
                   Unpowered plots — skipped · {filteredUnpowered.length} plot
                   {filteredUnpowered.length === 1 ? "" : "s"} ·{" "}
-                  {filteredUnpowered.reduce(
-                    (sum, p) => sum + p.empty_slots,
-                    0
-                  )}{" "}
+                  {filteredUnpowered.reduce((sum, p) => sum + p.empty_slots, 0)}{" "}
                   empty slot
                   {filteredUnpowered.reduce(
                     (sum, p) => sum + p.empty_slots,
@@ -716,30 +740,10 @@ export default function RentalOverview({
                   staked on your plots.
                 </Typography>
 
-                {/* Filter input */}
-                <TextField
-                  size="small"
-                  placeholder="Filter by card UID, owner or type…"
-                  value={rentedFilter}
-                  onChange={(e) => {
-                    setRentedFilter(e.target.value);
-                    setRentedPage(0);
-                  }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Typography variant="caption" color="text.secondary">
-                          🔍
-                        </Typography>
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 1, width: { xs: "100%", sm: 340 } }}
-                />
-
                 <ScrollableTableContainer>
                   <Table size="small">
                     <TableHead>
+                      {/* ── Label + sort row ── */}
                       <TableRow>
                         <TableCell>Card UID</TableCell>
                         <TableCell>Owner</TableCell>
@@ -800,6 +804,104 @@ export default function RentalOverview({
                         <TableCell align="center">Cancelled</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
+                      {/* ── Per-column filter row ── */}
+                      <TableRow>
+                        {(
+                          [
+                            {
+                              value: fCardUid,
+                              setter: setFCardUid,
+                              placeholder: "UID…",
+                              type: "text",
+                            },
+                            {
+                              value: fOwner,
+                              setter: setFOwner,
+                              placeholder: "Owner…",
+                              type: "text",
+                            },
+                            {
+                              value: "",
+                              setter: null,
+                              placeholder: "",
+                              type: "none",
+                            },
+                            {
+                              value: fType,
+                              setter: setFType,
+                              placeholder: "Type…",
+                              type: "text",
+                            },
+                            {
+                              value: fMinDays,
+                              setter: setFMinDays,
+                              placeholder: "≥ days",
+                              type: "number",
+                            },
+                            {
+                              value: fMinBasePP,
+                              setter: setFMinBasePP,
+                              placeholder: "≥ PP",
+                              type: "number",
+                            },
+                            {
+                              value: fMinDecDay,
+                              setter: setFMinDecDay,
+                              placeholder: "≥ DEC",
+                              type: "number",
+                            },
+                            {
+                              value: fMinTotalDec,
+                              setter: setFMinTotalDec,
+                              placeholder: "≥ DEC",
+                              type: "number",
+                            },
+                            {
+                              value: "",
+                              setter: null,
+                              placeholder: "",
+                              type: "none",
+                            },
+                            {
+                              value: "",
+                              setter: null,
+                              placeholder: "",
+                              type: "none",
+                            },
+                          ] as const
+                        ).map((col, i) => (
+                          <TableCell key={i} sx={{ py: 0.5, px: 1 }}>
+                            {col.setter ? (
+                              <TextField
+                                size="small"
+                                type={col.type}
+                                placeholder={col.placeholder}
+                                value={col.value}
+                                onChange={(e) => {
+                                  (col.setter as (v: string) => void)(
+                                    e.target.value
+                                  );
+                                  resetRentedPage();
+                                }}
+                                slotProps={{
+                                  htmlInput:
+                                    col.type === "number"
+                                      ? { min: 0, step: "any" }
+                                      : {},
+                                }}
+                                sx={{
+                                  width: col.type === "number" ? 72 : 100,
+                                  "& .MuiInputBase-input": {
+                                    fontSize: "0.7rem",
+                                    py: 0.5,
+                                    px: 0.75,
+                                  },
+                                }}
+                              />
+                            ) : null}
+                          </TableCell>
+                        ))}
+                      </TableRow>
                     </TableHead>
                     <TableBody>
                       {rentedPaginated.map((c) => (
@@ -813,9 +915,7 @@ export default function RentalOverview({
                             </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography variant="caption">
-                              {c.owner}
-                            </Typography>
+                            <Typography variant="caption">{c.owner}</Typography>
                           </TableCell>
                           <TableCell>
                             <Typography
@@ -959,4 +1059,3 @@ export default function RentalOverview({
     </>
   );
 }
-
