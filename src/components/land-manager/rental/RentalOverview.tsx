@@ -1003,7 +1003,9 @@ export default function RentalOverview({
                                 title={
                                   !c.deed_uid
                                     ? "No deed UID — cannot unstake"
-                                    : "Remove card from land (unstake)"
+                                    : c.stake_end_date != null
+                                      ? "Allready unstaked — cannot unstake again"
+                                      : "Remove card from land (unstake)"
                                 }
                               >
                                 <span>
@@ -1013,6 +1015,7 @@ export default function RentalOverview({
                                     color="warning"
                                     disabled={
                                       !c.deed_uid ||
+                                      c.stake_end_date != null ||
                                       cancelAction.busy ||
                                       unstakeAction.busy
                                     }

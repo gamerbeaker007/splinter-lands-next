@@ -172,6 +172,7 @@ export interface RentedCardEntry {
   total_dec: number;
   stake_plot: number;
   stake_region: number | null;
+  stake_end_date: string | null;
   /** Present when the renter has queued a cancellation. */
   cancel_tx: string | null;
   /** land_base_pp from the card's staking data (string → number). */
@@ -254,6 +255,7 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       total_dec: total,
       stake_plot: c.stake_plot as number,
       stake_region: c.stake_region ?? null,
+      stake_end_date: c.stake_end_date ?? null,
       cancel_tx: c.cancel_tx ?? null,
       base_pp: Number(c.land_base_pp) || 0,
       market_id: c.market_id ?? null,
