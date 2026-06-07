@@ -4,23 +4,20 @@ import RentalPlotTable, {
   RentalPlotColumn,
 } from "@/components/land-manager/rental/RentalPlotTable";
 import { buildConfirmColumns } from "@/components/land-manager/rental/RentConfirmDialog";
-import { RentalConfig, RentalPlan } from "@/types/landManager";
+import { RentalPlan } from "@/types/landManager";
 import {
   Alert,
   Box,
   Chip,
   Divider,
-  Link,
   Paper,
   Stack,
   Typography,
 } from "@mui/material";
 
-// ── Quick-launch link (all params explicit for easy editing in URL bar) ──────
-const DEFAULT_LINK =
-  "/dev/rental-plan?plots=14&batch=5&max_dec=0&max_per_worker=0&min_pp=0&min_foil=0";
+const COLUMNS: RentalPlotColumn[] = buildConfirmColumns();
 
-// ── Same columns as RentDryRunDialog ─────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
 
 function fmtDec(value: number): string {
   return value.toLocaleString("en-US", {
@@ -29,18 +26,12 @@ function fmtDec(value: number): string {
   });
 }
 
-const COLUMNS: RentalPlotColumn[] = buildConfirmColumns();
-
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface Props {
   plan: RentalPlan;
-  config: RentalConfig;
 }
 
-export default function RentalPlanDevView({ plan, config }: Props) {
+export default function RentalPlanDevView({ plan }: Props) {
   const { totals, warnings, rental_days, rental_days_source } = plan;
-
   return (
     <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
       {/* Header */}
@@ -64,57 +55,6 @@ export default function RentalPlanDevView({ plan, config }: Props) {
       >
         Season source: {rental_days_source}
       </Typography>
-
-      {/* Quick-launch link */}
-      <Box mb={3}>
-        <Chip
-          suppressHydrationWarning
-          component={Link}
-          href={DEFAULT_LINK}
-          label="Run test (all defaults)"
-          size="small"
-          variant="outlined"
-          color="primary"
-          clickable
-          sx={{ fontFamily: "monospace", fontSize: "0.72rem" }}
-        />
-      </Box>
-
-      {/* Config summary */}
-      <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-        <Typography variant="subtitle2" mb={1}>
-          Config used
-        </Typography>
-        <Stack direction="row" flexWrap="wrap" gap={1}>
-          {(
-            [
-              ["strategy", config.strategy],
-              ["max_total_dec", config.max_total_dec || "unlimited"],
-              [
-                "max_dec_per_day_per_worker",
-                config.max_dec_per_day_per_worker || "unlimited",
-              ],
-              ["min_land_base_pp", config.min_land_base_pp || "none"],
-              [
-                "min_foil",
-                config.min_foil === 0
-                  ? "Regular+"
-                  : config.min_foil === 1
-                    ? "Gold+"
-                    : config.min_foil,
-              ],
-              ["rental_batch_size", config.rental_batch_size ?? "all"],
-            ] as [string, string | number][]
-          ).map(([k, v]) => (
-            <Chip
-              key={k}
-              label={`${k}: ${v}`}
-              size="small"
-              variant="outlined"
-            />
-          ))}
-        </Stack>
-      </Paper>
 
       {/* Totals */}
       <Stack direction="row" spacing={3} mb={3}>
@@ -151,19 +91,8 @@ export default function RentalPlanDevView({ plan, config }: Props) {
       )}
 
       <Divider sx={{ mb: 2 }} />
-
       {/* Plan table */}
       <RentalPlotTable items={plan.items} columns={COLUMNS} rowsPerPage={25} />
-
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        mt={3}
-        display="block"
-      >
-        Reload the page to re-fetch live market data. Tweak via URL params:
-        ?max_dec=200&min_pp=50&max_per_worker=5&min_foil=0&batch=3&plots=3
-      </Typography>
     </Box>
   );
 }

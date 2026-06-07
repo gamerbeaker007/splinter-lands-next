@@ -20,7 +20,7 @@ import { RentalConfig, RentalEligiblePlot } from "@/types/landManager";
 import { TERRAIN_BONUS } from "@/types/planner/primitives";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import RentalPlanDevView from "./RentalPlanDevView";
+import RentalPlanAction from "./RentalPlanAction";
 
 // ── Synthetic test plots ───────────────────────────────────────────────────
 const TERRAIN_TYPES = Object.keys(TERRAIN_BONUS);
@@ -109,7 +109,7 @@ interface SearchParams {
 }
 
 function RentalPlanLoading() {
-  return <div style={{ padding: 16 }}>Building rental plan...</div>;
+  return <div style={{ padding: 16 }}>Loadin Page...</div>;
 }
 
 async function RentalPlanDevContent({
@@ -135,9 +135,15 @@ async function RentalPlanDevContent({
     land_renters_only: false,
   };
 
-  const plan = await buildRentalPlan(eligible, config);
-
-  return <RentalPlanDevView plan={plan} config={config} />;
+  return (
+    <RentalPlanAction
+      config={config}
+      execute={async () => {
+        "use server";
+        return buildRentalPlan(eligible, config);
+      }}
+    />
+  );
 }
 
 export default function RentalPlanDevPage({
