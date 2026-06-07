@@ -7,7 +7,7 @@ import MemorySectionServer from "@/components/admin/MemorySectionServer";
 import SignOutButton from "@/components/admin/SingOutButton";
 import WorkerStatusSection from "@/components/admin/WorkerStatusSection";
 import { authOptions } from "@/lib/backend/auth/authOptions";
-import { CircularProgress, Container, Typography } from "@mui/material";
+import { CircularProgress, Container, Stack, Typography } from "@mui/material";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -21,12 +21,19 @@ async function AdminContent() {
 
   return (
     <>
-      <Typography variant="h2">Admin Dashboard</Typography>
-      <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
-      <Typography variant="caption" color="text.secondary">
-        Version: {process.env.APP_VERSION ?? "dev"}
-      </Typography>
-      <SignOutButton />
+      <Stack
+        direction="column"
+        alignItems="left"
+        justifyContent="space-between"
+        mb={2}
+      >
+        <Typography variant="h2">Admin Dashboard</Typography>
+        <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
+        <Typography variant="caption" color="text.secondary">
+          Version: {process.env.APP_VERSION ?? "dev"}
+        </Typography>
+        <SignOutButton />
+      </Stack>
 
       <Suspense fallback={<CircularProgress />}>
         <WorkerStatusSection />
