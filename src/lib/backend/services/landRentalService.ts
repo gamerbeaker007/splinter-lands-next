@@ -7,6 +7,7 @@ import logger from "@/lib/backend/log/logger.server";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { calcLandPpPerBcx } from "@/lib/frontend/utils/plannerCalcs";
 import {
+  determineCardMaxBCX,
   findCardElement,
   findCardSet,
   getCardImgV2,
@@ -41,7 +42,7 @@ const MS_PER_DAY = 86_400_000;
  * cap - so the best value always wins regardless of card colour.
  * Higher = more choices but one extra API call per extra tuple.
  */
-const MAX_CANDIDATE_TUPLES = 100;
+const MAX_CANDIDATE_TUPLES = 15;
 
 /**
  * Exact land PP per BCX for a grouped candidate, derived from the same formula
@@ -109,7 +110,10 @@ function foilString(foil: number): CardFoil {
   return cardFoilOptions[foil] ?? "regular";
 }
 
-function buildPick(pair: ScoredPair): RentalPlanPick {
+function buildPick(
+  pair: ScoredPair,
+  cardDetails: SplCardDetails[]
+): RentalPlanPick {
   const {
     listing,
     card,
@@ -119,12 +123,19 @@ function buildPick(pair: ScoredPair): RentalPlanPick {
     rental_days,
     total_dec,
   } = pair;
+  const rarity = cardRarityOptions[card.rarity - 1] as CardRarity;
+  const set = findCardSet(cardDetails, listing.card_detail_id, listing.edition);
+  const maxBcx = determineCardMaxBCX(set, rarity, listing.foil);
+
   return {
     market_id: listing.market_id,
     card_uid: listing.uid,
     card_detail_id: listing.card_detail_id,
     card_name: card.name,
     edition: listing.edition,
+    rarity: rarity,
+    bxc: listing.bcx,
+    max_bcx: maxBcx,
     foil: listing.foil,
     gold: listing.gold,
     level: listing.level,
@@ -403,6 +414,7 @@ interface GreedyResult {
  *  - the assignment stays within the total DEC budget
  */
 function greedyAssign(
+  cardDetails: SplCardDetails[],
   pairs: ScoredPair[],
   eligible: RentalEligiblePlot[],
   config: RentalConfig
@@ -424,7 +436,7 @@ function greedyAssign(
     if (remaining <= 0) continue;
     if (runningTotal + pair.total_dec > maxTotalDec) continue;
 
-    picksByDeed.get(pair.plot.deed_uid)!.push(buildPick(pair));
+    picksByDeed.get(pair.plot.deed_uid)!.push(buildPick(pair, cardDetails));
     remainingSlots.set(pair.plot.deed_uid, remaining - 1);
     pickedCards.add(pair.listing.uid);
     runningTotal += pair.total_dec;
@@ -534,6 +546,7 @@ export async function buildRentalPlan(
 
   // Phase 6: greedy assignment (best PP/DEC first).
   const { picksByDeed, runningTotal } = greedyAssign(
+    cardDetails,
     pairs,
     batchedEligible,
     config

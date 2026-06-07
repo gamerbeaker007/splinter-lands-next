@@ -5,18 +5,11 @@ import {
   RentalPlanItem,
   RentalPlanPick,
 } from "@/types/landManager";
+import { CardRarity } from "@/types/planner";
 import type { Meta, StoryObj } from "@storybook/react";
 import RentConfirmDialog from "./RentConfirmDialog";
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
-
-const CARD_NAMES = [
-  "Charlok Minotaur",
-  "Radiated Scorcher",
-  "Goblin Firebomb",
-  "Serpent of Eld",
-  "Exploding Rats",
-];
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "GRAIN"];
 
@@ -93,10 +86,13 @@ function makePick(idx: number): RentalPlanPick {
   return {
     market_id: `mkt-${idx}`,
     card_uid: `card-${idx}`,
-    card_detail_id: 100 + (idx % CARD_NAMES.length),
-    card_name: CARD_NAMES[idx % CARD_NAMES.length],
-    edition: 1,
-    foil: 0,
+    card_detail_id: 395,
+    card_name: "Radiated Scorcher",
+    edition: 7,
+    rarity: ["common", "rare", "epic", "legendary"][idx % 4] as CardRarity,
+    max_bcx: 10,
+    bxc: 1 + (idx % 10),
+    foil: 1,
     gold: false,
     level: 3 + (idx % 3),
     color: "red",
@@ -109,7 +105,8 @@ function makePick(idx: number): RentalPlanPick {
     pp_per_dec: (1100 + idx * 10) / (decPerDay * days),
     seller: `seller${idx % 5}`,
     expiration_date: "2026-06-10T00:00:00.000Z",
-    card_image_url: "",
+    card_image_url:
+      "https://d36mxiodymuqjm.cloudfront.net/cards_by_level/chaos/Radiated%20Scorcher_lv1.png",
   };
 }
 

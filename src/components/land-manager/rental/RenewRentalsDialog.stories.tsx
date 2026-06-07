@@ -20,6 +20,8 @@ const basePlan: RenewRentalPlan = {
   skipped_already_renewed: 0,
   skipped_no_market_id: 0,
   skipped_cancel_tx: 0,
+  skipped_not_on_land: 0,
+  land_renters_only: false,
   total_dec: 16,
   dec_balance: 42.5,
   sufficient_balance: true,

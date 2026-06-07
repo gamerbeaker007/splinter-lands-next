@@ -1,12 +1,9 @@
 "use client";
 
+import CardTile from "@/components/player-overview/deed-overview/land-deed-card/card/CardTile";
 import { RentalPlanPick } from "@/types/landManager";
 import { cardElementColorMap } from "@/types/planner/primitives";
 import { Box, Tooltip, Typography } from "@mui/material";
-import Image from "next/image";
-
-const IMG_W = 42;
-const IMG_H = 57;
 
 function fmtDec(value: number): string {
   return value.toLocaleString("en-US", {
@@ -70,68 +67,22 @@ export default function CardPicksCell({ picks }: Props) {
     <Box>
       <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
         {picks.map((pick) => (
-          <Box
-            key={pick.card_uid}
-            sx={{
-              width: 75,
-              flexShrink: 0,
-            }}
-          >
+          <Box key={pick.card_uid}>
             <Tooltip title={<PickTooltip pick={pick} />} placement="top" arrow>
-              <Box
-                sx={{
-                  width: IMG_W,
-                  height: IMG_H,
-                  borderRadius: 0.5,
-                  overflow: "hidden",
-                  flexShrink: 0,
-                  bgcolor: "action.hover",
-                  position: "relative",
-                  cursor: "default",
-                }}
-              >
-                {pick.card_image_url ? (
-                  <Image
-                    src={pick.card_image_url}
-                    alt={pick.card_name}
-                    fill
-                    sizes={`${IMG_W}px`}
-                    style={{ objectFit: "cover" }}
-                    unoptimized
-                  />
-                ) : (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontSize: "0.6rem",
-                      color: "text.secondary",
-                    }}
-                  >
-                    {pick.card_name.charAt(0)}
-                  </Typography>
-                )}
-              </Box>
+              <CardTile
+                key={pick.card_uid}
+                name={pick.card_name}
+                rarity={pick.rarity}
+                edition={pick.edition}
+                foil={pick.foil}
+                terrain_boost={Number(pick.biome_modifier)}
+                actual_bcx={pick.bxc}
+                max_bcx={pick.max_bcx}
+                base_pp={Number(pick.land_base_pp)}
+                boosted_pp={Number(pick.effective_pp)}
+                uid={pick.card_uid}
+              />
             </Tooltip>
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                color: "text.secondary",
-                mt: 0.25,
-                fontSize: "0.65rem",
-              }}
-            >
-              {pick.effective_pp.toLocaleString(undefined, {
-                maximumFractionDigits: 0,
-              })}{" "}
-              eff PP
-            </Typography>
             <Typography
               variant="caption"
               sx={{

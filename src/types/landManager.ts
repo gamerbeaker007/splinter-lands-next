@@ -2,6 +2,7 @@
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
+import { CardRarity } from "./planner";
 
 export interface DryRunResult {
   title: string;
@@ -157,6 +158,9 @@ export interface RentalPlanPick {
   card_detail_id: number;
   card_name: string;
   edition: number;
+  rarity: CardRarity;
+  bxc: number;
+  max_bcx: number;
   foil: number;
   gold: boolean;
   level: number;
