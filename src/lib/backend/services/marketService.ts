@@ -7,7 +7,6 @@ import {
   PlotRarity,
   PlotStatus,
   TitleTier,
-  TotemRarity,
 } from "@/types/planner";
 import {
   LowestCardPriceEntry,
