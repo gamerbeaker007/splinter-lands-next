@@ -104,7 +104,7 @@ export function useRenewRentalsAction({
         const rentRes = await rentOnBehalfOf(marketIds, true);
         if (!rentRes.success) {
           setError(
-            `Rent failed: ${rentRes.error ?? "unknown error"}.${
+            `Renewal failed: ${rentRes.error ?? "unknown error"}.${
               rentRes.txIds.length > 0
                 ? " Some chunks may have already broadcast — check your wallet."
                 : ""

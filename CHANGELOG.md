@@ -12,15 +12,29 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
-
 ---
 
-## [v1.11.0] - 2026-06-06
+## [v1.11.0] - 2026-06-08
 
-### Updated
- - Restructure files in land manager
- - Add Dev testing page
- - Update theme to tri state (to include high-contrast)
+### Added
+- **Land Manager — Cancel rental** option to cancel active rental listings.
+- **Land Manager — Unstake workers** operation to remove worker cards from a deed.
+- **Land Manager — "Land renters only"** rental config option. When enabled, the
+  Renew Rentals flow skips rented cards that are not currently staked on a land
+  plot (`stake_plot = 0`).
+- Add Dev testing page
+- Update theme to tri state (to include high-contrast)
+
+### Changed
+- Restructure files in land manager
+- **Land Manager — Renew Rentals** now broadcasts as an on-behalf operation
+  signed by the configured land-service account's active key (same authority
+  path as Rent on behalf), eliminating per-batch active-key Keychain popups on
+  the client.
+
+### Fixed
+- **Planner — Detailed Price Information** no longer prices cards that produce
+  zero land base PP. The lowest-card-price market list now excludes 0 land base PP
 
 
 ### Improved
@@ -30,9 +44,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 The algorithm that selects which cards to rent for empty worker slots has been rewritten from scratch. The previous approach processed card types one by one and picked plots inside each loop, which could assign a zero-boost card early and block a higher-value boosted card from the same plot later. The new design avoids this by separating scoring from assignment:
 
 1. **Global candidate selection (Phase 1)** — every entry in the grouped rental market is scored against every eligible plot simultaneously. The top 100 unique `(card, foil, edition)` combinations are selected by their best achievable `effective_pp / DEC/day` across all plots. No per-element cap; fire and water cards compete on the same global leaderboard so the best value always wins regardless of element colour.
-
 2. **Live listing fetch and pair scoring (Phase 2)** — actual rental listings are fetched for each candidate. Every `(listing × plot)` combination is evaluated with the plot's real biome modifier for that card's element. The result is a single flat list of pairs sorted globally by `effective_pp / total_dec` (accounts for rental duration differences).
-
 3. **Greedy assignment (Phase 3)** — the sorted list is scanned once from best to worst. A pair is assigned if the listing hasn't been claimed yet and the target plot still has an empty slot. Because the list is globally sorted, the highest-value pick always lands first — no re-evaluation or inner loops needed.
 
 Biome modifiers are applied correctly throughout: a card placed on a plot with a 10% fire boost yields `land_base_pp × 1.10` effective PP, and that full effective PP drives the ranking. Cards whose element is penalised (`biome_modifier < 0`) on a plot are never paired with it.

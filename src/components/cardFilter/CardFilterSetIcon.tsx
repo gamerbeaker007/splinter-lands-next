@@ -1,6 +1,5 @@
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
-import { CardSetNameLandValid } from "@/types/editions";
-import { cardSetIconMap } from "@/types/planner";
+import { cardSetIconMap, CardSetNameLandValid } from "@/types/editions";
 import FilterIcon from "../filter/FilterIcon";
 
 type Props = {

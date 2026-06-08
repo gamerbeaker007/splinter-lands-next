@@ -450,9 +450,10 @@ export function buildUnstakeWorkersOp(
 }
 
 /**
- * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
- * `marketIds` — the market listing IDs of the cards to renew.
- * Batches are handled upstream (max 4 ops per tx).
+ * Renew one or more rented cards via the SPL market on behalf of `player`.
+ * Signed by the `serviceAccount`'s ACTIVE key (broadcast server-side) — the
+ * player must have granted purchase authority to that account on Splinterlands
+ * Account Security. Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
  */
 export function buildRenewRentalOnBehalfOp(
   serviceAccount: string,
@@ -471,6 +472,7 @@ export function buildRenewRentalOnBehalfOp(
         player,
         market: MARKET,
         app: APP,
+        n: generateNonce(),
       }),
     },
   ];

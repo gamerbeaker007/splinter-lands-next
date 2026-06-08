@@ -9,13 +9,6 @@ import {
   card_rarity_epic_icon_url,
   card_rarity_legendary_icon_url,
   card_rarity_rare_icon_url,
-  edition_alpha_icon_url,
-  edition_beta_icon_url,
-  edition_chaos_icon_url,
-  edition_conclave_arcana_icon_url,
-  edition_land_card_icon_url,
-  edition_rebellion_icon_url,
-  edition_untamed_icon_url,
   land_aura_lab_icon_url,
   land_castle_icon_url,
   land_grain_farm_icon_url,
@@ -184,16 +177,6 @@ export const cardSetModifiers: Record<CardSetNameLandValid, number> = {
   rebellion: 0.5,
   conclave: 0.5,
   land: 1,
-};
-
-export const cardSetIconMap: Record<CardSetNameLandValid, string> = {
-  alpha: edition_alpha_icon_url,
-  beta: edition_beta_icon_url,
-  untamed: edition_untamed_icon_url,
-  chaos: edition_chaos_icon_url,
-  rebellion: edition_rebellion_icon_url,
-  conclave: edition_conclave_arcana_icon_url,
-  land: edition_land_card_icon_url,
 };
 
 export const cardFoilOptions = [
