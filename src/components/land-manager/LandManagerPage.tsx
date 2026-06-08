@@ -2,17 +2,17 @@
 
 import LoginComponent from "@/components/auth/LoginComponent";
 import FilterDrawer from "@/components/filter/FilterDrawer";
-import AlertsPanel from "@/components/land-manager/AlertsPanel";
-import BulkActionPanel from "@/components/land-manager/bulk-operations/BulkActionPanel";
-import BulkDecActionsPanel from "@/components/land-manager/bulk-operations/BulkDecActionsPanel";
-import BulkRentalPanel from "@/components/land-manager/bulk-operations/BulkRentalPanel";
-import ConfigDialog from "@/components/land-manager/ConfigDialog";
-import MythicOverview from "@/components/land-manager/MythicOverview";
-import RegionOverview from "@/components/land-manager/RegionOverview";
-import RegionResourceSummary from "@/components/land-manager/RegionResourceSummary";
-import RentalAuthorityCard from "@/components/land-manager/RentalAuthorityCard";
-import RentalOverview from "@/components/land-manager/RentalOverview";
-import TodayPanel from "@/components/land-manager/TodayPanel";
+import ConfigDialog from "@/components/land-manager/config/ConfigDialog";
+import BulkDecActionsPanel from "@/components/land-manager/dec-actions/BulkDecActionsPanel";
+import BulkActionPanel from "@/components/land-manager/harvest/BulkActionPanel";
+import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
+import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
+import BulkRentalPanel from "@/components/land-manager/rental/BulkRentalPanel";
+import RentalAuthorityCard from "@/components/land-manager/rental/RentalAuthorityCard";
+import RentalOverview from "@/components/land-manager/rental/RentalOverview";
+import AlertsPanel from "@/components/land-manager/shared/AlertsPanel";
+import RegionResourceSummary from "@/components/land-manager/shared/RegionResourceSummary";
+import TodayPanel from "@/components/land-manager/shared/TodayPanel";
 import WorksiteTab from "@/components/land-manager/worksites/WorksiteTab";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";

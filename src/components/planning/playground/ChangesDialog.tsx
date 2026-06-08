@@ -2,7 +2,7 @@
 
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { cardSetIconMap, SlotInput } from "@/types/planner";
+import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
   PlaygroundCard,
@@ -30,6 +30,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { downloadTextFile } from "./util/dowload";
 import { generateTodoListText } from "./util/todolist";
+import { cardSetIconMap } from "@/types/editions";
 
 type ChangesDialogProps = {
   open: boolean;

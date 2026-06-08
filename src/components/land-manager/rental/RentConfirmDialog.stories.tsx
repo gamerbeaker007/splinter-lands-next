@@ -1,22 +1,15 @@
+import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import {
   DEFAULT_RENTAL_CONFIG,
   RentalEligiblePlot,
-  RentalPlan,
   RentalPlanItem,
   RentalPlanPick,
 } from "@/types/landManager";
+import { CardRarity } from "@/types/planner";
 import type { Meta, StoryObj } from "@storybook/react";
-import RentDryRunDialog from "./RentDryRunDialog";
+import RentConfirmDialog from "./RentConfirmDialog";
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
-
-const CARD_NAMES = [
-  "Charlok Minotaur",
-  "Radiated Scorcher",
-  "Goblin Firebomb",
-  "Serpent of Eld",
-  "Exploding Rats",
-];
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "GRAIN"];
 
@@ -93,10 +86,13 @@ function makePick(idx: number): RentalPlanPick {
   return {
     market_id: `mkt-${idx}`,
     card_uid: `card-${idx}`,
-    card_detail_id: 100 + (idx % CARD_NAMES.length),
-    card_name: CARD_NAMES[idx % CARD_NAMES.length],
-    edition: 1,
-    foil: 0,
+    card_detail_id: 395,
+    card_name: "Radiated Scorcher",
+    edition: 7,
+    rarity: ["common", "rare", "epic", "legendary"][idx % 4] as CardRarity,
+    max_bcx: 10,
+    bxc: 1 + (idx % 10),
+    foil: 1,
     gold: false,
     level: 3 + (idx % 3),
     color: "red",
@@ -109,7 +105,8 @@ function makePick(idx: number): RentalPlanPick {
     pp_per_dec: (1100 + idx * 10) / (decPerDay * days),
     seller: `seller${idx % 5}`,
     expiration_date: "2026-06-10T00:00:00.000Z",
-    card_image_url: "",
+    card_image_url:
+      "https://d36mxiodymuqjm.cloudfront.net/cards_by_level/chaos/Radiated%20Scorcher_lv1.png",
   };
 }
 
@@ -118,81 +115,97 @@ function makeItem(
   tract: number,
   plot: number,
   pickCount: number,
-  pickOffset = 0,
-  skipReason?: string
+  pickOffset = 0
 ): RentalPlanItem {
   const plt = makePlot(region, tract, plot);
-  const picks = skipReason
-    ? []
-    : Array.from({ length: pickCount }, (_, i) => makePick(pickOffset + i));
-  const slotsFilled = picks.length;
+  const picks = Array.from({ length: pickCount }, (_, i) =>
+    makePick(pickOffset + i)
+  );
   return {
     plot: plt,
     picks,
-    slots_filled: slotsFilled,
-    slots_skipped: plt.empty_slots - slotsFilled,
+    slots_filled: picks.length,
+    slots_skipped: plt.empty_slots - picks.length,
     plot_total_dec: picks.reduce((s, p) => s + p.total_dec, 0),
-    skip_reason: skipReason ?? null,
+    skip_reason: null,
   };
 }
 
-function makeTotals(items: RentalPlanItem[]) {
-  return {
+function makeExecPlan(
+  items: RentalPlanItem[],
+  withShortage = false
+): RentalExecutionPlan {
+  const totals = {
     plots_total: items.length,
-    plots_with_picks: items.filter((i) => i.picks.length > 0).length,
+    plots_with_picks: items.length,
     slots_total: items.reduce((s, i) => s + i.plot.empty_slots, 0),
     slots_filled: items.reduce((s, i) => s + i.slots_filled, 0),
     total_dec: items.reduce((s, i) => s + i.plot_total_dec, 0),
   };
-}
 
-function makePlan(
-  items: RentalPlanItem[],
-  warnings: string[] = []
-): RentalPlan {
+  const emptySlotsByDeed: Record<string, number[]> = {};
+  items.forEach((item, idx) => {
+    // Simulate one plot having a slot shortage to test the warning banner.
+    const shortage = withShortage && idx === 0;
+    const available = shortage ? item.picks.length - 1 : item.plot.empty_slots;
+    emptySlotsByDeed[item.plot.deed_uid] = Array.from(
+      { length: available },
+      (_, i) => i + 1
+    );
+  });
+
   return {
-    config: DEFAULT_RENTAL_CONFIG,
-    items,
-    totals: makeTotals(items),
-    warnings,
-    rental_days: 14,
-    rental_days_source: "season 12 ends 2026-06-10 (14.0d left)",
+    plan: {
+      config: DEFAULT_RENTAL_CONFIG,
+      items,
+      totals,
+      warnings: [],
+      rental_days: 14,
+      rental_days_source: "season 12 ends 2026-06-10 (14.0d left)",
+    },
+    emptySlotsByDeed,
   };
 }
 
 // ── Stories ───────────────────────────────────────────────────────────────────
 
-const meta: Meta<typeof RentDryRunDialog> = {
-  title: "Land Manager/Bulk Operations/RentDryRunDialog",
-  component: RentDryRunDialog,
+const meta: Meta<typeof RentConfirmDialog> = {
+  title: "Land Manager/Bulk Operations/RentConfirmDialog",
+  component: RentConfirmDialog,
   args: {
     decBalance: 5000,
-    onClose: () => {},
+    busy: false,
+    onConfirm: () => {},
+    onCancel: () => {},
   },
 };
 
 export default meta;
-type Story = StoryObj<typeof RentDryRunDialog>;
+type Story = StoryObj<typeof RentConfirmDialog>;
 
-/** A small region with a mix of filled, partially filled, and skipped plots. */
+/** A small region — 5 plots, all fully filled. */
 export const FewPlots: Story = {
   args: {
-    plan: makePlan(
+    exec: makeExecPlan([
+      makeItem(1, 1, 1, 5, 0),
+      makeItem(1, 1, 2, 3, 5),
+      makeItem(1, 2, 1, 5, 8),
+      makeItem(1, 2, 2, 4, 13),
+      makeItem(1, 2, 3, 5, 17),
+    ]),
+  },
+};
+
+/** Shows the slot-shortage warning when one plot has fewer free slots than picks. */
+export const WithSlotShortage: Story = {
+  args: {
+    exec: makeExecPlan(
       [
         makeItem(1, 1, 1, 5, 0),
         makeItem(1, 1, 2, 3, 5),
-        makeItem(1, 1, 3, 0, 0, "no matching listings or budget exhausted"),
         makeItem(1, 2, 1, 5, 8),
-        makeItem(
-          1,
-          2,
-          2,
-          0,
-          0,
-          "could not fill all slots (budget or biome match)"
-        ),
       ],
-      ["Biome filter active: earth only"]
+      true
     ),
   },
 };
@@ -200,34 +213,31 @@ export const FewPlots: Story = {
 /** Simulates a 1 000-plot region (20 tracts × 50 plots). */
 export const LargeRegion: Story = {
   args: {
-    plan: (() => {
+    exec: (() => {
       const items: RentalPlanItem[] = [];
       let pickOffset = 0;
       for (let tract = 1; tract <= 20; tract++) {
         for (let plot = 1; plot <= 50; plot++) {
-          const isSkipped = (tract + plot) % 7 === 0;
-          const picks = isSkipped ? 0 : 5;
-          items.push(
-            makeItem(
-              65,
-              tract,
-              plot,
-              picks,
-              pickOffset,
-              isSkipped ? "no matching listings or budget exhausted" : undefined
-            )
-          );
-          pickOffset += picks;
+          items.push(makeItem(65, tract, plot, 5, pickOffset));
+          pickOffset += 5;
         }
       }
-      return makePlan(items);
+      return makeExecPlan(items);
     })(),
   },
 };
 
-/** Empty plan — no eligible plots. */
-export const Empty: Story = {
+/** Shows the "no picks" state. */
+export const NoPicks: Story = {
   args: {
-    plan: makePlan([]),
+    exec: makeExecPlan([]),
+  },
+};
+
+/** Shows the busy/loading state during execution. */
+export const Busy: Story = {
+  args: {
+    busy: true,
+    exec: makeExecPlan([makeItem(1, 1, 1, 5, 0), makeItem(1, 1, 2, 5, 5)]),
   },
 };

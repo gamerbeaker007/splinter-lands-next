@@ -19,7 +19,6 @@ import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
 import {
   cardFoilOptions,
-  cardSetIconMap,
   cardSetModifiers,
   RarityColor,
 } from "@/types/planner";
@@ -28,6 +27,7 @@ import CardTableIcon from "./CardTableIcon";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import DateColumn from "@/components/ui/DateColumn";
 import { DateSortType, getDateSortValue } from "@/lib/utils/dateColumnUtils";
+import { cardSetIconMap } from "@/types/editions";
 
 type Props = {
   data: GroupedCardRow[];

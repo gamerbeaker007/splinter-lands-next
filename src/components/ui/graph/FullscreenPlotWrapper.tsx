@@ -1,17 +1,51 @@
 "use client";
-import theme from "@/lib/frontend/themes/themes";
+import { useAppTheme, type AppTheme } from "@/lib/frontend/context/ThemeSetup";
 import CloseIcon from "@mui/icons-material/Close";
-import {
-  Box,
-  Dialog,
-  IconButton,
-  useColorScheme,
-  useMediaQuery,
-} from "@mui/material";
+import { Box, Dialog, IconButton } from "@mui/material";
 import dynamic from "next/dynamic";
 import React, { useState } from "react";
 
 const Plot = dynamic(() => import("react-plotly.js"), { ssr: false });
+
+// ---------------------------------------------------------------------------
+// Theme tokens — explicit per-theme colours, no MUI palette inspection needed
+// ---------------------------------------------------------------------------
+
+interface ThemeTokens {
+  plotlyTemplate: string;
+  paper_bgcolor: string;
+  plot_bgcolor: string;
+  font_color: string;
+  gridcolor: string;
+  zerolinecolor: string;
+}
+
+const THEME_TOKENS: Record<AppTheme, ThemeTokens> = {
+  light: {
+    plotlyTemplate: "plotly_white",
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font_color: "#1a1a1a",
+    gridcolor: "rgba(0,0,0,0.08)",
+    zerolinecolor: "rgba(0,0,0,0.15)",
+  },
+  dark: {
+    plotlyTemplate: "plotly_dark",
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font_color: "#e0e0e0",
+    gridcolor: "rgba(255,255,255,0.06)",
+    zerolinecolor: "rgba(255,255,255,0.15)",
+  },
+  "high-contrast": {
+    plotlyTemplate: "plotly_dark",
+    paper_bgcolor: "rgba(0,0,0,0)",
+    plot_bgcolor: "rgba(0,0,0,0)",
+    font_color: "#ffffff",
+    gridcolor: "rgba(255,255,255,0.10)",
+    zerolinecolor: "rgba(255,255,255,0.22)",
+  },
+};
 
 interface FullscreenPlotWrapperProps {
   data: Partial<Plotly.PlotData>[] | Partial<Plotly.PieData>[];
@@ -28,20 +62,8 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   style,
   noBoxWrapper = false,
 }) => {
-  const { mode } = useColorScheme();
-  const prefersDark = useMediaQuery("(prefers-color-scheme: dark)");
-
-  // Resolve the effective mode based on system preference when mode is "system"
-  const resolvedMode =
-    mode === "system" ? (prefersDark ? "dark" : "light") : mode;
-  const effectiveMode = resolvedMode === "light" ? "light" : "dark";
-
-  const activePalette =
-    theme.colorSchemes?.[effectiveMode]?.palette ?? theme.palette;
-
-  const backgroundColor = activePalette.background?.default;
-  const textColor = activePalette.text?.primary;
-  const gridLineColor = activePalette.divider;
+  const { theme } = useAppTheme();
+  const t = THEME_TOKENS[theme];
 
   const [open, setOpen] = useState(false);
 
@@ -72,11 +94,12 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
   };
 
   const defaultLayout: Partial<Plotly.Layout> = {
-    paper_bgcolor: backgroundColor,
-    plot_bgcolor: backgroundColor,
-    font: { color: textColor },
-    yaxis: { gridcolor: gridLineColor },
-    xaxis: { gridcolor: gridLineColor },
+    template: t.plotlyTemplate as Plotly.Layout["template"],
+    paper_bgcolor: t.paper_bgcolor,
+    plot_bgcolor: t.plot_bgcolor,
+    font: { color: t.font_color },
+    yaxis: { gridcolor: t.gridcolor, zerolinecolor: t.zerolinecolor },
+    xaxis: { gridcolor: t.gridcolor, zerolinecolor: t.zerolinecolor },
     margin: { t: 50, l: 50, r: 50, b: 50 },
     autosize: true,
   };
@@ -132,12 +155,7 @@ export const FullscreenPlotWrapper: React.FC<FullscreenPlotWrapperProps> = ({
         </Box>
       )}
 
-      <Dialog
-        fullScreen
-        open={open}
-        onClose={() => setOpen(false)}
-        sx={{ style: { backgroundColor } }}
-      >
+      <Dialog fullScreen open={open} onClose={() => setOpen(false)}>
         <Box
           sx={{
             position: "absolute",

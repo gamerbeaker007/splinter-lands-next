@@ -1,4 +1,4 @@
-import {
+﻿import {
   fetchMarketForRentGrouped,
   fetchMarketRentalListings,
   fetchSettings,
@@ -7,6 +7,7 @@ import logger from "@/lib/backend/log/logger.server";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { calcLandPpPerBcx } from "@/lib/frontend/utils/plannerCalcs";
 import {
+  determineCardMaxBCX,
   findCardElement,
   findCardSet,
   getCardImgV2,
@@ -31,13 +32,17 @@ import {
 } from "@/types/spl/marketRental";
 import { SplCardDetails } from "@/types/splCardDetails";
 
-// ──────────────────────────────────────────────────────────────────────────
 // Constants
-// ──────────────────────────────────────────────────────────────────────────
 
 const MS_PER_DAY = 86_400_000;
-// How many cheapest grouped tuples to keep as candidates (per biome).
-const MAX_GROUPED_CANDIDATES_PER_BIOME = 15;
+
+/**
+ * How many unique (card_detail_id, foil, edition) tuples to fetch listings
+ * for. They are ranked globally across all eligible plots - no per-element
+ * cap - so the best value always wins regardless of card colour.
+ * Higher = more choices but one extra API call per extra tuple.
+ */
+const MAX_CANDIDATE_TUPLES = 15;
 
 /**
  * Exact land PP per BCX for a grouped candidate, derived from the same formula
@@ -59,7 +64,7 @@ function ppPerBcxForGrouped(
 
 /**
  * Estimated land_base_pp for a grouped candidate. All listings in a group
- * share (cdid, foil, edition, level) so they share the same BCX → same PP.
+ * share (cdid, foil, edition, level) so they share the same BCX â†’ same PP.
  * Returns null when rarity/foil/set can't be resolved.
  */
 function estimatedLandBasePp(
@@ -71,10 +76,8 @@ function estimatedLandBasePp(
   return (ppPerBcxForGrouped(g, card, cardDetails) ?? 0) * bcx;
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Types (internal)
-// ──────────────────────────────────────────────────────────────────────────
-
+// Types
+/** A unique (card, foil variant, edition) combination from the grouped market. */
 interface CandidateTuple {
   card_detail_id: number;
   foil: number;
@@ -82,54 +85,57 @@ interface CandidateTuple {
   element: CardElement;
 }
 
-interface CandidateTuplesResult {
-  tuples: CandidateTuple[];
-  perBiome: Record<string, number>;
-  groupedAfterColorFilter: number;
-}
-
-interface ScoredListing {
+/**
+ * A single rental listing paired with a specific eligible plot, scored by
+ * effective_pp / total_dec. Building a flat global list and sorting it once
+ * means greedy assignment always picks the best available value - no per-plot
+ * or per-element inner loops needed.
+ */
+interface ScoredPair {
   listing: SplMarketListing;
   card: SplCardDetails;
   element: CardElement;
-  total_dec: number;
-  rental_days: number;
-  land_base_pp: number;
-  potential_effective_pp: number;
-}
-
-interface PlotState {
   plot: RentalEligiblePlot;
-  picks: RentalPlanPick[];
-  plot_total_dec: number;
-  skip_reason: string | null;
+  biomeModifier: number;
+  land_base_pp: number;
+  effective_pp: number;
+  rental_days: number;
+  total_dec: number;
+  /** effective_pp / total_dec - the primary ranking metric. */
+  effectivePpPerDec: number;
 }
 
-interface AssignmentResult {
-  states: PlotState[];
-  runningTotal: number;
-}
-
-// ──────────────────────────────────────────────────────────────────────────
 // Small helpers
-// ──────────────────────────────────────────────────────────────────────────
-
 function foilString(foil: number): CardFoil {
   return cardFoilOptions[foil] ?? "regular";
 }
 
 function buildPick(
-  scored: ScoredListing,
-  biomeModifier: number
+  pair: ScoredPair,
+  cardDetails: SplCardDetails[]
 ): RentalPlanPick {
-  const { listing, card, total_dec, rental_days, land_base_pp } = scored;
-  const effective_pp = land_base_pp * (1 + biomeModifier);
+  const {
+    listing,
+    card,
+    biomeModifier,
+    land_base_pp,
+    effective_pp,
+    rental_days,
+    total_dec,
+  } = pair;
+  const rarity = cardRarityOptions[card.rarity - 1] as CardRarity;
+  const set = findCardSet(cardDetails, listing.card_detail_id, listing.edition);
+  const maxBcx = determineCardMaxBCX(set, rarity, listing.foil);
+
   return {
     market_id: listing.market_id,
     card_uid: listing.uid,
     card_detail_id: listing.card_detail_id,
     card_name: card.name,
     edition: listing.edition,
+    rarity: rarity,
+    bxc: listing.bcx,
+    max_bcx: maxBcx,
     foil: listing.foil,
     gold: listing.gold,
     level: listing.level,
@@ -177,84 +183,12 @@ function emptyPlan(
 }
 
 // ──────────────────────────────────────────────────────────────────────────
-// Phase 2 — build candidate tuples from grouped rentals
-// ──────────────────────────────────────────────────────────────────────────
-
-function buildCandidateTuples(
-  grouped: SplMarketRentGrouped[],
-  cardById: Map<number, SplCardDetails>,
-  cardDetails: SplCardDetails[],
-  maxPerWorkerPerDay: number,
-  minLandBasePp: number,
-  minFoil: number
-): CandidateTuplesResult {
-  const tupleByKey = new Map<string, CandidateTuple>();
-  const perBiome: Record<string, number> = {};
-  let groupedAfterColorFilter = 0;
-
-  // Best estimated PP-per-DEC first. PP/DEC = pp_per_bcx / (low_price_bcx × days);
-  // for a fixed day count, max PP/DEC ≡ min (low_price_bcx / pp_per_bcx).
-  // pp_per_bcx comes from the planner formula (set + foil + rarity).
-  const rankScore = (g: SplMarketRentGrouped): number => {
-    const card = cardById.get(g.card_detail_id);
-    if (!card) return Number.POSITIVE_INFINITY;
-    const ppPerBcx = ppPerBcxForGrouped(g, card, cardDetails);
-    if (ppPerBcx === null || ppPerBcx <= 0) return Number.POSITIVE_INFINITY;
-
-    return g.low_price_bcx / ppPerBcx;
-  };
-  const groupedSorted = [...grouped].sort(
-    (a, b) => rankScore(a) - rankScore(b)
-  );
-
-  for (const g of groupedSorted) {
-    const card = cardById.get(g.card_detail_id);
-    if (!card) continue;
-    const element = findCardElement(cardDetails, g.card_detail_id);
-
-    // Min foil: skip groups below the chosen foil rank (0=Regular, 1=Gold, ...).
-    if (g.foil < minFoil) continue;
-
-    // Per-worker DEC/day cap: if even the cheapest listing of this group
-    // exceeds the cap, no listings in it can ever be picked — skip before
-    // making an API call.
-    if (g.low_price > maxPerWorkerPerDay) continue;
-
-    // Min land_base_pp: all listings in a group share level → share BCX → same
-    // land_base_pp. Skip the group before fetching if it's below the floor.
-    if (minLandBasePp > 0) {
-      const estPp = estimatedLandBasePp(g, card, cardDetails);
-      if (estPp === null || estPp < minLandBasePp) continue;
-    }
-    groupedAfterColorFilter += 1;
-
-    if ((perBiome[element] ?? 0) >= MAX_GROUPED_CANDIDATES_PER_BIOME) continue;
-    const key = `${g.card_detail_id}:${g.foil}:${g.edition}`;
-    if (tupleByKey.has(key)) continue;
-    perBiome[element] = (perBiome[element] ?? 0) + 1;
-    tupleByKey.set(key, {
-      card_detail_id: g.card_detail_id,
-      foil: g.foil,
-      edition: g.edition,
-      element,
-    });
-  }
-
-  // Preserve insertion order (already cheapest-first).
-  return {
-    tuples: [...tupleByKey.values()],
-    perBiome,
-    groupedAfterColorFilter,
-  };
-}
-
-// ──────────────────────────────────────────────────────────────────────────
-// Phase 3 — single season-info fetch + rental_days calc (7-day rule)
+// Season / rental-days helpers
 // ──────────────────────────────────────────────────────────────────────────
 
 interface SeasonDaysResult {
-  rental_days: number | null; // null when we should fall back to per-listing expiration
-  source: string; // for diagnostics
+  rental_days: number | null; // null → fall back to per-listing expiration_date
+  source: string;
 }
 
 async function computeRentalDaysForSeason(): Promise<SeasonDaysResult> {
@@ -266,7 +200,6 @@ async function computeRentalDaysForSeason(): Promise<SeasonDaysResult> {
       source: "fallback (settings missing season.ends)",
     };
   }
-
   const now = Date.now();
   const currentEndMs = new Date(current.ends).getTime();
   if (!Number.isFinite(currentEndMs)) {
@@ -276,8 +209,6 @@ async function computeRentalDaysForSeason(): Promise<SeasonDaysResult> {
     };
   }
   const daysToCurrentEnd = (currentEndMs - now) / MS_PER_DAY;
-
-  // Rule: ≥7 days left → rental ends at current season end.
   if (daysToCurrentEnd >= 7) {
     const rentalDays = Math.max(1, Math.ceil(daysToCurrentEnd));
     return {
@@ -285,9 +216,6 @@ async function computeRentalDaysForSeason(): Promise<SeasonDaysResult> {
       source: `season ${current.id} ends ${current.ends} (${daysToCurrentEnd.toFixed(2)}d left)`,
     };
   }
-
-  // <7 days — rolls into next season. /settings exposes the next season end
-  // directly at the top level, no extra call needed.
   const nextEndIso = settings?.next_season_end;
   if (!nextEndIso) {
     return {
@@ -321,110 +249,96 @@ function rentalDaysFromListing(
   return Math.max(1, Math.ceil(diff / MS_PER_DAY));
 }
 
-function scoreListing(
-  listing: SplMarketListing,
-  card: SplCardDetails,
-  element: CardElement,
-  rentalDays: number,
-  minLandBasePp: number
-): ScoredListing | null {
-  if (rentalDays <= 0) return null;
-  //Assume 10% buff because land bonus will be applied only for neutrals the boost is 0 (so rank neutrals lower)
-  const boost = element === "neutral" ? 0 : 0.1;
-  const land_base_pp = Number(listing.land_base_pp);
+// Phase 1 - score all groups globally, pick top candidate tuples
 
-  if (!Number.isFinite(land_base_pp) || land_base_pp <= 0) return null;
+/**
+ * Scores every grouped-market entry against all eligible plots and returns
+ * the top MAX_CANDIDATE_TUPLES unique (card, foil, edition) tuples ranked by
+ * the best achievable effective_pp/DEC/day on any available plot.
+ *
+ * No per-element cap: fire and water cards compete on the same global
+ * leaderboard - the best value wins regardless of element.
+ */
+function selectCandidateTuples(
+  rentalMarketGrouped: SplMarketRentGrouped[],
+  cardById: Map<number, SplCardDetails>,
+  cardDetails: SplCardDetails[],
+  eligible: RentalEligiblePlot[],
+  maxPerWorkerPerDay: number,
+  minLandBasePp: number,
+  minFoil: number
+): CandidateTuple[] {
+  const seen = new Set<string>();
+  const scored: { tuple: CandidateTuple; score: number }[] = [];
 
-  // Per-listing PP guard. Needed in addition to the grouped pre-filter because
-  // market_query_by_card returns ALL levels for (cdid, foil, edition) and a
-  // tuple keyed on those three can be added by a high-level group, then a
-  // low-level listing of the same card slips through the response.
-  if (minLandBasePp > 0 && land_base_pp < minLandBasePp) return null;
+  for (const g of rentalMarketGrouped) {
+    const card = cardById.get(g.card_detail_id);
+    if (!card) continue;
+    if (g.foil < minFoil) continue;
+    if (g.low_price > maxPerWorkerPerDay) continue;
 
-  const total_dec = listing.buy_price * rentalDays;
-  if (total_dec <= 0) return null;
-  return {
-    listing,
-    card,
-    element,
-    total_dec,
-    rental_days: rentalDays,
-    land_base_pp,
-    potential_effective_pp: land_base_pp * (1 + boost),
-  };
-}
+    const key = `${g.card_detail_id}:${g.foil}:${g.edition}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
 
-// ──────────────────────────────────────────────────────────────────────────
-// Phase 4 — lazy fetch + greedy plot assignment
-// ──────────────────────────────────────────────────────────────────────────
+    const element = findCardElement(cardDetails, g.card_detail_id);
+    const estPp = estimatedLandBasePp(g, card, cardDetails);
+    if (!estPp || estPp <= 0) continue;
+    if (minLandBasePp > 0 && estPp < minLandBasePp) continue;
 
-function findBestPlotForListing(
-  scored: ScoredListing,
-  states: PlotState[],
-  remainingSlots: Map<string, number>
-): PlotState | null {
-  let best: PlotState | null = null;
-  let bestModifier = -Infinity;
-  let bestRemaining = -1;
-  for (const state of states) {
-    const remaining = remainingSlots.get(state.plot.deed_uid) ?? 0;
-    if (remaining <= 0) continue;
-    const mod = state.plot.biome_modifiers[scored.element] ?? 0;
-    if (mod < 0) continue; // plot does not benefit from this card's element
-    // Primary: highest biome modifier (give best card to plot that benefits most).
-    // Tiebreak: plot with more empty slots (spreads picks evenly across plots).
-    if (
-      mod > bestModifier ||
-      (mod === bestModifier && remaining > bestRemaining)
-    ) {
-      bestModifier = mod;
-      bestRemaining = remaining;
-      best = state;
+    // Best achievable score = max (estimated_pp — (1 + biome_mod)) / DEC/day
+    // across any eligible plot. rental_days cancels out in the comparison so
+    // we divide by g.low_price (DEC/day) rather than total_dec.
+    let bestScore = 0;
+    for (const plot of eligible) {
+      const mod = plot.biome_modifiers[element] ?? 0;
+      if (mod < 0) continue; // element is penalised on this plot
+      const score = (estPp * (1 + mod)) / g.low_price;
+      if (score > bestScore) bestScore = score;
     }
+    if (bestScore <= 0) continue;
+
+    scored.push({
+      tuple: {
+        card_detail_id: g.card_detail_id,
+        foil: g.foil,
+        edition: g.edition,
+        element,
+      },
+      score: bestScore,
+    });
   }
-  return best;
+
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.slice(0, MAX_CANDIDATE_TUPLES);
+
+  logger.info(
+    `[rental] candidates: ${top.length} tuples from ${scored.length} eligible groups` +
+      ` (best score: ${top[0]?.score.toFixed(2) ?? "n/a"},` +
+      ` worst: ${top.at(-1)?.score.toFixed(2) ?? "n/a"})`
+  );
+  return top.map((s) => s.tuple);
 }
 
-function allPlotsFull(remainingSlots: Map<string, number>): boolean {
-  for (const r of remainingSlots.values()) if (r > 0) return false;
-  return true;
-}
+// Phase 2 fetch actual listings, cross-product with plots, score each pair
 
-async function fetchAndAssignLazy(
+/**
+ * For every candidate tuple, fetches live listings from the market and pairs
+ * each valid listing with every eligible plot that doesn't penalise the card's
+ * element. Returns a flat list sorted best-first (highest effectivePpPerDec).
+ */
+async function buildScoredPairs(
   tuples: CandidateTuple[],
   eligible: RentalEligiblePlot[],
   cardById: Map<number, SplCardDetails>,
-  config: RentalConfig,
   rentalDaysFixed: number | null,
+  minLandBasePp: number,
+  maxPerWorkerPerDay: number,
   warnings: string[]
-): Promise<AssignmentResult> {
-  const states: PlotState[] = eligible.map((plot) => ({
-    plot,
-    picks: [],
-    plot_total_dec: 0,
-    skip_reason: null,
-  }));
-  const remainingSlots = new Map<string, number>();
-  for (const plot of eligible) {
-    remainingSlots.set(plot.deed_uid, plot.empty_slots);
-  }
-
-  // Shopping cart — never pick the same card twice across plots, even via
-  // different listings.
-  const pickedCardUids = new Set<string>();
-
-  const maxTotalDec =
-    config.max_total_dec > 0 ? config.max_total_dec : Infinity;
-  const maxPerWorkerPerDay =
-    config.max_dec_per_day_per_worker > 0
-      ? config.max_dec_per_day_per_worker
-      : Infinity;
-
-  let runningTotal = 0;
+): Promise<ScoredPair[]> {
+  const pairs: ScoredPair[] = [];
 
   for (const tuple of tuples) {
-    if (allPlotsFull(remainingSlots)) break;
-
     const card = cardById.get(tuple.card_detail_id);
     if (!card) continue;
 
@@ -444,78 +358,101 @@ async function fetchAndAssignLazy(
       continue;
     }
 
-    // Score + filter listings, then rank by PP/DEC. For regular foil this
-    // equals cheapest-per-day, but gold / black foil have different
-    // BCX-to-PP ratios so the explicit ratio is the right primary sort.
-    const scoredList: ScoredListing[] = [];
     for (const listing of listings) {
-      if (pickedCardUids.has(listing.uid)) continue;
       if (listing.buy_price > maxPerWorkerPerDay) continue;
+
       const rentalDays = rentalDaysFromListing(listing, rentalDaysFixed);
-      const scored = scoreListing(
-        listing,
-        card,
-        tuple.element,
-        rentalDays,
-        config.min_land_base_pp
-      );
-      if (!scored) continue;
-      scoredList.push(scored);
-    }
-    scoredList.sort(
-      (a, b) =>
-        b.potential_effective_pp / b.listing.buy_price -
-        a.potential_effective_pp / a.listing.buy_price
-    );
+      if (rentalDays <= 0) continue;
 
-    for (const scored of scoredList) {
-      if (allPlotsFull(remainingSlots)) break;
-      if (pickedCardUids.has(scored.listing.uid)) continue;
-      // Total-DEC budget check (absolute, factoring rental_days via total_dec).
-      if (runningTotal + scored.total_dec > maxTotalDec) continue;
+      // land_base_pp comes from the actual listing, not an estimate, so this
+      // guard correctly rejects below-threshold low-level cards even when a
+      // high-level group of the same (cdid, foil, edition) was in the tuples.
+      const land_base_pp = Number(listing.land_base_pp);
+      if (!Number.isFinite(land_base_pp) || land_base_pp <= 0) continue;
+      if (minLandBasePp > 0 && land_base_pp < minLandBasePp) continue;
 
-      const target = findBestPlotForListing(scored, states, remainingSlots);
-      if (!target) continue;
+      const total_dec = listing.buy_price * rentalDays;
+      if (total_dec <= 0) continue;
 
-      const mod = target.plot.biome_modifiers[scored.element] ?? 0;
-      target.picks.push(buildPick(scored, mod));
-      target.plot_total_dec += scored.total_dec;
-      remainingSlots.set(
-        target.plot.deed_uid,
-        (remainingSlots.get(target.plot.deed_uid) ?? 0) - 1
-      );
-      pickedCardUids.add(scored.listing.uid);
-      runningTotal += scored.total_dec;
+      for (const plot of eligible) {
+        const mod = plot.biome_modifiers[tuple.element] ?? 0;
+        if (mod < 0) continue; // element is penalised on this plot
+        const effective_pp = land_base_pp * (1 + mod);
+        pairs.push({
+          listing,
+          card,
+          element: tuple.element,
+          plot,
+          biomeModifier: mod,
+          land_base_pp,
+          effective_pp,
+          rental_days: rentalDays,
+          total_dec,
+          effectivePpPerDec: effective_pp / total_dec,
+        });
+      }
     }
   }
 
-  // Annotate skip reasons after the loop.
-  for (const state of states) {
-    const remaining = remainingSlots.get(state.plot.deed_uid) ?? 0;
-    if (remaining > 0 && state.picks.length === 0) {
-      state.skip_reason = "no matching listings or budget exhausted";
-    } else if (remaining > 0) {
-      state.skip_reason = "could not fill all slots (budget or biome match)";
-    }
-  }
-
-  return { states, runningTotal };
+  // Best value first greedy assignment reads from the top.
+  pairs.sort((a, b) => b.effectivePpPerDec - a.effectivePpPerDec);
+  logger.info(`[rental] scored pairs: ${pairs.length}`);
+  return pairs;
 }
 
-// ──────────────────────────────────────────────────────────────────────────
-// Orchestrator
-// ──────────────────────────────────────────────────────────────────────────
+// Phase 3 - greedy assignment from the globally sorted pair list
+interface GreedyResult {
+  picksByDeed: Map<string, RentalPlanPick[]>;
+  runningTotal: number;
+}
 
+/**
+ * Iterates the globally sorted pair list (best effectivePpPerDec first).
+ * A pair is assigned when:
+ *  - the listing hasn't been picked yet (no double-booking)
+ *  - the target plot still has empty slots
+ *  - the assignment stays within the total DEC budget
+ */
+function greedyAssign(
+  cardDetails: SplCardDetails[],
+  pairs: ScoredPair[],
+  eligible: RentalEligiblePlot[],
+  config: RentalConfig
+): GreedyResult {
+  const remainingSlots = new Map(
+    eligible.map((p) => [p.deed_uid, p.empty_slots])
+  );
+  const pickedCards = new Set<string>();
+  const picksByDeed = new Map(
+    eligible.map((p) => [p.deed_uid, [] as RentalPlanPick[]])
+  );
+  const maxTotalDec =
+    config.max_total_dec > 0 ? config.max_total_dec : Infinity;
+  let runningTotal = 0;
+
+  for (const pair of pairs) {
+    if (pickedCards.has(pair.listing.uid)) continue;
+    const remaining = remainingSlots.get(pair.plot.deed_uid) ?? 0;
+    if (remaining <= 0) continue;
+    if (runningTotal + pair.total_dec > maxTotalDec) continue;
+
+    picksByDeed.get(pair.plot.deed_uid)!.push(buildPick(pair, cardDetails));
+    remainingSlots.set(pair.plot.deed_uid, remaining - 1);
+    pickedCards.add(pair.listing.uid);
+    runningTotal += pair.total_dec;
+  }
+
+  return { picksByDeed, runningTotal };
+}
+
+// Orchestrator
 export async function buildRentalPlan(
   eligible: RentalEligiblePlot[],
   config: RentalConfig
 ): Promise<RentalPlan> {
   const warnings: string[] = [];
 
-  // Apply batch size cap: simple slice of eligible plots. If rental_batch_size
-  // is set, only the first N plots are processed this run regardless of how many
-  // empty slots each plot has. Running again will pick up the next plots, letting
-  // you re-evaluate market conditions between batches for fresher matches.
+  // Apply batch size cap.
   let batchedEligible = eligible;
   if (config.rental_batch_size !== null && config.rental_batch_size > 0) {
     const cap = config.rental_batch_size;
@@ -540,68 +477,94 @@ export async function buildRentalPlan(
     return emptyPlan(eligible, config, items, warnings);
   }
 
-  // ── Phase 1: card details ──
+  // Phase 1: card details (cached 1 day).
   const cardDetails = await getCachedCardDetailsData();
   const cardById = new Map(cardDetails.map((c) => [c.id, c]));
 
-  // ── Phase 2: grouped rentals → candidate tuples ──
-  const grouped = await fetchMarketForRentGrouped();
-  logger.info(`[rental] grouped rentals from market: ${grouped.length}`);
+  // Phase 2: live grouped-market snapshot.
+  const rentalMarketGrouped = await fetchMarketForRentGrouped();
+  logger.info(`[rental] grouped market entries: ${rentalMarketGrouped.length}`);
 
-  const maxDECPerWorkerPerDay =
+  const maxPerWorkerPerDay =
     config.max_dec_per_day_per_worker > 0
       ? config.max_dec_per_day_per_worker
       : Infinity;
-  const cands = buildCandidateTuples(
-    grouped,
+
+  // Phase 3: select top candidate tuples globally (no per-element cap).
+  const tuples = selectCandidateTuples(
+    rentalMarketGrouped,
     cardById,
     cardDetails,
-    maxDECPerWorkerPerDay,
+    batchedEligible,
+    maxPerWorkerPerDay,
     config.min_land_base_pp,
     config.min_foil
   );
-  logger.info(
-    `[rental] biome-mappable: ${cands.groupedAfterColorFilter}; unique tuples: ${cands.tuples.length}; per biome: ${JSON.stringify(cands.perBiome)}`
-  );
 
-  if (cands.tuples.length === 0) {
+  if (tuples.length === 0) {
     warnings.push(
-      `No grouped rentals could be mapped to a known biome color out of ${grouped.length} grouped entries.`
+      `No candidate tuples found after filtering ${rentalMarketGrouped.length} grouped market entries.`
     );
     return emptyPlan(eligible, config, items, warnings);
   }
 
-  // ── Phase 3: fetch current-season info once ──
+  // Phase 4: season info (cached via fetchSettings).
   const seasonDays = await computeRentalDaysForSeason();
   logger.info(
-    `[rental] rental_days for run: ${seasonDays.rental_days ?? "(per-listing fallback)"} — source: ${seasonDays.source}`
+    `[rental] rental_days: ${seasonDays.rental_days ?? "per-listing"} - ${seasonDays.source}`
   );
   if (seasonDays.rental_days === null) {
     warnings.push(
-      `Could not determine season end from /settings — using each listing's expiration_date instead (${seasonDays.source}).`
+      `Could not determine season end from /settings - using each listing's expiration_date instead (${seasonDays.source}).`
     );
   }
 
-  // ── Phase 4: lazy fetch + greedy assignment ──
-  const result = await fetchAndAssignLazy(
-    cands.tuples,
+  // Phase 5: fetch actual listings and score every (listing, plot) pair.
+  const pairs = await buildScoredPairs(
+    tuples,
     batchedEligible,
     cardById,
-    config,
     seasonDays.rental_days,
+    config.min_land_base_pp,
+    maxPerWorkerPerDay,
     warnings
   );
 
-  // Merge plot states back into items.
-  const stateByDeed = new Map(result.states.map((s) => [s.plot.deed_uid, s]));
+  if (pairs.length === 0) {
+    warnings.push(
+      "No valid (listing, plot) pairs found market may be empty or all listings filtered out."
+    );
+    return emptyPlan(
+      eligible,
+      config,
+      items,
+      warnings,
+      seasonDays.rental_days,
+      seasonDays.source
+    );
+  }
+
+  // Phase 6: greedy assignment (best PP/DEC first).
+  const { picksByDeed, runningTotal } = greedyAssign(
+    cardDetails,
+    pairs,
+    batchedEligible,
+    config
+  );
+
+  // Merge picks into items.
   for (const item of items) {
-    const state = stateByDeed.get(item.plot.deed_uid);
-    if (!state) continue;
-    item.picks = state.picks;
-    item.plot_total_dec = state.plot_total_dec;
-    item.slots_filled = state.picks.length;
-    item.slots_skipped = item.plot.empty_slots - state.picks.length;
-    item.skip_reason = state.skip_reason;
+    const picks = picksByDeed.get(item.plot.deed_uid) ?? [];
+    item.picks = picks;
+    item.slots_filled = picks.length;
+    item.slots_skipped = item.plot.empty_slots - picks.length;
+    item.plot_total_dec = picks.reduce((s, p) => s + p.total_dec, 0);
+    if (item.slots_skipped > 0 && picks.length === 0) {
+      item.skip_reason = "no matching listings or budget exhausted";
+    } else if (item.slots_skipped > 0) {
+      item.skip_reason =
+        "could not fill all slots (budget or no matching pairs)";
+    }
   }
 
   const totals = {
@@ -609,7 +572,7 @@ export async function buildRentalPlan(
     plots_with_picks: items.filter((i) => i.picks.length > 0).length,
     slots_total: items.reduce((s, i) => s + i.plot.empty_slots, 0),
     slots_filled: items.reduce((s, i) => s + i.slots_filled, 0),
-    total_dec: result.runningTotal,
+    total_dec: runningTotal,
   };
 
   return {

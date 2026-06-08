@@ -2,6 +2,7 @@
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
+import { CardRarity } from "./planner";
 
 export interface DryRunResult {
   title: string;
@@ -113,6 +114,11 @@ export interface RentalConfig {
    * for potentially better matches; larger batches process more in one go.
    */
   rental_batch_size: number | null;
+  /**
+   * When true, the Renew Rentals flow skips cards that are rented but NOT
+   * currently staked on a land plot (stake_plot = 0).
+   */
+  land_renters_only: boolean;
 }
 
 export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
@@ -122,6 +128,7 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   min_land_base_pp: 0,
   min_foil: 0,
   rental_batch_size: 10,
+  land_renters_only: false,
 };
 
 // === Rental eligibility (computed from region data) ===
@@ -151,6 +158,9 @@ export interface RentalPlanPick {
   card_detail_id: number;
   card_name: string;
   edition: number;
+  rarity: CardRarity;
+  bxc: number;
+  max_bcx: number;
   foil: number;
   gold: boolean;
   level: number;
@@ -257,6 +267,10 @@ export interface RenewRentalPlan {
   skipped_no_market_id: number;
   /** Rented cards that have a pending cancellation (cancel_tx set). */
   skipped_cancel_tx: number;
+  /** Rented cards skipped because land_renters_only is true and they are not staked on a plot. */
+  skipped_not_on_land: number;
+  /** Whether the land_renters_only config option is active. */
+  land_renters_only: boolean;
   total_dec: number;
   dec_balance: number;
   sufficient_balance: boolean;

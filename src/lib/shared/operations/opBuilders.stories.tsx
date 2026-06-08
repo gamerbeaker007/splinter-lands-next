@@ -17,7 +17,7 @@ import {
   buildBuyWithDecOp,
   buildDonationTransferOp,
   buildHarvestOp,
-  buildRenewRentalOp,
+  buildRenewRentalOnBehalfOp,
   buildRentOnBehalfOp,
   buildSellResourceForDecOp,
   buildSetAuthorityOp,
@@ -182,14 +182,19 @@ const VARIABLE_ROWS: OpRow[] = [
     ) as CustomJsonOp,
   },
   {
-    label: "buildRenewRentalOp (1)",
+    label: "buildRenewRentalOnBehalfOp (1)",
     inputDescription: "renew rental — 1 marketplace ID",
-    op: buildRenewRentalOp(USER, makeMarketIds(1)) as CustomJsonOp,
+    op: buildRenewRentalOnBehalfOp(
+      SERVICE_ACCOUNT,
+      USER,
+      makeMarketIds(1)
+    ) as CustomJsonOp,
   },
   {
-    label: `buildRenewRentalOp (${REALISTIC_RENEWAL_BATCH})`,
+    label: `buildRenewRentalOnBehalfOp (${REALISTIC_RENEWAL_BATCH})`,
     inputDescription: `renew rental — ${REALISTIC_RENEWAL_BATCH} marketplace IDs (MAX_ITEM_SIZE_IN_OPERATION)`,
-    op: buildRenewRentalOp(
+    op: buildRenewRentalOnBehalfOp(
+      SERVICE_ACCOUNT,
       USER,
       makeMarketIds(REALISTIC_RENEWAL_BATCH)
     ) as CustomJsonOp,
@@ -259,7 +264,12 @@ const ceilings = {
     (n) => buildSetAuthorityOp(USER, makeRentalList(n))[1] as { json: string }
   ),
   renew: findMaxCount(
-    (n) => buildRenewRentalOp(USER, makeMarketIds(n))[1] as { json: string }
+    (n) =>
+      buildRenewRentalOnBehalfOp(
+        SERVICE_ACCOUNT,
+        USER,
+        makeMarketIds(n)
+      )[1] as { json: string }
   ),
   rentOnBehalf: findMaxCount(
     (n) =>
@@ -279,7 +289,8 @@ const ceilings = {
 const WORST_CASE_OPS: CustomJsonOp[] = Array.from(
   { length: MAX_OPS_PER_TX },
   () =>
-    buildRenewRentalOp(
+    buildRenewRentalOnBehalfOp(
+      SERVICE_ACCOUNT,
       USER,
       makeMarketIds(REALISTIC_RENEWAL_BATCH)
     ) as CustomJsonOp
@@ -396,7 +407,7 @@ export const HiveSizeLimits: Story = {
                 </TableCell>
               </TableRow>
               <TableRow>
-                <TableCell>buildRenewRentalOp</TableCell>
+                <TableCell>buildRenewRentalOnBehalfOp</TableCell>
                 <TableCell>
                   <code>items[]</code> (36-char market IDs)
                 </TableCell>
@@ -434,8 +445,8 @@ export const HiveSizeLimits: Story = {
         </Typography>
         <Stack spacing={0.5}>
           <Typography variant="body2">
-            {MAX_OPS_PER_TX} × buildRenewRentalOp({REALISTIC_RENEWAL_BATCH}{" "}
-            market IDs) →{" "}
+            {MAX_OPS_PER_TX} × buildRenewRentalOnBehalfOp(
+            {REALISTIC_RENEWAL_BATCH} market IDs) →{" "}
             <strong>{WORST_CASE_TX_BYTES.toLocaleString()}</strong> bytes (JSON
             envelope, upper bound vs binary serialization).
           </Typography>

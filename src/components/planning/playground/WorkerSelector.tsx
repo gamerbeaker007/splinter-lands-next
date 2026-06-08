@@ -2,11 +2,12 @@
 
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
-import { cardIconMap, cardSetIconMap } from "@/types/planner/primitives";
+import { cardIconMap } from "@/types/planner/primitives";
 import { PlaygroundCard } from "@/types/playground";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
 import { COLUMN_WIDTHS } from "./util/gridConstants";
+import { cardSetIconMap } from "@/types/editions";
 
 type Props = {
   slotIndex: number;

@@ -7,7 +7,6 @@ import {
   PlotRarity,
   PlotStatus,
   TitleTier,
-  TotemRarity,
 } from "@/types/planner";
 import {
   LowestCardPriceEntry,
@@ -19,7 +18,7 @@ import {
 } from "@/types/planner/market/market";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplMarketAsset } from "@/types/splMarketAsset";
-import { SplMarketCardData } from "../../../types/splMarketCardData";
+import { SplMarketCardData } from "@/types/splMarketCardData";
 import { fetchMarketCardData } from "../api/spl/spl-base-api";
 import {
   fetchAssetsPrices,
@@ -68,6 +67,14 @@ export function getLowestCardPriceList(
 ): LowestCardPriceEntry[] {
   const map = new Map<string, LowestCardPriceEntry>();
   for (const card of cards) {
+    // Skip cards that produce no land base PP - they'd be a waste to stake on
+    // land, but are usually the cheapest in their group so they'd otherwise win
+    // the "lowest price" slot. filter out 0 pp cards
+    // NOTE: edition check could be removed once https://support.splinterlands.com/hc/en-us/requests/82466 issue is solved.
+    // edition 18 are the conclave rewards cards
+    const detail = cardDetails.find((cd) => cd.id === card.card_detail_id);
+    if (detail?.no_pp || detail?.editions.includes("18")) continue;
+
     const { name, rarity } = determineCardInfo(
       card.card_detail_id,
       cardDetails
@@ -134,8 +141,7 @@ export function getLowestTotemPriceList(
   for (const item of items) {
     if (item.assetName === "TOTEMS" || item.assetName === "TOTEM_ITEMS") {
       const rarity =
-        (item.detailName &&
-          (item.detailName.split(" ")[0].toLowerCase() as TotemRarity)) ||
+        (item.detailName && item.detailName.split(" ")[0].toLowerCase()) ||
         "common";
 
       const priceObj = Array.isArray(item.prices)
@@ -165,10 +171,7 @@ export function getLowestTitlePriceList(
   for (const item of items) {
     if (item.assetName === "TITLES") {
       // Try to map detailName to rarity
-      const rarity = titleTierMap[item.detailName] as Exclude<
-        TitleTier,
-        "none"
-      >;
+      const rarity = titleTierMap[item.detailName];
       const priceObj = Array.isArray(item.prices)
         ? item.prices.find((p) => p.currency === "USD")
         : null;

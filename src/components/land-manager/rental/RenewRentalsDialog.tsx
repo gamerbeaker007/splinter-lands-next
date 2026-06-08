@@ -53,7 +53,8 @@ export default function RenewRentalsDialog({
   const skippedCount =
     plan.skipped_already_renewed +
     plan.skipped_no_market_id +
-    plan.skipped_cancel_tx;
+    plan.skipped_cancel_tx +
+    plan.skipped_not_on_land;
 
   return (
     <Dialog open onClose={busy ? undefined : onCancel} maxWidth="md" fullWidth>
@@ -74,6 +75,16 @@ export default function RenewRentalsDialog({
               variant="outlined"
             />
           )}
+          <Chip
+            label={
+              plan.land_renters_only
+                ? "Land renters only: ON"
+                : "Land renters only: OFF"
+            }
+            size="small"
+            variant="outlined"
+            color={plan.land_renters_only ? "primary" : "default"}
+          />
         </Stack>
 
         {/* Skipped info */}
@@ -98,6 +109,13 @@ export default function RenewRentalsDialog({
                 {plan.skipped_no_market_id} card
                 {plan.skipped_no_market_id !== 1 ? "s" : ""} skipped (no
                 market_id — cannot identify listing).
+              </Typography>
+            )}
+            {plan.skipped_not_on_land > 0 && (
+              <Typography variant="caption" display="block">
+                {plan.skipped_not_on_land} card
+                {plan.skipped_not_on_land !== 1 ? "s" : ""} skipped — rented but
+                not staked on a land plot (land renters only is ON).
               </Typography>
             )}
           </Alert>

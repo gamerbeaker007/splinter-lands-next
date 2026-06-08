@@ -1,6 +1,6 @@
 "use client";
 
-import StakeDecRow from "@/components/land-manager/bulk-operations/StakeDecRow";
+import StakeDecRow from "@/components/land-manager/dec-actions/StakeDecRow";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { Box, Stack } from "@mui/material";
 import { useCallback, useState } from "react";

@@ -8,7 +8,10 @@ import {
 } from "@/lib/backend/services/splAuthorityService";
 import { Operation } from "@hiveio/dhive";
 import { getAuthStatus } from "../auth-actions";
-import { buildRentOnBehalfOp } from "@/lib/shared/operations/opBuilders";
+import {
+  buildRenewRentalOnBehalfOp,
+  buildRentOnBehalfOp,
+} from "@/lib/shared/operations/opBuilders";
 import { MAX_ITEM_SIZE_IN_OPERATION } from "@/types/landManager";
 
 function chunk<T>(arr: T[], n: number): T[][] {
@@ -31,7 +34,8 @@ export interface RentOnBehalfResult {
  * Eliminates per-batch active-key Keychain popups on the client.
  */
 export async function rentOnBehalfOf(
-  marketIds: string[]
+  marketIds: string[],
+  renew = false
 ): Promise<RentOnBehalfResult> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -71,7 +75,11 @@ export async function rentOnBehalfOf(
   const operations: Operation[] = chunk(
     marketIds,
     MAX_ITEM_SIZE_IN_OPERATION
-  ).map((ids) => buildRentOnBehalfOp(service, player, ids) as Operation);
+  ).map((ids) =>
+    renew
+      ? (buildRenewRentalOnBehalfOp(service, player, ids) as Operation)
+      : (buildRentOnBehalfOp(service, player, ids) as Operation)
+  );
 
   return broadcastOpsAsService(operations);
 }

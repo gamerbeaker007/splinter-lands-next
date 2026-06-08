@@ -380,6 +380,7 @@ model LandManagerConfig {
   rental_min_land_base_pp           Int     @default(0)
   rental_min_foil                   Int     @default(0)
   rental_batch_size                 Int?    @default(10)
+  rental_land_renters_only          Boolean @default(false)
   created_at                      DateTime @default(now())
   updated_at                      DateTime @updatedAt
 

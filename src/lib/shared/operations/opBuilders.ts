@@ -329,31 +329,6 @@ export function buildBuyWithDecOp(
 }
 
 /**
- * Renew one or more rented cards via the SPL market. Uses ACTIVE key.
- * `marketIds` — the market listing IDs of the cards to renew.
- * Batches are handled upstream (max 4 ops per tx).
- */
-export function buildRenewRentalOp(
-  username: string,
-  marketIds: string[]
-): [string, object] {
-  return [
-    "custom_json",
-    {
-      required_auths: [username],
-      required_posting_auths: [],
-      id: "sm_market_renew_rental",
-      json: JSON.stringify({
-        items: marketIds,
-        currency: "DEC",
-        market: MARKET,
-        app: APP,
-      }),
-    },
-  ];
-}
-
-/**
  * Start construction of a new worksite on a deed. Uses POSTING key.
  * `opName` maps to one of: worksite_grain_construction, worksite_wood_construction,
  * worksite_iron_construction, worksite_stone_construction, worksite_research_construction,
@@ -415,6 +390,92 @@ export function buildUpdateWorksiteOp(
     project_id: projectId,
     auto_buy_grain: autoBuyGrain,
   });
+}
+
+/**
+ * Cancel one or more active rental listings. Uses POSTING key.
+ * `marketIds` — the market listing IDs of the cards to cancel.
+ * Batch upstream if needed.
+ */
+export function buildCancelRentalOp(
+  username: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_market_cancel_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Unstake worker cards from a deed. One op per deed. Uses POSTING key.
+ * `cardUids` — the UIDs of the worker cards to unstake.
+ */
+export function buildUnstakeWorkersOp(
+  username: string,
+  deedUid: string,
+  cardUids: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: {
+          cards: cardUids.map((uid) => ({ card_uid: uid })),
+          items: [],
+        },
+        stake: {
+          cards: [],
+          items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Renew one or more rented cards via the SPL market on behalf of `player`.
+ * Signed by the `serviceAccount`'s ACTIVE key (broadcast server-side) — the
+ * player must have granted purchase authority to that account on Splinterlands
+ * Account Security. Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
+ */
+export function buildRenewRentalOnBehalfOp(
+  serviceAccount: string,
+  player: string,
+  marketIds: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [serviceAccount],
+      required_posting_auths: [],
+      id: "sm_market_renew_rental",
+      json: JSON.stringify({
+        items: marketIds,
+        currency: "DEC",
+        player,
+        market: MARKET,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
 }
 
 /**

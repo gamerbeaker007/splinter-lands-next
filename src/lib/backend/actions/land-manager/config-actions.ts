@@ -56,6 +56,7 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       min_land_base_pp: row?.rental_min_land_base_pp ?? 0,
       min_foil: row?.rental_min_foil ?? 0,
       rental_batch_size: row?.rental_batch_size ?? null,
+      land_renters_only: row?.rental_land_renters_only ?? false,
     },
   };
 }
@@ -117,6 +118,7 @@ export async function saveRentalConfig(
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
         rental_batch_size: rental.rental_batch_size ?? null,
+        rental_land_renters_only: rental.land_renters_only,
       },
       create: {
         player: auth.username,
@@ -127,6 +129,7 @@ export async function saveRentalConfig(
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
         rental_batch_size: rental.rental_batch_size ?? null,
+        rental_land_renters_only: rental.land_renters_only,
       },
     });
     return { success: true };

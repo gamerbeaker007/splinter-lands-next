@@ -4,15 +4,14 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "types": ["node"],
-    "baseUrl": "..",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["../src/*"]
     }
   },
   "include": [
     "**/*",
-    "../src/**/*.stories.ts",
-    "../src/**/*.stories.tsx"
+    "**/*.stories.ts",
+    "**/*.stories.tsx"
   ],
   "exclude": []
 }

@@ -213,6 +213,9 @@ export async function fetchMarketRentalListings(
   edition: number
 ): Promise<SplMarketListing[]> {
   const url = "market/market_query_by_card";
+  console.info(
+    `Fetch market rental listings for cdid=${cardDetailId} foil=${foil} ed=${edition}`
+  );
 
   // Map internal foil values to API values
   let apiFoil: number | string = foil;

@@ -4,16 +4,9 @@ import {
   getRenewRentalsEligibility,
   refreshCardCollection,
 } from "@/lib/backend/actions/land-manager/renew-rental-actions";
-import { buildRenewRentalOp } from "@/lib/shared/operations/opBuilders";
-import {
-  broadcastOperations,
-  waitForTransactions,
-} from "@/lib/frontend/splBroadcast";
-import {
-  MAX_ITEM_SIZE_IN_OPERATION,
-  RenewRentalPlan,
-} from "@/types/landManager";
-import { KeychainKeyTypes } from "keychain-sdk";
+import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
+import { waitForTransactions } from "@/lib/frontend/splBroadcast";
+import { RenewRentalPlan } from "@/types/landManager";
 import { useCallback, useEffect, useState } from "react";
 
 interface Params {
@@ -108,26 +101,11 @@ export function useRenewRentalsAction({
       try {
         const marketIds = currentPlan.items.map((i) => i.market_id);
 
-        const ops: [string, object][] = [];
-        for (let i = 0; i < marketIds.length; i += MAX_ITEM_SIZE_IN_OPERATION) {
-          ops.push(
-            buildRenewRentalOp(
-              username,
-              marketIds.slice(i, i + MAX_ITEM_SIZE_IN_OPERATION)
-            )
-          );
-        }
-
-        const broadcastRes = await broadcastOperations(
-          username,
-          ops,
-          KeychainKeyTypes.active
-        );
-
-        if (!broadcastRes.success) {
+        const rentRes = await rentOnBehalfOf(marketIds, true);
+        if (!rentRes.success) {
           setError(
-            `Renewal failed: ${broadcastRes.error ?? "unknown error"}.${
-              broadcastRes.txIds.length > 0
+            `Renewal failed: ${rentRes.error ?? "unknown error"}.${
+              rentRes.txIds.length > 0
                 ? " Some chunks may have already broadcast — check your wallet."
                 : ""
             }`
@@ -136,7 +114,7 @@ export function useRenewRentalsAction({
           return;
         }
 
-        await waitForTransactions(broadcastRes.txIds, lookupTransaction);
+        await waitForTransactions(rentRes.txIds, lookupTransaction);
 
         // Force-bust the card collection cache so the Rental Overview shows
         // fresh rental_date / rental_days after the on-chain renewal.
@@ -144,7 +122,7 @@ export function useRenewRentalsAction({
 
         setResult({
           success: true,
-          txIds: broadcastRes.txIds,
+          txIds: rentRes.txIds,
           renewedCount: marketIds.length,
           totalDec: currentPlan.total_dec,
         });

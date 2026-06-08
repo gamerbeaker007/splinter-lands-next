@@ -1,6 +1,6 @@
 "use client";
 
-import StakeDecDialog from "@/components/land-manager/bulk-operations/StakeDecDialog";
+import StakeDecDialog from "@/components/land-manager/dec-actions/StakeDecDialog";
 import { useStakeDecAction } from "@/hooks/useStakeDecAction";
 import { Bolt } from "@mui/icons-material";
 import {

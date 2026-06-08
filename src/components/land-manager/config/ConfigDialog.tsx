@@ -30,11 +30,11 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import DonationSettingsSection from "./land-config/DonationSettingsSection";
-import EnabledRegionsSection from "./land-config/EnabledRegionsSection";
-import MakeHarvestableSection from "./land-config/MakeHarvestableSection";
-import PostHarvestSection from "./land-config/PostHarvestSection";
-import RentEmptyWorkersSection from "./land-config/RentEmptyWorkersSection";
+import DonationSettingsSection from "./DonationSettingsSection";
+import EnabledRegionsSection from "./EnabledRegionsSection";
+import MakeHarvestableSection from "./MakeHarvestableSection";
+import PostHarvestSection from "./PostHarvestSection";
+import RentEmptyWorkersSection from "./RentEmptyWorkersSection";
 
 interface Props {
   open: boolean;

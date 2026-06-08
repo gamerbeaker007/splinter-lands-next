@@ -1,7 +1,6 @@
 "use client";
-import { CardSetNameLandValid } from "@/types/editions";
+import { cardSetIconMap, CardSetNameLandValid } from "@/types/editions";
 import { CardElement, cardSetModifiers } from "@/types/planner";
-import { cardSetIconMap } from "@/types/planner/primitives";
 import {
   Box,
   capitalize,

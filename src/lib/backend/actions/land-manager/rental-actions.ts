@@ -172,8 +172,15 @@ export interface RentedCardEntry {
   total_dec: number;
   stake_plot: number;
   stake_region: number | null;
+  stake_end_date: string | null;
   /** Present when the renter has queued a cancellation. */
   cancel_tx: string | null;
+  /** land_base_pp from the card's staking data (string → number). */
+  base_pp: number;
+  /** Market listing ID — needed to cancel or renew the rental. */
+  market_id: string | null;
+  /** Deed UID the card is staked on (stake_ref_uid). */
+  deed_uid: string | null;
 }
 
 export interface RentedCardsList {
@@ -248,7 +255,11 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       total_dec: total,
       stake_plot: c.stake_plot as number,
       stake_region: c.stake_region ?? null,
+      stake_end_date: c.stake_end_date ?? null,
       cancel_tx: c.cancel_tx ?? null,
+      base_pp: Number(c.land_base_pp) || 0,
+      market_id: c.market_id ?? null,
+      deed_uid: c.stake_ref_uid ?? null,
     });
     total_dec_per_day += perDay;
     total_dec_for_duration += total;
@@ -258,14 +269,6 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
   cards.sort((a, b) => b.total_dec - a.total_dec);
 
   return { cards, total_dec_per_day, total_dec_for_duration };
-}
-
-export async function getRentalDryRunPlan(
-  enabledRegions: number[],
-  rental: RentalConfig = DEFAULT_RENTAL_CONFIG
-): Promise<RentalPlan> {
-  const eligibility = await getRentalEligibility(enabledRegions);
-  return buildRentalPlan(eligibility.eligible, rental);
 }
 
 export interface RentalExecutionPlan {

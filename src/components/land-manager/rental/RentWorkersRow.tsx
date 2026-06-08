@@ -1,7 +1,7 @@
 "use client";
 
-import RenewRentalsDialog from "@/components/land-manager/bulk-operations/RenewRentalsDialog";
-import RentConfirmDialog from "@/components/land-manager/bulk-operations/RentConfirmDialog";
+import RenewRentalsDialog from "@/components/land-manager/rental/RenewRentalsDialog";
+import RentConfirmDialog from "@/components/land-manager/rental/RentConfirmDialog";
 import { useRenewRentalsAction } from "@/hooks/useRenewRentalsAction";
 import { useRentEmptyWorkersAction } from "@/hooks/useRentEmptyWorkersAction";
 import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";

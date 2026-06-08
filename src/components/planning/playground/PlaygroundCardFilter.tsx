@@ -4,7 +4,11 @@ import FilterIcon from "@/components/filter/FilterIcon";
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
-import { CardSetNameLandValid, landCardSet } from "@/types/editions";
+import {
+  cardSetIconMap,
+  CardSetNameLandValid,
+  landCardSet,
+} from "@/types/editions";
 import {
   CardElement,
   cardElementOptions,
@@ -13,7 +17,6 @@ import {
   cardIconMap,
   CardRarity,
   cardRarityOptions,
-  cardSetIconMap,
 } from "@/types/planner";
 import { PlaygroundCard } from "@/types/playground";
 import {

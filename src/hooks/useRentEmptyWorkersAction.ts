@@ -6,7 +6,6 @@ import {
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
 import {
-  getRentalDryRunPlan,
   getRentalExecutionPlan,
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
@@ -18,7 +17,7 @@ import {
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
-import { RentalConfig, RentalPlan } from "@/types/landManager";
+import { RentalConfig } from "@/types/landManager";
 import { useCallback, useState } from "react";
 
 interface Params {
@@ -41,17 +40,14 @@ export interface RentExecuteResult {
 export interface UseRentEmptyWorkersAction {
   busy: boolean;
   eligiblePlotCount: number | null;
-  dryRunPlan: RentalPlan | null;
   executionPlan: RentalExecutionPlan | null;
-  /** Player DEC balance fetched alongside the dry-run / execution plan. */
+  /** Player DEC balance fetched alongside the execution plan. */
   decBalance: number | null;
   result: RentExecuteResult | null;
   error: string | null;
-  clearDryRunPlan: () => void;
   clearExecutionPlan: () => void;
   clearResult: () => void;
   clearError: () => void;
-  preview: () => Promise<void>;
   prepareExecution: () => Promise<void>;
   execute: () => Promise<void>;
 }
@@ -64,31 +60,11 @@ export function useRentEmptyWorkersAction({
   onSuccess,
 }: Params): UseRentEmptyWorkersAction {
   const [busy, setBusy] = useState(false);
-  const [dryRunPlan, setDryRunPlan] = useState<RentalPlan | null>(null);
   const [executionPlan, setExecutionPlan] =
     useState<RentalExecutionPlan | null>(null);
   const [decBalance, setDecBalance] = useState<number | null>(null);
   const [result, setResult] = useState<RentExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  const preview = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setDryRunPlan(null);
-    setDecBalance(null);
-    try {
-      const [plan, balance] = await Promise.all([
-        getRentalDryRunPlan(enabledRegions, rental),
-        username ? getDecBalance(username) : Promise.resolve(0),
-      ]);
-      setDryRunPlan(plan);
-      setDecBalance(balance);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setBusy(false);
-    }
-  }, [enabledRegions, rental, username]);
 
   const prepareExecution = useCallback(async () => {
     setBusy(true);
@@ -279,22 +255,16 @@ export function useRentEmptyWorkersAction({
   return {
     busy,
     eligiblePlotCount,
-    dryRunPlan,
     executionPlan,
     decBalance,
     result,
     error,
-    clearDryRunPlan: () => {
-      setDryRunPlan(null);
-      setDecBalance(null);
-    },
     clearExecutionPlan: () => {
       setExecutionPlan(null);
       setDecBalance(null);
     },
     clearResult: () => setResult(null),
     clearError: () => setError(null),
-    preview,
     prepareExecution,
     execute,
   };

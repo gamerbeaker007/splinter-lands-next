@@ -40,6 +40,7 @@ export type SplCardDetails = {
   is_starter: boolean;
   editions: string;
   is_promo: boolean;
+  no_pp: boolean;
   tier?: number;
   secondary_color?: string;
   stats?: {
