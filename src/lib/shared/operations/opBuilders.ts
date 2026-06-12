@@ -248,6 +248,9 @@ export function buildStakeWorkersOp(
 }
 
 export const STAKE_TYPE_UID_LAND_POWER_CORE = "STK-LND-PCR";
+export const STAKE_TYPE_UID_LAND_TOTEM = "STK-LND-TOT";
+export const STAKE_TYPE_UID_LAND_TITLE = "STK-LND-TTL";
+export const STAKE_TYPE_UID_LAND_RUNI = "STK-LND-RUNI";
 
 /**
  * Stake a Power Core item onto a deed. One op per deed. Uses POSTING key.
@@ -439,6 +442,150 @@ export function buildUnstakeWorkersOp(
         stake: {
           cards: [],
           items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Unstake the Power Core item from a deed ("unpower" the plot). One op per
+ * deed. Uses POSTING key. `itemUid` — the UID of the staked Power Core item.
+ * Mirrors the stake op: the staked power core lives in the deed's `items`, so
+ * we move it into the `unstake.items` list.
+ */
+export function buildUnstakePowerCoreOp(
+  username: string,
+  deedUid: string,
+  itemUid: string
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: {
+          cards: [],
+          items: [{ item_uid: itemUid }],
+        },
+        stake: {
+          cards: [],
+          items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Fully empty a deed in a single op: unstake every worker card AND every staked
+ * item (power core, title, totem). One op per deed. Uses POSTING key.
+ * `cardUids` — all staked worker card UIDs. `itemUids` — all staked item UIDs.
+ * Pass empty arrays for whichever side has nothing staked.
+ */
+export function buildEmptyPlotOp(
+  username: string,
+  deedUid: string,
+  cardUids: string[],
+  itemUids: string[]
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: {
+          cards: cardUids.map((uid) => ({ card_uid: uid })),
+          items: itemUids.map((uid) => ({ item_uid: uid })),
+        },
+        stake: {
+          cards: [],
+          items: [],
+        },
+        deed_uid: deedUid,
+        auto_buy_grain: false,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/** A card to stake, with its stake type and (for workers) target slot. */
+export interface StakeChangeCard {
+  card_uid: string;
+  stake_type_uid: string;
+  /** Worker slot (1-5). Omit for assets that don't use a slot (e.g. Runi). */
+  slot?: number;
+}
+
+/** An item to stake (power core / totem / title), with its stake type. */
+export interface StakeChangeItem {
+  item_uid: string;
+  stake_type_uid: string;
+}
+
+export interface StakeChangeInput {
+  /** Cards (workers, runi) to stake. */
+  stakeCards?: StakeChangeCard[];
+  /** Items (power core, totem, title) to stake. */
+  stakeItems?: StakeChangeItem[];
+  /** Card UIDs to unstake (workers, runi). */
+  unstakeCardUids?: string[];
+  /** Item UIDs to unstake (power core, totem, title). */
+  unstakeItemUids?: string[];
+}
+
+/**
+ * One combined `sm_stake_change` op for a deed that both stakes and unstakes
+ * cards and items in a single broadcast. Uses POSTING key. This backs the
+ * Production-tab "Configure → Save" flow, where assigning to empty spots and
+ * clearing/replacing filled spots are applied together per plot.
+ */
+export function buildStakeChangeOp(
+  username: string,
+  deedUid: string,
+  input: StakeChangeInput
+): [string, object] {
+  const stakeCards = (input.stakeCards ?? []).map((c) => {
+    const entry: Record<string, string> = {
+      card_uid: c.card_uid,
+      stake_type_uid: c.stake_type_uid,
+    };
+    if (c.slot !== undefined) entry.slot = String(c.slot);
+    return entry;
+  });
+
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_stake_change",
+      json: JSON.stringify({
+        unstake: {
+          cards: (input.unstakeCardUids ?? []).map((uid) => ({
+            card_uid: uid,
+          })),
+          items: (input.unstakeItemUids ?? []).map((uid) => ({
+            item_uid: uid,
+          })),
+        },
+        stake: {
+          cards: stakeCards,
+          items: input.stakeItems ?? [],
         },
         deed_uid: deedUid,
         auto_buy_grain: false,

@@ -229,6 +229,11 @@ export async function getPlaygroundData(
         landBoost,
         inSet: card.set_id !== null,
         onWagon: card.wagon_uid !== null,
+        onLand: card.stake_plot != null && card.stake_end_date == null,
+        owned: card.player === player,
+        delegated: card.delegated_to != null,
+        landCooldownDate: card.stake_end_date ?? null,
+        survivalDate: card.survival_date ?? null,
       };
     })
     .sort((a, b) => Number(b.landBasePP) - Number(a.landBasePP)); // Highest PP first

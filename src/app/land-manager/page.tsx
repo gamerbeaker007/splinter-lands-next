@@ -1,10 +1,10 @@
 import LandManagerPageSkeleton from "@/app/land-manager/loading";
+import { MaintenanceGuard } from "@/components/guard/MaintenanceGuard";
 import LandManagerPage from "@/components/land-manager/LandManagerPage";
 import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
 import { getLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
 import { getProductionOverview } from "@/lib/backend/actions/land-manager/overview-actions";
 import { Suspense } from "react";
-import { MaintenanceGuard } from "../../components/guard/MaintenanceGuard";
 
 async function LandManagerContent() {
   const auth = await getAuthStatus();

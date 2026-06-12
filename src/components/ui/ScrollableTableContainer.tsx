@@ -16,6 +16,8 @@ export default function ScrollableTableContainer({ children, sx }: Props) {
   return (
     <Box
       sx={{
+        width: "100%",
+        minWidth: 0,
         overflowX: "auto",
         // Smooth momentum scrolling on iOS.
         WebkitOverflowScrolling: "touch",

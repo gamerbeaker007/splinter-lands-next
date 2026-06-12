@@ -14,6 +14,32 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Added
 - **Land Manager - Maintenance Gaurd ** When splinterlands is in maintenance mode disable land manager
+- **Land Manager — Production tab** A new tab listing every plot with its
+  rewards/hour, **Net DEC** (production value − consumption cost, reusing the
+  deed-overview calc), and total **Harvest / Boosted / Total PP**. Uses the
+  standard deed FilterDrawer plus powered and worker/empty status toggles; every
+  column is locally sortable; switch between a flat list and a collapsible,
+  paginated grouped-by-region view.
+  - Per-plot and bulk (over the filtered list) actions: **Power on** (stake a
+    Power Core), **Unpower** (remove the Power Core), **Remove workers**, and
+    **Empty plot** (unstake workers, Power Core, title and totem). Destructive
+    actions confirm first and warn about the auto-harvest they trigger.
+  - Per-plot **Configure** panel: unfold a plot to see its 8 spots (Power Core,
+    Runi, 5 Workers, Totem, Title) with their images, assign to empty spots or
+    replace filled ones, then **Save** to broadcast one combined stake/unstake
+    op. Power cores / totems / titles are chosen from your available items, Runi
+    from your unstaked card_detail_id 505 cards, and workers from a full-screen
+    picker. The picker hides cards already staked on land and shows only
+    land-valid sets/editions; its filter sidebar has the edition/set Modern-Wild
+    filter (per-set native + Promo/Reward/Extra variants, Escalation under
+    Conclave) plus owned / delegated / land-cooldown / survival-cooldown /
+    last-used filters, with the table sortable by every column. Staking a Power
+    Core on an unpowered plot opens all 5 worker slots locally. Listed
+    (on-market) plots can't be reconfigured, and multiple Configure panels can be
+    open at once. While editing, a line shows the projected change vs the current
+    state (Δ PP, Δ rewards/hour, Δ consume cost, Δ net DEC).
+  - Large staked-asset lookups are throttled (> 50 plots) to avoid SPL
+    rate-limit/timeout errors.
 
 ---
 

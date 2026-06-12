@@ -137,6 +137,44 @@ export async function fetchPowerCoreAvailableIds(
   return ids.map((i) => i.uid);
 }
 
+/** A single available (unstaked) stake item, with whatever metadata the API returns. */
+export interface RawAvailableStakeItem {
+  uid: string;
+  name: string | null;
+  rarity: string | null;
+  boost: number | null;
+}
+
+/**
+ * Generic version of {@link fetchPowerCoreAvailableIds} for any land stake item
+ * type (e.g. "STK-LND-TOT" totems, "STK-LND-TTL" titles, "STK-LND-PCR" power
+ * cores). Returns each available item's UID plus any name/rarity/boost the API
+ * includes, so a picker can label the choices. Paginate via `offset`.
+ */
+export async function fetchAvailableStakeItems(
+  player: string,
+  stakeTypeUid: string,
+  offset = 0,
+  limit = 100
+): Promise<RawAvailableStakeItem[]> {
+  const url = `/land/stake/items/${encodeURIComponent(stakeTypeUid)}/available`;
+  const res = await splLandClient.get(url, {
+    params: { deedUid: '""', player, offset, limit },
+  });
+  const ids: {
+    uid: string;
+    name?: string;
+    rarity?: string;
+    boost?: number;
+  }[] = res.data?.data?.ids ?? [];
+  return ids.map((i) => ({
+    uid: i.uid,
+    name: i.name ?? null,
+    rarity: i.rarity ?? null,
+    boost: i.boost ?? null,
+  }));
+}
+
 export async function fetchPlayerPoolInfo(
   player: string
 ): Promise<PlayerTradeHubPosition[]> {

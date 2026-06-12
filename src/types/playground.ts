@@ -62,6 +62,16 @@ export type PlaygroundCard = {
   landBoost: LandBoost | null;
   inSet: boolean;
   onWagon: boolean;
+  /** Currently staked on a land plot. */
+  onLand: boolean;
+  /** Owned by the player (not delegated in from another account). */
+  owned: boolean;
+  /** Delegated out to another account. */
+  delegated: boolean;
+  /** Land (unstake) cooldown end date, if any. */
+  landCooldownDate: string | null;
+  /** Survival cooldown end date, if any. */
+  survivalDate: string | null;
 };
 
 export type PlaygroundData = {

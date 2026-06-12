@@ -25,6 +25,7 @@ import {
   title_untamed_icon_url,
   title_veteran_icon_url,
   title_watcher_icon_url,
+  land_runi_power_core_icon_url,
   WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
 import { Item } from "@/types/stakedAssets";
@@ -66,6 +67,23 @@ const titleIconMap: Record<string, string> = {
 };
 
 const fallbackTitleUrl = land_hammer_icon_url;
+
+/** Resolve the icon URL for a staked land item (power core / totem / title). */
+export function landItemIconUrl(stakeTypeUid: string, name: string): string {
+  if (stakeTypeUid === "STK-LND-PCR") return land_runi_power_core_icon_url;
+  if (stakeTypeUid === "STK-LND-TTL") {
+    const normalized = name.toLowerCase().startsWith("the ")
+      ? name.slice(4).toLowerCase()
+      : name.toLowerCase();
+    return titleIconMap[normalized.replace(/ /g, "_")] ?? fallbackTitleUrl;
+  }
+  if (stakeTypeUid === "STK-LND-TOT") {
+    const imageName =
+      defaultTotemMap[name] ?? name.toLowerCase().replace(/ /g, "_");
+    return `${WEB_URL}website/icons/icon_totem_${imageName}_300.png`;
+  }
+  return fallbackTitleUrl;
+}
 
 export const ItemBoosts: React.FC<ItemBoostsProps> = ({ items }) => {
   const findTitleIcon = (name: string): { url: string; label: string } => {
