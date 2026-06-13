@@ -12,16 +12,16 @@ import {
   STAKE_TYPE_UID_LAND_TITLE,
   STAKE_TYPE_UID_LAND_TOTEM,
 } from "@/lib/shared/operations/opBuilders";
+import { titleIconMap, totemIconMap } from "@/lib/shared/statics";
+import {
+  land_hammer_icon_url,
+  land_runi_power_core_icon_url,
+} from "@/lib/shared/statics_icon_urls";
 import { editionMap } from "@/types/editions";
 import { cardFoilOptions } from "@/types/planner";
-
-const ITEM_STAKE_TYPE: Record<string, string> = {
-  powerCore: STAKE_TYPE_UID_LAND_POWER_CORE,
-  totem: STAKE_TYPE_UID_LAND_TOTEM,
-  title: STAKE_TYPE_UID_LAND_TITLE,
-};
 import {
   Alert,
+  Avatar,
   Box,
   Button,
   CircularProgress,
@@ -30,12 +30,19 @@ import {
   DialogContent,
   DialogTitle,
   List,
+  ListItemAvatar,
   ListItemButton,
   ListItemText,
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { SpotCardVM, SpotItemVM } from "./productionConfigTypes";
+
+const ITEM_STAKE_TYPE: Record<string, string> = {
+  powerCore: STAKE_TYPE_UID_LAND_POWER_CORE,
+  totem: STAKE_TYPE_UID_LAND_TOTEM,
+  title: STAKE_TYPE_UID_LAND_TITLE,
+};
 
 /** Which spot the picker is filling. */
 export type PickerKind = StakeItemKind | "runi";
@@ -135,6 +142,24 @@ export default function AssetPickerDialog({
 
   const isEmpty = kind === "runi" ? runis.length === 0 : items.length === 0;
 
+  function determineImageForItem(kind: PickerKind, item: AvailableStakeItem) {
+    console.log("determineImageForItem", { kind, item });
+    if (kind === "powerCore") {
+      return land_runi_power_core_icon_url;
+    } else if (kind === "totem") {
+      return totemIconMap[item.name ?? ""]
+        ? totemIconMap[item.name ?? ""]
+        : land_hammer_icon_url;
+    } else if (kind === "title") {
+      return titleIconMap[item.name ?? ""]
+        ? titleIconMap[item.name ?? ""]
+        : land_hammer_icon_url;
+    } else if (kind === "runi") {
+      return `https://runi.splinterlands.com/cards/${item.uid}.jpg`;
+    }
+    return land_hammer_icon_url;
+  }
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>{TITLE_FOR[kind]}</DialogTitle>
@@ -163,23 +188,37 @@ export default function AssetPickerDialog({
                     />
                   </ListItemButton>
                 ))
-              : items.map((it) => (
-                  <ListItemButton key={it.uid} onClick={() => pickItem(it)}>
-                    <ListItemText
-                      primary={it.name ?? "Item"}
-                      secondary={
-                        [
-                          it.rarity,
-                          it.boost != null
-                            ? `+${Math.round(it.boost * 100)}%`
-                            : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ") || undefined
-                      }
-                    />
-                  </ListItemButton>
-                ))}
+              : items.map((it) => {
+                const img = determineImageForItem(kind, it);
+                  console.log("AssetPickerDialog render item", { kind, it, img });
+                  const name =
+                    kind === "powerCore" ? "Power Core" : (it.name ?? "Item");
+                  const uid = it.uid ?? "unknown";
+                  return (
+                    <ListItemButton key={uid} onClick={() => pickItem(it)}>
+                      <ListItemAvatar>
+                        <Avatar
+                          src={img}
+                          alt={name}
+                          sx={{ width: 32, height: 32 }}
+                        />
+                      </ListItemAvatar>
+
+                      <ListItemText
+                        primary={name}
+                        secondary={uid}
+                        primaryTypographyProps={{
+                          fontSize: 14,
+                          fontWeight: 500,
+                        }}
+                        secondaryTypographyProps={{
+                          fontSize: 12,
+                          color: "text.secondary",
+                        }}
+                      />
+                    </ListItemButton>
+                  );
+                })}
           </List>
         )}
       </DialogContent>

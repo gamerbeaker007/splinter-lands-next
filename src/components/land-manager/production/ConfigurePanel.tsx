@@ -1,11 +1,11 @@
 "use client";
 
+import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
 import {
   getPlotConfigureData,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
-import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
 import { DeedComplete } from "@/types/deed";
 import { Prices } from "@/types/price";
 import {
@@ -25,7 +25,6 @@ import {
   boostOverrides,
   diffStagedConfig,
   initStagedConfig,
-  MAX_WORKER_SLOTS,
   SpotCardVM,
   StagedConfig,
   stagedHasChanges,
@@ -60,8 +59,6 @@ export default function ConfigurePanel({
   actions,
   onSaved,
 }: Props) {
-  const onChainMaxWorkers = deed.stakingDetail?.max_workers_allowed ?? 0;
-
   const [data, setData] = useState<PlotConfigureData | null>(null);
   const [staged, setStaged] = useState<StagedConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -205,12 +202,7 @@ export default function ConfigurePanel({
   }
   if (!data || !staged) return null;
 
-  // Staking a Power Core opens all 5 worker slots, even on a plot the API still
-  // reports as 0-worker because it is currently unpowered.
-  const effectiveMaxWorkers = staged.powerCore
-    ? MAX_WORKER_SLOTS
-    : Math.min(onChainMaxWorkers, MAX_WORKER_SLOTS);
-  const workerSlots = staged.workers.slice(0, effectiveMaxWorkers);
+  const workerSlots = staged.workers.slice(0, 5);
 
   const emptyWorkerSlots = workerSlots.filter((w) => w === null).length;
   const excludeUids = [
