@@ -409,6 +409,7 @@ export default function ConfigurePanel({
           key={picker}
           open
           kind={picker}
+          deedUid={deed.deed_uid}
           onClose={() => setPicker(null)}
           onPick={handlePick}
         />

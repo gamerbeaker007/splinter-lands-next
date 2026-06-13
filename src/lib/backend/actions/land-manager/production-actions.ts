@@ -2,14 +2,14 @@
 
 import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
 import {
+  fetchAvailableStakeCards,
   fetchAvailableStakeItems,
+  fetchGroupedStakeCards,
+  fetchGroupedStakeItems,
   fetchRegionDataPlayer,
 } from "@/lib/backend/api/spl/spl-land-api";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
-import {
-  getCachedPlayerCardCollection,
-  getCachedStakedAssets,
-} from "@/lib/backend/services/playerService";
+import { getCachedStakedAssets } from "@/lib/backend/services/playerService";
 import { enrichWithProductionInfo } from "@/lib/backend/services/regionService";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import {
@@ -19,6 +19,7 @@ import {
   STAKE_TYPE_UID_LAND_TOTEM,
 } from "@/lib/shared/operations/opBuilders";
 import {
+  bcxForLevel,
   determineCardInfo,
   determineCardMaxBCX,
   findCardElement,
@@ -139,6 +140,15 @@ const STAKE_ITEM_KIND_UID: Record<StakeItemKind, string> = {
   title: STAKE_TYPE_UID_LAND_TITLE,
 };
 
+/**
+ * Stake item UIDs encode their item_detail_id as the middle segment
+ * (`I-<item_detail_id>-<suffix>`). Returns NaN if the UID doesn't match, so
+ * lookups in the grouped map simply miss.
+ */
+function itemDetailIdFromUid(uid: string): number {
+  return Number(uid.split("-")[1]);
+}
+
 /** An item the player can stake into a plot spot. */
 export interface AvailableStakeItem {
   uid: string;
@@ -160,6 +170,13 @@ export async function getAvailableStakeItems(
   }
   try {
     const stakeTypeUid = STAKE_ITEM_KIND_UID[kind];
+
+    // The `available` endpoint only returns bare UIDs; the `grouped` endpoint
+    // carries the name/boost, keyed by item_detail_id (embedded in each UID as
+    // `I-<item_detail_id>-...`). Fetch the groups once to label the choices.
+    const groups = await fetchGroupedStakeItems(auth.username, stakeTypeUid);
+    const groupByDetailId = new Map(groups.map((g) => [g.itemDetailId, g]));
+
     const all: AvailableStakeItem[] = [];
     let offset = 0;
     const limit = 100;
@@ -171,7 +188,14 @@ export async function getAvailableStakeItems(
         offset,
         limit
       );
-      all.push(...batch);
+      for (const item of batch) {
+        const group = groupByDetailId.get(itemDetailIdFromUid(item.uid));
+        all.push({
+          ...item,
+          name: item.name ?? group?.name ?? null,
+          boost: item.boost ?? group?.boost ?? null,
+        });
+      }
       if (batch.length < limit) break;
       offset += limit;
     }
@@ -192,11 +216,24 @@ export interface AvailableRuni {
   level: number;
 }
 
+/** Runi display level (1-4) from its BCX, using legendary combine rates. */
+function runiLevelFromBcx(foil: number, bcx: number): number {
+  let level = 1;
+  for (let lvl = 1; lvl <= 4; lvl++) {
+    if (bcx >= bcxForLevel("legendary", foil, lvl)) level = lvl;
+  }
+  return level;
+}
+
 /**
- * The player's Runi cards (card_detail_id 505) that are not currently staked on
- * land (no `stake_ref_uid`), so they can be assigned to a plot's Runi spot.
+ * The Runi cards the player can assign to `deedUid`'s Runi spot, mirroring how
+ * {@link getAvailableStakeItems} works: the `grouped` cards endpoint enumerates
+ * the assignable groups (one per Runi, since the name embeds the uid) and the
+ * `available` endpoint resolves each group's uid. Unlike the cached card
+ * collection, the `delegated=true` grouped call also surfaces Runis delegated
+ * *to* the player.
  */
-export async function getAvailableRunis(): Promise<{
+export async function getAvailableRunis(deedUid: string): Promise<{
   runis: AvailableRuni[];
   error?: string;
 }> {
@@ -205,19 +242,46 @@ export async function getAvailableRunis(): Promise<{
     return { runis: [], error: "Not authenticated" };
   }
   try {
-    const collection = await getCachedPlayerCardCollection(auth.username, true);
-    const runis = collection
-      .filter(
-        (c) => c.card_detail_id === RUNI_CARD_DETAIL_ID && !c.stake_ref_uid
-      )
-      .map((c) => ({
-        uid: c.uid,
-        name: "Runi",
-        edition: c.edition,
-        foil: c.foil,
-        bcx: c.bcx,
-        level: c.level,
-      }));
+    const groups = await fetchGroupedStakeCards(
+      auth.username,
+      STAKE_TYPE_UID_LAND_RUNI,
+      deedUid
+    );
+
+    const runis: AvailableRuni[] = [];
+    for (const group of groups) {
+      let offset = 0;
+      const limit = 100;
+      // Paginate until a short page comes back.
+      for (;;) {
+        const batch = await fetchAvailableStakeCards(
+          auth.username,
+          STAKE_TYPE_UID_LAND_RUNI,
+          deedUid,
+          {
+            cardDetailId: group.cardDetailId,
+            bcx: group.bcx,
+            gold: group.gold,
+            edition: group.edition,
+            name: group.name,
+          },
+          offset,
+          limit
+        );
+        for (const c of batch) {
+          runis.push({
+            uid: c.uid,
+            name: "Runi",
+            edition: c.edition,
+            foil: c.foil,
+            bcx: c.bcx,
+            level: runiLevelFromBcx(c.foil, c.bcx),
+          });
+        }
+        if (batch.length < limit) break;
+        offset += limit;
+      }
+    }
     return { runis };
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unknown error";

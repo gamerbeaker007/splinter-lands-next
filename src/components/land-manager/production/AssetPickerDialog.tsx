@@ -12,7 +12,7 @@ import {
   STAKE_TYPE_UID_LAND_TITLE,
   STAKE_TYPE_UID_LAND_TOTEM,
 } from "@/lib/shared/operations/opBuilders";
-import { titleIconMap, totemIconMap } from "@/lib/shared/statics";
+import { totemIconMap } from "@/lib/shared/statics";
 import {
   land_hammer_icon_url,
   land_runi_power_core_icon_url,
@@ -37,6 +37,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { SpotCardVM, SpotItemVM } from "./productionConfigTypes";
+import { getTitleIcon } from "@/lib/utils/deedUtil";
 
 const ITEM_STAKE_TYPE: Record<string, string> = {
   powerCore: STAKE_TYPE_UID_LAND_POWER_CORE,
@@ -61,6 +62,8 @@ const TITLE_FOR: Record<PickerKind, string> = {
 interface Props {
   open: boolean;
   kind: PickerKind;
+  /** Plot being configured — Runi availability is resolved against this deed. */
+  deedUid: string;
   onClose: () => void;
   onPick: (result: PickerResult) => void;
 }
@@ -68,6 +71,7 @@ interface Props {
 export default function AssetPickerDialog({
   open,
   kind,
+  deedUid,
   onClose,
   onPick,
 }: Props) {
@@ -83,7 +87,7 @@ export default function AssetPickerDialog({
 
     const load = async () => {
       if (kind === "runi") {
-        const res = await getAvailableRunis();
+        const res = await getAvailableRunis(deedUid);
         if (cancelled) return;
         if (res.error) setError(res.error);
         setRunis(res.runis);
@@ -107,7 +111,7 @@ export default function AssetPickerDialog({
     return () => {
       cancelled = true;
     };
-  }, [open, kind]);
+  }, [open, kind, deedUid]);
 
   const pickItem = (item: AvailableStakeItem) => {
     const vm: SpotItemVM = {
@@ -142,20 +146,18 @@ export default function AssetPickerDialog({
 
   const isEmpty = kind === "runi" ? runis.length === 0 : items.length === 0;
 
-  function determineImageForItem(kind: PickerKind, item: AvailableStakeItem) {
-    console.log("determineImageForItem", { kind, item });
+  function determineImageForItem(kind: PickerKind, name: string, uid: string) {
     if (kind === "powerCore") {
       return land_runi_power_core_icon_url;
     } else if (kind === "totem") {
-      return totemIconMap[item.name ?? ""]
-        ? totemIconMap[item.name ?? ""]
+      const rarity = name?.split(" ")[0].toLowerCase();
+      return totemIconMap[rarity ?? ""]
+        ? totemIconMap[rarity ?? ""]
         : land_hammer_icon_url;
     } else if (kind === "title") {
-      return titleIconMap[item.name ?? ""]
-        ? titleIconMap[item.name ?? ""]
-        : land_hammer_icon_url;
+      return getTitleIcon(name ?? "");
     } else if (kind === "runi") {
-      return `https://runi.splinterlands.com/cards/${item.uid}.jpg`;
+      return `https://runi.splinterlands.com/cards/${uid}.jpg`;
     }
     return land_hammer_icon_url;
   }
@@ -182,6 +184,15 @@ export default function AssetPickerDialog({
             {kind === "runi"
               ? runis.map((r) => (
                   <ListItemButton key={r.uid} onClick={() => pickRuni(r)}>
+                    <ListItemAvatar>
+                      <Avatar
+                        src={determineImageForItem(
+                          "runi",
+                          r.name ?? "",
+                          r.uid ?? "unknown"
+                        )}
+                      />
+                    </ListItemAvatar>
                     <ListItemText
                       primary={`${r.name} · lvl ${r.level}`}
                       secondary={`${cardFoilOptions[r.foil] ?? "regular"} · ${r.bcx} BCX`}
@@ -189,8 +200,11 @@ export default function AssetPickerDialog({
                   </ListItemButton>
                 ))
               : items.map((it) => {
-                const img = determineImageForItem(kind, it);
-                  console.log("AssetPickerDialog render item", { kind, it, img });
+                  const img = determineImageForItem(
+                    kind,
+                    it.name ?? "",
+                    it.uid ?? "unknown"
+                  );
                   const name =
                     kind === "powerCore" ? "Power Core" : (it.name ?? "Item");
                   const uid = it.uid ?? "unknown";

@@ -146,6 +146,55 @@ export interface RawAvailableStakeItem {
 }
 
 /**
+ * A group of stake items the player owns, as returned by the `/grouped`
+ * endpoint. The `available` endpoint only returns bare UIDs, so this is the
+ * only place that carries the human-readable `name` and `boost` per
+ * `item_detail_id` — which is embedded in every UID (`I-<item_detail_id>-...`).
+ */
+export interface RawGroupedStakeItem {
+  itemDetailId: number;
+  name: string | null;
+  itemCount: number;
+  boost: number | null;
+}
+
+/**
+ * Returns the selectable groups (by `item_detail_id`) of a given land stake
+ * item type the player owns, with the name and boost the `available` endpoint
+ * omits. Pair with {@link fetchAvailableStakeItems} to label the picker.
+ */
+export async function fetchGroupedStakeItems(
+  player: string,
+  stakeTypeUid: string,
+  offset = 0,
+  limit = 100
+): Promise<RawGroupedStakeItem[]> {
+  const url = `/land/stake/items/${encodeURIComponent(stakeTypeUid)}/grouped`;
+  const res = await splLandClient.get(url, {
+    params: {
+      deedUid: '""',
+      player,
+      offset,
+      limit,
+      order_by: 1,
+      order_by_asc: 0,
+    },
+  });
+  const items: {
+    item_detail_id: number;
+    name?: string;
+    item_count?: number;
+    boost?: string | number;
+  }[] = res.data?.data?.items ?? [];
+  return items.map((i) => ({
+    itemDetailId: i.item_detail_id,
+    name: i.name ?? null,
+    itemCount: i.item_count ?? 0,
+    boost: i.boost === undefined || i.boost === null ? null : Number(i.boost),
+  }));
+}
+
+/**
  * Generic version of {@link fetchPowerCoreAvailableIds} for any land stake item
  * type (e.g. "STK-LND-TOT" totems, "STK-LND-TTL" titles, "STK-LND-PCR" power
  * cores). Returns each available item's UID plus any name/rarity/boost the API
@@ -172,6 +221,127 @@ export async function fetchAvailableStakeItems(
     name: i.name ?? null,
     rarity: i.rarity ?? null,
     boost: i.boost ?? null,
+  }));
+}
+
+/**
+ * A group of stake cards the player can assign to a plot, as returned by the
+ * `/land/stake/cards/<type>/grouped` endpoint. Each Runi is its own group (its
+ * `name` embeds the card uid), so the group identifies one assignable card; the
+ * uid itself comes from {@link fetchAvailableStakeCards}.
+ */
+export interface RawGroupedStakeCard {
+  cardDetailId: number;
+  bcx: number;
+  gold: boolean;
+  foil: number;
+  edition: number;
+  name: string;
+}
+
+/**
+ * Returns the assignable groups of a given land stake card type the player can
+ * stake on `deedUid` (e.g. "STK-LND-RUNI"). With `delegated=true` this includes
+ * cards delegated *to* the player, not just owned ones. Pair with
+ * {@link fetchAvailableStakeCards} to resolve each group's individual uids.
+ */
+export async function fetchGroupedStakeCards(
+  player: string,
+  stakeTypeUid: string,
+  deedUid: string,
+  offset = 0,
+  limit = 100
+): Promise<RawGroupedStakeCard[]> {
+  const url = `/land/stake/cards/${encodeURIComponent(stakeTypeUid)}/grouped`;
+  const res = await splLandClient.get(url, {
+    params: {
+      deedUid,
+      player,
+      offset,
+      limit,
+      order_by: 1,
+      order_by_asc: 0,
+      delegated: true,
+      land_card_abilities: false,
+    },
+  });
+  const cards: {
+    card_detail_id: number;
+    bcx: number;
+    gold?: boolean;
+    foil?: number;
+    edition: number;
+    name: string;
+  }[] = res.data?.data?.cards ?? [];
+  return cards.map((c) => ({
+    cardDetailId: c.card_detail_id,
+    bcx: c.bcx,
+    gold: c.gold ?? false,
+    foil: c.foil ?? 0,
+    edition: c.edition,
+    name: c.name,
+  }));
+}
+
+/** A single available (stakeable) card, with the uid the grouped endpoint omits. */
+export interface RawAvailableStakeCard {
+  uid: string;
+  cardDetailId: number;
+  bcx: number;
+  foil: number;
+  edition: number;
+  name: string;
+}
+
+/**
+ * Resolves the individual stakeable card uids for one group returned by
+ * {@link fetchGroupedStakeCards}. The endpoint filters by the group's
+ * attributes (card_detail_id / bcx / gold / edition / name), so pass them
+ * through verbatim. Paginate via `offset`.
+ */
+export async function fetchAvailableStakeCards(
+  player: string,
+  stakeTypeUid: string,
+  deedUid: string,
+  group: {
+    cardDetailId: number;
+    bcx: number;
+    gold: boolean;
+    edition: number;
+    name: string;
+  },
+  offset = 0,
+  limit = 100
+): Promise<RawAvailableStakeCard[]> {
+  const url = `/land/stake/cards/${encodeURIComponent(stakeTypeUid)}/available`;
+  const res = await splLandClient.get(url, {
+    params: {
+      deedUid,
+      player,
+      offset,
+      limit,
+      card_detail_id: group.cardDetailId,
+      bcx: group.bcx,
+      gold: group.gold,
+      edition: group.edition,
+      name: group.name,
+    },
+  });
+  const ids: {
+    uid: string;
+    card_detail_id: number;
+    bcx: number;
+    foil?: number;
+    edition: number;
+    name: string;
+  }[] = res.data?.data?.ids ?? [];
+  return ids.map((c) => ({
+    uid: c.uid,
+    cardDetailId: c.card_detail_id,
+    bcx: c.bcx,
+    foil: c.foil ?? 0,
+    edition: c.edition,
+    name: c.name,
   }));
 }
 
