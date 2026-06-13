@@ -13,6 +13,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [Unreleased]
 
 ### Added
+- ** Player Dashboard** Add alert for base PP larger than 100K
 - **Land Manager - Maintenance Gaurd ** When splinterlands is in maintenance mode disable land manager
 - **Land Manager — Production tab** A new tab listing every plot with its
   rewards/hour, **Net DEC** (production value − consumption cost, reusing the
