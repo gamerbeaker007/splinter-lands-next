@@ -313,7 +313,7 @@ export default function PlaygroundCardFilter({
           <Typography variant="body2" gutterBottom>
             Rarity:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
             {cardRarityOptions.map((rarity) => (
               <FilterIcon
                 key={rarity}
@@ -342,7 +342,7 @@ export default function PlaygroundCardFilter({
           <Typography variant="body2" gutterBottom>
             Foil:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
             {cardFoilOptions.map((foil) => (
               <Box
                 key={foil}
@@ -356,8 +356,6 @@ export default function PlaygroundCardFilter({
                   overflow: "hidden",
                   cursor: "pointer",
                   display: "inline-block",
-                  padding: "2px",
-                  margin: "5px",
                 }}
                 title={foil}
               >
@@ -379,7 +377,7 @@ export default function PlaygroundCardFilter({
           <Typography variant="body2" gutterBottom>
             Element:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
             {cardElementOptions.map((element) => (
               <FilterIcon
                 key={element}

@@ -17,6 +17,7 @@ import {
   land_hammer_icon_url,
   land_runi_power_core_icon_url,
 } from "@/lib/shared/statics_icon_urls";
+import { getTitleIcon } from "@/lib/utils/deedUtil";
 import { editionMap } from "@/types/editions";
 import { cardFoilOptions } from "@/types/planner";
 import {
@@ -37,7 +38,6 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { SpotCardVM, SpotItemVM } from "./productionConfigTypes";
-import { getTitleIcon } from "@/lib/utils/deedUtil";
 
 const ITEM_STAKE_TYPE: Record<string, string> = {
   powerCore: STAKE_TYPE_UID_LAND_POWER_CORE,
@@ -140,6 +140,8 @@ export default function AssetPickerDialog({
       boostedPP: 0,
       terrainBoost: 0,
       fromChain: false,
+      onWagon: false,
+      inSet: false,
     };
     onPick({ kind: "runi", runi: vm });
   };

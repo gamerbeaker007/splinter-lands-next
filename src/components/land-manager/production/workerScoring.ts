@@ -73,6 +73,8 @@ export function scorePlaygroundCard(
       card.subElement
     ),
     fromChain: false,
+    onWagon: card.onWagon,
+    inSet: card.inSet,
   };
 }
 

@@ -1,14 +1,20 @@
-import { getCardImg } from "@/lib/utils/cardUtil";
+import { SpotCardVM } from "@/components/land-manager/production/productionConfigTypes";
+import { getCardImgV2 } from "@/lib/utils/cardUtil";
 import { GroupedCardRow } from "@/types/groupedCardRow";
+import { cardFoilOptions } from "@/types/planner/primitives";
 import { Box, Tooltip } from "@mui/material";
 import Image from "next/image";
 
 type Props = {
-  card: GroupedCardRow;
+  card: GroupedCardRow | SpotCardVM;
 };
 
 export default function CardTableIcon({ card }: Props) {
-  const img = getCardImg(card.name, card.edition, card.foil, card.level);
+  const uid = "uid" in card ? card.uid : undefined;
+  const img =
+    card.name === "Runi"
+      ? `https://runi.splinterlands.com/cards/${uid}.jpg`
+      : getCardImgV2(card.name, card.edition, cardFoilOptions[card.foil]);
 
   return (
     <Tooltip

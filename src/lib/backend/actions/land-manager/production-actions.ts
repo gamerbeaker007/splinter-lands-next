@@ -308,6 +308,8 @@ export interface ConfigCard {
   terrainBoost: number;
   /** Worker slot (1-5); 0/undefined for runi. */
   slot: number;
+  onWagon: boolean;
+  inSet: boolean;
 }
 
 /** A staked item (power core / totem / title) for the Configure panel. */
@@ -374,6 +376,8 @@ export async function getPlotConfigureData(
       boostedPP: Number(c.total_harvest_pp),
       terrainBoost: Number(c.terrain_boost),
       slot: c.slot,
+      onWagon: false, // is on land so not on wagon
+      inSet: false, // is on land so not in set
     };
   };
 

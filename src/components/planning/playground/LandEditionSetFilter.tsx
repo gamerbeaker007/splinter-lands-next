@@ -97,7 +97,7 @@ const LAND_SET_DEFS: LandSetDef[] = [
 /** Sets considered "Modern" format. */
 const MODERN_SETS = ["rebellion", "conclave"];
 
-const editionIcon = (id: number) => editionMap[id]?.setIcon ?? "";
+const editionIcon = (id: number) => editionMap[id]?.editionIcon ?? "";
 const PROMO_ICON = editionIcon(CROSS_ERA_EDITIONS.promo);
 const REWARD_ICON = editionIcon(CROSS_ERA_EDITIONS.reward);
 const EXTRA_ICON = editionIcon(CROSS_ERA_EDITIONS.extra);

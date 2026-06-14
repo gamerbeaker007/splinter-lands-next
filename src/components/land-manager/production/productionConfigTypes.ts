@@ -38,6 +38,8 @@ export interface SpotCardVM {
   terrainBoost: number;
   /** True when this is the currently-staked occupant (no change needed). */
   fromChain: boolean;
+  onWagon: boolean;
+  inSet: boolean;
 }
 
 /** An item occupying a spot (power core / totem / title). */
@@ -63,7 +65,7 @@ export interface StagedConfig {
 export const MAX_WORKER_SLOTS = 5;
 
 function cardToVM(card: ConfigCard): SpotCardVM {
-  return { ...card, fromChain: true };
+  return { ...card, fromChain: true, onWagon: card.onWagon, inSet: card.inSet };
 }
 
 /**
