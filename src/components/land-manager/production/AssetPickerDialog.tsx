@@ -1,40 +1,40 @@
 "use client";
 
 import {
-  AvailableRuni,
-  AvailableStakeItem,
-  getAvailableRunis,
-  getAvailableStakeItems,
-  StakeItemKind,
+    AvailableRuni,
+    AvailableStakeItem,
+    getAvailableRunis,
+    getAvailableStakeItems,
+    StakeItemKind,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import {
-  STAKE_TYPE_UID_LAND_POWER_CORE,
-  STAKE_TYPE_UID_LAND_TITLE,
-  STAKE_TYPE_UID_LAND_TOTEM,
+    STAKE_TYPE_UID_LAND_POWER_CORE,
+    STAKE_TYPE_UID_LAND_TITLE,
+    STAKE_TYPE_UID_LAND_TOTEM,
 } from "@/lib/shared/operations/opBuilders";
 import { totemIconMap } from "@/lib/shared/statics";
 import {
-  land_hammer_icon_url,
-  land_runi_power_core_icon_url,
+    land_hammer_icon_url,
+    land_runi_power_core_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { getTitleIcon } from "@/lib/utils/deedUtil";
 import { editionMap } from "@/types/editions";
 import { cardFoilOptions } from "@/types/planner";
 import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  List,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
-  Typography,
+    Alert,
+    Avatar,
+    Box,
+    Button,
+    CircularProgress,
+    Dialog,
+    DialogActions,
+    DialogContent,
+    DialogTitle,
+    List,
+    ListItemAvatar,
+    ListItemButton,
+    ListItemText,
+    Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import { SpotCardVM, SpotItemVM } from "./productionConfigTypes";

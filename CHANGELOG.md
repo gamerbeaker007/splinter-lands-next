@@ -12,6 +12,11 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+
+---
+
+## [v1.12.0] - 2026-06-15
+
 ### Added
 - ** Player Dashboard** Add alert for base PP larger than 100K
 - **Land Manager - Maintenance Gaurd ** When splinterlands is in maintenance mode disable land manager
