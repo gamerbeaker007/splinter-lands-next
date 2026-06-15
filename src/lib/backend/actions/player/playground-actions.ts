@@ -7,15 +7,10 @@ import {
   getCachedPlayerCardCollection,
   getCachedPlayerData,
 } from "@/lib/backend/services/playerService";
-import {
-  determineBcxCap,
-  determineCardInfo,
-  determineLandBoosts,
-} from "@/lib/utils/cardUtil";
-import { CardSetName, CardSetNameLandValid } from "@/types/editions";
+import { determineBcxCap, determineLandBoosts } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   CardBloodline,
-  CardElement,
   cardElementColorMap,
   cardFoilOptions,
   CardRarity,
@@ -34,11 +29,12 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import {
-  PlaygroundCard,
+  PlayerLandCard,
   PlaygroundData,
   PlaygroundDeed,
 } from "@/types/playground";
 import { filterCardCollection } from "../../helpers/filterPlayerCards";
+import { getPlayerLandCards } from "./landCards-actions";
 
 /**
  * Fetch optimized player data for the playground
@@ -190,48 +186,8 @@ export async function getPlaygroundData(
     };
   });
 
-  // Map and sort cards by land_base_pp
-  const cards: PlaygroundCard[] = filteredCardCollection
-    .map((card) => {
-      const { name, rarity } = determineCardInfo(
-        card.card_detail_id,
-        cardDetails
-      );
-      const basePP = Number(card.land_base_pp);
-
-      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
-      const foil = cardFoilOptions[card.foil] || "regular";
-      const landBoost = determineLandBoosts(rarity, foil, card.bcx, splCard);
-
-      return {
-        uid: card.uid,
-        cardDetailId: card.card_detail_id,
-        name: name,
-        edition: card.edition,
-        set: card.card_set as CardSetName,
-        rarity: rarity.toLowerCase() as CardRarity,
-        element: cardElementColorMap[
-          splCard?.color?.toLowerCase() ?? "red"
-        ] as CardElement,
-        // null when the card has no secondary color — defaulting to a real
-        // element here would give single-color cards a phantom terrain boost.
-        subElement: splCard?.secondary_color
-          ? ((cardElementColorMap[
-              splCard.secondary_color.toLowerCase()
-            ] as CardElement) ?? null)
-          : null,
-        landBasePP: basePP,
-        lastUsedDate: card.last_used_date || null,
-        bcx: card.bcx,
-        bcxUnbound: card.bcx_unbound,
-        foil: foil,
-        level: card.level,
-        landBoost,
-        inSet: card.set_id !== null,
-        onWagon: card.wagon_uid !== null,
-      };
-    })
-    .sort((a, b) => Number(b.landBasePP) - Number(a.landBasePP)); // Highest PP first
+  // Player's land-eligible cards (shared, feature-neutral mapping).
+  const cards: PlayerLandCard[] = await getPlayerLandCards(player);
 
   // Calculate total boosted PP
   const totalBoostedPP = deeds.reduce((sum, deed) => {

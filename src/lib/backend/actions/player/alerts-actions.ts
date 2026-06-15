@@ -44,6 +44,8 @@ function createDeedInfo(deed: DeedComplete): DeedInfo {
     regionName: deed.region_name ?? "Unknown",
     tractNumber: deed.tract_number ?? 0,
     territory: deed.territory ?? "Unknown",
+    basePP: deed.stakingDetail?.total_base_pp ?? 0,
+    boostPP: deed.stakingDetail?.total_boost_pp ?? 0,
   };
 }
 
@@ -90,10 +92,8 @@ export async function getPlayerCardAlerts(
       ) ?? 0;
 
     // Analyze all alerts in a single pass through deeds
-    const { countAlerts, negativeAlerts, powerSourceAlerts } = analyzeAllDeeds(
-      enrichedPlayerData,
-      ownedPowerCores
-    );
+    const { countAlerts, negativeAlerts, powerSourceAlerts, toMuchBasePP } =
+      analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
 
     // Analyze cards for terrain bonuses
     const terrainBoostAlerts = analyzeTerrainBonuses(
@@ -115,6 +115,7 @@ export async function getPlayerCardAlerts(
       terrainBoostAlerts: terrainBoostAlerts,
       negativeDECNaturalResourceDeeds: negativeAlerts.negativeNaturalResource,
       negativeDECOtherResourceDeeds: negativeAlerts.negativeOtherResource,
+      tooMuchBasePP: toMuchBasePP,
       unusedPowerSource: powerSourceAlerts.unusedPowerSource,
       noPowerSource: powerSourceAlerts.noPowerSource,
       powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
@@ -229,6 +230,7 @@ function analyzeAllDeeds(
     noPowerSource: DeedInfo[];
     powerCoreWhileEnergized: DeedInfo[];
   };
+  toMuchBasePP: DeedInfo[];
 } {
   const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
@@ -236,6 +238,7 @@ function analyzeAllDeeds(
   const negativeOtherResource: NegativeDecAlert[] = [];
   const noPowerSource: DeedInfo[] = [];
   const powerCoreWhileEnergized: DeedInfo[] = [];
+  const toMuchBasePP: DeedInfo[] = [];
   let numberOfPowerCores = ownedPowerCores;
 
   // Single loop through all deeds
@@ -256,6 +259,11 @@ function analyzeAllDeeds(
       });
     }
 
+    // Check for base PP issues
+    const basePP = deed.stakingDetail?.total_base_pp ?? 0;
+    if (basePP > 100_000) {
+      toMuchBasePP.push(deedInfo);
+    }
     // Check for negative DEC earnings
     const hasNetDec = deed.productionInfo?.netDEC != null;
     if (hasNetDec && (deed.productionInfo!.netDEC ?? 0) < -0.001) {
@@ -301,6 +309,7 @@ function analyzeAllDeeds(
       noPowerSource,
       powerCoreWhileEnergized,
     },
+    toMuchBasePP,
   };
 }
 

@@ -109,24 +109,6 @@ const bcxMap: Record<
   },
 };
 
-/**
- * @deprecated Use getCardImgV2 instead.
- */
-export function getCardImg(
-  cardName: string,
-  edition: number,
-  foil: number,
-  level?: number
-): string {
-  const foilName = cardFoilOptions[foil];
-  const suffix = foilName ? cardFoilSuffixMap[foilName] : "";
-  const baseCardUrl = `${WEB_URL}cards_by_level`;
-  const editionName = editionMap[edition]?.urlName || "default";
-  const safeCardName = encodeURIComponent(cardName.trim());
-  const lvl = level && level > 1 ? level : 1;
-  return `${baseCardUrl}/${editionName}/${safeCardName}_lv${lvl}${suffix}.png`;
-}
-
 // New version using Edition and CardFoil types from primitives.ts
 export function getCardImgV2(
   cardName: string,

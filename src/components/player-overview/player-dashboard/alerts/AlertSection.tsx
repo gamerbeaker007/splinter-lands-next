@@ -6,6 +6,7 @@ import {
   AssignmentInd,
   Block,
   FormatColorReset,
+  KeyboardDoubleArrowUp,
   Landscape,
   RemoveCircleOutline,
   Store,
@@ -30,6 +31,7 @@ import { NegativeDECAlerts } from "./NegativeDECAlerts";
 import { NoWorkersAlerts } from "./NoWorkersAlerts";
 import { PowerCoreAlerts } from "./PowerCoreAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
+import { TooMuchPPAlerts } from "./TooMuchPPAlerts";
 
 type Props = {
   finishedFullAlerts: DeedAlertsInfo[];
@@ -175,6 +177,17 @@ export default function AlertSection({
         <MissingBloodLineBoostAlerts
           missingBloodLineBoost={cardAlerts?.missingBloodLineBoost}
         />
+      ),
+    },
+    {
+      key: "TooMuchBasePP",
+      label: "Too Much Base PP",
+      alertsCount: cardAlerts?.tooMuchBasePP.length ?? 0,
+      icon: <KeyboardDoubleArrowUp fontSize="large" />,
+      dialogTitle: "Deeds with Base PP > 100K ",
+      // <TooMuchBasePPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
+      dialogContent: (
+        <TooMuchPPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
       ),
     },
     {

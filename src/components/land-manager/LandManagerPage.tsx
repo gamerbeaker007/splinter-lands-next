@@ -13,6 +13,7 @@ import RentalOverview from "@/components/land-manager/rental/RentalOverview";
 import AlertsPanel from "@/components/land-manager/shared/AlertsPanel";
 import RegionResourceSummary from "@/components/land-manager/shared/RegionResourceSummary";
 import TodayPanel from "@/components/land-manager/shared/TodayPanel";
+import ProductionTab from "@/components/land-manager/production/ProductionTab";
 import WorksiteTab from "@/components/land-manager/worksites/WorksiteTab";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
@@ -123,7 +124,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
   const donationEnabled = donation.enabled && donation.pct > 0;
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box maxWidth={2400} mx="auto" px={2} py={3}>
       {/* Header */}
       <Stack
         direction="row"
@@ -158,7 +159,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
       <Divider sx={{ mb: 3 }} />
 
-      {/* Experimental feature disclaimer */}
+      {/*/!* Experimental feature disclaimer *!/*/}
       <Alert severity="warning" sx={{ mb: 2 }}>
         <Typography variant="body2" fontWeight="bold" gutterBottom>
           Experimental Feature
@@ -223,14 +224,14 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
       {/* ── Common top sections ─────────────────────────────────────────── */}
 
-      {/* Resource balance summary */}
+      {/*Resource balance summary */}
       <RegionResourceSummary
         regions={allRegions}
         enabledRegions={currentConfig.enabled_regions}
         refreshKey={regionRefreshKey}
       />
 
-      {/* Today's activity log */}
+      {/*/!* Today's activity log *!/*/}
       <TodayPanel refreshKey={regionRefreshKey} />
 
       <AlertsPanel
@@ -242,12 +243,18 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       <Tabs
         value={activeTab}
         onChange={(_, v) => setActiveTab(v)}
-        sx={{ mb: 2 }}
+        variant="scrollable"
+        scrollButtons="auto"
+        allowScrollButtonsMobile
+        sx={{
+          mb: 2,
+        }}
       >
         <Tab label="Harvest" />
         <Tab label="Rental" />
         <Tab label="DEC Actions" />
         <Tab label="Worksites" />
+        <Tab label="Production" />
       </Tabs>
 
       {/* ── Harvest tab ─────────────────────────────────────────────────── */}
@@ -337,7 +344,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
 
           <MythicOverview deeds={enabledMythicDeeds} />
 
-          {/* Per-region overview with harvestable resources */}
+          {/*Per-region overview with harvestable resources */}
           <RegionOverview
             username={auth.username ?? ""}
             regions={allRegions}
@@ -398,6 +405,15 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
           username={auth.username ?? ""}
           enabledRegions={currentConfig.enabled_regions}
           strategies={currentConfig.make_harvestable_strategies}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {/* ── Production tab ─────────────────────────────────────────────── */}
+      {activeTab === 4 && (
+        <ProductionTab
+          username={auth.username ?? ""}
+          enabledRegions={currentConfig.enabled_regions}
           onSuccess={handleSuccess}
         />
       )}

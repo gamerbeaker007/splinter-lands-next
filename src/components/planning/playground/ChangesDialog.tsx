@@ -5,7 +5,7 @@ import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_
 import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
-  PlaygroundCard,
+  PlayerLandCard,
   PlaygroundDeed,
   WorkerMovement,
 } from "@/types/playground";
@@ -37,7 +37,7 @@ type ChangesDialogProps = {
   onClose: () => void;
   changes: DeedChange[];
   deeds: PlaygroundDeed[];
-  allCards: PlaygroundCard[];
+  allCards: PlayerLandCard[];
 };
 
 const CHANGES_PER_PAGE = 50;
@@ -59,7 +59,7 @@ export default function ChangesDialog({
     );
   };
 
-  const getCardByUid = (uid: string): PlaygroundCard | undefined => {
+  const getCardByUid = (uid: string): PlayerLandCard | undefined => {
     return allCards.find((c) => c.uid === uid);
   };
 

@@ -6,8 +6,8 @@
 
   // Auto-organize imports on save
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "explicit",
-    "source.fixAll.eslint": "explicit"
+    "source.organizeImports": "always",
+    "source.fixAll.eslint": "always"
   },
 
   // TypeScript/JavaScript specific settings
@@ -32,9 +32,9 @@
   },
 
   // Import organization settings
-  "typescript.preferences.includePackageJsonAutoImports": "auto",
-  "typescript.suggest.autoImports": true,
-  "typescript.suggest.includeAutomaticOptionalChainCompletions": true,
+  "js/ts.preferences.includePackageJsonAutoImports": "auto",
+  "js/ts.suggest.autoImports": true,
+  "js/ts.suggest.includeAutomaticOptionalChainCompletions": true,
 
   // ESLint settings
   "eslint.validate": [

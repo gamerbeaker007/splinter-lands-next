@@ -5,7 +5,7 @@ import {
   TitleTier,
   TotemTier,
 } from "@/types/planner";
-import { PlaygroundCard, PlaygroundDeed } from "@/types/playground";
+import { PlayerLandCard, PlaygroundDeed } from "@/types/playground";
 import { SplInventory } from "@/types/spl/inventory";
 import { Box, Paper, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
@@ -14,7 +14,7 @@ type InventoryOverviewOutputProps = {
   deeds: PlaygroundDeed[];
   inventory: SplInventory[];
   loadingInventory: boolean;
-  allCards: PlaygroundCard[];
+  allCards: PlayerLandCard[];
 };
 
 export default function InventoryOverviewOutput({

@@ -1,14 +1,9 @@
-import { CardFilterOptions } from "@/types/cardFilter";
-import {
-  DeedFilterOptions,
-  PlaygroundCard,
-  PlaygroundDeed,
-} from "@/types/playground";
+import { DeedFilterOptions, PlaygroundDeed } from "@/types/playground";
 
 /**
  * Filters deeds based on the provided filter options
  */
-export function filterDeeds(
+export function filterPlaygroundDeeds(
   deeds: PlaygroundDeed[],
   filterOptions: DeedFilterOptions
 ): PlaygroundDeed[] {
@@ -95,64 +90,4 @@ export function filterDeeds(
 
     return true;
   });
-}
-
-/**
- * Filters available cards based on assigned cards and card filter options
- */
-export function filterAvailableCards(
-  cards: PlaygroundCard[],
-  assignedCardIds: Set<string>,
-  cardFilterOptions: CardFilterOptions
-): PlaygroundCard[] {
-  // Filter out assigned cards
-  let filtered = cards.filter((card) => !assignedCardIds.has(card.uid));
-
-  // Filter out Runi (no workers)
-  filtered = filtered.filter((card) => card.cardDetailId !== 505);
-
-  // Apply card filters
-  if (cardFilterOptions.onWagon !== undefined) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.onWagon ? card.onWagon : !card.onWagon
-    );
-  }
-
-  if (cardFilterOptions.inSet !== undefined) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.inSet ? card.inSet : !card.inSet
-    );
-  }
-
-  if (cardFilterOptions.rarities.length > 0) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.rarities.includes(card.rarity)
-    );
-  }
-
-  if (cardFilterOptions.sets.length > 0) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.sets.includes(card.set)
-    );
-  }
-
-  if (cardFilterOptions.elements.length > 0) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.elements.includes(card.element)
-    );
-  }
-
-  if (cardFilterOptions.foils.length > 0) {
-    filtered = filtered.filter((card) =>
-      cardFilterOptions.foils.includes(card.foil)
-    );
-  }
-
-  if (cardFilterOptions.minPP > 0) {
-    filtered = filtered.filter(
-      (card) => card.landBasePP >= cardFilterOptions.minPP
-    );
-  }
-
-  return filtered;
 }

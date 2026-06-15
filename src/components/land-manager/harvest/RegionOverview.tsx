@@ -40,6 +40,7 @@ import {
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import RegionAnalysisCell from "./RegionAnalysisCell";
+import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 
 interface Props {
   username: string;
@@ -280,30 +281,32 @@ export default function RegionOverview({
   }
 
   return (
-    <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>Region</TableCell>
-            <TableCell>Harvestable</TableCell>
-            <TableCell>Cost to Harvest</TableCell>
-            <TableCell>Natural Resource Analysis</TableCell>
-            <TableCell>Last Claimed</TableCell>
-            <TableCell>Action</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {visibleRegions.map((region) => (
-            <RegionRow
-              key={region.region_uid}
-              region={region}
-              username={username}
-              donation={donation}
-              externalRefreshKey={refreshKey}
-            />
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+    <ScrollableTableContainer>
+      <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>Region</TableCell>
+              <TableCell>Harvestable</TableCell>
+              <TableCell>Cost to Harvest</TableCell>
+              <TableCell>Natural Resource Analysis</TableCell>
+              <TableCell>Last Claimed</TableCell>
+              <TableCell>Action</TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {visibleRegions.map((region) => (
+              <RegionRow
+                key={region.region_uid}
+                region={region}
+                username={username}
+                donation={donation}
+                externalRefreshKey={refreshKey}
+              />
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </ScrollableTableContainer>
   );
 }

@@ -16,6 +16,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 
 interface Props {
   regions: SplProductionOverviewRegion[];
@@ -66,67 +67,69 @@ export default function RegionResourceSummary({
   if (visibleRegions.length === 0) return null;
 
   return (
-    <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
-      <Table size="small">
-        <TableHead>
-          <TableRow>
-            <TableCell>
-              <Typography variant="caption" fontWeight="bold">
-                Region
-              </Typography>
-            </TableCell>
-            {NATURAL_RESOURCES.map((sym) => (
-              <TableCell key={sym} align="right">
-                <Typography
-                  variant="caption"
-                  fontWeight="bold"
-                  sx={{ color: RESOURCE_COLOR_MAP[sym] ?? "inherit" }}
-                >
-                  {sym}
+    <ScrollableTableContainer>
+      <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              <TableCell>
+                <Typography variant="caption" fontWeight="bold">
+                  Region
                 </Typography>
               </TableCell>
-            ))}
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {loading ? (
-            <TableRow>
-              <TableCell colSpan={5} align="center" sx={{ py: 1 }}>
-                <CircularProgress size={16} />
-              </TableCell>
+              {NATURAL_RESOURCES.map((sym) => (
+                <TableCell key={sym} align="right">
+                  <Typography
+                    variant="caption"
+                    fontWeight="bold"
+                    sx={{ color: RESOURCE_COLOR_MAP[sym] ?? "inherit" }}
+                  >
+                    {sym}
+                  </Typography>
+                </TableCell>
+              ))}
             </TableRow>
-          ) : (
-            visibleRegions.map((region) => {
-              const b = balances[region.region_uid] ?? null;
-              return (
-                <TableRow key={region.region_uid}>
-                  <TableCell>
-                    <Tooltip title={`Region #${region.region_number}`}>
-                      <Typography variant="caption" fontWeight="bold">
-                        {region.name}
-                      </Typography>
-                    </Tooltip>
-                  </TableCell>
-                  {NATURAL_RESOURCES.map((sym) => (
-                    <TableCell key={sym} align="right">
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: b
-                            ? (RESOURCE_COLOR_MAP[sym] ?? "text.primary")
-                            : "text.disabled",
-                        }}
-                      >
-                        {b ? fmt(b[sym] ?? 0) : "—"}
-                      </Typography>
+          </TableHead>
+          <TableBody>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 1 }}>
+                  <CircularProgress size={16} />
+                </TableCell>
+              </TableRow>
+            ) : (
+              visibleRegions.map((region) => {
+                const b = balances[region.region_uid] ?? null;
+                return (
+                  <TableRow key={region.region_uid}>
+                    <TableCell>
+                      <Tooltip title={`Region #${region.region_number}`}>
+                        <Typography variant="caption" fontWeight="bold">
+                          {region.name}
+                        </Typography>
+                      </Tooltip>
                     </TableCell>
-                  ))}
-                </TableRow>
-              );
-            })
-          )}
-        </TableBody>
-      </Table>
-    </TableContainer>
+                    {NATURAL_RESOURCES.map((sym) => (
+                      <TableCell key={sym} align="right">
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            color: b
+                              ? (RESOURCE_COLOR_MAP[sym] ?? "text.primary")
+                              : "text.disabled",
+                          }}
+                        >
+                          {b ? fmt(b[sym] ?? 0) : "—"}
+                        </Typography>
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                );
+              })
+            )}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </ScrollableTableContainer>
   );
 }

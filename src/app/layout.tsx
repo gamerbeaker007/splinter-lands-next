@@ -24,9 +24,19 @@ export default function RootLayout({
                 <PlayerProvider>
                   <Box display="flex" height="100vh" overflow="hidden">
                     <SideBar />
-                    <Box display="flex" flexDirection="column" flexGrow={1}>
+                    <Box
+                      display="flex"
+                      flexDirection="column"
+                      flexGrow={1}
+                      minWidth={0}
+                    >
                       <TopBar />
-                      <Box component="main" flexGrow={1} overflow="auto">
+                      <Box
+                        component="main"
+                        flexGrow={1}
+                        overflow="auto"
+                        minWidth={0}
+                      >
                         {children}
                       </Box>
                     </Box>

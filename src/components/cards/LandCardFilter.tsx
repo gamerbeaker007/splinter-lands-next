@@ -1,14 +1,10 @@
 "use client";
 
 import FilterIcon from "@/components/filter/FilterIcon";
+import LandEditionSetFilter from "@/components/cards/LandEditionSetFilter";
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
-import {
-  cardSetIconMap,
-  CardSetNameLandValid,
-  landCardSet,
-} from "@/types/editions";
 import {
   CardElement,
   cardElementOptions,
@@ -18,7 +14,7 @@ import {
   CardRarity,
   cardRarityOptions,
 } from "@/types/planner";
-import { PlaygroundCard } from "@/types/playground";
+import { PlayerLandCard } from "@/types/playground";
 import {
   Box,
   Button,
@@ -28,28 +24,93 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
+import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 
-type PlaygroundCardFilterProps = {
-  cards: PlaygroundCard[];
-  filteresCardCount?: number;
-  assingesCardCount?: number;
+type LandCardFilterProps = {
+  cards: PlayerLandCard[];
+  filteredCardCount?: number;
+  assignedCardCount?: number;
   filterOptions: CardFilterOptions;
   onFilterChange: (newFilters: CardFilterOptions) => void;
 };
 
-export default function PlaygroundCardFilter({
+const fontSizeSmall = "0.8rem";
+
+/** A tri-state Yes / No / (off) toggle row used by the boolean card filters. */
+function TriToggle({
+  label,
+  value,
+  onChange,
+}: Readonly<{
+  label: string;
+  value: boolean | undefined;
+  onChange: (v: boolean | undefined) => void;
+}>) {
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+      }}
+    >
+      <Typography sx={{ fontSize: fontSizeSmall }}>{label}</Typography>
+      <Box sx={{ display: "flex", gap: 0.5 }}>
+        <Button
+          variant={value === true ? "contained" : "outlined"}
+          color="success"
+          size="small"
+          sx={{ fontSize: fontSizeSmall, minWidth: 50, py: 0.2, px: 1 }}
+          onClick={() => onChange(value === true ? undefined : true)}
+        >
+          Yes
+        </Button>
+        <Button
+          variant={value === false ? "contained" : "outlined"}
+          color="error"
+          size="small"
+          sx={{ fontSize: fontSizeSmall, minWidth: 50, py: 0.2, px: 1 }}
+          onClick={() => onChange(value === false ? undefined : false)}
+        >
+          No
+        </Button>
+      </Box>
+    </Box>
+  );
+}
+
+export default function LandCardFilter({
   cards,
-  filteresCardCount,
-  assingesCardCount,
+  filteredCardCount,
+  assignedCardCount,
   filterOptions,
   onFilterChange,
-}: PlaygroundCardFilterProps) {
+}: Readonly<LandCardFilterProps>) {
   const availableStats = useMemo(() => {
     const onWagonCount = cards.filter((c) => c.onWagon).length;
     const inSetCount = cards.filter((c) => c.inSet).length;
+    const isListedCount = cards.filter((c) => c.isListed).length;
+    const ownedCount = cards.filter((c) => c.owned).length;
+    const delegatedCount = cards.filter((c) => c.delegated).length;
+    const onLandCooldown = cards.filter((c) =>
+      isCooldownActive(c.landCooldownDate)
+    ).length;
+    const onSurvivalCoolDown = cards.filter((c) =>
+      isCooldownActive(c.survivalDate)
+    ).length;
     const maxPP = Math.max(...cards.map((c) => c.landBasePP), 0);
 
-    return { onWagonCount, inSetCount, maxPP };
+    return {
+      onWagonCount,
+      inSetCount,
+      isListedCount,
+      ownedCount,
+      delegatedCount,
+      onLandCooldown,
+      onSurvivalCoolDown,
+      maxPP,
+    };
   }, [cards]);
 
   const handleRarityToggle = (rarity: CardRarity) => {
@@ -57,13 +118,6 @@ export default function PlaygroundCardFilter({
       ? filterOptions.rarities.filter((r) => r !== rarity)
       : [...filterOptions.rarities, rarity];
     onFilterChange({ ...filterOptions, rarities: updated });
-  };
-
-  const handleSetToggle = (set: CardSetNameLandValid) => {
-    const updated = filterOptions.sets.includes(set)
-      ? filterOptions.sets.filter((s) => s !== set)
-      : [...filterOptions.sets, set];
-    onFilterChange({ ...filterOptions, sets: updated });
   };
 
   const handleElementToggle = (element: CardElement) => {
@@ -93,8 +147,6 @@ export default function PlaygroundCardFilter({
 
   const runiCount = cards.filter((card) => card.cardDetailId === 505).length;
 
-  const fontSizeSmall = "0.8rem";
-
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
       <Typography variant="h6" gutterBottom>
@@ -108,10 +160,10 @@ export default function PlaygroundCardFilter({
           Runi(s): {runiCount}
         </Typography>
         <Typography variant="caption" gutterBottom>
-          Assigned Cards: {assingesCardCount}
+          Assigned Cards: {assignedCardCount}
         </Typography>
         <Typography variant="caption" gutterBottom>
-          Filtered Cards: {filteresCardCount}
+          Filtered Cards: {filteredCardCount}
         </Typography>
       </Stack>
 
@@ -214,6 +266,39 @@ export default function PlaygroundCardFilter({
               </Button>
             </Box>
           </Box>
+
+          {/* Collection state filters */}
+          <TriToggle
+            label={"Is Listed (" + availableStats.isListedCount + ") :"}
+            value={filterOptions.isListed}
+            onChange={(v) => onFilterChange({ ...filterOptions, isListed: v })}
+          />
+          <TriToggle
+            label={"Owned (" + availableStats.ownedCount + ") :"}
+            value={filterOptions.owned}
+            onChange={(v) => onFilterChange({ ...filterOptions, owned: v })}
+          />
+          <TriToggle
+            label={"Delegated (" + availableStats.delegatedCount + ") :"}
+            value={filterOptions.delegated}
+            onChange={(v) => onFilterChange({ ...filterOptions, delegated: v })}
+          />
+          <TriToggle
+            label={"Land Cooldown (" + availableStats.onLandCooldown + ") :"}
+            value={filterOptions.landCooldown}
+            onChange={(v) =>
+              onFilterChange({ ...filterOptions, landCooldown: v })
+            }
+          />
+          <TriToggle
+            label={
+              "Survival Cooldown (" + availableStats.onSurvivalCoolDown + ") :"
+            }
+            value={filterOptions.survivalCooldown}
+            onChange={(v) =>
+              onFilterChange({ ...filterOptions, survivalCooldown: v })
+            }
+          />
         </Box>
 
         {/* Min PP Filter */}
@@ -230,12 +315,31 @@ export default function PlaygroundCardFilter({
           />
         </Box>
 
+        {/* Last-used Filter (min days since last used; 0 = off) */}
+        <Box sx={{ minWidth: 200, maxWidth: 300 }}>
+          <TextField
+            label="Not used in (days)"
+            type="number"
+            value={filterOptions.lastUsedDays ?? 0}
+            onChange={(e) =>
+              onFilterChange({
+                ...filterOptions,
+                lastUsedDays: Number(e.target.value),
+              })
+            }
+            size="small"
+            fullWidth
+            inputProps={{ min: 0, step: 1 }}
+            helperText="0 = any"
+          />
+        </Box>
+
         {/* Rarity Filter */}
         <Box>
           <Typography variant="body2" gutterBottom>
             Rarity:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
             {cardRarityOptions.map((rarity) => (
               <FilterIcon
                 key={rarity}
@@ -248,30 +352,23 @@ export default function PlaygroundCardFilter({
           </Box>
         </Box>
 
-        {/* Set Filter */}
-        <Box>
-          <Typography variant="body2" gutterBottom>
-            Card Set:
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {landCardSet.map((set) => (
-              <FilterIcon
-                key={set}
-                name={set}
-                isActive={filterOptions.sets.includes(set)}
-                image={cardSetIconMap[set]}
-                onChange={() => handleSetToggle(set)}
-              />
-            ))}
-          </Box>
-        </Box>
+        {/* Set / Edition Filter */}
+        <LandEditionSetFilter
+          value={{
+            editions: filterOptions.editions,
+            promoSets: filterOptions.promoSets,
+            rewardSets: filterOptions.rewardSets,
+            extraSets: filterOptions.extraSets,
+          }}
+          onChange={(v) => onFilterChange({ ...filterOptions, ...v })}
+        />
 
         {/* Foil Filter */}
         <Box>
           <Typography variant="body2" gutterBottom>
             Foil:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
             {cardFoilOptions.map((foil) => (
               <Box
                 key={foil}
@@ -285,8 +382,6 @@ export default function PlaygroundCardFilter({
                   overflow: "hidden",
                   cursor: "pointer",
                   display: "inline-block",
-                  padding: "2px",
-                  margin: "5px",
                 }}
                 title={foil}
               >
@@ -308,7 +403,7 @@ export default function PlaygroundCardFilter({
           <Typography variant="body2" gutterBottom>
             Element:
           </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap" }}>
             {cardElementOptions.map((element) => (
               <FilterIcon
                 key={element}

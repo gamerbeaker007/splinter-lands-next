@@ -34,6 +34,8 @@ export type DeedInfo = {
   magicType: MagicType;
   plotStatus: PlotStatus;
   rarity: PlotRarity;
+  basePP: number;
+  boostPP: number;
   worksiteType?: WorksiteType;
 };
 
@@ -57,6 +59,7 @@ export type CardAlerts = {
   terrainBoostAlerts: TerrainBoostAlerts;
   negativeDECNaturalResourceDeeds: NegativeDecAlert[];
   negativeDECOtherResourceDeeds: NegativeDecAlert[];
+  tooMuchBasePP: DeedInfo[];
   unusedPowerSource: number;
   noPowerSource: DeedInfo[];
   powerCoreWhileEnergized: DeedInfo[];

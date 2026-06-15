@@ -1,7 +1,9 @@
 import {
+  land_hammer_icon_url,
   land_unsurveyd_deed_url,
   SPL_WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
+import { titleIconMapOnTitle } from "@/lib/shared/statics";
 
 const BASE_URL = "https://next.splinterlands.com/assets/lands/deedsSurveyed";
 
@@ -40,4 +42,13 @@ export function getDeedGeographyImg(deedType: string) {
   return deedType.toLowerCase() === "unsurveyed deed"
     ? null
     : `${SPL_WEB_URL}${path}img_geography-emblem_${deedType.toLowerCase()}.svg`;
+}
+
+export function getTitleIcon(name: string) {
+  const normalized = name.toLowerCase().startsWith("the ")
+    ? name.slice(4).toLowerCase()
+    : name.toLowerCase();
+  return (
+    titleIconMapOnTitle[normalized.replace(/ /g, "_")] ?? land_hammer_icon_url
+  );
 }
