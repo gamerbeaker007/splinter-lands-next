@@ -1,7 +1,7 @@
 "use client";
 
 import { usePlayerInventory } from "@/hooks/usePlayerInventory";
-import { PlaygroundCard, PlaygroundDeed } from "@/types/playground";
+import { PlayerLandCard, PlaygroundDeed } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { Box } from "@mui/material";
 import InventoryOverviewOutput from "./InventoryOverviewOutput";
@@ -12,7 +12,7 @@ type PlaygroundOverviewProps = {
   originalOutputs: PlaygroundSummary;
   updatedOutputs: PlaygroundSummary;
   playerName: string | null;
-  allCards: PlaygroundCard[];
+  allCards: PlayerLandCard[];
 };
 
 export default function PlaygroundOverview({

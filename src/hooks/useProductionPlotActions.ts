@@ -134,6 +134,8 @@ export function useProductionPlotActions({
             skipped.push({ deedUid, reason: "No workers staked" });
             continue;
           }
+          // `cardUids` includes the Runi (it is a staked card). Unstaking it
+          // alongside the workers is intentional — see the Confirm dialog copy.
           ops.push({
             deedUid,
             op: buildUnstakeWorkersOp(username, deedUid, a.cardUids),
@@ -191,10 +193,15 @@ export function useProductionPlotActions({
           KeychainKeyTypes.posting
         );
 
-        // Each broadcast batch (MAX_OPS_PER_BROADCAST ops) yields one txId and
-        // is atomic; broadcastOperations stops at the first rejected batch. So
-        // ops whose batch index is within the returned txId count were sent.
-        const succeededBatches = broadcast.txIds.length;
+        // Each broadcast batch (MAX_OPS_PER_BROADCAST ops) is atomic and
+        // broadcastOperations stops at the first rejected batch. A successful
+        // broadcast means every batch landed — we can't key off txIds.length
+        // there, because a batch can succeed without the node returning a txId
+        // (broadcastOperations only records ids it actually gets back). On
+        // failure we fall back to the count of returned txIds.
+        const succeededBatches = broadcast.success
+          ? Math.ceil(ops.length / MAX_OPS_PER_BROADCAST)
+          : broadcast.txIds.length;
         const succeeded: string[] = [];
         const failed: string[] = [];
         ops.forEach((o, i) => {

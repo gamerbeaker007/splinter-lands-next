@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  filterAvailableCards,
-  filterDeeds,
-} from "@/components/planning/playground/util/deedFilters";
+import { filterPlaygroundDeeds } from "@/components/planning/playground/util/deedFilters";
+import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { usePrices } from "@/hooks/usePrices";
 
 import { CardFilterOptions } from "@/types/cardFilter";
@@ -11,7 +9,7 @@ import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
   DeedFilterOptions,
-  PlaygroundCard,
+  PlayerLandCard,
   PlaygroundDeed,
 } from "@/types/playground";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
@@ -23,7 +21,7 @@ import ClearActionsPanel from "./ClearActionsPanel";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
 import ExportButtons from "./ExportButtons";
-import PlaygroundCardFilter from "./PlaygroundCardFilter";
+import LandCardFilter from "@/components/cards/LandCardFilter";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
 import { calculateSummary } from "./util/calculatedSummary";
@@ -33,7 +31,7 @@ const ITEMS_PER_PAGE = 50;
 
 type PlaygroundDeedGridProps = {
   deeds: PlaygroundDeed[];
-  cards: PlaygroundCard[];
+  cards: PlayerLandCard[];
   cardDetails: SplCardDetails[];
   playerName: string | null;
   regionTax: RegionTax[];
@@ -66,6 +64,7 @@ export default function PlaygroundDeedGrid({
     {
       onWagon: undefined,
       inSet: undefined,
+      isListed: undefined,
       rarities: [],
       sets: [],
       editions: [],
@@ -114,7 +113,7 @@ export default function PlaygroundDeedGrid({
 
   // Apply filters to updatedDeeds
   const filteredDeeds = useMemo(() => {
-    return filterDeeds(updatedDeeds, filterOptions);
+    return filterPlaygroundDeeds(updatedDeeds, filterOptions);
   }, [updatedDeeds, filterOptions]);
 
   // Calculate original outputs
@@ -261,10 +260,10 @@ export default function PlaygroundDeedGrid({
           filterOptions={filterOptions}
           onFilterChange={setFilterOptions}
         />
-        <PlaygroundCardFilter
+        <LandCardFilter
           cards={cards}
-          filteresCardCount={availableCards.length}
-          assingesCardCount={assignedCardCount}
+          filteredCardCount={availableCards.length}
+          assignedCardCount={assignedCardCount}
           filterOptions={cardFilterOptions}
           onFilterChange={setCardFilterOptions}
         />

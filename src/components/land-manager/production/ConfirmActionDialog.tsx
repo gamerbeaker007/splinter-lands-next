@@ -14,6 +14,7 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
+import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 import { ProductionRow } from "./productionTypes";
 
 export const ACTION_META: Record<
@@ -34,10 +35,10 @@ export const ACTION_META: Record<
   },
   removeWorkers: {
     title: "Remove workers",
-    verb: "Unstake all worker cards from",
+    verb: "Unstake all worker cards (and the Runi) from",
     destructive: true,
     warning:
-      "Unstaking workers triggers an auto-harvest of any pending production on the plot.",
+      "Unstaking the worker cards — including the Runi — triggers an auto-harvest of any pending production on the plot.",
   },
   empty: {
     title: "Empty plot",
@@ -117,14 +118,14 @@ export default function ConfirmActionDialog({
           </List>
         </Box>
 
-        {count > 5 && (
+        {count > MAX_OPS_PER_BROADCAST && (
           <Typography
             variant="caption"
             color="text.secondary"
             sx={{ mt: 1, display: "block" }}
           >
-            These are broadcast in batches of 5 — Keychain will prompt once per
-            batch.
+            These are broadcast in batches of {MAX_OPS_PER_BROADCAST} — Keychain
+            will prompt once per batch.
           </Typography>
         )}
       </DialogContent>

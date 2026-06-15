@@ -18,9 +18,17 @@ import {
   titleModifiers,
   TotemTier,
   totemModifiers,
+  RuniTier,
 } from "@/types/planner";
 
-/** A card occupying a spot (worker or runi), staged or already on-chain. */
+/**
+ * A card occupying a spot (worker or runi), staged or already on-chain.
+ *
+ * The `VM` suffix means "View Model": a render-ready, normalized shape built
+ * for the Configure panel, distinct from the API/domain card types. It holds
+ * both on-chain occupants (`fromChain: true`) and not-yet-saved staged picks,
+ * so it is deliberately not named after the staked-assets domain type.
+ */
 export interface SpotCardVM {
   uid: string;
   name: string;
@@ -40,9 +48,14 @@ export interface SpotCardVM {
   fromChain: boolean;
   onWagon: boolean;
   inSet: boolean;
+  isListed: boolean;
 }
 
-/** An item occupying a spot (power core / totem / title). */
+/**
+ * An item occupying a spot (power core / totem / title). `VM` = View Model;
+ * see {@link SpotCardVM} for what that means and why it is not named after the
+ * staked-assets domain type.
+ */
 export interface SpotItemVM {
   uid: string;
   name: string;
@@ -65,7 +78,7 @@ export interface StagedConfig {
 export const MAX_WORKER_SLOTS = 5;
 
 function cardToVM(card: ConfigCard): SpotCardVM {
-  return { ...card, fromChain: true, onWagon: card.onWagon, inSet: card.inSet };
+  return { ...card, fromChain: true };
 }
 
 /**
@@ -202,10 +215,15 @@ export function boostOverrides(input: {
   totem: { boost: number } | null;
   runi: { foil: number } | null;
 }): PlotBoostOverrides {
+  let runi: RuniTier = "none";
+
+  if (input.runi) {
+    runi = input.runi.foil > 0 ? "gold" : "regular";
+  }
   return {
     title: tierForBoost<TitleTier>(titleModifiers, input.title?.boost, "none"),
     totem: tierForBoost<TotemTier>(totemModifiers, input.totem?.boost, "none"),
-    runi: input.runi ? (input.runi.foil > 0 ? "gold" : "regular") : "none",
+    runi,
   };
 }
 

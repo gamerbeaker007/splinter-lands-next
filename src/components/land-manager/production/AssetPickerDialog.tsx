@@ -68,13 +68,29 @@ interface Props {
   onPick: (result: PickerResult) => void;
 }
 
+function determineImageForItem(kind: PickerKind, name: string, uid: string) {
+  if (kind === "powerCore") {
+    return land_runi_power_core_icon_url;
+  } else if (kind === "totem") {
+    const rarity = name?.split(" ")[0].toLowerCase();
+    return totemIconMap[rarity ?? ""]
+      ? totemIconMap[rarity ?? ""]
+      : land_hammer_icon_url;
+  } else if (kind === "title") {
+    return getTitleIcon(name ?? "");
+  } else if (kind === "runi") {
+    return `https://runi.splinterlands.com/cards/${uid}.jpg`;
+  }
+  return land_hammer_icon_url;
+}
+
 export default function AssetPickerDialog({
   open,
   kind,
   deedUid,
   onClose,
   onPick,
-}: Props) {
+}: Readonly<Props>) {
   // Mounted on demand (keyed by kind), so it always opens in a loading state.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -142,27 +158,76 @@ export default function AssetPickerDialog({
       fromChain: false,
       onWagon: false,
       inSet: false,
+      isListed: false,
     };
     onPick({ kind: "runi", runi: vm });
   };
 
   const isEmpty = kind === "runi" ? runis.length === 0 : items.length === 0;
 
-  function determineImageForItem(kind: PickerKind, name: string, uid: string) {
-    if (kind === "powerCore") {
-      return land_runi_power_core_icon_url;
-    } else if (kind === "totem") {
-      const rarity = name?.split(" ")[0].toLowerCase();
-      return totemIconMap[rarity ?? ""]
-        ? totemIconMap[rarity ?? ""]
-        : land_hammer_icon_url;
-    } else if (kind === "title") {
-      return getTitleIcon(name ?? "");
-    } else if (kind === "runi") {
-      return `https://runi.splinterlands.com/cards/${uid}.jpg`;
+  const renderRuni = (r: AvailableRuni) => (
+    <ListItemButton key={r.uid} onClick={() => pickRuni(r)}>
+      <ListItemAvatar>
+        <Avatar
+          src={determineImageForItem("runi", r.name ?? "", r.uid ?? "unknown")}
+        />
+      </ListItemAvatar>
+      <ListItemText
+        primary={`${r.name} · lvl ${r.level}`}
+        secondary={`${cardFoilOptions[r.foil] ?? "regular"} · ${r.bcx} BCX`}
+      />
+    </ListItemButton>
+  );
+
+  const renderItem = (it: AvailableStakeItem) => {
+    const img = determineImageForItem(kind, it.name ?? "", it.uid ?? "unknown");
+    const name = kind === "powerCore" ? "Power Core" : (it.name ?? "Item");
+    const uid = it.uid ?? "unknown";
+
+    return (
+      <ListItemButton key={uid} onClick={() => pickItem(it)}>
+        <ListItemAvatar>
+          <Avatar src={img} alt={name} sx={{ width: 32, height: 32 }} />
+        </ListItemAvatar>
+        <ListItemText
+          primary={name}
+          secondary={uid}
+          slotProps={{
+            primary: {
+              sx: { fontSize: 14, fontWeight: 500 },
+            },
+            secondary: {
+              sx: { fontSize: 12, color: "text.secondary" },
+            },
+          }}
+        />
+      </ListItemButton>
+    );
+  };
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
+      );
     }
-    return land_hammer_icon_url;
-  }
+
+    if (isEmpty) {
+      return (
+        <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
+          None available to assign.
+        </Typography>
+      );
+    }
+
+    return (
+      <List dense disablePadding>
+        {kind === "runi" ? runis.map(renderRuni) : items.map(renderItem)}
+      </List>
+    );
+  };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
@@ -173,70 +238,7 @@ export default function AssetPickerDialog({
             {error}
           </Alert>
         )}
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : isEmpty ? (
-          <Typography color="text.secondary" align="center" sx={{ py: 3 }}>
-            None available to assign.
-          </Typography>
-        ) : (
-          <List dense disablePadding>
-            {kind === "runi"
-              ? runis.map((r) => (
-                  <ListItemButton key={r.uid} onClick={() => pickRuni(r)}>
-                    <ListItemAvatar>
-                      <Avatar
-                        src={determineImageForItem(
-                          "runi",
-                          r.name ?? "",
-                          r.uid ?? "unknown"
-                        )}
-                      />
-                    </ListItemAvatar>
-                    <ListItemText
-                      primary={`${r.name} · lvl ${r.level}`}
-                      secondary={`${cardFoilOptions[r.foil] ?? "regular"} · ${r.bcx} BCX`}
-                    />
-                  </ListItemButton>
-                ))
-              : items.map((it) => {
-                  const img = determineImageForItem(
-                    kind,
-                    it.name ?? "",
-                    it.uid ?? "unknown"
-                  );
-                  const name =
-                    kind === "powerCore" ? "Power Core" : (it.name ?? "Item");
-                  const uid = it.uid ?? "unknown";
-                  return (
-                    <ListItemButton key={uid} onClick={() => pickItem(it)}>
-                      <ListItemAvatar>
-                        <Avatar
-                          src={img}
-                          alt={name}
-                          sx={{ width: 32, height: 32 }}
-                        />
-                      </ListItemAvatar>
-
-                      <ListItemText
-                        primary={name}
-                        secondary={uid}
-                        primaryTypographyProps={{
-                          fontSize: 14,
-                          fontWeight: 500,
-                        }}
-                        secondaryTypographyProps={{
-                          fontSize: 12,
-                          color: "text.secondary",
-                        }}
-                      />
-                    </ListItemButton>
-                  );
-                })}
-          </List>
-        )}
+        {renderContent()}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>

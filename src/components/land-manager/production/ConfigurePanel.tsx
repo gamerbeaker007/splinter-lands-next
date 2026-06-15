@@ -25,6 +25,7 @@ import {
   boostOverrides,
   diffStagedConfig,
   initStagedConfig,
+  MAX_WORKER_SLOTS,
   SpotCardVM,
   StagedConfig,
   stagedHasChanges,
@@ -202,7 +203,11 @@ export default function ConfigurePanel({
   }
   if (!data || !staged) return null;
 
-  const workerSlots = staged.workers.slice(0, 5);
+  // Worksites cap at MAX_WORKER_SLOTS workers. We intentionally do NOT use
+  // `deed.stakingDetail.max_workers_allowed` here: it reports 0 while a plot is
+  // unpowered, which would hide the slots. (This will need revisiting once
+  // buildings ship, as those allow a different worker count.)
+  const workerSlots = staged.workers.slice(0, MAX_WORKER_SLOTS);
 
   const emptyWorkerSlots = workerSlots.filter((w) => w === null).length;
   const excludeUids = [

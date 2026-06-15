@@ -3,7 +3,7 @@
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { cardIconMap } from "@/types/planner/primitives";
-import { PlaygroundCard } from "@/types/playground";
+import { PlayerLandCard } from "@/types/playground";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
 import { COLUMN_WIDTHS } from "./util/gridConstants";
@@ -13,8 +13,8 @@ type Props = {
   slotIndex: number;
   deedUid: string;
   workerUid: string | null;
-  availableCards: PlaygroundCard[];
-  allCards: PlaygroundCard[];
+  availableCards: PlayerLandCard[];
+  allCards: PlayerLandCard[];
   selectedWorkerUids: (string | null)[];
   onChange: (slotIndex: number, cardUid: string) => void;
 };
@@ -31,7 +31,7 @@ export default function WorkerSelector({
   const fmt = (n: number) =>
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
 
-  const getElementIcon = (card: PlaygroundCard) => {
+  const getElementIcon = (card: PlayerLandCard) => {
     return land_default_element_icon_url_placeholder.replace(
       "__NAME__",
       card.element.toLowerCase()

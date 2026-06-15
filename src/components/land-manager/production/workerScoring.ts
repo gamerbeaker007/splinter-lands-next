@@ -16,18 +16,18 @@ import {
   cardFoilOptions,
   SlotInput,
 } from "@/types/planner";
-import { PlaygroundCard } from "@/types/playground";
+import { PlayerLandCard } from "@/types/playerLandCard";
 import { Prices } from "@/types/price";
 import { SpotCardVM } from "./productionConfigTypes";
 
 /** Numeric foil id for a card's foil string (0 = regular). */
-function foilId(card: PlaygroundCard): number {
+function foilId(card: PlayerLandCard): number {
   const idx = cardFoilOptions.indexOf(card.foil);
   return idx < 0 ? 0 : idx;
 }
 
 /** Build a planner SlotInput from a player's card for boosted-PP scoring. */
-export function playgroundCardToSlotInput(card: PlaygroundCard): SlotInput {
+export function landCardToSlotInput(card: PlayerLandCard): SlotInput {
   return {
     id: 0,
     set: card.set as CardSetNameLandValid,
@@ -46,11 +46,11 @@ export function playgroundCardToSlotInput(card: PlaygroundCard): SlotInput {
  * plot multipliers) via the planner calc, normalized into a SpotCardVM ready
  * to display in a CardTile and stage as a worker.
  */
-export function scorePlaygroundCard(
-  card: PlaygroundCard,
+export function scoreLandCard(
+  card: PlayerLandCard,
   deed: DeedComplete
 ): SpotCardVM {
-  const slot = playgroundCardToSlotInput(card);
+  const slot = landCardToSlotInput(card);
   const plot = deedToPlotPlannerData(deed, [slot]);
   const { basePP, boostedPP } = computeSlot(slot, plot);
   const fid = foilId(card);
@@ -75,6 +75,7 @@ export function scorePlaygroundCard(
     fromChain: false,
     onWagon: card.onWagon,
     inSet: card.inSet,
+    isListed: card.isListed,
   };
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { editionMap } from "@/types/editions";
+import { CROSS_ERA_EDITIONS, editionMap } from "@/types/editions";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 
@@ -17,9 +17,6 @@ export interface EditionFilterValue {
   rewardSets: string[];
   extraSets: string[];
 }
-
-/** Cross-era edition ids shared across sets (set is taken from the card). */
-export const CROSS_ERA_EDITIONS = { promo: 2, reward: 3, extra: 17 } as const;
 
 interface LandSetDef {
   setName: string;

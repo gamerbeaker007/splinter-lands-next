@@ -37,12 +37,12 @@ export type SplPlayerCardCollection = {
   next_rental_payment?: string | null;
   cancel_tx?: string;
   cancel_date?: string;
+  market_listing_type?: string;
+  market_listing_status?: string;
+  market_created_date?: string;
 
   //unused in this app
   //  "gold": boolean,
-  //   "market_listing_type"?: string,
-  //   "market_listing_status"?: string,
-  //   "market_created_date"?: string,
   //   "cancel_tx"?: string,
   //   "cancel_date"?: string,
   //   "cancel_player"?: string,

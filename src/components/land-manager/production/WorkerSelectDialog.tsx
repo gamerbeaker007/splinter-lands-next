@@ -1,16 +1,16 @@
 "use client";
 
-import PlaygroundCardFilter from "@/components/planning/playground/PlaygroundCardFilter";
-import { filterAvailableCards } from "@/components/planning/playground/util/deedFilters";
+import LandCardFilter from "@/components/cards/LandCardFilter";
+import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import CardTableIcon from "@/components/player-overview/collection-overview/CardTableIcon";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
-import { getPlaygroundData } from "@/lib/backend/actions/player/playground-actions";
+import { getPlayerLandCards } from "@/lib/backend/actions/player/landCards-actions";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { DeedComplete } from "@/types/deed";
 import { cardSetIconMap, editionMap } from "@/types/editions";
 import { cardIconMap } from "@/types/planner/primitives";
-import { PlaygroundCard } from "@/types/playground";
+import { PlayerLandCard } from "@/types/playerLandCard";
 import {
   Alert,
   Avatar,
@@ -36,7 +36,8 @@ import {
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { SpotCardVM } from "./productionConfigTypes";
-import { scorePlaygroundCard } from "./workerScoring";
+import { scoreLandCard } from "./workerScoring";
+import { foilLabel } from "@/lib/utils/cardUtil";
 
 type WorkerSortKey =
   | "img"
@@ -44,6 +45,7 @@ type WorkerSortKey =
   | "rarity"
   | "set"
   | "edition"
+  | "foil"
   | "bcx"
   | "basePP"
   | "boostedPP";
@@ -56,6 +58,7 @@ const HEAD_CELLS: { key: WorkerSortKey; label: string; numeric: boolean }[] = [
   { key: "rarity", label: "Rarity", numeric: false },
   { key: "set", label: "Set", numeric: false },
   { key: "edition", label: "Edition", numeric: false },
+  { key: "foil", label: "Foil", numeric: false },
   { key: "bcx", label: "BCX", numeric: true },
   { key: "basePP", label: "Base PP", numeric: true },
   { key: "boostedPP", label: "Boosted PP", numeric: true },
@@ -72,6 +75,8 @@ function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
       return a.edition - b.edition;
     case "set":
       return a.set.localeCompare(b.set);
+    case "foil":
+      return a.foil - b.foil;
     case "bcx":
       return a.bcx - b.bcx;
     case "basePP":
@@ -123,6 +128,8 @@ function isLandSelectable(
     return { valid: false, reason: "Card is part of set" };
   } else if (card.onWagon) {
     return { valid: false, reason: "Card is on wagon" };
+  } else if (card.isListed) {
+    return { valid: false, reason: "Card is listed" };
   } else if (!isSelected && selected >= emptySlots) {
     return { valid: false, reason: "No empty slots available" };
   }
@@ -137,7 +144,7 @@ export default function WorkerSelectDialog({
   onClose,
   onConfirm,
 }: Props) {
-  const [cards, setCards] = useState<PlaygroundCard[] | null>(null);
+  const [cards, setCards] = useState<PlayerLandCard[] | null>(null);
   // Mounted on demand, so it always opens in a loading state.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,10 +168,10 @@ export default function WorkerSelectDialog({
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    getPlaygroundData(username)
+    getPlayerLandCards(username)
       .then((data) => {
         if (cancelled) return;
-        setCards(data.cards);
+        setCards(data);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -186,7 +193,7 @@ export default function WorkerSelectDialog({
     if (!cards) return [];
     const available = cards.filter((c) => !c.onLand);
     const filtered = filterAvailableCards(available, excludeSet, filter);
-    const scored = filtered.map((card) => scorePlaygroundCard(card, deed));
+    const scored = filtered.map((card) => scoreLandCard(card, deed));
     const mul = sortDir === "asc" ? 1 : -1;
     return scored.sort((a, b) => compareRows(a, b, sortKey) * mul);
   }, [cards, excludeSet, filter, deed, sortKey, sortDir]);
@@ -201,7 +208,14 @@ export default function WorkerSelectDialog({
   };
 
   const handleConfirm = () => {
-    const picks = rows.filter((r) => selected.has(r.uid));
+    if (!cards) return;
+    // Resolve selections against the full card list, not the currently-filtered
+    // `rows`: a card selected before a filter change must survive that change.
+    const byUid = new Map(cards.map((c) => [c.uid, c]));
+    const picks = [...selected]
+      .map((uid) => byUid.get(uid))
+      .filter((c): c is PlayerLandCard => Boolean(c))
+      .map((card) => scoreLandCard(card, deed));
     onConfirm(picks);
   };
 
@@ -240,9 +254,9 @@ export default function WorkerSelectDialog({
           >
             {/* Filter sidebar */}
             <Box sx={{ width: 280, flexShrink: 0 }}>
-              <PlaygroundCardFilter
+              <LandCardFilter
                 cards={cards ?? []}
-                filteresCardCount={rows.length}
+                filteredCardCount={rows.length}
                 filterOptions={filter}
                 onFilterChange={setFilter}
               />
@@ -362,6 +376,9 @@ export default function WorkerSelectDialog({
                                   editionMap[r.edition].displayName
                                 )}
                               />
+                            </TableCell>
+                            <TableCell align="left">
+                              {foilLabel(r.foil)}
                             </TableCell>
                             <TableCell align="right">
                               {r.bcx}/{r.maxBcx}

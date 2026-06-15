@@ -8,7 +8,7 @@ import {
   TotemTier,
   WorksiteType,
 } from "@/types/planner/primitives";
-import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
+import { DeedChange, PlayerLandCard, PlaygroundDeed } from "@/types/playground";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -28,8 +28,8 @@ import { RegionTax } from "@/types/regionTax";
 
 type Props = {
   deed: PlaygroundDeed;
-  availableCards: PlaygroundCard[];
-  allCards: PlaygroundCard[];
+  availableCards: PlayerLandCard[];
+  allCards: PlayerLandCard[];
   cardDetails: SplCardDetails[];
   regionTax: RegionTax[] | null;
   spsRatio: number;

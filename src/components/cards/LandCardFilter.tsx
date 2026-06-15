@@ -1,7 +1,7 @@
 "use client";
 
 import FilterIcon from "@/components/filter/FilterIcon";
-import LandEditionSetFilter from "@/components/planning/playground/LandEditionSetFilter";
+import LandEditionSetFilter from "@/components/cards/LandEditionSetFilter";
 import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
@@ -14,7 +14,7 @@ import {
   CardRarity,
   cardRarityOptions,
 } from "@/types/planner";
-import { PlaygroundCard } from "@/types/playground";
+import { PlayerLandCard } from "@/types/playground";
 import {
   Box,
   Button,
@@ -24,11 +24,12 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
+import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 
-type PlaygroundCardFilterProps = {
-  cards: PlaygroundCard[];
-  filteresCardCount?: number;
-  assingesCardCount?: number;
+type LandCardFilterProps = {
+  cards: PlayerLandCard[];
+  filteredCardCount?: number;
+  assignedCardCount?: number;
   filterOptions: CardFilterOptions;
   onFilterChange: (newFilters: CardFilterOptions) => void;
 };
@@ -40,11 +41,11 @@ function TriToggle({
   label,
   value,
   onChange,
-}: {
+}: Readonly<{
   label: string;
   value: boolean | undefined;
   onChange: (v: boolean | undefined) => void;
-}) {
+}>) {
   return (
     <Box
       sx={{
@@ -79,19 +80,37 @@ function TriToggle({
   );
 }
 
-export default function PlaygroundCardFilter({
+export default function LandCardFilter({
   cards,
-  filteresCardCount,
-  assingesCardCount,
+  filteredCardCount,
+  assignedCardCount,
   filterOptions,
   onFilterChange,
-}: PlaygroundCardFilterProps) {
+}: Readonly<LandCardFilterProps>) {
   const availableStats = useMemo(() => {
     const onWagonCount = cards.filter((c) => c.onWagon).length;
     const inSetCount = cards.filter((c) => c.inSet).length;
+    const isListedCount = cards.filter((c) => c.isListed).length;
+    const ownedCount = cards.filter((c) => c.owned).length;
+    const delegatedCount = cards.filter((c) => c.delegated).length;
+    const onLandCooldown = cards.filter((c) =>
+      isCooldownActive(c.landCooldownDate)
+    ).length;
+    const onSurvivalCoolDown = cards.filter((c) =>
+      isCooldownActive(c.survivalDate)
+    ).length;
     const maxPP = Math.max(...cards.map((c) => c.landBasePP), 0);
 
-    return { onWagonCount, inSetCount, maxPP };
+    return {
+      onWagonCount,
+      inSetCount,
+      isListedCount,
+      ownedCount,
+      delegatedCount,
+      onLandCooldown,
+      onSurvivalCoolDown,
+      maxPP,
+    };
   }, [cards]);
 
   const handleRarityToggle = (rarity: CardRarity) => {
@@ -141,10 +160,10 @@ export default function PlaygroundCardFilter({
           Runi(s): {runiCount}
         </Typography>
         <Typography variant="caption" gutterBottom>
-          Assigned Cards: {assingesCardCount}
+          Assigned Cards: {assignedCardCount}
         </Typography>
         <Typography variant="caption" gutterBottom>
-          Filtered Cards: {filteresCardCount}
+          Filtered Cards: {filteredCardCount}
         </Typography>
       </Stack>
 
@@ -250,24 +269,31 @@ export default function PlaygroundCardFilter({
 
           {/* Collection state filters */}
           <TriToggle
-            label="Owned"
+            label={"Is Listed (" + availableStats.isListedCount + ") :"}
+            value={filterOptions.isListed}
+            onChange={(v) => onFilterChange({ ...filterOptions, isListed: v })}
+          />
+          <TriToggle
+            label={"Owned (" + availableStats.ownedCount + ") :"}
             value={filterOptions.owned}
             onChange={(v) => onFilterChange({ ...filterOptions, owned: v })}
           />
           <TriToggle
-            label="Delegated"
+            label={"Delegated (" + availableStats.delegatedCount + ") :"}
             value={filterOptions.delegated}
             onChange={(v) => onFilterChange({ ...filterOptions, delegated: v })}
           />
           <TriToggle
-            label="Land Cooldown"
+            label={"Land Cooldown (" + availableStats.onLandCooldown + ") :"}
             value={filterOptions.landCooldown}
             onChange={(v) =>
               onFilterChange({ ...filterOptions, landCooldown: v })
             }
           />
           <TriToggle
-            label="Survival Cooldown"
+            label={
+              "Survival Cooldown (" + availableStats.onSurvivalCoolDown + ") :"
+            }
             value={filterOptions.survivalCooldown}
             onChange={(v) =>
               onFilterChange({ ...filterOptions, survivalCooldown: v })

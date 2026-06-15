@@ -4,6 +4,8 @@ import { CardElement, CardFoil, CardRarity } from "./planner";
 export type CardFilterOptions = {
   onWagon?: boolean;
   inSet?: boolean;
+  /** Card is listed on the market */
+  isListed?: boolean;
   /** Owned by the player (vs delegated in). */
   owned?: boolean;
   /** Delegated out to another account. */

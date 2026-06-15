@@ -310,6 +310,7 @@ export interface ConfigCard {
   slot: number;
   onWagon: boolean;
   inSet: boolean;
+  isListed: boolean;
 }
 
 /** A staked item (power core / totem / title) for the Configure panel. */
@@ -378,6 +379,7 @@ export async function getPlotConfigureData(
       slot: c.slot,
       onWagon: false, // is on land so not on wagon
       inSet: false, // is on land so not in set
+      isListed: false, // is on land so not listed for sale
     };
   };
 

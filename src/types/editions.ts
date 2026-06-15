@@ -179,3 +179,6 @@ export const cardSetIconMap: Record<CardSetName, string> = {
 };
 
 export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);
+
+/** Cross-era edition ids shared across sets (set is taken from the card). */
+export const CROSS_ERA_EDITIONS = { promo: 2, reward: 3, extra: 17 } as const;

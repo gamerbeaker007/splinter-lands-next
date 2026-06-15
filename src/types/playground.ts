@@ -1,13 +1,9 @@
 // Optimized types for playground to reduce data transfer
 
 import { Resource } from "@/constants/resource/resource";
-import { CardSetName } from "./editions";
+import { PlayerLandCard } from "./playerLandCard";
 import {
-  CardElement,
-  CardFoil,
-  CardRarity,
   DeedType,
-  LandBoost,
   MagicType,
   PlotRarity,
   PlotStatus,
@@ -17,6 +13,13 @@ import {
   TotemTier,
   WorksiteType,
 } from "./planner";
+
+/**
+ * Re-exported for back-compat. New code should import {@link PlayerLandCard}
+ * from `@/types/playerLandCard` directly — it is feature-neutral and outlives
+ * the Playground.
+ */
+export type { PlayerLandCard };
 
 export type PlaygroundDeed = {
   deed_uid: string;
@@ -43,40 +46,9 @@ export type PlaygroundDeed = {
   worker5Uid: SlotInput | null;
 };
 
-export type PlaygroundCard = {
-  uid: string;
-  cardDetailId: number;
-  name: string;
-  edition: number;
-  set: CardSetName;
-  rarity: CardRarity;
-  element: CardElement;
-  /** Secondary element for dual-element cards; null when single-color. */
-  subElement: CardElement | null;
-  landBasePP: number;
-  lastUsedDate: string | null;
-  bcx: number;
-  bcxUnbound: number;
-  foil: CardFoil;
-  level: number;
-  landBoost: LandBoost | null;
-  inSet: boolean;
-  onWagon: boolean;
-  /** Currently staked on a land plot. */
-  onLand: boolean;
-  /** Owned by the player (not delegated in from another account). */
-  owned: boolean;
-  /** Delegated out to another account. */
-  delegated: boolean;
-  /** Land (unstake) cooldown end date, if any. */
-  landCooldownDate: string | null;
-  /** Survival cooldown end date, if any. */
-  survivalDate: string | null;
-};
-
 export type PlaygroundData = {
   deeds: PlaygroundDeed[];
-  cards: PlaygroundCard[];
+  cards: PlayerLandCard[];
   totalBoostedPP: number;
 };
 

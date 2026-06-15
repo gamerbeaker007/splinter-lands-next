@@ -1,6 +1,6 @@
 "use client";
 
-import { DeedChange, PlaygroundCard, PlaygroundDeed } from "@/types/playground";
+import { DeedChange, PlayerLandCard, PlaygroundDeed } from "@/types/playground";
 import DownloadIcon from "@mui/icons-material/Download";
 import ListIcon from "@mui/icons-material/List";
 import { Box, Button } from "@mui/material";
@@ -12,7 +12,7 @@ type ExportButtonsProps = {
   onExportNew: () => void;
   originalDeeds: PlaygroundDeed[];
   updatedDeeds: PlaygroundDeed[];
-  allCards: PlaygroundCard[];
+  allCards: PlayerLandCard[];
 };
 
 export default function ExportButtons({

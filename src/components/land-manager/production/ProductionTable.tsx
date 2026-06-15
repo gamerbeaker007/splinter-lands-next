@@ -189,7 +189,9 @@ export default function ProductionTable({
                     </Tooltip>
                     <Tooltip
                       title={
-                        r.workerCount > 0 ? "Remove workers" : "No workers"
+                        r.workerCount > 0
+                          ? "Remove workers (and Runi)"
+                          : "No workers"
                       }
                     >
                       <span>
