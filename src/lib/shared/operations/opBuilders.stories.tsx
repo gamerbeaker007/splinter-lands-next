@@ -12,11 +12,13 @@ import {
 } from "@mui/material";
 import type { Meta, StoryObj } from "@storybook/react";
 import { expect } from "storybook/test";
+import { MAX_ITEM_SIZE_IN_OPERATION } from "../../../types/landManager";
 import {
   buildAddLiquidityOp,
   buildBuyWithDecOp,
   buildDonationTransferOp,
   buildHarvestOp,
+  buildMarketPurchaseOnBehalfOp,
   buildRenewRentalOnBehalfOp,
   buildRentOnBehalfOp,
   buildSellResourceForDecOp,
@@ -26,7 +28,6 @@ import {
   buildSwapTokensOp,
   buildTaxCollectionOp,
 } from "./opBuilders";
-import { MAX_ITEM_SIZE_IN_OPERATION } from "../../../types/landManager";
 
 // Hive consensus limits. Refs hive/libraries/protocol/include/hive/protocol/config.hpp:
 //   HIVE_CUSTOM_OP_DATA_MAX_LENGTH = 8192   (max bytes of a custom_json `json` field)
@@ -83,6 +84,7 @@ function makeRentalList(count: number): string[] {
 const REALISTIC_RENTAL_AUTHORIZATIONS = 25;
 const REALISTIC_RENEWAL_BATCH = MAX_ITEM_SIZE_IN_OPERATION;
 const REALISTIC_RENT_ON_BEHALF_BATCH = MAX_ITEM_SIZE_IN_OPERATION;
+const REALISTIC_BUY_ON_BEHALF_BATCH = MAX_ITEM_SIZE_IN_OPERATION;
 const FULL_DEED_WORKER_SLOTS = 9;
 
 interface OpRow {
@@ -162,15 +164,16 @@ const VARIABLE_ROWS: OpRow[] = [
   {
     label: "buildSetAuthorityOp (1)",
     inputDescription: "rental authority — 1 account",
-    op: buildSetAuthorityOp(USER, makeRentalList(1)) as CustomJsonOp,
+    op: buildSetAuthorityOp(USER, {
+      rental: makeRentalList(1),
+    }) as CustomJsonOp,
   },
   {
     label: `buildSetAuthorityOp (${REALISTIC_RENTAL_AUTHORIZATIONS})`,
     inputDescription: `rental authority — ${REALISTIC_RENTAL_AUTHORIZATIONS} accounts (realistic max)`,
-    op: buildSetAuthorityOp(
-      USER,
-      makeRentalList(REALISTIC_RENTAL_AUTHORIZATIONS)
-    ) as CustomJsonOp,
+    op: buildSetAuthorityOp(USER, {
+      rental: makeRentalList(REALISTIC_RENTAL_AUTHORIZATIONS),
+    }) as CustomJsonOp,
   },
   {
     label: `buildStakeWorkersOp (${FULL_DEED_WORKER_SLOTS})`,
@@ -217,6 +220,16 @@ const VARIABLE_ROWS: OpRow[] = [
       makeMarketIds(REALISTIC_RENT_ON_BEHALF_BATCH)
     ) as CustomJsonOp,
   },
+  {
+    label: `buildBuyOnBehalfOp (${REALISTIC_BUY_ON_BEHALF_BATCH})`,
+    inputDescription: `buy-on-behalf — ${REALISTIC_BUY_ON_BEHALF_BATCH} marketplace IDs (MAX_ITEM_SIZE_IN_OPERATION)`,
+    op: buildMarketPurchaseOnBehalfOp(
+      SERVICE_ACCOUNT,
+      USER,
+      makeMarketIds(REALISTIC_RENT_ON_BEHALF_BATCH),
+      Math.random()
+    ) as CustomJsonOp,
+  },
 ];
 
 const ALL_ROWS: OpRow[] = [...FIXED_ROWS, ...VARIABLE_ROWS];
@@ -261,7 +274,10 @@ function findMaxCount(build: (count: number) => { json: string }): number {
 
 const ceilings = {
   rental: findMaxCount(
-    (n) => buildSetAuthorityOp(USER, makeRentalList(n))[1] as { json: string }
+    (n) =>
+      buildSetAuthorityOp(USER, { rental: makeRentalList(n) })[1] as {
+        json: string;
+      }
   ),
   renew: findMaxCount(
     (n) =>
@@ -274,6 +290,17 @@ const ceilings = {
   rentOnBehalf: findMaxCount(
     (n) =>
       buildRentOnBehalfOp(SERVICE_ACCOUNT, USER, makeMarketIds(n))[1] as {
+        json: string;
+      }
+  ),
+  buyOnBehalf: findMaxCount(
+    (n) =>
+      buildMarketPurchaseOnBehalfOp(
+        SERVICE_ACCOUNT,
+        USER,
+        makeMarketIds(n),
+        Math.random()
+      )[1] as {
         json: string;
       }
   ),
@@ -424,6 +451,16 @@ export const HiveSizeLimits: Story = {
                 <TableCell align="right">{ceilings.rentOnBehalf}</TableCell>
                 <TableCell align="right">
                   {ceilings.rentOnBehalf * MAX_OPS_PER_TX}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>buildBuyOnBehalfOp</TableCell>
+                <TableCell>
+                  <code>items[]</code> (36-char market IDs, +player field)
+                </TableCell>
+                <TableCell align="right">{ceilings.buyOnBehalf}</TableCell>
+                <TableCell align="right">
+                  {ceilings.buyOnBehalf * MAX_OPS_PER_TX}
                 </TableCell>
               </TableRow>
               <TableRow>

@@ -1,6 +1,7 @@
 "use server";
 
 import {
+  getPurchaseAuthorityInfo,
   getRentalAuthorityInfo,
   getServiceAccount,
   invalidateAuthorityCache,
@@ -57,6 +58,57 @@ export async function refreshRentalAuthorityStatus(): Promise<RentalAuthoritySta
     invalidateAuthorityCache(auth.username);
   }
   return getRentalAuthorityStatus();
+}
+
+export interface PurchaseAuthorityStatus {
+  /** True when SPL_LAND_SERVICE_ACCOUNT + SPL_LAND_SERVICE_ACTIVE_KEY are set. */
+  serviceConfigured: boolean;
+  /** Display name of the configured service account (or null when unset). */
+  serviceAccount: string | null;
+  /** True only when the authenticated user has granted purchase authority. */
+  authorized: boolean;
+  /** The username the check was performed for (null when not logged in). */
+  player: string | null;
+  /** Current full purchase authorities list — used by the UI to smart-merge. */
+  purchase: string[];
+}
+
+/**
+ * Purchase counterpart of {@link getRentalAuthorityStatus}: resolves whether
+ * the logged-in user has granted purchase authority to the service account,
+ * plus the full current purchase list for smart-merging on grant/revoke.
+ */
+export async function getPurchaseAuthorityStatus(): Promise<PurchaseAuthorityStatus> {
+  const serviceConfigured = isServiceBroadcastConfigured();
+  const serviceAccount = getServiceAccount();
+  const auth = await getAuthStatus();
+  const player = auth.authenticated && auth.username ? auth.username : null;
+  if (!player || !serviceConfigured) {
+    return {
+      serviceConfigured,
+      serviceAccount,
+      authorized: false,
+      player,
+      purchase: [],
+    };
+  }
+  const info = await getPurchaseAuthorityInfo(player);
+  return {
+    serviceConfigured,
+    serviceAccount,
+    authorized: info.authorized,
+    player,
+    purchase: info.purchase,
+  };
+}
+
+/** Force a fresh purchase-authority check next time. */
+export async function refreshPurchaseAuthorityStatus(): Promise<PurchaseAuthorityStatus> {
+  const auth = await getAuthStatus();
+  if (auth.authenticated && auth.username) {
+    invalidateAuthorityCache(auth.username);
+  }
+  return getPurchaseAuthorityStatus();
 }
 
 /**

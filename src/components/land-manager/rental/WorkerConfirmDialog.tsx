@@ -1,12 +1,13 @@
 "use client";
 
-import CardPicksCell from "@/components/land-manager/rental/CardPicksCell";
 import RentalPlotTable, {
   RentalPlotColumn,
 } from "@/components/land-manager/rental/RentalPlotTable";
+import WorkerCardPicksCell from "@/components/land-manager/rental/WorkerCardPicksCell";
+import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import { parseLandStatsResources } from "@/lib/filters";
-import { RentalPlanItem } from "@/types/landManager";
+import { WorkerPlanItem } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
   Alert,
@@ -22,7 +23,7 @@ import {
 } from "@mui/material";
 
 interface Props {
-  exec: RentalExecutionPlan;
+  exec: RentalExecutionPlan | BuyExecutionPlan;
   busy: boolean;
   decBalance: number | null;
   onConfirm: () => void;
@@ -36,7 +37,7 @@ function fmtDec(value: number): string {
   });
 }
 
-export function buildConfirmColumns(): RentalPlotColumn[] {
+export function buildConfirmColumns(mode: "buy" | "rent"): RentalPlotColumn[] {
   return [
     {
       header: "Plot",
@@ -74,18 +75,20 @@ export function buildConfirmColumns(): RentalPlotColumn[] {
     },
     {
       header: "Workers",
-      render: (item: RentalPlanItem) => <CardPicksCell picks={item.picks} />,
+      render: (item: WorkerPlanItem) => (
+        <WorkerCardPicksCell picks={item.picks} mode={mode} />
+      ),
     },
   ];
 }
 
-export default function RentConfirmDialog({
+export default function WorkerConfirmDialog({
   exec,
   busy,
   decBalance,
   onConfirm,
   onCancel,
-}: Props) {
+}: Readonly<Props>) {
   const { plan, emptySlotsByDeed } = exec;
   const { totals } = plan;
 
@@ -97,13 +100,16 @@ export default function RentConfirmDialog({
 
   const noPicks = totals.slots_filled === 0;
   const itemsWithPicks = plan.items.filter((i) => i.picks.length > 0);
-  const columns = buildConfirmColumns();
+  const isRental = "rental_days" in plan;
+  const columns = buildConfirmColumns(isRental ? "rent" : "buy");
   const insufficientDec =
     decBalance != null && totals.total_dec > 0 && decBalance < totals.total_dec;
 
   return (
     <Dialog open onClose={busy ? undefined : onCancel} maxWidth="lg" fullWidth>
-      <DialogTitle>Confirm — Rent Empty Workers</DialogTitle>
+      <DialogTitle>
+        Confirm — {isRental ? "Rent" : "Buy"} Empty Workers
+      </DialogTitle>
       <DialogContent dividers>
         <Stack direction="row" gap={1} flexWrap="wrap" mb={2}>
           <Chip
@@ -133,13 +139,14 @@ export default function RentConfirmDialog({
 
         {noPicks ? (
           <Alert severity="info">
-            No cards selected for rental. Check your config or biome filters.
+            No cards selected for {isRental ? "rental" : "purchase"}. Check your
+            config or biome filters.
           </Alert>
         ) : (
           <>
             {insufficientDec && (
               <Alert severity="error" sx={{ mb: 2 }}>
-                Insufficient DEC — this rental needs{" "}
+                Insufficient DEC — this {isRental ? "rental" : "purchase"} needs{" "}
                 <strong>{fmtDec(totals.total_dec)} DEC</strong> but your balance
                 is <strong>{fmtDec(decBalance!)} DEC</strong>. Top up{" "}
                 <strong>{fmtDec(totals.total_dec - decBalance!)} DEC</strong>{" "}
@@ -149,24 +156,28 @@ export default function RentConfirmDialog({
 
             <Alert severity="warning" icon={<WarningAmber />} sx={{ mb: 2 }}>
               You are about to spend{" "}
-              <strong>{fmtDec(totals.total_dec)} DEC</strong> to rent{" "}
-              <strong>{totals.slots_filled}</strong> card
-              {totals.slots_filled === 1 ? "" : "s"} for{" "}
-              <strong>
-                {plan.rental_days ?? "?"}{" "}
-                {plan.rental_days === 1 ? "day" : "days"}
-              </strong>
-              {plan.rental_days_source && (
-                <Typography
-                  variant="caption"
-                  display="block"
-                  color="text.secondary"
-                >
-                  ({plan.rental_days_source})
-                </Typography>
+              <strong>{fmtDec(totals.total_dec)} DEC</strong> to{" "}
+              {isRental ? "rent" : "buy"} <strong>{totals.slots_filled}</strong>{" "}
+              card
+              {totals.slots_filled === 1 ? "" : "s"}
+              {isRental && (
+                <>
+                  {" "}
+                  for{" "}
+                  <strong>
+                    {plan.rental_days} {plan.rental_days === 1 ? "day" : "days"}
+                  </strong>
+                  {plan.rental_days_source && (
+                    <Typography
+                      variant="caption"
+                      display="block"
+                      color="text.secondary"
+                    >
+                      ({plan.rental_days_source})
+                    </Typography>
+                  )}
+                </>
               )}
-              Season rentals cannot be cancelled — the full amount is taken
-              immediately and distributed to sellers.
             </Alert>
 
             {slotShortages.length > 0 && (
@@ -195,7 +206,11 @@ export default function RentConfirmDialog({
             busy ? <CircularProgress size={14} color="inherit" /> : null
           }
         >
-          {busy ? "Renting…" : "Confirm Rent and Stake"}
+          {busy
+            ? isRental
+              ? "Renting…"
+              : "Buying…"
+            : `Confirm ${isRental ? "Rent" : "Buy"} and Stake`}
         </Button>
       </DialogActions>
     </Dialog>

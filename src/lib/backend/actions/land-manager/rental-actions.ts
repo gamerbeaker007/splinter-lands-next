@@ -1,93 +1,19 @@
 "use server";
 import {
-  fetchProductionOverview,
-  fetchRegionDataPlayer,
-  fetchStakedAssets,
-} from "@/lib/backend/api/spl/spl-land-api";
+  fetchEmptySlotsByDeed,
+  getWorkerEligibility,
+} from "@/lib/backend/actions/land-manager/worker-actions";
+import { fetchProductionOverview } from "@/lib/backend/api/spl/spl-land-api";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
 import { getCachedPlayerCardCollection } from "@/lib/backend/services/playerService";
 import { isRentedByPlayer } from "@/lib/utils/cardUtil";
 import {
   DEFAULT_RENTAL_CONFIG,
   RentalConfig,
-  RentalEligibilityResult,
-  RentalEligiblePlot,
   RentalPlan,
 } from "@/types/landManager";
-import { Card, StakedAssets } from "@/types/stakedAssets";
 import { cookies } from "next/headers";
-import pLimit from "p-limit";
 import { getAuthStatus } from "../auth-actions";
-
-export async function getRentalEligibility(
-  enabledRegions: number[]
-): Promise<RentalEligibilityResult> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return { eligible: [], unpoweredSkipped: [] };
-  }
-
-  if (enabledRegions.length === 0) {
-    return { eligible: [], unpoweredSkipped: [] };
-  }
-
-  const regionData = await fetchRegionDataPlayer(auth.username);
-  const stakingByDeed = new Map(
-    regionData.staking_details.map((s) => [s.deed_uid, s])
-  );
-  const worksiteByDeed = new Map(
-    regionData.worksite_details.map((s) => [s.deed_uid, s])
-  );
-  const enabledSet = new Set(enabledRegions);
-
-  const eligible: RentalEligiblePlot[] = [];
-  const unpoweredSkipped: RentalEligiblePlot[] = [];
-
-  for (const deed of regionData.deeds) {
-    if (!enabledSet.has(deed.region_number)) continue;
-
-    const staking = stakingByDeed.get(deed.deed_uid);
-    if (!staking) continue;
-    const worksiteDetails = worksiteByDeed.get(deed.deed_uid) ?? null;
-
-    const maxWorkers = staking.max_workers_allowed ?? 0;
-    const workerCount = staking.worker_count ?? 0;
-
-    const plot: RentalEligiblePlot = {
-      ...deed,
-      worksiteDetail: worksiteDetails,
-      stakingDetail: staking,
-      worker_count: workerCount,
-      max_workers: maxWorkers,
-      empty_slots: maxWorkers - workerCount,
-      is_powered: staking.is_powered ?? false,
-      biome_modifiers: {
-        fire: staking.red_biome_modifier ?? 0,
-        water: staking.blue_biome_modifier ?? 0,
-        life: staking.white_biome_modifier ?? 0,
-        death: staking.black_biome_modifier ?? 0,
-        earth: staking.green_biome_modifier ?? 0,
-        dragon: staking.gold_biome_modifier ?? 0,
-      },
-    };
-
-    if (!plot.is_powered) {
-      unpoweredSkipped.push(plot);
-    } else {
-      if (workerCount < maxWorkers) {
-        eligible.push(plot);
-      }
-    }
-  }
-
-  const byRegionThenPlot = (a: RentalEligiblePlot, b: RentalEligiblePlot) =>
-    a.region_number - b.region_number || a.plot_number - b.plot_number;
-
-  eligible.sort(byRegionThenPlot);
-  unpoweredSkipped.sort(byRegionThenPlot);
-
-  return { eligible, unpoweredSkipped };
-}
 
 export interface RegionDECInfo {
   region_number: number;
@@ -253,7 +179,7 @@ export async function getRentedCardsList(): Promise<RentedCardsList> {
       rental_date: c.rental_date ?? null,
       dec_per_day: perDay,
       total_dec: total,
-      stake_plot: c.stake_plot as number,
+      stake_plot: c.stake_plot,
       stake_region: c.stake_region ?? null,
       stake_end_date: c.stake_end_date ?? null,
       cancel_tx: c.cancel_tx ?? null,
@@ -281,36 +207,9 @@ export async function getRentalExecutionPlan(
   enabledRegions: number[],
   rental: RentalConfig = DEFAULT_RENTAL_CONFIG
 ): Promise<RentalExecutionPlan> {
-  const eligibility = await getRentalEligibility(enabledRegions);
+  const eligibility = await getWorkerEligibility(enabledRegions);
   const plan = await buildRentalPlan(eligibility.eligible, rental);
-
-  // Only fetch staked assets for plots that actually have picks to stake.
-  const deedsToFetch = plan.items
-    .filter((i) => i.picks.length > 0)
-    .map((i) => i.plot);
-
-  const emptySlotsByDeed: Record<string, number[]> = {};
-  const limit = pLimit(5);
-
-  await Promise.all(
-    deedsToFetch.map((plot) =>
-      limit(async () => {
-        try {
-          const assets: StakedAssets | undefined = await fetchStakedAssets(
-            plot.deed_uid
-          );
-          const occupied = new Set<number>(
-            (assets?.cards ?? []).map((c: Card) => c.slot)
-          );
-          const all = Array.from({ length: plot.max_workers }, (_, i) => i + 1);
-          emptySlotsByDeed[plot.deed_uid] = all.filter((s) => !occupied.has(s));
-        } catch {
-          // Fall back to "no slot info" — execution layer will skip this deed.
-          emptySlotsByDeed[plot.deed_uid] = [];
-        }
-      })
-    )
-  );
+  const emptySlotsByDeed = await fetchEmptySlotsByDeed(plan);
 
   return { plan, emptySlotsByDeed };
 }

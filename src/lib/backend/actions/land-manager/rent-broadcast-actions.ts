@@ -6,13 +6,13 @@ import {
   getServiceAccount,
   isServiceBroadcastConfigured,
 } from "@/lib/backend/services/splAuthorityService";
-import { Operation } from "@hiveio/dhive";
-import { getAuthStatus } from "../auth-actions";
 import {
   buildRenewRentalOnBehalfOp,
   buildRentOnBehalfOp,
 } from "@/lib/shared/operations/opBuilders";
 import { MAX_ITEM_SIZE_IN_OPERATION } from "@/types/landManager";
+import { Operation } from "@hiveio/dhive";
+import { getAuthStatus } from "../auth-actions";
 
 function chunk<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];
@@ -68,7 +68,7 @@ export async function rentOnBehalfOf(
     return {
       success: false,
       txIds: [],
-      error: `@${service} does not have purchase authority for @${player}. Grant it at https://splinterlands.com/?p=account_security and refresh.`,
+      error: `@${service} does not have rental authority for @${player}. Grant it at https://splinterlands.com/?p=account_security and refresh.`,
     };
   }
 

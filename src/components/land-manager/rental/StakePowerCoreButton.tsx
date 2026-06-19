@@ -1,7 +1,7 @@
 "use client";
 
 import { useStakePowerCoreAction } from "@/hooks/useStakePowerCoreAction";
-import { RentalEligiblePlot } from "@/types/landManager";
+import { WorkerEligiblePlot } from "@/types/landManager";
 import { Bolt } from "@mui/icons-material";
 import {
   Alert,
@@ -19,7 +19,7 @@ import { useState } from "react";
 
 interface Props {
   username: string;
-  plot: RentalEligiblePlot;
+  plot: WorkerEligiblePlot;
   onSuccess: () => void;
 }
 

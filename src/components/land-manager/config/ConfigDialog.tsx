@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  saveBuyConfig,
   saveDonationConfig,
   saveLandManagerConfig,
   saveMakeHarvestableStrategies,
@@ -9,6 +10,7 @@ import {
   saveRentalConfig,
 } from "@/lib/backend/actions/land-manager/config-actions";
 import {
+  BuyConfig,
   DEFAULT_POST_HARVEST_POOL_PCT,
   DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
@@ -30,6 +32,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import BuyEmptyWorkersSection from "./BuyEmptyWorkersSection";
 import DonationSettingsSection from "./DonationSettingsSection";
 import EnabledRegionsSection from "./EnabledRegionsSection";
 import MakeHarvestableSection from "./MakeHarvestableSection";
@@ -72,6 +75,7 @@ export default function ConfigDialog({
     config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT
   );
   const [rental, setRental] = useState<RentalConfig>(config.rental);
+  const [buy, setBuy] = useState<BuyConfig>(config.buy);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -90,6 +94,7 @@ export default function ConfigDialog({
     setSellPct(config.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT);
     setPoolPct(config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT);
     setRental(config.rental);
+    setBuy(config.buy);
     setError(null);
     onClose();
   };
@@ -120,6 +125,7 @@ export default function ConfigDialog({
       postHarvestResult,
       excludedResult,
       rentalResult,
+      buyResult,
     ] = await Promise.all([
       saveLandManagerConfig(enabledRegions),
       saveMakeHarvestableStrategies(strategies),
@@ -127,6 +133,7 @@ export default function ConfigDialog({
       savePostHarvestStrategy(postHarvestStrategy, sellPct, poolPct),
       savePostHarvestExcludedResources(excludedResources),
       saveRentalConfig(rental),
+      saveBuyConfig(buy),
     ]);
     setSaving(false);
     const err =
@@ -135,14 +142,16 @@ export default function ConfigDialog({
       donationResult.error ??
       postHarvestResult.error ??
       excludedResult.error ??
-      rentalResult.error;
+      rentalResult.error ??
+      buyResult.error;
     if (
       !regionsResult.success ||
       !strategiesResult.success ||
       !donationResult.success ||
       !postHarvestResult.success ||
       !excludedResult.success ||
-      !rentalResult.success
+      !rentalResult.success ||
+      !buyResult.success
     ) {
       setError(err ?? "Save failed");
       return;
@@ -157,6 +166,7 @@ export default function ConfigDialog({
       post_harvest_sell_pct: sellPct,
       post_harvest_pool_pct: poolPct,
       rental,
+      buy,
     });
     onClose();
     // Refresh server components so derived panels (RegionOverview, AlertsPanel,
@@ -199,6 +209,8 @@ export default function ConfigDialog({
         />
 
         <RentEmptyWorkersSection rental={rental} onChange={setRental} />
+
+        <BuyEmptyWorkersSection buy={buy} onChange={setBuy} />
 
         {error && (
           <Typography color="error" variant="body2" sx={{ px: 2, pb: 1 }}>

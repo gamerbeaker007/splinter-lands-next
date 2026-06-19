@@ -131,13 +131,51 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   land_renters_only: false,
 };
 
-// === Rental eligibility (computed from region data) ===
+// === Buy ("purchase") strategy ===
+// Mirrors the rental config but for buying cards outright instead of renting.
+// Fully separate from RentalConfig so buying and renting can be tuned
+// independently.
+
+export type BuyStrategy = "highest_pp_per_dec";
+export const DEFAULT_BUY_STRATEGY: BuyStrategy = "highest_pp_per_dec";
+export const BUY_STRATEGY_LABELS: Record<BuyStrategy, string> = {
+  highest_pp_per_dec: "Highest base_pp per DEC",
+};
+
+/** Batch size is a plain integer 1..50 (no "unlimited"). */
+export const BUY_BATCH_SIZE_MIN = 1;
+export const BUY_BATCH_SIZE_MAX = 50;
+
+export interface BuyConfig {
+  strategy: BuyStrategy;
+  /** Absolute DEC budget across all picks for the whole run. 0 = no limit. */
+  max_total_dec: number;
+  /** Max DEC for a single bought card. 0 = no limit. */
+  max_dec_per_worker: number;
+  /** Minimum land_base_pp per card. 0 = no minimum. */
+  min_land_base_pp: number;
+  /** Minimum foil rank (0=Regular). Cards below this are skipped. */
+  min_foil: number;
+  /** Max plots to process per run (1..50). */
+  buy_batch_size: number;
+}
+
+export const DEFAULT_BUY_CONFIG: BuyConfig = {
+  strategy: DEFAULT_BUY_STRATEGY,
+  max_total_dec: 0,
+  max_dec_per_worker: 0,
+  min_land_base_pp: 0,
+  min_foil: 0,
+  buy_batch_size: 10,
+};
+
+// === Worker eligibility (computed from region data) ===
 /**
- * A deed plus the staking-derived fields the rental flow needs. Carries the
+ * A deed plus the staking-derived fields the rental/buy flow needs. Carries the
  * full DeedComplete so the shared `filterDeeds` and the standard filter UI
  * work directly on it — no parallel filter implementation needed.
  */
-export interface RentalEligiblePlot extends DeedComplete {
+export interface WorkerEligiblePlot extends DeedComplete {
   worker_count: number;
   max_workers: number;
   empty_slots: number;
@@ -145,21 +183,25 @@ export interface RentalEligiblePlot extends DeedComplete {
   biome_modifiers: BiomeModifiers;
 }
 
-export interface RentalEligibilityResult {
-  eligible: RentalEligiblePlot[];
-  unpoweredSkipped: RentalEligiblePlot[];
+export interface WorkerEligibilityResult {
+  eligible: WorkerEligiblePlot[];
+  unpoweredSkipped: WorkerEligiblePlot[];
 }
 
-// === Rental plan (dry run output) ===
+// === Worker plan (dry run output) ===
+// Shared by the rental and buy flows — a "worker" is a card assigned to an
+// empty worker slot, whether rented or bought. The cost is always captured as
+// `total_dec`; the per-day rental fields are present only for rentals.
 
-export interface RentalPlanPick {
+export interface WorkerPlanPick {
+  /** Market listing id — the item id passed to sm_market_rent / sm_market_purchase. */
   market_id: string;
   card_uid: string;
   card_detail_id: number;
   card_name: string;
   edition: number;
   rarity: CardRarity;
-  bxc: number;
+  bcx: number;
   max_bcx: number;
   foil: number;
   gold: boolean;
@@ -168,25 +210,30 @@ export interface RentalPlanPick {
   biome_modifier: number;
   land_base_pp: number;
   effective_pp: number;
-  buy_price_per_day: number;
-  rental_days: number;
+  /** Total DEC for this pick (rental: per-day × days; buy: one-time price). */
   total_dec: number;
+  /** effective_pp / total_dec. */
   pp_per_dec: number;
   seller: string;
-  expiration_date: string;
   card_image_url: string;
+  /** Rental-only: per-day rate. Absent for purchases. */
+  buy_price_per_day?: number;
+  /** Rental-only: number of rental days. Absent for purchases. */
+  rental_days?: number;
+  /** Rental-only: listing expiration date. Absent for purchases. */
+  expiration_date?: string;
 }
 
-export interface RentalPlanItem {
-  plot: RentalEligiblePlot;
-  picks: RentalPlanPick[];
+export interface WorkerPlanItem {
+  plot: WorkerEligiblePlot;
+  picks: WorkerPlanPick[];
   slots_filled: number;
   slots_skipped: number;
   plot_total_dec: number;
   skip_reason: string | null;
 }
 
-export interface RentalPlanTotals {
+export interface WorkerPlanTotals {
   plots_total: number;
   plots_with_picks: number;
   slots_total: number;
@@ -194,10 +241,22 @@ export interface RentalPlanTotals {
   total_dec: number;
 }
 
+// === Buy plan (dry run output) ===
+// Eligible plots are computed exactly like rentals (powered plots with empty
+// worker slots) — the buy flow reuses WorkerEligiblePlot. Picks/items/totals
+// are the shared WorkerPlan* shapes; for purchases the rental-only fields
+// (buy_price_per_day, rental_days, expiration_date) are simply absent.
+export interface BuyPlan {
+  config: BuyConfig;
+  items: WorkerPlanItem[];
+  totals: WorkerPlanTotals;
+  warnings: string[];
+}
+
 export interface RentalPlan {
   config: RentalConfig;
-  items: RentalPlanItem[];
-  totals: RentalPlanTotals;
+  items: WorkerPlanItem[];
+  totals: WorkerPlanTotals;
   warnings: string[];
   rental_days: number | null;
   rental_days_source: string;
@@ -215,6 +274,7 @@ export interface LandManagerConfig {
   post_harvest_sell_pct: number;
   post_harvest_pool_pct: number;
   rental: RentalConfig;
+  buy: BuyConfig;
 }
 
 // === Mythic deeds (Keeps & Castles) ===

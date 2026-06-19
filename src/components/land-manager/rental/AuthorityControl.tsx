@@ -1,6 +1,6 @@
 "use client";
 
-import type { UseRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
+import type { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
 import {
   Alert,
   Box,
@@ -14,15 +14,26 @@ import {
 import { useState } from "react";
 
 interface Props {
-  authority: UseRentalAuthorityStatus;
+  authority: UseAuthorityStatus;
+  /** Row label, e.g. "Rental Authority". */
+  label: string;
+  /** Lowercase noun for messages/tooltips, e.g. "rental" / "purchase". */
+  actionNoun: string;
+  /** The op the service account signs on the user's behalf, e.g. "sm_market_rent". */
+  opName: string;
 }
 
 /**
- * Inline rental-authority control: one row showing a label, a clickable status
- * chip ("Granted" / "Not Granted"), and an Authorize/Revoke button. Clicking
- * the chip triggers the same action as the button.
+ * Inline authority control: one row showing a label, a clickable status chip
+ * ("Granted" / "Not Granted"), and an Authorize/Revoke button. Reused for both
+ * rental and purchase authority.
  */
-export default function RentalAuthorityCard({ authority }: Props) {
+export default function AuthorityControl({
+  authority,
+  label,
+  actionNoun,
+  opName,
+}: Readonly<Props>) {
   const { status, busy, grant, revoke } = authority;
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionInfo, setActionInfo] = useState<string | null>(null);
@@ -41,11 +52,8 @@ export default function RentalAuthorityCard({ authority }: Props) {
     }
 
     const isGrant = kind === "grant";
-
     if (r.confirmed) {
-      setActionInfo(
-        isGrant ? "Rental authority granted." : "Rental authority revoked."
-      );
+      setActionInfo(isGrant ? `${label} granted.` : `${label} revoked.`);
     } else {
       setActionInfo(
         `${isGrant ? "Granted" : "Revoked"} on chain — SPL has not reflected it yet.`
@@ -62,19 +70,19 @@ export default function RentalAuthorityCard({ authority }: Props) {
   if (!status) {
     chipLabel = "Checking…";
     chipColor = "default";
-    tooltip = "Reading current rental authorities from Splinterlands.";
+    tooltip = `Reading current ${actionNoun} authorities from Splinterlands.`;
   } else if (!configured) {
     chipLabel = "Not configured";
     chipColor = "default";
-    tooltip = "Server-side renting is not configured.";
+    tooltip = `Server-side ${actionNoun} is not configured.`;
   } else if (authorized) {
     chipLabel = "Granted";
     chipColor = "success";
-    tooltip = `@${serviceAccount} can sign sm_market_rent on your behalf. Click to revoke.`;
+    tooltip = `@${serviceAccount} can sign ${opName} on your behalf. Click to revoke.`;
   } else {
     chipLabel = "Not Granted";
     chipColor = "warning";
-    tooltip = `Authorize @${serviceAccount} to rent on your behalf (one active-key signature).`;
+    tooltip = `Authorize @${serviceAccount} to ${actionNoun} on your behalf (one active-key signature).`;
   }
 
   const actionable = configured && !busy && status !== null;
@@ -83,7 +91,7 @@ export default function RentalAuthorityCard({ authority }: Props) {
     <Box sx={{ mt: 2, mb: 2 }}>
       <Stack direction="row" gap={1.5} alignItems="center" flexWrap="wrap">
         <Typography variant="body2" fontWeight="bold">
-          Rental Authority
+          {label}
         </Typography>
         <Tooltip title={tooltip}>
           <span>

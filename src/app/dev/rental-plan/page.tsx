@@ -16,7 +16,7 @@
  *   /dev/rental-plan?max_dec=200&min_pp=50&plots=5
  */
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
-import { RentalConfig, RentalEligiblePlot } from "@/types/landManager";
+import { RentalConfig, WorkerEligiblePlot } from "@/types/landManager";
 import { TERRAIN_BONUS } from "@/types/planner/primitives";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -45,7 +45,7 @@ const BIOME_CYCLES: Array<Record<string, number>> = TERRAIN_TYPES.map(
 
 const RESOURCES = ["GRAIN", "WOOD", "STONE", "IRON", "AURA"];
 
-function makePlot(i: number): RentalEligiblePlot {
+function makePlot(i: number): WorkerEligiblePlot {
   return {
     deed_uid: `dev-test-plot-${i + 1}`,
     plot_id: 900000 + i,
@@ -120,7 +120,7 @@ async function RentalPlanDevContent({
   const params = await searchParams;
 
   const numPlots = Number(params.plots ?? 3);
-  const eligible: RentalEligiblePlot[] = Array.from(
+  const eligible: WorkerEligiblePlot[] = Array.from(
     { length: numPlots },
     (_, i) => makePlot(i)
   );

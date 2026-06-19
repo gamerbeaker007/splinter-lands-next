@@ -7,19 +7,21 @@ import BulkDecActionsPanel from "@/components/land-manager/dec-actions/BulkDecAc
 import BulkActionPanel from "@/components/land-manager/harvest/BulkActionPanel";
 import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
 import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
+import ProductionTab from "@/components/land-manager/production/ProductionTab";
+import AuthorityControl from "@/components/land-manager/rental/AuthorityControl";
 import BulkRentalPanel from "@/components/land-manager/rental/BulkRentalPanel";
-import RentalAuthorityCard from "@/components/land-manager/rental/RentalAuthorityCard";
 import RentalOverview from "@/components/land-manager/rental/RentalOverview";
 import AlertsPanel from "@/components/land-manager/shared/AlertsPanel";
 import RegionResourceSummary from "@/components/land-manager/shared/RegionResourceSummary";
 import TodayPanel from "@/components/land-manager/shared/TodayPanel";
-import ProductionTab from "@/components/land-manager/production/ProductionTab";
 import WorksiteTab from "@/components/land-manager/worksites/WorksiteTab";
+import { usePurchaseAuthorityStatus } from "@/hooks/usePurchaseAuthorityStatus";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
+  DEFAULT_BUY_CONFIG,
   DEFAULT_DONATION_CONFIG,
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
   DEFAULT_POST_HARVEST_POOL_PCT,
@@ -83,7 +85,11 @@ function NotLoggedIn() {
   );
 }
 
-export default function LandManagerPage({ auth, config, allRegions }: Props) {
+export default function LandManagerPage({
+  auth,
+  config,
+  allRegions,
+}: Readonly<Props>) {
   const [currentConfig, setCurrentConfig] = useState<LandManagerConfig>(
     config ?? {
       player: auth.username ?? "",
@@ -95,12 +101,14 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
       post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
       post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
       rental: DEFAULT_RENTAL_CONFIG,
+      buy: DEFAULT_BUY_CONFIG,
     }
   );
   const [configOpen, setConfigOpen] = useState(false);
   const [regionRefreshKey, setRegionRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
-  const authorityHook = useRentalAuthorityStatus();
+  const rentalAuthorityHook = useRentalAuthorityStatus();
+  const purchaseAuthorityHook = usePurchaseAuthorityStatus();
   const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
     null
   );
@@ -251,7 +259,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         }}
       >
         <Tab label="Harvest" />
-        <Tab label="Rental" />
+        <Tab label="Workers" />
         <Tab label="DEC Actions" />
         <Tab label="Worksites" />
         <Tab label="Production" />
@@ -355,7 +363,7 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
         </>
       )}
 
-      {/* ── Rental tab ──────────────────────────────────────────────────── */}
+      {/* ── Worker tab ──────────────────────────────────────────────────── */}
       {activeTab === 1 && (
         <FilterProvider>
           {/* player=null → categorical filters show site-wide options;
@@ -369,13 +377,28 @@ export default function LandManagerPage({ auth, config, allRegions }: Props) {
               sorting: false,
             }}
           />
-          <RentalAuthorityCard authority={authorityHook} />
+          <Stack spacing={2} direction={"row"} mb={2}>
+            <AuthorityControl
+              authority={rentalAuthorityHook}
+              label="Rental Authority"
+              actionNoun="rental"
+              opName="sm_market_rent"
+            />
+            <AuthorityControl
+              authority={purchaseAuthorityHook}
+              label="Purchase Authority"
+              actionNoun="purchase"
+              opName="sm_market_purchase"
+            />
+          </Stack>
 
           <BulkRentalPanel
             username={auth.username ?? ""}
             enabledRegions={currentConfig.enabled_regions}
             rental={currentConfig.rental}
-            authorityStatus={authorityHook.status}
+            buy={currentConfig.buy}
+            rentalAuthorityStatus={rentalAuthorityHook.status}
+            purchaseAuthorityStatus={purchaseAuthorityHook.status}
             refreshKey={regionRefreshKey}
             onSuccess={handleSuccess}
           />

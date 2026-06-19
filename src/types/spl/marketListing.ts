@@ -1,4 +1,4 @@
-export interface SplMarketRentGrouped {
+export interface SplMarketListingGrouped {
   card_detail_id: number;
   gold: boolean;
   foil: number;

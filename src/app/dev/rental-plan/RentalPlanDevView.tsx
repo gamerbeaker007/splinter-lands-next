@@ -3,7 +3,7 @@
 import RentalPlotTable, {
   RentalPlotColumn,
 } from "@/components/land-manager/rental/RentalPlotTable";
-import { buildConfirmColumns } from "@/components/land-manager/rental/RentConfirmDialog";
+import { buildConfirmColumns } from "@/components/land-manager/rental/WorkerConfirmDialog";
 import { RentalPlan } from "@/types/landManager";
 import {
   Alert,
@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 
-const COLUMNS: RentalPlotColumn[] = buildConfirmColumns();
+const COLUMNS: RentalPlotColumn[] = buildConfirmColumns("rent");
 
 // ─────────────────────────────────────────────────────────────────────────────
 

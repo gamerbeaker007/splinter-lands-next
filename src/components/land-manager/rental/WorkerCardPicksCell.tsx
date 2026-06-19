@@ -1,9 +1,11 @@
 "use client";
 
 import CardTile from "@/components/player-overview/deed-overview/land-deed-card/card/CardTile";
-import { RentalPlanPick } from "@/types/landManager";
+import { WorkerPlanPick } from "@/types/landManager";
 import { cardElementColorMap } from "@/types/planner/primitives";
 import { Box, Tooltip, Typography } from "@mui/material";
+
+export type WorkerMode = "rent" | "buy";
 
 function fmtDec(value: number): string {
   return value.toLocaleString("en-US", {
@@ -16,7 +18,7 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-function PickTooltip({ pick }: { pick: RentalPlanPick }) {
+function PickTooltip({ pick }: { pick: WorkerPlanPick }) {
   const element = cardElementColorMap[pick.color.toLowerCase()] ?? pick.color;
   const foilLabel = pick.gold ? "Gold Foil" : "Regular Foil";
   const biome =
@@ -41,8 +43,9 @@ function PickTooltip({ pick }: { pick: RentalPlanPick }) {
         {pick.effective_pp.toLocaleString()} eff
       </Typography>
       <Typography variant="caption" sx={{ display: "block" }}>
-        {fmtDec(pick.buy_price_per_day)} DEC/day × {pick.rental_days} d ={" "}
-        {fmtDec(pick.total_dec)} DEC
+        {pick.buy_price_per_day !== undefined && pick.rental_days !== undefined
+          ? `${fmtDec(pick.buy_price_per_day)} DEC/day × ${pick.rental_days} d = ${fmtDec(pick.total_dec)} DEC`
+          : `${fmtDec(pick.total_dec)} DEC`}
       </Typography>
       <Typography
         variant="caption"
@@ -55,13 +58,20 @@ function PickTooltip({ pick }: { pick: RentalPlanPick }) {
 }
 
 interface Props {
-  picks: RentalPlanPick[];
+  picks: WorkerPlanPick[];
+  /** "rent" shows per-day pricing; "buy" shows the one-time DEC price. */
+  mode: WorkerMode;
 }
 
-export default function CardPicksCell({ picks }: Props) {
+/** Shared picks cell for the rental and buy confirm tables. */
+export default function WorkerCardPicksCell({ picks, mode }: Props) {
   if (picks.length === 0) return null;
 
-  const totalDecPerDay = picks.reduce((s, p) => s + p.buy_price_per_day, 0);
+  // Rent shows DEC/day per card; buy shows the one-time DEC price.
+  const perCard = (pick: WorkerPlanPick) =>
+    mode === "rent" ? (pick.buy_price_per_day ?? 0) : pick.total_dec;
+  const unit = mode === "rent" ? "DEC/day" : "DEC";
+  const total = picks.reduce((s, p) => s + perCard(p), 0);
 
   return (
     <Box>
@@ -76,7 +86,7 @@ export default function CardPicksCell({ picks }: Props) {
                 edition={pick.edition}
                 foil={pick.foil}
                 terrain_boost={Number(pick.biome_modifier)}
-                actual_bcx={pick.bxc}
+                actual_bcx={pick.bcx}
                 max_bcx={pick.max_bcx}
                 base_pp={Number(pick.land_base_pp)}
                 boosted_pp={Number(pick.effective_pp)}
@@ -93,10 +103,10 @@ export default function CardPicksCell({ picks }: Props) {
                 fontSize: "0.65rem",
               }}
             >
-              {pick.buy_price_per_day.toLocaleString(undefined, {
+              {perCard(pick).toLocaleString(undefined, {
                 maximumFractionDigits: 0,
               })}{" "}
-              DEC/day
+              {unit}
             </Typography>
             <Typography
               variant="caption"
@@ -109,7 +119,7 @@ export default function CardPicksCell({ picks }: Props) {
               }}
             >
               {pick.pp_per_dec.toLocaleString(undefined, {
-                maximumFractionDigits: 0,
+                maximumFractionDigits: 3,
               })}{" "}
               PP/DEC
             </Typography>
@@ -120,7 +130,7 @@ export default function CardPicksCell({ picks }: Props) {
         variant="caption"
         sx={{ display: "block", color: "text.secondary", mt: 0.25 }}
       >
-        {fmtDec(totalDecPerDay)} DEC/day (Total)
+        {fmtDec(total)} {unit} (Total)
       </Typography>
     </Box>
   );

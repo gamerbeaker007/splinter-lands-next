@@ -127,6 +127,32 @@ export interface MarketRentTrxData {
   by_seller: MarketRentSellerResult[];
 }
 
+// ── market_purchase ─────────────────────────────────────────────────────────
+
+export interface MarketPurchaseSellerResult {
+  seller: string;
+  items: string[];
+  total_usd: number;
+  total_dec: number;
+  total_fees: number;
+  market_fees: number;
+  burn_fees: number;
+  referral_cut: number;
+}
+
+export interface MarketPurchaseTrxData {
+  success: boolean;
+  purchaser: string;
+  num_cards: number;
+  total_usd: number;
+  total_dec: number;
+  total_fees_dec: number;
+  total_market_fees_dec: number;
+  total_burn_fees_dec: number;
+  total_referral_cut: number;
+  by_seller: MarketPurchaseSellerResult[];
+}
+
 // ── dec_powerup_region ────────────────────────────────────────────────────────
 // Result of staking DEC into a region. Triggers an auto-harvest as a side
 // effect — we surface the key bits (efficiency change + the inner harvest
@@ -205,6 +231,7 @@ export type SplTrxResult =
   | { type: "add_liquidity"; data: AddLiquidityTrxData }
   | { type: "market_rent"; data: MarketRentTrxData }
   | { type: "market_renew_rental"; data: MarketRentTrxData }
+  | { type: "market_purchase"; data: MarketPurchaseTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
   | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
   | { type: "worksite_construction"; data: WorksiteConstructionTrxData }

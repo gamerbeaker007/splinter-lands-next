@@ -14,7 +14,7 @@ import {
   landElementIconUrl,
   landElementLabel,
 } from "@/lib/utils/cardUtil";
-import { RentalEligiblePlot } from "@/types/landManager";
+import { WorkerEligiblePlot } from "@/types/landManager";
 import { cardElementOptions } from "@/types/planner";
 import {
   Bolt,
@@ -49,7 +49,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 interface Props {
   username: string;
@@ -174,7 +174,7 @@ function PlotRow({
   rentSummary,
   action,
 }: {
-  plot: RentalEligiblePlot;
+  plot: WorkerEligiblePlot;
   rentSummary: PlotRentSummary;
   action?: React.ReactNode;
 }) {
@@ -243,10 +243,10 @@ function PlotTable({
   emptyMessage,
   renderAction,
 }: {
-  plots: RentalEligiblePlot[];
+  plots: WorkerEligiblePlot[];
   rentByPlot: Map<number, PlotRentSummary>;
   emptyMessage: string;
-  renderAction?: (plot: RentalEligiblePlot) => React.ReactNode;
+  renderAction?: (plot: WorkerEligiblePlot) => React.ReactNode;
 }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);

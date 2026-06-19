@@ -2,16 +2,16 @@
 
 import {
   getRegionStakedDEC,
-  getRentalEligibility,
   getRentedCardsList,
   RegionDECInfo,
   RentedCardsList,
 } from "@/lib/backend/actions/land-manager/rental-actions";
-import { RentalEligibilityResult } from "@/types/landManager";
+import { getWorkerEligibility } from "@/lib/backend/actions/land-manager/worker-actions";
+import { WorkerEligibilityResult } from "@/types/landManager";
 import { useEffect, useState } from "react";
 
 interface LandRegionData {
-  eligibility: RentalEligibilityResult | null;
+  eligibility: WorkerEligibilityResult | null;
   /** Per-region DEC rows for the enabled regions. */
   stakedDEC: RegionDECInfo[];
   /** Account-wide DEC currently staked (global `dark_energy` pool). */
@@ -31,7 +31,7 @@ export function useLandManagerRegionData(
   refreshKey: number = 0
 ): LandRegionData {
   const [eligibility, setEligibility] =
-    useState<RentalEligibilityResult | null>(null);
+    useState<WorkerEligibilityResult | null>(null);
   const [stakedDEC, setStakedDEC] = useState<RegionDECInfo[]>([]);
   const [totalStaked, setTotalStaked] = useState(0);
   const [totalRequired, setTotalRequired] = useState(0);
@@ -41,7 +41,7 @@ export function useLandManagerRegionData(
   useEffect(() => {
     let cancelled = false;
     Promise.all([
-      getRentalEligibility(enabledRegions),
+      getWorkerEligibility(enabledRegions),
       getRegionStakedDEC(enabledRegions),
       getRentedCardsList(),
     ]).then(([e, a, r]) => {
