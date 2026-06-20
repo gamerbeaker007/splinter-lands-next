@@ -1,10 +1,10 @@
 "use client";
 
-import RentalPlotTable, {
-  RentalPlotColumn,
-} from "@/components/land-manager/rental/RentalPlotTable";
 import { buildConfirmColumns } from "@/components/land-manager/rental/WorkerConfirmDialog";
-import { RentalPlan } from "@/types/landManager";
+import WorkerPlotTable, {
+  WorkerPlotColumn,
+} from "@/components/land-manager/rental/WorkerPlotTable";
+import { BuyPlan, RentalPlan } from "@/types/landManager";
 import {
   Alert,
   Box,
@@ -14,8 +14,6 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-
-const COLUMNS: RentalPlotColumn[] = buildConfirmColumns("rent");
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -27,24 +25,31 @@ function fmtDec(value: number): string {
 }
 
 interface Props {
-  plan: RentalPlan;
+  plan: RentalPlan | BuyPlan;
 }
 
-export default function RentalPlanDevView({ plan }: Props) {
-  const { totals, warnings, rental_days, rental_days_source } = plan;
+export default function WorkerPlanDevView({ plan }: Props) {
+  const isRental = "rental_days" in plan;
+
+  const columns: WorkerPlotColumn[] = isRental
+    ? buildConfirmColumns("rent")
+    : buildConfirmColumns("buy");
+
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
+    <Box>
       {/* Header */}
       <Stack direction="row" alignItems="center" spacing={2} mb={2}>
         <Typography variant="h5" fontWeight="bold">
-          buildRentalPlan — dev test
+          {isRental ? "buildRentalPlan" : "buildBuyPlan"} — dev test
         </Typography>
-        <Chip
-          label={`${rental_days ?? "per-listing"} rental days`}
-          size="small"
-          color="default"
-          variant="outlined"
-        />
+        {isRental && (
+          <Chip
+            label={`${plan.rental_days ?? "per-listing"} rental days`}
+            size="small"
+            color="default"
+            variant="outlined"
+          />
+        )}
       </Stack>
 
       <Typography
@@ -53,7 +58,7 @@ export default function RentalPlanDevView({ plan }: Props) {
         display="block"
         mb={1}
       >
-        Season source: {rental_days_source}
+        Season source: {isRental ? plan.rental_days_source : "N/A"}
       </Typography>
 
       {/* Totals */}
@@ -62,10 +67,13 @@ export default function RentalPlanDevView({ plan }: Props) {
           [
             [
               "Plots processed",
-              `${totals.plots_with_picks} / ${totals.plots_total}`,
+              `${plan.totals.plots_with_picks} / ${plan.totals.plots_total}`,
             ],
-            ["Slots filled", `${totals.slots_filled} / ${totals.slots_total}`],
-            ["Total DEC", fmtDec(totals.total_dec)],
+            [
+              "Slots filled",
+              `${plan.totals.slots_filled} / ${plan.totals.slots_total}`,
+            ],
+            ["Total DEC", fmtDec(plan.totals.total_dec)],
           ] as [string, string][]
         ).map(([label, value]) => (
           <Paper key={label} variant="outlined" sx={{ p: 2, minWidth: 140 }}>
@@ -80,9 +88,9 @@ export default function RentalPlanDevView({ plan }: Props) {
       </Stack>
 
       {/* Warnings */}
-      {warnings.length > 0 && (
+      {plan.warnings.length > 0 && (
         <Stack spacing={1} mb={3}>
-          {warnings.map((w, i) => (
+          {plan.warnings.map((w, i) => (
             <Alert key={i} severity="warning" sx={{ py: 0.5 }}>
               {w}
             </Alert>
@@ -92,7 +100,7 @@ export default function RentalPlanDevView({ plan }: Props) {
 
       <Divider sx={{ mb: 2 }} />
       {/* Plan table */}
-      <RentalPlotTable items={plan.items} columns={COLUMNS} rowsPerPage={25} />
+      <WorkerPlotTable items={plan.items} columns={columns} rowsPerPage={25} />
     </Box>
   );
 }

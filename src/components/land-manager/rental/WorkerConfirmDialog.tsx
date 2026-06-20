@@ -1,8 +1,8 @@
 "use client";
 
-import RentalPlotTable, {
-  RentalPlotColumn,
-} from "@/components/land-manager/rental/RentalPlotTable";
+import WorkerPlotTable, {
+  WorkerPlotColumn,
+} from "@/components/land-manager/rental/WorkerPlotTable";
 import WorkerCardPicksCell from "@/components/land-manager/rental/WorkerCardPicksCell";
 import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
@@ -37,7 +37,7 @@ function fmtDec(value: number): string {
   });
 }
 
-export function buildConfirmColumns(mode: "buy" | "rent"): RentalPlotColumn[] {
+export function buildConfirmColumns(mode: "buy" | "rent"): WorkerPlotColumn[] {
   return [
     {
       header: "Plot",
@@ -189,7 +189,7 @@ export default function WorkerConfirmDialog({
               </Alert>
             )}
 
-            <RentalPlotTable items={itemsWithPicks} columns={columns} />
+            <WorkerPlotTable items={itemsWithPicks} columns={columns} />
           </>
         )}
       </DialogContent>

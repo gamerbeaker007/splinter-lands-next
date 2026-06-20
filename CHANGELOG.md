@@ -36,6 +36,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ### Fixed
 - **Rent on behalf** now reports missing rental authority as rental authority,
   not purchase authority.
+- **Player Dashboard** take into account runi(s) with the tooMuchBasePP alert (they can go over 100K)
 
 
 ---

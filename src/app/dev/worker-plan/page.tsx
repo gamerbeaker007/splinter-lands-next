@@ -15,12 +15,18 @@
  * Example:
  *   /dev/rental-plan?max_dec=200&min_pp=50&plots=5
  */
+import { buildBuyPlan } from "@/lib/backend/services/landBuyService";
 import { buildRentalPlan } from "@/lib/backend/services/landRentalService";
-import { RentalConfig, WorkerEligiblePlot } from "@/types/landManager";
+import {
+  BuyConfig,
+  RentalConfig,
+  WorkerEligiblePlot,
+} from "@/types/landManager";
 import { TERRAIN_BONUS } from "@/types/planner/primitives";
+import { Box, Chip, Link, Stack } from "@mui/material";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import RentalPlanAction from "./RentalPlanAction";
+import WorkerPlanAction from "./WorkerPlanAction";
 
 // ── Synthetic test plots ───────────────────────────────────────────────────
 const TERRAIN_TYPES = Object.keys(TERRAIN_BONUS);
@@ -125,7 +131,7 @@ async function RentalPlanDevContent({
     (_, i) => makePlot(i)
   );
 
-  const config: RentalConfig = {
+  const rentalConfig: RentalConfig = {
     strategy: "highest_pp_per_dec",
     max_total_dec: Number(params.max_dec ?? 0),
     max_dec_per_day_per_worker: Number(params.max_per_worker ?? 0),
@@ -135,14 +141,50 @@ async function RentalPlanDevContent({
     land_renters_only: false,
   };
 
+  const buyConfig: BuyConfig = {
+    strategy: "highest_pp_per_dec",
+    max_total_dec: Number(params.max_dec ?? 0),
+    max_dec_per_worker: Number(params.max_per_worker ?? 0),
+    min_land_base_pp: Number(params.min_pp ?? 0),
+    min_foil: Number(params.min_foil ?? 0),
+    buy_batch_size: Number(params.batch ?? 3),
+  };
+
+  // ── Quick-launch link (all params explicit for easy editing in URL bar) ──────
+  const DEFAULT_LINK =
+    "/dev/worker-plan?plots=14&batch=5&max_dec=0&max_per_worker=0&min_pp=0&min_foil=0";
+
   return (
-    <RentalPlanAction
-      config={config}
-      execute={async () => {
-        "use server";
-        return buildRentalPlan(eligible, config);
-      }}
-    />
+    <Stack direction="column" m={2} spacing={3}>
+      {/* Quick-launch link */}
+      <Box mb={3}>
+        <Chip
+          suppressHydrationWarning
+          component={Link}
+          href={DEFAULT_LINK}
+          label="Run test (all defaults)"
+          size="small"
+          variant="outlined"
+          color="primary"
+          clickable
+          sx={{ fontFamily: "monospace", fontSize: "0.72rem" }}
+        />
+      </Box>
+      <WorkerPlanAction
+        config={rentalConfig}
+        execute={async () => {
+          "use server";
+          return buildRentalPlan(eligible, rentalConfig);
+        }}
+      />
+      <WorkerPlanAction
+        config={buyConfig}
+        execute={async () => {
+          "use server";
+          return buildBuyPlan(eligible, buyConfig);
+        }}
+      />
+    </Stack>
   );
 }
 
