@@ -725,3 +725,17 @@ export async function fetchTransactionLookup(
     return { status: "pending" };
   }
 }
+
+/**
+ * Tri-state confirmation of a tx by id, for broadcast verify-before-fail.
+ * "confirmed" once SPL has processed it, "failed" if rejected, "pending" while
+ * not yet indexed (or on a transient lookup error).
+ */
+export async function confirmSplTrx(
+  trxId: string
+): Promise<"confirmed" | "failed" | "pending"> {
+  const outcome = await fetchTransactionLookup(trxId);
+  if (outcome.status === "success") return "confirmed";
+  if (outcome.status === "failed") return "failed";
+  return "pending";
+}

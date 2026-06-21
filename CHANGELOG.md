@@ -15,6 +15,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.13.2] - 2026-06-21
+
+
+### Fixed
+- **Land Manager: Buy worker** - Protect buy and stake (buy was successful but stake was not) 
+
+---
+
 ## [v1.13.1] - 2026-06-21
 
 ### Added

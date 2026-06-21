@@ -1,5 +1,6 @@
 "use server";
 
+import { confirmSplTrx } from "@/lib/backend/api/spl/spl-base-api";
 import { broadcastOpsAsService } from "@/lib/backend/services/hiveBroadcastService";
 import {
   getPurchaseAuthorityInfo,
@@ -89,5 +90,5 @@ export async function purchaseOnBehalfOf(
     }
   );
 
-  return broadcastOpsAsService(operations);
+  return broadcastOpsAsService(operations, { verify: confirmSplTrx });
 }

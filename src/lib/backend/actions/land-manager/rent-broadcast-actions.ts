@@ -1,5 +1,6 @@
 "use server";
 
+import { confirmSplTrx } from "@/lib/backend/api/spl/spl-base-api";
 import { broadcastOpsAsService } from "@/lib/backend/services/hiveBroadcastService";
 import {
   getRentalAuthorityInfo,
@@ -81,5 +82,5 @@ export async function rentOnBehalfOf(
       : (buildRentOnBehalfOp(service, player, ids) as Operation)
   );
 
-  return broadcastOpsAsService(operations);
+  return broadcastOpsAsService(operations, { verify: confirmSplTrx });
 }
