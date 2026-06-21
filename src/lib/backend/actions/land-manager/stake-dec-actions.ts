@@ -1,8 +1,9 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
+import { fetchProductionOverview } from "../../api/spl/spl-land-api";
 import { getAuthStatus } from "../auth-actions";
-import { getRegionStakedDEC } from "./rental-actions";
 
 export interface StakeDecRegionPlanItem {
   region_uid: string;
@@ -15,6 +16,75 @@ export interface StakeDecRegionPlanItem {
 export interface StakeDecPlan {
   items: StakeDecRegionPlanItem[];
   total_dec: number;
+}
+
+const EMPTY_STAKED_DEC: RegionStakedDEC = {
+  regions: [],
+  totalStaked: 0,
+  totalRequired: 0,
+};
+
+export interface RegionDECInfo {
+  region_number: number;
+  region_uid: string;
+  total_plot_count: number;
+  dec_stake_needed: number;
+  dec_stake_in_use: number;
+}
+
+export interface RegionStakedDEC {
+  /** Per-region rows for the enabled regions, sorted by region number. */
+  regions: RegionDECInfo[];
+  /**
+   * Account-wide DEC currently staked (the global `dark_energy` pool). This is
+   * the source of truth for whether enough DEC is staked overall — a region's
+   * `dec_stake_in_use` can temporarily read 0 while a building is in progress,
+   * even though that DEC is still staked in the global pool.
+   */
+  totalStaked: number;
+  /** Sum of `dark_energy_required` across ALL of the player's regions. */
+  totalRequired: number;
+}
+
+export async function getRegionStakedDEC(
+  enabledRegions: number[]
+): Promise<RegionStakedDEC> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) return EMPTY_STAKED_DEC;
+  if (enabledRegions.length === 0) return EMPTY_STAKED_DEC;
+
+  const cookieStore = await cookies();
+  const jwt = cookieStore.get("jwt_token")?.value ?? null;
+  if (!jwt) return EMPTY_STAKED_DEC;
+
+  const { regions } = await fetchProductionOverview(auth.username, jwt);
+  const enabledSet = new Set(enabledRegions);
+
+  const enabled = regions
+    .filter((r) => enabledSet.has(r.region_number))
+    .map((r) => ({
+      region_number: r.region_number,
+      region_uid: r.region_uid,
+      total_plot_count: r.plots_owned,
+      dec_stake_needed: r.dark_energy_required,
+      dec_stake_in_use: r.dark_energy_staked,
+    }))
+    .sort((a, b) => a.region_number - b.region_number);
+
+  const totalDECRequired = enabled.reduce(
+    (sum, r) => sum + r.dec_stake_needed,
+    0
+  );
+  const totalDECStaked = enabled.reduce(
+    (sum, r) => sum + r.dec_stake_in_use,
+    0
+  );
+
+  return {
+    regions: enabled,
+    totalStaked: totalDECStaked,
+    totalRequired: totalDECRequired,
+  };
 }
 
 /**
