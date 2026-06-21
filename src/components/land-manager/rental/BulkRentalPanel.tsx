@@ -1,9 +1,9 @@
 "use client";
 
-import RentWorkersRow from "@/components/land-manager/rental/RentWorkersRow";
+import WorkersRow from "@/components/land-manager/rental/WorkersRow";
+import type { AuthorityCoreStatus } from "@/hooks/useAuthorityStatusCore";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
-import type { RentalAuthorityStatus } from "@/lib/backend/actions/land-manager/authority-actions";
-import { RentalConfig } from "@/types/landManager";
+import { BuyConfig, RentalConfig } from "@/types/landManager";
 import { Box, Stack } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
 
@@ -11,7 +11,9 @@ interface Props {
   username: string;
   enabledRegions: number[];
   rental: RentalConfig;
-  authorityStatus?: RentalAuthorityStatus | null;
+  buy: BuyConfig;
+  rentalAuthorityStatus?: AuthorityCoreStatus | null;
+  purchaseAuthorityStatus?: AuthorityCoreStatus | null;
   refreshKey?: number;
   onSuccess?: () => void;
 }
@@ -20,10 +22,12 @@ export default function BulkRentalPanel({
   username,
   enabledRegions,
   rental,
-  authorityStatus,
+  buy,
+  rentalAuthorityStatus,
+  purchaseAuthorityStatus,
   refreshKey = 0,
   onSuccess,
-}: Props) {
+}: Readonly<Props>) {
   const { eligibility } = useLandManagerRegionData(enabledRegions, refreshKey);
 
   const [busyMap, setBusyMap] = useState({
@@ -45,11 +49,13 @@ export default function BulkRentalPanel({
   return (
     <Box sx={{ mb: 3 }}>
       <Stack direction="column" gap={0.5} flexWrap="wrap" alignItems="left">
-        <RentWorkersRow
+        <WorkersRow
           username={username}
           enabledRegions={enabledRegions}
           rental={rental}
-          authorityStatus={authorityStatus}
+          buy={buy}
+          rentalAuthorityStatus={rentalAuthorityStatus}
+          purchaseAuthorityStatus={purchaseAuthorityStatus}
           eligiblePlotCount={eligibility?.eligible.length ?? null}
           anyBusy={anyBusy}
           onBusyChange={onRentWorkersBusy}

@@ -6,8 +6,8 @@
 
   // Auto-organize imports on save
   "editor.codeActionsOnSave": {
-    "source.organizeImports": "always",
-    "source.fixAll.eslint": "always"
+    "source.organizeImports": "explicit",
+    "source.fixAll.eslint": "explicit"
   },
 
   // TypeScript/JavaScript specific settings

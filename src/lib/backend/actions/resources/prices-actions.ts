@@ -1,9 +1,8 @@
 "use server";
-import { Prices } from "@/types/price";
+import { getCachedSplPriceData } from "@/lib/backend/services/tokenService";
+import { Prices, SplPriceData } from "@/types/price";
 import { cacheLife } from "next/cache";
 import { getResourceDECPrices } from "../../helpers/resourcePrices";
-import { getCachedSplPriceData } from "@/lib/backend/services/tokenService";
-import { SplPriceData } from "@/types/price";
 
 /**
  * Get resource prices with hourly cache.

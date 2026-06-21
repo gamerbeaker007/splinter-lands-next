@@ -1,13 +1,15 @@
+import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import {
+  DEFAULT_BUY_CONFIG,
   DEFAULT_RENTAL_CONFIG,
   RentalEligiblePlot,
-  RentalPlanItem,
-  RentalPlanPick,
+  WorkerPlanItem,
+  WorkerPlanPick,
 } from "@/types/landManager";
 import { CardRarity } from "@/types/planner";
 import type { Meta, StoryObj } from "@storybook/react";
-import RentConfirmDialog from "./RentConfirmDialog";
+import WorkerConfirmDialog from "./WorkerConfirmDialog";
 
 // ── Mock helpers ──────────────────────────────────────────────────────────────
 
@@ -20,7 +22,6 @@ function makePlot(
   emptySlots = 5
 ): RentalEligiblePlot {
   return {
-    // ── Deed fields (only the ones referenced by the dialog UI / filters) ──
     deed_uid: `${region}-${tract}-${plot}`,
     map_name: "praetoria",
     region_id: region,
@@ -64,7 +65,7 @@ function makePlot(
     is_construction: false,
     worksiteDetail: null,
     stakingDetail: null,
-    // ── Staking-derived fields ──
+
     worker_count: 0,
     max_workers: 5,
     empty_slots: emptySlots,
@@ -80,9 +81,10 @@ function makePlot(
   };
 }
 
-function makePick(idx: number): RentalPlanPick {
+function makePick(idx: number): WorkerPlanPick {
   const decPerDay = 4 + (idx % 5);
   const days = 14;
+
   return {
     market_id: `mkt-${idx}`,
     card_uid: `card-${idx}`,
@@ -116,11 +118,12 @@ function makeItem(
   plot: number,
   pickCount: number,
   pickOffset = 0
-): RentalPlanItem {
+): WorkerPlanItem {
   const plt = makePlot(region, tract, plot);
   const picks = Array.from({ length: pickCount }, (_, i) =>
     makePick(pickOffset + i)
   );
+
   return {
     plot: plt,
     picks,
@@ -132,9 +135,10 @@ function makeItem(
 }
 
 function makeExecPlan(
-  items: RentalPlanItem[],
-  withShortage = false
-): RentalExecutionPlan {
+  items: WorkerPlanItem[],
+  withShortage = false,
+  rental = true
+): RentalExecutionPlan | BuyExecutionPlan {
   const totals = {
     plots_total: items.length,
     plots_with_picks: items.length,
@@ -144,35 +148,79 @@ function makeExecPlan(
   };
 
   const emptySlotsByDeed: Record<string, number[]> = {};
+
   items.forEach((item, idx) => {
-    // Simulate one plot having a slot shortage to test the warning banner.
     const shortage = withShortage && idx === 0;
     const available = shortage ? item.picks.length - 1 : item.plot.empty_slots;
+
     emptySlotsByDeed[item.plot.deed_uid] = Array.from(
       { length: available },
       (_, i) => i + 1
     );
   });
 
+  if (rental) {
+    return {
+      plan: {
+        config: DEFAULT_RENTAL_CONFIG,
+        items,
+        totals,
+        warnings: [],
+        rental_days: 14,
+        rental_days_source: "season 12 ends 2026-06-10 (14.0d left)",
+      },
+      emptySlotsByDeed,
+    };
+  }
+
   return {
     plan: {
-      config: DEFAULT_RENTAL_CONFIG,
+      config: DEFAULT_BUY_CONFIG,
       items,
       totals,
       warnings: [],
-      rental_days: 14,
-      rental_days_source: "season 12 ends 2026-06-10 (14.0d left)",
     },
     emptySlotsByDeed,
   };
 }
 
-// ── Stories ───────────────────────────────────────────────────────────────────
+// ── Story wrapper ─────────────────────────────────────────────────────────────
 
-const meta: Meta<typeof RentConfirmDialog> = {
-  title: "Land Manager/Bulk Operations/RentConfirmDialog",
-  component: RentConfirmDialog,
+type StoryArgs = {
+  mode: "rent" | "buy";
+  items: WorkerPlanItem[];
+  withShortage?: boolean;
+  decBalance: number;
+  busy: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+function RentBuyConfirmDialogStory(args: StoryArgs) {
+  const exec = makeExecPlan(
+    args.items,
+    args.withShortage,
+    args.mode === "rent"
+  );
+
+  return args.mode === "rent" ? (
+    <WorkerConfirmDialog {...args} exec={exec as RentalExecutionPlan} />
+  ) : (
+    <WorkerConfirmDialog {...args} exec={exec as BuyExecutionPlan} />
+  );
+}
+
+const meta: Meta<typeof RentBuyConfirmDialogStory> = {
+  title: "Land Manager/Bulk Operations/ConfirmDialog",
+  component: RentBuyConfirmDialogStory,
+  argTypes: {
+    mode: {
+      control: "radio",
+      options: ["rent", "buy"],
+    },
+  },
   args: {
+    mode: "rent",
     decBalance: 5000,
     busy: false,
     onConfirm: () => {},
@@ -181,63 +229,58 @@ const meta: Meta<typeof RentConfirmDialog> = {
 };
 
 export default meta;
-type Story = StoryObj<typeof RentConfirmDialog>;
+type Story = StoryObj<typeof RentBuyConfirmDialogStory>;
 
-/** A small region — 5 plots, all fully filled. */
 export const FewPlots: Story = {
   args: {
-    exec: makeExecPlan([
+    items: [
       makeItem(1, 1, 1, 5, 0),
       makeItem(1, 1, 2, 3, 5),
       makeItem(1, 2, 1, 5, 8),
       makeItem(1, 2, 2, 4, 13),
       makeItem(1, 2, 3, 5, 17),
-    ]),
+    ],
   },
 };
 
-/** Shows the slot-shortage warning when one plot has fewer free slots than picks. */
 export const WithSlotShortage: Story = {
   args: {
-    exec: makeExecPlan(
-      [
-        makeItem(1, 1, 1, 5, 0),
-        makeItem(1, 1, 2, 3, 5),
-        makeItem(1, 2, 1, 5, 8),
-      ],
-      true
-    ),
+    withShortage: true,
+    items: [
+      makeItem(1, 1, 1, 5, 0),
+      makeItem(1, 1, 2, 3, 5),
+      makeItem(1, 2, 1, 5, 8),
+    ],
   },
 };
 
-/** Simulates a 1 000-plot region (20 tracts × 50 plots). */
 export const LargeRegion: Story = {
   args: {
-    exec: (() => {
-      const items: RentalPlanItem[] = [];
+    items: (() => {
+      const items: WorkerPlanItem[] = [];
       let pickOffset = 0;
+
       for (let tract = 1; tract <= 20; tract++) {
         for (let plot = 1; plot <= 50; plot++) {
           items.push(makeItem(65, tract, plot, 5, pickOffset));
           pickOffset += 5;
         }
       }
-      return makeExecPlan(items);
+
+      return items;
     })(),
   },
 };
 
-/** Shows the "no picks" state. */
 export const NoPicks: Story = {
   args: {
-    exec: makeExecPlan([]),
+    items: [],
   },
 };
 
-/** Shows the busy/loading state during execution. */
 export const Busy: Story = {
   args: {
     busy: true,
-    exec: makeExecPlan([makeItem(1, 1, 1, 5, 0), makeItem(1, 1, 2, 5, 5)]),
+    items: [makeItem(1, 1, 1, 5, 0), makeItem(1, 1, 2, 5, 5)],
   },
 };

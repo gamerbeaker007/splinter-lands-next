@@ -1,6 +1,6 @@
 "use client";
 
-import { RentalPlanItem } from "@/types/landManager";
+import { WorkerPlanItem } from "@/types/landManager";
 import {
   Table,
   TableBody,
@@ -10,21 +10,21 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 
-export interface RentalPlotColumn {
+export interface WorkerPlotColumn {
   header: string;
   align?: "left" | "right";
-  render: (item: RentalPlanItem) => React.ReactNode;
+  render: (item: WorkerPlanItem) => ReactNode;
 }
 
 interface Props {
-  items: RentalPlanItem[];
-  columns: RentalPlotColumn[];
+  items: WorkerPlanItem[];
+  columns: WorkerPlotColumn[];
   rowsPerPage?: number;
 }
 
-export default function RentalPlotTable({
+export default function WorkerPlotTable({
   items,
   columns,
   rowsPerPage = 20,

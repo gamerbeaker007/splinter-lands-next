@@ -10,12 +10,12 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { buildStakePowerCoreOp } from "@/lib/shared/operations/opBuilders";
-import { RentalEligiblePlot } from "@/types/landManager";
+import { WorkerEligiblePlot } from "@/types/landManager";
 import { useCallback, useState } from "react";
 
 interface Params {
   username: string;
-  plot: RentalEligiblePlot;
+  plot: WorkerEligiblePlot;
   onSuccess?: () => void;
 }
 

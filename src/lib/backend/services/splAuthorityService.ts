@@ -26,21 +26,27 @@ export interface RentalAuthorityInfo {
   rental: string[];
 }
 
-/**
- * Reads the player's rental authority list and reports both the current
- * membership of the service account and the full list (so callers building
- * a grant/revoke op can smart-merge instead of clobbering other authorities).
- *
- * Cached for 5 minutes per player.
- */
-export async function getRentalAuthorityInfo(
-  player: string
-): Promise<RentalAuthorityInfo> {
-  const service = getServiceAccount();
-  if (!service || !player) return { authorized: false, rental: [] };
+export interface PurchaseAuthorityInfo {
+  /** True iff the service account is in the player's `authorities.purchase[]`. */
+  authorized: boolean;
+  /** The full current purchase list — clients merge into this when granting. */
+  purchase: string[];
+}
 
+interface CachedAuthorities {
+  rental: string[];
+  purchase: string[];
+}
+
+/**
+ * Reads (and caches for 5 minutes) the player's full authority lists. One
+ * fetch serves both the rental and purchase authority checks.
+ */
+async function getPlayerAuthorities(
+  player: string
+): Promise<CachedAuthorities> {
   const key = cacheKey(player);
-  const cached = cache.get<RentalAuthorityInfo>(key);
+  const cached = cache.get<CachedAuthorities>(key);
   if (cached !== undefined) return cached;
 
   try {
@@ -48,17 +54,49 @@ export async function getRentalAuthorityInfo(
     const row = rows.find(
       (r) => r.name?.toLowerCase() === player.toLowerCase()
     );
-    const rental = row?.authorities?.rental ?? [];
-    const authorized = rental.map((p) => p.toLowerCase()).includes(service);
-    const info: RentalAuthorityInfo = { authorized, rental };
+    const info: CachedAuthorities = {
+      rental: row?.authorities?.rental ?? [],
+      purchase: row?.authorities?.purchase ?? [],
+    };
     cache.set(key, info, AUTHORITY_TTL_SEC);
     return info;
   } catch (err) {
     logger.warn(
-      `getRentalAuthorityInfo lookup failed for ${player}: ${err instanceof Error ? err.message : err}`
+      `getPlayerAuthorities lookup failed for ${player}: ${err instanceof Error ? err.message : err}`
     );
-    return { authorized: false, rental: [] };
+    return { rental: [], purchase: [] };
   }
+}
+
+/**
+ * Reads the player's rental authority list and reports both the current
+ * membership of the service account and the full list (so callers building
+ * a grant/revoke op can smart-merge instead of clobbering other authorities).
+ */
+export async function getRentalAuthorityInfo(
+  player: string
+): Promise<RentalAuthorityInfo> {
+  const service = getServiceAccount();
+  if (!service || !player) return { authorized: false, rental: [] };
+
+  const { rental } = await getPlayerAuthorities(player);
+  const authorized = rental.map((p) => p.toLowerCase()).includes(service);
+  return { authorized, rental };
+}
+
+/**
+ * Purchase counterpart of {@link getRentalAuthorityInfo} — needed for the
+ * land-service account to sign `sm_market_purchase` on the player's behalf.
+ */
+export async function getPurchaseAuthorityInfo(
+  player: string
+): Promise<PurchaseAuthorityInfo> {
+  const service = getServiceAccount();
+  if (!service || !player) return { authorized: false, purchase: [] };
+
+  const { purchase } = await getPlayerAuthorities(player);
+  const authorized = purchase.map((p) => p.toLowerCase()).includes(service);
+  return { authorized, purchase };
 }
 
 export function invalidateAuthorityCache(player: string): void {

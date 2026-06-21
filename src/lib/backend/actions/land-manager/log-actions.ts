@@ -394,12 +394,16 @@ export async function getTodayLogs(): Promise<{
     transactions: string[];
     donation_transactions: string[];
   } | null;
-  rental: {
+  worker: {
     runs: number;
     rented_count: number;
+    bought_count: number;
     staked_count: number;
-    total_dec: number;
+    rent_total_dec: number;
+    buy_total_dec: number;
+    buy_total_usd: number;
     rent_transactions: string[];
+    purchase_transactions: string[];
     stake_transactions: string[];
   } | null;
   stakeDec: {
@@ -419,7 +423,7 @@ export async function getTodayLogs(): Promise<{
       makeHarvestable: null,
       postHarvest: null,
       mythicHarvest: null,
-      rental: null,
+      worker: null,
       stakeDec: null,
     };
   }
@@ -432,7 +436,7 @@ export async function getTodayLogs(): Promise<{
     makeHarvestable,
     postHarvest,
     mythicHarvest,
-    rental,
+    worker,
     stakeDec,
   ] = await Promise.all([
     prisma.landHarvestLog.findUnique({
@@ -447,7 +451,7 @@ export async function getTodayLogs(): Promise<{
     prisma.landMythicHarvestLog.findUnique({
       where: { date_player: { date, player } },
     }),
-    prisma.landRentalLog.findUnique({
+    prisma.landWorkerLog.findUnique({
       where: { date_player: { date, player } },
     }),
     prisma.landStakeDecLog.findUnique({
@@ -492,14 +496,18 @@ export async function getTodayLogs(): Promise<{
           donation_transactions: mythicHarvest.donation_transactions,
         }
       : null,
-    rental: rental
+    worker: worker
       ? {
-          runs: rental.runs,
-          rented_count: rental.rented_count,
-          staked_count: rental.staked_count,
-          total_dec: rental.total_dec,
-          rent_transactions: rental.rent_transactions,
-          stake_transactions: rental.stake_transactions,
+          runs: worker.runs,
+          rented_count: worker.rented_count,
+          bought_count: worker.bought_count,
+          staked_count: worker.staked_count,
+          rent_total_dec: worker.rent_total_dec,
+          buy_total_dec: worker.buy_total_dec,
+          buy_total_usd: worker.buy_total_usd,
+          rent_transactions: worker.rent_transactions,
+          purchase_transactions: worker.purchase_transactions,
+          stake_transactions: worker.stake_transactions,
         }
       : null,
     stakeDec: stakeDec
@@ -516,7 +524,7 @@ export async function getTodayLogs(): Promise<{
   };
 }
 
-// ── Rental log ───────────────────────────────────────────────────────────────
+// ── Worker log (rental + purchase) ─────────────────────────────────────────────
 
 export interface RecordRentalLogInput {
   player: string;
@@ -527,7 +535,7 @@ export interface RecordRentalLogInput {
   stakeTxIds: string[];
 }
 
-/** Persist a rent-and-stake run. Upserts onto the (date, player) row — repeated runs accumulate. */
+/** Persist a rent-and-stake run. Upserts onto the (date, player) worker row — repeated runs accumulate. */
 export async function recordRentalLog(
   input: RecordRentalLogInput
 ): Promise<void> {
@@ -535,31 +543,89 @@ export async function recordRentalLog(
     input;
   const date = today();
 
-  const existing = await prisma.landRentalLog.findUnique({
+  const existing = await prisma.landWorkerLog.findUnique({
     where: { date_player: { date, player } },
   });
 
   if (existing) {
-    await prisma.landRentalLog.update({
+    await prisma.landWorkerLog.update({
       where: { date_player: { date, player } },
       data: {
         runs: { increment: 1 },
         rented_count: { increment: rentedCount },
         staked_count: { increment: stakedCount },
-        total_dec: { increment: totalDec },
+        rent_total_dec: { increment: totalDec },
         rent_transactions: { push: rentTxIds },
         stake_transactions: { push: stakeTxIds },
       },
     });
   } else {
-    await prisma.landRentalLog.create({
+    await prisma.landWorkerLog.create({
       data: {
         date,
         player,
         rented_count: rentedCount,
         staked_count: stakedCount,
-        total_dec: totalDec,
+        rent_total_dec: totalDec,
         rent_transactions: rentTxIds,
+        stake_transactions: stakeTxIds,
+      },
+    });
+  }
+}
+
+export interface RecordPurchaseLogInput {
+  player: string;
+  boughtCount: number;
+  stakedCount: number;
+  totalDec: number;
+  totalUsd: number;
+  purchaseTxIds: string[];
+  stakeTxIds: string[];
+}
+
+/** Persist a buy-and-stake run. Upserts onto the same (date, player) worker row as rentals. */
+export async function recordPurchaseLog(
+  input: RecordPurchaseLogInput
+): Promise<void> {
+  const {
+    player,
+    boughtCount,
+    stakedCount,
+    totalDec,
+    totalUsd,
+    purchaseTxIds,
+    stakeTxIds,
+  } = input;
+  const date = today();
+
+  const existing = await prisma.landWorkerLog.findUnique({
+    where: { date_player: { date, player } },
+  });
+
+  if (existing) {
+    await prisma.landWorkerLog.update({
+      where: { date_player: { date, player } },
+      data: {
+        runs: { increment: 1 },
+        bought_count: { increment: boughtCount },
+        staked_count: { increment: stakedCount },
+        buy_total_dec: { increment: totalDec },
+        buy_total_usd: { increment: totalUsd },
+        purchase_transactions: { push: purchaseTxIds },
+        stake_transactions: { push: stakeTxIds },
+      },
+    });
+  } else {
+    await prisma.landWorkerLog.create({
+      data: {
+        date,
+        player,
+        bought_count: boughtCount,
+        staked_count: stakedCount,
+        buy_total_dec: totalDec,
+        buy_total_usd: totalUsd,
+        purchase_transactions: purchaseTxIds,
         stake_transactions: stakeTxIds,
       },
     });

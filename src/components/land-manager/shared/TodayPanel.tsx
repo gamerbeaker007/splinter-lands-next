@@ -58,8 +58,9 @@ export default function TodayPanel({
       ...(data.postHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.transactions ?? []),
       ...(data.mythicHarvest?.donation_transactions ?? []),
-      ...(data.rental?.rent_transactions ?? []),
-      ...(data.rental?.stake_transactions ?? []),
+      ...(data.worker?.rent_transactions ?? []),
+      ...(data.worker?.purchase_transactions ?? []),
+      ...(data.worker?.stake_transactions ?? []),
       ...(data.stakeDec?.transactions ?? []),
     ];
     const unique = [...new Set(allTxIds)];
@@ -213,7 +214,7 @@ export default function TodayPanel({
     data?.makeHarvestable !== null ||
     data?.postHarvest !== null ||
     data?.mythicHarvest !== null ||
-    data?.rental !== null ||
+    data?.worker !== null ||
     data?.stakeDec !== null;
 
   return (
@@ -432,49 +433,98 @@ export default function TodayPanel({
               </Box>
             )}
 
-            {data?.rental && (
+            {data?.worker && data.worker.rented_count > 0 && (
               <Box>
                 <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Rent Workers · {data.rental.runs} run
-                    {data.rental.runs !== 1 ? "s" : ""}
+                    Rent Workers
                   </Typography>
-                  {anyFailed([
-                    ...data.rental.rent_transactions,
-                    ...data.rental.stake_transactions,
-                  ]) && <Cancel sx={{ fontSize: 12, color: "error.main" }} />}
-                  {allVerified([
-                    ...data.rental.rent_transactions,
-                    ...data.rental.stake_transactions,
-                  ]) && (
+                  {anyFailed(data.worker.rent_transactions) && (
+                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
+                  )}
+                  {allVerified(data.worker.rent_transactions) && (
                     <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
                   )}
                 </Stack>
                 <Stack direction="row" gap={0.5} flexWrap="wrap">
                   <Chip
-                    label={`Rented: ${data.rental.rented_count}`}
+                    label={`Rented: ${data.worker.rented_count}`}
                     size="small"
                     variant="outlined"
                     sx={{ fontSize: "0.7rem" }}
                   />
                   <Chip
-                    label={`Staked: ${data.rental.staked_count}`}
-                    size="small"
-                    variant="outlined"
-                    sx={{ fontSize: "0.7rem" }}
-                  />
-                  <Chip
-                    label={`${data.rental.total_dec.toFixed(3)} DEC`}
+                    label={`${data.worker.rent_total_dec.toFixed(3)} DEC`}
                     size="small"
                     color="primary"
                     variant="outlined"
                     sx={{ fontSize: "0.7rem" }}
                   />
                 </Stack>
-                {txList([
-                  ...data.rental.rent_transactions,
-                  ...data.rental.stake_transactions,
-                ])}
+                {txList(data.worker.rent_transactions)}
+              </Box>
+            )}
+
+            {data?.worker && data.worker.bought_count > 0 && (
+              <Box>
+                <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    Buy Workers
+                  </Typography>
+                  {anyFailed(data.worker.purchase_transactions) && (
+                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
+                  )}
+                  {allVerified(data.worker.purchase_transactions) && (
+                    <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
+                  )}
+                </Stack>
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  <Chip
+                    label={`Bought: ${data.worker.bought_count}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                  <Chip
+                    label={`${data.worker.buy_total_dec.toFixed(3)} DEC`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                  <Chip
+                    label={`$${data.worker.buy_total_usd.toFixed(2)}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                </Stack>
+                {txList(data.worker.purchase_transactions)}
+              </Box>
+            )}
+
+            {data?.worker && data.worker.staked_count > 0 && (
+              <Box>
+                <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    Workers Staked
+                  </Typography>
+                  {anyFailed(data.worker.stake_transactions) && (
+                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
+                  )}
+                  {allVerified(data.worker.stake_transactions) && (
+                    <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
+                  )}
+                </Stack>
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  <Chip
+                    label={`Staked: ${data.worker.staked_count}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                </Stack>
+                {txList(data.worker.stake_transactions)}
               </Box>
             )}
 

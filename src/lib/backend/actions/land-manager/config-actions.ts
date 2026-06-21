@@ -1,6 +1,11 @@
 "use server";
 import { prisma } from "@/lib/prisma";
 import {
+  BUY_BATCH_SIZE_MAX,
+  BUY_BATCH_SIZE_MIN,
+  BuyConfig,
+  BuyStrategy,
+  DEFAULT_BUY_STRATEGY,
   DEFAULT_DONATION_CONFIG,
   DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
   DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES,
@@ -58,7 +63,50 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       rental_batch_size: row?.rental_batch_size ?? null,
       land_renters_only: row?.rental_land_renters_only ?? false,
     },
+    buy: {
+      strategy: (row?.buy_strategy as BuyStrategy) ?? DEFAULT_BUY_STRATEGY,
+      max_total_dec: row?.buy_max_total_dec ?? 0,
+      max_dec_per_worker: row?.buy_max_dec_per_worker ?? 0,
+      min_land_base_pp: row?.buy_min_land_base_pp ?? 0,
+      min_foil: row?.buy_min_foil ?? 0,
+      buy_batch_size: row?.buy_batch_size ?? 10,
+    },
   };
+}
+
+export async function saveBuyConfig(
+  buy: BuyConfig
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const batchSize = Math.max(
+    BUY_BATCH_SIZE_MIN,
+    Math.min(BUY_BATCH_SIZE_MAX, Math.floor(buy.buy_batch_size || 0) || 1)
+  );
+
+  const data = {
+    buy_strategy: buy.strategy,
+    buy_max_total_dec: buy.max_total_dec,
+    buy_max_dec_per_worker: buy.max_dec_per_worker,
+    buy_min_land_base_pp: buy.min_land_base_pp,
+    buy_min_foil: buy.min_foil,
+    buy_batch_size: batchSize,
+  };
+
+  try {
+    await prisma.landManagerConfig.upsert({
+      where: { player: auth.username },
+      update: data,
+      create: { player: auth.username, enabled_regions: [], ...data },
+    });
+    return { success: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: msg };
+  }
 }
 
 export async function saveDonationConfig(

@@ -184,13 +184,14 @@ export function buildSellResourceForDecOp(
 }
 
 /**
- * Grants/revokes rental authority by replacing the player's `rental[]` list.
- * Pass the new full list (smart-merge upstream so other granted accounts stay).
- * Uses ACTIVE key — modifies on-chain authority state.
+ * Grants/revokes authority by replacing the player's authority lists. Pass the
+ * new full list(s) (smart-merge upstream so other granted accounts stay). Only
+ * the lists provided are sent; omit one to leave it untouched. Uses ACTIVE key
+ * — modifies on-chain authority state.
  */
 export function buildSetAuthorityOp(
   username: string,
-  rental: string[]
+  authorities: { rental?: string[]; purchase?: string[] }
 ): [string, object] {
   return [
     "custom_json",
@@ -199,7 +200,12 @@ export function buildSetAuthorityOp(
       required_posting_auths: [],
       id: "sm_set_authority",
       json: JSON.stringify({
-        rental,
+        ...(authorities.rental !== undefined
+          ? { rental: authorities.rental }
+          : {}),
+        ...(authorities.purchase !== undefined
+          ? { purchase: authorities.purchase }
+          : {}),
         app: APP,
         n: generateNonce(),
       }),
@@ -599,7 +605,7 @@ export function buildStakeChangeOp(
 /**
  * Renew one or more rented cards via the SPL market on behalf of `player`.
  * Signed by the `serviceAccount`'s ACTIVE key (broadcast server-side) — the
- * player must have granted purchase authority to that account on Splinterlands
+ * player must have granted rental authority to that account on Splinterlands
  * Account Security. Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
  */
 export function buildRenewRentalOnBehalfOp(
@@ -627,7 +633,7 @@ export function buildRenewRentalOnBehalfOp(
 
 /**
  * Rent cards via the SPL market on behalf of `player`. Signed by the
- * `serviceAccount`'s ACTIVE key — the player must have granted purchase
+ * `serviceAccount`'s ACTIVE key — the player must have granted rental
  * authority to that account on Splinterlands Account Security.
  * Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
  */
@@ -645,6 +651,42 @@ export function buildRentOnBehalfOp(
       json: JSON.stringify({
         currency: "DEC",
         items: marketIds,
+        player,
+        market: MARKET,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
+/**
+ * Buy cards via the SPL market on behalf of `player`. Signed by the
+ * `serviceAccount`'s ACTIVE key — the player must have granted PURCHASE
+ * authority to that account on Splinterlands Account Security. The base SPL
+ * `market_purchase` op is account-signed; here we make it an on-behalf op by
+ * adding `player` (and signing with the service account's active key).
+ *
+ * `price` is the total DEC the buyer is willing to pay for `marketIds` — it
+ * guards against the listing price changing between planning and broadcast.
+ * Batch upstream with MAX_ITEM_SIZE_IN_OPERATION.
+ */
+export function buildMarketPurchaseOnBehalfOp(
+  serviceAccount: string,
+  player: string,
+  marketIds: string[],
+  price: number
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [serviceAccount],
+      required_posting_auths: [],
+      id: "sm_market_purchase",
+      json: JSON.stringify({
+        currency: "DEC",
+        items: marketIds,
+        price,
         player,
         market: MARKET,
         app: APP,

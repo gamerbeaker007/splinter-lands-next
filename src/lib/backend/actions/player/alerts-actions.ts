@@ -92,7 +92,7 @@ export async function getPlayerCardAlerts(
       ) ?? 0;
 
     // Analyze all alerts in a single pass through deeds
-    const { countAlerts, negativeAlerts, powerSourceAlerts, toMuchBasePP } =
+    const { countAlerts, negativeAlerts, powerSourceAlerts, tooMuchBasePP } =
       analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
 
     // Analyze cards for terrain bonuses
@@ -115,7 +115,7 @@ export async function getPlayerCardAlerts(
       terrainBoostAlerts: terrainBoostAlerts,
       negativeDECNaturalResourceDeeds: negativeAlerts.negativeNaturalResource,
       negativeDECOtherResourceDeeds: negativeAlerts.negativeOtherResource,
-      tooMuchBasePP: toMuchBasePP,
+      tooMuchBasePP: tooMuchBasePP,
       unusedPowerSource: powerSourceAlerts.unusedPowerSource,
       noPowerSource: powerSourceAlerts.noPowerSource,
       powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
@@ -230,7 +230,7 @@ function analyzeAllDeeds(
     noPowerSource: DeedInfo[];
     powerCoreWhileEnergized: DeedInfo[];
   };
-  toMuchBasePP: DeedInfo[];
+  tooMuchBasePP: DeedInfo[];
 } {
   const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
@@ -238,7 +238,7 @@ function analyzeAllDeeds(
   const negativeOtherResource: NegativeDecAlert[] = [];
   const noPowerSource: DeedInfo[] = [];
   const powerCoreWhileEnergized: DeedInfo[] = [];
-  const toMuchBasePP: DeedInfo[] = [];
+  const tooMuchBasePP: DeedInfo[] = [];
   let numberOfPowerCores = ownedPowerCores;
 
   // Single loop through all deeds
@@ -261,8 +261,9 @@ function analyzeAllDeeds(
 
     // Check for base PP issues
     const basePP = deed.stakingDetail?.total_base_pp ?? 0;
-    if (basePP > 100_000) {
-      toMuchBasePP.push(deedInfo);
+    const cappedBasePP = deed.stakingDetail?.total_base_pp_after_cap ?? 0;
+    if (basePP > 100_000 && basePP !== cappedBasePP) {
+      tooMuchBasePP.push(deedInfo);
     }
     // Check for negative DEC earnings
     const hasNetDec = deed.productionInfo?.netDEC != null;
@@ -309,7 +310,7 @@ function analyzeAllDeeds(
       noPowerSource,
       powerCoreWhileEnergized,
     },
-    toMuchBasePP,
+    tooMuchBasePP,
   };
 }
 

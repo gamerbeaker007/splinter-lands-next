@@ -1,52 +1,30 @@
 "use client";
 
-import { RentalConfig, RentalPlan } from "@/types/landManager";
 import {
-  Box,
-  Button,
-  Chip,
-  Link,
-  Paper,
-  Stack,
-  Typography,
-} from "@mui/material";
+  BuyConfig,
+  BuyPlan,
+  RentalConfig,
+  RentalPlan,
+} from "@/types/landManager";
+import { Box, Button, Chip, Paper, Stack, Typography } from "@mui/material";
 import { useState, useTransition } from "react";
-import RentalPlanDevView from "./RentalPlanDevView";
-
-// ── Quick-launch link (all params explicit for easy editing in URL bar) ──────
-const DEFAULT_LINK =
-  "/dev/rental-plan?plots=14&batch=5&max_dec=0&max_per_worker=0&min_pp=0&min_foil=0";
-
-// ── Same columns as RentDryRunDialog ─────────────────────────────────────────
+import WorkerPlanDevView from "./WorkerPlanDevView";
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface Props {
-  config: RentalConfig;
-  execute: () => Promise<RentalPlan>;
+  config: RentalConfig | BuyConfig;
+  execute: () => Promise<RentalPlan | BuyPlan>;
 }
 
-export default function RentalPlanAction({ config, execute }: Props) {
-  const [plan, setPlan] = useState<RentalPlan | null>(null);
+export default function WorkerPlanAction({ config, execute }: Props) {
+  const [plan, setPlan] = useState<RentalPlan | BuyPlan | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: "auto" }}>
-      {/* Quick-launch link */}
-      <Box mb={3}>
-        <Chip
-          suppressHydrationWarning
-          component={Link}
-          href={DEFAULT_LINK}
-          label="Run test (all defaults)"
-          size="small"
-          variant="outlined"
-          color="primary"
-          clickable
-          sx={{ fontFamily: "monospace", fontSize: "0.72rem" }}
-        />
-      </Box>
+  const isRental = "max_dec_per_day_per_worker" in config;
 
+  return (
+    <Box>
       {/* Config summary */}
       <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
         <Typography variant="subtitle2" mb={1}>
@@ -58,8 +36,10 @@ export default function RentalPlanAction({ config, execute }: Props) {
               ["strategy", config.strategy],
               ["max_total_dec", config.max_total_dec || "unlimited"],
               [
-                "max_dec_per_day_per_worker",
-                config.max_dec_per_day_per_worker || "unlimited",
+                isRental ? "max_dec_per_day_per_worker" : "max_dec_per_worker",
+                (isRental
+                  ? config.max_dec_per_day_per_worker
+                  : config.max_dec_per_worker) || "unlimited",
               ],
               ["min_land_base_pp", config.min_land_base_pp || "none"],
               [
@@ -70,7 +50,12 @@ export default function RentalPlanAction({ config, execute }: Props) {
                     ? "Gold+"
                     : config.min_foil,
               ],
-              ["rental_batch_size", config.rental_batch_size ?? "all"],
+              [
+                "batch_size",
+                isRental
+                  ? config.rental_batch_size
+                  : (config.buy_batch_size ?? "all"),
+              ],
             ] as [string, string | number][]
           ).map(([k, v]) => (
             <Chip
@@ -85,6 +70,9 @@ export default function RentalPlanAction({ config, execute }: Props) {
 
       {/* Execute action */}
       <Button
+        variant="contained"
+        color="primary"
+        sx={{ mb: 3 }}
         disabled={isPending}
         onClick={() => {
           startTransition(async () => {
@@ -93,10 +81,14 @@ export default function RentalPlanAction({ config, execute }: Props) {
           });
         }}
       >
-        {isPending ? "Building..." : "Build rental plan"}
+        {isPending
+          ? "Building..."
+          : isRental
+            ? "Build rental plan"
+            : "Build buy plan"}
       </Button>
 
-      {plan && <RentalPlanDevView plan={plan} />}
+      {plan && <WorkerPlanDevView plan={plan} />}
     </Box>
   );
 }

@@ -15,6 +15,32 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.13.0] - 2026-06-19
+
+### Added
+- **Land Manager - Buy Workers** adds a purchase counterpart to Rent Empty
+  Workers. Powered plots with empty worker slots can now be planned from live
+  for-sale card listings, confirmed with DEC balance checks, bought through the
+  land-service account using purchase authority, and then staked as workers via
+  Hive Keychain.
+- **Land Manager - Purchase authority** adds a reusable authority control for
+  rental and purchase permissions, plus combined worker logging in the Today
+  panel for rented, bought, and staked workers.
+
+### Changed
+- **Worker planning** now shares the candidate selection, listing scoring,
+  budget caps, batching, and greedy assignment code between rentals and
+  purchases. Rental-specific season-day pricing remains isolated in the rental
+  strategy; purchase pricing is one-time DEC per listing.
+
+### Fixed
+- **Rent on behalf** now reports missing rental authority as rental authority,
+  not purchase authority.
+- **Player Dashboard** take into account runi(s) with the tooMuchBasePP alert (they can go over 100K)
+
+
+---
+
 ## [v1.12.0] - 2026-06-15
 
 ### Added

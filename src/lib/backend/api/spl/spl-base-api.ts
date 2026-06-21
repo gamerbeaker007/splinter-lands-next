@@ -3,14 +3,15 @@ import { SplBalance } from "@/types/spl/balance";
 import { SplInventory } from "@/types/spl/inventory";
 import {
   SplMarketListing,
-  SplMarketRentGrouped,
-} from "@/types/spl/marketRental";
+  SplMarketListingGrouped,
+} from "@/types/spl/marketListing";
 import { SplPlayerAuthorities } from "@/types/spl/playerAuthorities";
 import { SplSettingsResponse } from "@/types/spl/settings";
 import type {
   AddLiquidityTrxData,
   DecPowerupRegionTrxData,
   HarvestAllTrxData,
+  MarketPurchaseTrxData,
   MarketRentTrxData,
   SetAuthorityTrxData,
   SplTrxResult,
@@ -21,12 +22,12 @@ import type {
   TrxLookupOutcome,
 } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
+import { SplMarketCardData } from "@/types/splMarketCardData";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { SplPlayerDetails } from "@/types/splPlayerDetails";
 import axios from "axios";
 import { cookies } from "next/headers";
 import * as rax from "retry-axios";
-import { SplMarketCardData } from "../../../../types/splMarketCardData";
 import { validateSplJwt } from "../../jwt/splJwtValidation";
 import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
@@ -182,7 +183,7 @@ export async function fetchMarketCardData() {
 }
 
 export async function fetchMarketForRentGrouped(): Promise<
-  SplMarketRentGrouped[]
+  SplMarketListingGrouped[]
 > {
   const url = "market/for_rent_grouped";
   logger.info("Fetch market for-rent grouped");
@@ -195,49 +196,67 @@ export async function fetchMarketForRentGrouped(): Promise<
   if (!Array.isArray(data)) {
     throw new Error("Invalid response from Splinterlands API");
   }
-  return data as SplMarketRentGrouped[];
+  return data as SplMarketListingGrouped[];
+}
+
+/** Map an internal foil rank to the market API's `foil` query value. */
+function foilToApiValue(foil: number): number | string {
+  if (foil === 1 || foil === 2) return "gold";
+  if (foil === 3 || foil === 4) return "black";
+  return foil; // 0 (regular) or any unmapped value
+}
+
+export interface MarketListingQuery {
+  cardDetailId: number;
+  foil: number;
+  edition: number;
+  /** "rent" → rental listings (adds rental_type); "sell" → for-sale listings. */
+  type: "rent" | "sell";
+  /** Rental period, only meaningful for type "rent". Defaults to "season". */
+  rentalType?: "season" | "daily";
+  /**
+   * BY-CARD level filter (market_query_by_card): integer where 99 = max level,
+   * 0 = all levels, any other N = that specific level. Omitted from the
+   * request when undefined (returns all levels).
+   *
+   * NB: the GROUPED endpoints usea different convention:
+   * (string "max" / integer / omit) — see the fetch Grouped functions.
+   */
+  level?: number;
 }
 
 /**
- * Returns rental market listings for the given (card_detail_id, foil, edition).
- * Caller still does season/PP filtering.
- * foil = 0 use foil=0
- * foil = 1 or 2 user foil="gold"
- * foil = 3 or 4 use foil="black"
+ * Returns market listings for a single (card_detail_id, foil, edition) from
+ * `market/market_query_by_card`, for either renting or buying. Caller still
+ * does season/PP/price filtering.
  *
- * Then filter out the ones that are not needed
+ * foil mapping: 0 → 0, 1|2 → "gold", 3|4 → "black".
  */
-export async function fetchMarketRentalListings(
-  cardDetailId: number,
-  foil: number,
-  edition: number
-): Promise<SplMarketListing[]> {
+export async function fetchMarketListingsByCard({
+  cardDetailId,
+  foil,
+  edition,
+  type,
+  rentalType = "season",
+  level,
+}: MarketListingQuery): Promise<SplMarketListing[]> {
   const url = "market/market_query_by_card";
-  console.info(
-    `Fetch market rental listings for cdid=${cardDetailId} foil=${foil} ed=${edition}`
+  logger.info(
+    `Fetch market ${type} listings for cdid=${cardDetailId} foil=${foil} ed=${edition}` +
+      (level === undefined ? "" : ` level=${level}`)
   );
 
-  // Map internal foil values to API values
-  let apiFoil: number | string = foil;
+  const params: Record<string, string | number> = {
+    card_detail_id: cardDetailId,
+    foil: foilToApiValue(foil),
+    edition,
+    type,
+    sort: "low_price_bcx",
+  };
+  if (type === "rent") params.rental_type = rentalType;
+  if (level !== undefined) params.level = level;
 
-  if (foil === 0) {
-    apiFoil = 0;
-  } else if (foil === 1 || foil === 2) {
-    apiFoil = "gold";
-  } else if (foil === 3 || foil === 4) {
-    apiFoil = "black";
-  }
-
-  const res = await splBaseClient.get(url, {
-    params: {
-      card_detail_id: cardDetailId,
-      foil: apiFoil,
-      edition,
-      type: "rent",
-      rental_type: "season",
-      sort: "low_price_bcx",
-    },
-  });
+  const res = await splBaseClient.get(url, { params });
 
   const data = res.data;
   const items: unknown = Array.isArray(data)
@@ -247,15 +266,43 @@ export async function fetchMarketRentalListings(
       : null;
   if (!Array.isArray(items)) {
     logger.warn(
-      `[rental] ${url} unexpected response shape for cdid=${cardDetailId} foil=${foil} ed=${edition}: ${JSON.stringify(data).slice(0, 300)}`
+      `[market] ${url} unexpected response shape for cdid=${cardDetailId} foil=${foil} ed=${edition}: ${JSON.stringify(data).slice(0, 300)}`
     );
     throw new Error("Invalid response from Splinterlands API");
   }
 
-  // Filter out listings with foil that doesn't match the requested foil
+  // Filter out listings whose foil doesn't match the requested foil.
   return (items as SplMarketListing[]).filter(
     (listing) => listing.foil === foil
   );
+}
+
+/**
+ * Grouped for-sale market snapshot — the buy ("purchase") counterpart of
+ * {@link fetchMarketForRentGrouped}.
+ *
+ * `level` conventions for the GROUPED endpoints (for_rent_grouped /
+ * for_sale_grouped):
+ *   - an integer (e.g. 4) selects that specific card level,
+ *   - the string "max" selects the max level,
+ *   - omitting the param returns all levels.
+ * We keep "max" for now to mirror the rental flow.
+ */
+export async function fetchMarketForSaleGrouped(): Promise<
+  SplMarketListingGrouped[]
+> {
+  const url = "market/for_sale_grouped";
+  logger.info("Fetch market for-sale grouped");
+  const params = {
+    level: "max",
+  };
+  const res = await splBaseClient.get(url, { params });
+
+  const data = res.data;
+  if (!Array.isArray(data)) {
+    throw new Error("Invalid response from Splinterlands API");
+  }
+  return data as SplMarketListingGrouped[];
 }
 
 export async function fetchSettings(): Promise<SplSettingsResponse | null> {
@@ -431,6 +478,21 @@ function parseMarketRent(d: Raw): MarketRentTrxData {
   };
 }
 
+function parseMarketPurchase(d: Raw): MarketPurchaseTrxData {
+  return {
+    success: (d.success as boolean) ?? false,
+    purchaser: (d.purchaser as string) ?? "",
+    num_cards: (d.num_cards as number) ?? 0,
+    total_usd: (d.total_usd as number) ?? 0,
+    total_dec: (d.total_dec as number) ?? 0,
+    total_fees_dec: (d.total_fees_dec as number) ?? 0,
+    total_market_fees_dec: (d.total_market_fees_dec as number) ?? 0,
+    total_burn_fees_dec: (d.total_burn_fees_dec as number) ?? 0,
+    total_referral_cut: (d.total_referral_cut as number) ?? 0,
+    by_seller: (d.by_seller as MarketPurchaseTrxData["by_seller"]) ?? [],
+  };
+}
+
 function parseDecPowerupRegion(d: Raw): DecPowerupRegionTrxData {
   const harvest = (d.harvestResults as Raw | undefined) ?? {};
   const harvestData = (harvest.data as Raw | undefined) ?? {};
@@ -536,6 +598,18 @@ export async function fetchTransactionLookup(
         result = {
           type: "market_renew_rental",
           data: parseMarketRent(outer as Raw),
+        };
+        break;
+      }
+      case "market_purchase": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "Purchase transaction failed";
+          return { status: "failed", error };
+        }
+        result = {
+          type: "market_purchase",
+          data: parseMarketPurchase(outer as Raw),
         };
         break;
       }
