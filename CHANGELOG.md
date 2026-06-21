@@ -15,7 +15,17 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.13.0] - 2026-06-19
+## [v1.13.1] - 2026-06-21
+
+### Added
+- **Land Manager: UnStaked DEC** - added possibility to unstake DEC when you have more staked DEC then required
+
+### Fixed
+- **Land Manager: Staked DEC** - now only for eneabled regions not total
+
+---
+
+## [v1.13.0] - 2026-06-21
 
 ### Added
 - **Land Manager - Buy Workers** adds a purchase counterpart to Rent Empty

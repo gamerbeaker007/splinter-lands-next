@@ -363,6 +363,22 @@ model LandStakeDecLog {
   @@map("land_stake_dec_log")
 }
 
+model LandUnstakeDecLog {
+  date             DateTime @db.Date
+  player           String
+  runs             Int      @default(1)
+  succeeded_json   Json     @default("{}")    // { region_uid: amount } broadcast & confirmed
+  failed_json      Json     @default("{}")    // { region_uid: amount } attempted but failed
+  total_succeeded  Float    @default(0)
+  total_failed     Float    @default(0)
+  error            String?
+  transactions     String[] @default([])
+  updated_at       DateTime @updatedAt
+
+  @@id([date, player])
+  @@map("land_unstake_dec_log")
+}
+
 model LandManagerConfig {
   player                          String   @id
   enabled_regions                 Int[]

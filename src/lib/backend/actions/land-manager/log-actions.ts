@@ -415,6 +415,15 @@ export async function getTodayLogs(): Promise<{
     error: string | null;
     transactions: string[];
   } | null;
+  unstakeDec: {
+    runs: number;
+    succeeded_json: unknown;
+    failed_json: unknown;
+    total_succeeded: number;
+    total_failed: number;
+    error: string | null;
+    transactions: string[];
+  } | null;
 }> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -425,6 +434,7 @@ export async function getTodayLogs(): Promise<{
       mythicHarvest: null,
       worker: null,
       stakeDec: null,
+      unstakeDec: null,
     };
   }
 
@@ -438,6 +448,7 @@ export async function getTodayLogs(): Promise<{
     mythicHarvest,
     worker,
     stakeDec,
+    unstakeDec,
   ] = await Promise.all([
     prisma.landHarvestLog.findUnique({
       where: { date_player: { date, player } },
@@ -455,6 +466,9 @@ export async function getTodayLogs(): Promise<{
       where: { date_player: { date, player } },
     }),
     prisma.landStakeDecLog.findUnique({
+      where: { date_player: { date, player } },
+    }),
+    prisma.landUnstakeDecLog.findUnique({
       where: { date_player: { date, player } },
     }),
   ]);
@@ -519,6 +533,17 @@ export async function getTodayLogs(): Promise<{
           total_failed: stakeDec.total_failed,
           error: stakeDec.error,
           transactions: stakeDec.transactions,
+        }
+      : null,
+    unstakeDec: unstakeDec
+      ? {
+          runs: unstakeDec.runs,
+          succeeded_json: unstakeDec.succeeded_json,
+          failed_json: unstakeDec.failed_json,
+          total_succeeded: unstakeDec.total_succeeded,
+          total_failed: unstakeDec.total_failed,
+          error: unstakeDec.error,
+          transactions: unstakeDec.transactions,
         }
       : null,
   };
