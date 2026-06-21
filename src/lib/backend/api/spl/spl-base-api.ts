@@ -9,7 +9,7 @@ import { SplPlayerAuthorities } from "@/types/spl/playerAuthorities";
 import { SplSettingsResponse } from "@/types/spl/settings";
 import type {
   AddLiquidityTrxData,
-  DecPowerupRegionTrxData,
+  DecPowerRegionTrxData,
   HarvestAllTrxData,
   MarketPurchaseTrxData,
   MarketRentTrxData,
@@ -493,7 +493,7 @@ function parseMarketPurchase(d: Raw): MarketPurchaseTrxData {
   };
 }
 
-function parseDecPowerupRegion(d: Raw): DecPowerupRegionTrxData {
+function parseDecPowerRegion(d: Raw): DecPowerRegionTrxData {
   const harvest = (d.harvestResults as Raw | undefined) ?? {};
   const harvestData = (harvest.data as Raw | undefined) ?? {};
   return {
@@ -506,7 +506,7 @@ function parseDecPowerupRegion(d: Raw): DecPowerupRegionTrxData {
       ? (harvestData.results as unknown[]).length
       : 0,
     harvest_results:
-      (harvestData.results as DecPowerupRegionTrxData["harvest_results"]) ?? [],
+      (harvestData.results as DecPowerRegionTrxData["harvest_results"]) ?? [],
   };
 }
 
@@ -553,7 +553,8 @@ export async function fetchTransactionLookup(
       case "swap_tokens":
       case "tax_collection":
       case "add_liquidity":
-      case "dec_powerup_region": {
+      case "dec_powerup_region":
+      case "dec_powerdown_region": {
         if (outer?.result?.success === false) {
           const error: string =
             outer?.result?.error ?? outer?.error ?? "Transaction failed";
@@ -573,10 +574,15 @@ export async function fetchTransactionLookup(
           result = { type: "tax_collection", data: parseTaxCollection(d) };
         else if (op === "add_liquidity")
           result = { type: "add_liquidity", data: parseAddLiquidity(d) };
-        else
+        else if (op === "dec_powerup_region")
           result = {
             type: "dec_powerup_region",
-            data: parseDecPowerupRegion(d),
+            data: parseDecPowerRegion(d),
+          };
+        else
+          result = {
+            type: "dec_powerdown_region",
+            data: parseDecPowerRegion(d),
           };
         break;
       }

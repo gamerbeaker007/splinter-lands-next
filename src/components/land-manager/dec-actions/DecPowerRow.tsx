@@ -1,8 +1,9 @@
 "use client";
 
-import StakeDecDialog from "@/components/land-manager/dec-actions/StakeDecDialog";
-import { useStakeDecAction } from "@/hooks/useStakeDecAction";
-import { Bolt } from "@mui/icons-material";
+import DecPowerDialog from "@/components/land-manager/dec-actions/DecPowerDialog";
+import { DEC_POWER_VARIANTS } from "@/components/land-manager/dec-actions/decPowerVariant";
+import { useDecPowerAction } from "@/hooks/useDecPowerAction";
+import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
 import {
   Alert,
   Button,
@@ -16,7 +17,9 @@ import { useEffect, useState } from "react";
 interface Props {
   username: string;
   enabledRegions: number[];
-  shortfallTotal: number;
+  direction: DecPowerDirection;
+  /** Global amount available to act on (shortfall for stake, excess for unstake). */
+  availableTotal: number;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onSuccess: () => void;
@@ -26,15 +29,23 @@ function fmtInt(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-export default function StakeDecRow({
+export default function DecPowerRow({
   username,
   enabledRegions,
-  shortfallTotal,
+  direction,
+  availableTotal,
   anyBusy,
   onBusyChange,
   onSuccess,
 }: Props) {
-  const action = useStakeDecAction({ username, enabledRegions, onSuccess });
+  const variant = DEC_POWER_VARIANTS[direction];
+  const Icon = variant.icon;
+  const action = useDecPowerAction({
+    username,
+    enabledRegions,
+    direction,
+    onSuccess,
+  });
   const [dialogMode, setDialogMode] = useState<"dryrun" | "confirm" | null>(
     null
   );
@@ -43,7 +54,7 @@ export default function StakeDecRow({
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
 
-  const disabled = anyBusy || shortfallTotal <= 0;
+  const disabled = anyBusy || availableTotal <= 0;
 
   const handleConfirm = async () => {
     await action.execute();
@@ -61,6 +72,10 @@ export default function StakeDecRow({
     await action.preview();
   };
 
+  const succeededRegionCount = action.result
+    ? Object.keys(action.result.succeededByRegion).length
+    : 0;
+
   return (
     <>
       <Stack
@@ -73,34 +88,36 @@ export default function StakeDecRow({
         <ButtonGroup size="small" disabled={disabled}>
           <Tooltip
             title={
-              shortfallTotal <= 0
-                ? "No DEC stake shortfall in enabled regions"
-                : "Stake DEC into regions short of needed stake"
+              availableTotal <= 0
+                ? variant.disabledTooltip
+                : variant.enabledTooltip
             }
           >
             <span>
               <Button
                 variant="contained"
-                color="info"
+                color={variant.color}
                 startIcon={
                   action.busy ? (
                     <CircularProgress size={14} color="inherit" />
                   ) : (
-                    <Bolt fontSize="small" />
+                    <Icon fontSize="small" />
                   )
                 }
                 disabled={disabled}
                 onClick={openConfirm}
               >
-                Stake DEC{" "}
+                {variant.verb} DEC{" "}
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Show planned stake without broadcasting">
+          <Tooltip
+            title={`Show planned ${variant.verb.toLowerCase()} without broadcasting`}
+          >
             <span>
               <Button
                 variant="outlined"
-                color="info"
+                color={variant.color}
                 disabled={disabled}
                 onClick={openDryRun}
               >
@@ -113,17 +130,17 @@ export default function StakeDecRow({
 
       {action.result?.success && (
         <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
-          Staked {fmtInt(action.result.totalSucceeded)} DEC across{" "}
-          {Object.keys(action.result.succeededByRegion).length} region
-          {Object.keys(action.result.succeededByRegion).length === 1 ? "" : "s"}
-          .
+          {variant.pastVerb} {fmtInt(action.result.totalSucceeded)} DEC across{" "}
+          {succeededRegionCount} region
+          {succeededRegionCount === 1 ? "" : "s"}.
         </Alert>
       )}
 
       {action.result && !action.result.success && (
         <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
-          Partial run — staked {fmtInt(action.result.totalSucceeded)} DEC,
-          failed/skipped {fmtInt(action.result.totalFailed)} DEC.
+          Partial run — {variant.pastVerb.toLowerCase()}{" "}
+          {fmtInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
+          {fmtInt(action.result.totalFailed)} DEC.
         </Alert>
       )}
 
@@ -134,7 +151,8 @@ export default function StakeDecRow({
       )}
 
       {dialogMode && action.dryRun && (
-        <StakeDecDialog
+        <DecPowerDialog
+          direction={direction}
           plan={action.dryRun}
           decBalance={action.decBalance}
           busy={action.busy}

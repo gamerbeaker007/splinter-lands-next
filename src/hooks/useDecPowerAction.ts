@@ -5,11 +5,15 @@ import {
   lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
-  getStakeDecPlan,
-  recordStakeDecLog,
-  StakeDecPlan,
-} from "@/lib/backend/actions/land-manager/stake-dec-actions";
-import { buildStakeDecRegionOp } from "@/lib/shared/operations/opBuilders";
+  DecPowerDirection,
+  DecPowerPlan,
+  getDecPowerPlan,
+  recordDecPowerLog,
+} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import {
+  buildStakeDecRegionOp,
+  buildUnstakeDecRegionOp,
+} from "@/lib/shared/operations/opBuilders";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -20,10 +24,11 @@ import { useCallback, useState } from "react";
 interface Params {
   username: string;
   enabledRegions: number[];
+  direction: DecPowerDirection;
   onSuccess?: () => void;
 }
 
-export interface StakeDecExecuteResult {
+export interface DecPowerExecuteResult {
   success: boolean;
   txIds: string[];
   succeededByRegion: Record<string, number>;
@@ -32,11 +37,12 @@ export interface StakeDecExecuteResult {
   totalFailed: number;
 }
 
-export interface UseStakeDecAction {
+export interface UseDecPowerAction {
   busy: boolean;
-  dryRun: StakeDecPlan | null;
+  dryRun: DecPowerPlan | null;
+  /** Player DEC balance — only fetched when staking (`direction === "up"`). */
   decBalance: number | null;
-  result: StakeDecExecuteResult | null;
+  result: DecPowerExecuteResult | null;
   error: string | null;
   clearDryRun: () => void;
   clearResult: () => void;
@@ -45,16 +51,25 @@ export interface UseStakeDecAction {
   execute: () => Promise<void>;
 }
 
-export function useStakeDecAction({
+export function useDecPowerAction({
   username,
   enabledRegions,
+  direction,
   onSuccess,
-}: Params): UseStakeDecAction {
+}: Params): UseDecPowerAction {
   const [busy, setBusy] = useState(false);
-  const [dryRun, setDryRun] = useState<StakeDecPlan | null>(null);
+  const [dryRun, setDryRun] = useState<DecPowerPlan | null>(null);
   const [decBalance, setDecBalance] = useState<number | null>(null);
-  const [result, setResult] = useState<StakeDecExecuteResult | null>(null);
+  const [result, setResult] = useState<DecPowerExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Staking spends DEC, so we check the balance covers the plan. Unstaking
+  // returns DEC, so there's nothing to check.
+  const needsBalance = direction === "up";
+  const buildOp =
+    direction === "up" ? buildStakeDecRegionOp : buildUnstakeDecRegionOp;
+  const noun = direction === "up" ? "shortfall to stake" : "excess to unstake";
+  const verb = direction === "up" ? "Stake" : "Unstake";
 
   const preview = useCallback(async () => {
     setBusy(true);
@@ -63,8 +78,10 @@ export function useStakeDecAction({
     setDecBalance(null);
     try {
       const [plan, balance] = await Promise.all([
-        getStakeDecPlan(enabledRegions),
-        username ? getDecBalance(username) : Promise.resolve(0),
+        getDecPowerPlan(enabledRegions, direction),
+        needsBalance && username
+          ? getDecBalance(username)
+          : Promise.resolve(null),
       ]);
       setDryRun(plan);
       setDecBalance(balance);
@@ -73,7 +90,7 @@ export function useStakeDecAction({
     } finally {
       setBusy(false);
     }
-  }, [enabledRegions, username]);
+  }, [enabledRegions, direction, needsBalance, username]);
 
   const execute = useCallback(async () => {
     if (!username) {
@@ -87,12 +104,12 @@ export function useStakeDecAction({
     // Re-fetch right before broadcast — the in_use / needed numbers can
     // have moved since the dry run dialog opened (other tabs, manual stakes,
     // etc.). The freshly-fetched plan is what we actually broadcast.
-    let plan: StakeDecPlan;
-    let balance: number;
+    let plan: DecPowerPlan;
+    let balance: number | null;
     try {
       [plan, balance] = await Promise.all([
-        getStakeDecPlan(enabledRegions),
-        getDecBalance(username),
+        getDecPowerPlan(enabledRegions, direction),
+        needsBalance ? getDecBalance(username) : Promise.resolve(null),
       ]);
     } catch (err) {
       setError(
@@ -107,11 +124,11 @@ export function useStakeDecAction({
     setDecBalance(balance);
 
     if (plan.items.length === 0) {
-      setError("No DEC shortfall left to stake.");
+      setError(`No DEC ${noun} left.`);
       setBusy(false);
       return;
     }
-    if (balance < plan.total_dec) {
+    if (needsBalance && balance !== null && balance < plan.total_dec) {
       setError(
         `Insufficient DEC: need ${plan.total_dec.toLocaleString("en-US")} but have ${balance.toLocaleString("en-US", { maximumFractionDigits: 3 })}. Top up and re-run.`
       );
@@ -129,7 +146,7 @@ export function useStakeDecAction({
       // pops up once. If a chunk rejects, broadcastOperations stops and
       // returns the txIds that did succeed.
       const ops = plan.items.map((it) =>
-        buildStakeDecRegionOp(username, it.region_uid, it.shortfall)
+        buildOp(username, it.region_uid, it.amount)
       );
       const res = await broadcastOperations(
         username,
@@ -145,13 +162,13 @@ export function useStakeDecAction({
       for (let i = 0; i < plan.items.length; i++) {
         const it = plan.items[i];
         if (i < succeededCount) {
-          succeededByRegion[it.region_uid] = it.shortfall;
+          succeededByRegion[it.region_uid] = it.amount;
         } else {
-          failedByRegion[it.region_uid] = it.shortfall;
+          failedByRegion[it.region_uid] = it.amount;
         }
       }
       if (!res.success) {
-        phaseError = `Stake broadcast failed: ${res.error ?? "unknown error"}.`;
+        phaseError = `${verb} broadcast failed: ${res.error ?? "unknown error"}.`;
       }
 
       if (res.txIds.length > 0) {
@@ -179,7 +196,7 @@ export function useStakeDecAction({
 
       // Always log — including partial successes and full failures — so the
       // admin can see what was attempted vs. what landed.
-      recordStakeDecLog({
+      recordDecPowerLog(direction, {
         player: username,
         succeeded: succeededByRegion,
         failed: failedByRegion,
@@ -199,9 +216,9 @@ export function useStakeDecAction({
         const it = plan.items[i];
         if (i < txIds.length) continue;
         failedByRegion[it.region_uid] =
-          (failedByRegion[it.region_uid] ?? 0) + it.shortfall;
+          (failedByRegion[it.region_uid] ?? 0) + it.amount;
       }
-      recordStakeDecLog({
+      recordDecPowerLog(direction, {
         player: username,
         succeeded: succeededByRegion,
         failed: failedByRegion,
@@ -211,7 +228,16 @@ export function useStakeDecAction({
     } finally {
       setBusy(false);
     }
-  }, [username, enabledRegions, onSuccess]);
+  }, [
+    username,
+    enabledRegions,
+    direction,
+    needsBalance,
+    buildOp,
+    noun,
+    verb,
+    onSuccess,
+  ]);
 
   return {
     busy,

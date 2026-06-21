@@ -1,6 +1,10 @@
 "use client";
 
-import { StakeDecPlan } from "@/lib/backend/actions/land-manager/stake-dec-actions";
+import {
+  DecPowerDirection,
+  DecPowerPlan,
+} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { DEC_POWER_VARIANTS } from "./decPowerVariant";
 import { WarningAmber } from "@mui/icons-material";
 import {
   Alert,
@@ -20,7 +24,8 @@ import {
 } from "@mui/material";
 
 interface Props {
-  plan: StakeDecPlan;
+  direction: DecPowerDirection;
+  plan: DecPowerPlan;
   decBalance: number | null;
   busy: boolean;
   mode: "dryrun" | "confirm";
@@ -36,7 +41,8 @@ function fmtDec(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 3 });
 }
 
-export default function StakeDecDialog({
+export default function DecPowerDialog({
+  direction,
   plan,
   decBalance,
   busy,
@@ -44,25 +50,30 @@ export default function StakeDecDialog({
   onConfirm,
   onClose,
 }: Props) {
-  const insufficient = decBalance !== null && decBalance < plan.total_dec;
+  const variant = DEC_POWER_VARIANTS[direction];
+  const insufficient =
+    variant.showBalance && decBalance !== null && decBalance < plan.total_dec;
   const empty = plan.items.length === 0;
   return (
     <Dialog open onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {mode === "dryrun" ? "Stake DEC — Dry Run" : "Confirm Stake DEC"}
+        {mode === "dryrun"
+          ? `${variant.verb} DEC — Dry Run`
+          : `Confirm ${variant.verb} DEC`}
       </DialogTitle>
       <DialogContent dividers>
         {empty ? (
           <Typography variant="body2" color="text.secondary">
-            No DEC stake shortfall in any enabled region. Nothing to stake.
+            {variant.emptyMessage}
           </Typography>
         ) : (
           <>
             <Stack direction="row" gap={2} flexWrap="wrap" mb={1}>
               <Typography variant="body2">
-                <strong>Total to stake:</strong> {fmtInt(plan.total_dec)} DEC
+                <strong>Total to {variant.verb.toLowerCase()}:</strong>{" "}
+                {fmtInt(plan.total_dec)} DEC
               </Typography>
-              {decBalance !== null && (
+              {variant.showBalance && decBalance !== null && (
                 <Typography
                   variant="body2"
                   color={insufficient ? "error.main" : "text.secondary"}
@@ -82,7 +93,8 @@ export default function StakeDecDialog({
             {mode === "confirm" && (
               <Alert severity="warning" sx={{ mb: 1 }}>
                 <>
-                  Staking DEC triggers an automatic harvest on the region.
+                  {variant.gerund} DEC triggers an automatic harvest on the
+                  region.
                   <br />
                   If a plot does not have enough resource to cover the harvest,
                   resources will be lost.
@@ -99,7 +111,7 @@ export default function StakeDecDialog({
                   <TableCell>Region</TableCell>
                   <TableCell align="right">In use</TableCell>
                   <TableCell align="right">Needed</TableCell>
-                  <TableCell align="right">Stake</TableCell>
+                  <TableCell align="right">{variant.amountHeader}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -124,9 +136,9 @@ export default function StakeDecDialog({
                       <Typography
                         variant="caption"
                         fontWeight="bold"
-                        color="info.main"
+                        color={`${variant.color}.main`}
                       >
-                        {fmtInt(it.shortfall)}
+                        {fmtInt(it.amount)}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -143,12 +155,12 @@ export default function StakeDecDialog({
         {mode === "confirm" && (
           <Button
             variant="contained"
-            color="info"
+            color={variant.color}
             onClick={onConfirm}
             disabled={busy || empty || insufficient}
             startIcon={busy ? <CircularProgress size={14} /> : undefined}
           >
-            Stake {fmtInt(plan.total_dec)} DEC
+            {variant.verb} {fmtInt(plan.total_dec)} DEC
           </Button>
         )}
       </DialogActions>

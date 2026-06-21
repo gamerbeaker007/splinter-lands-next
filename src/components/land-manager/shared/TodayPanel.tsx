@@ -62,6 +62,7 @@ export default function TodayPanel({
       ...(data.worker?.purchase_transactions ?? []),
       ...(data.worker?.stake_transactions ?? []),
       ...(data.stakeDec?.transactions ?? []),
+      ...(data.unstakeDec?.transactions ?? []),
     ];
     const unique = [...new Set(allTxIds)];
     if (unique.length === 0) return;
@@ -215,7 +216,8 @@ export default function TodayPanel({
     data?.postHarvest !== null ||
     data?.mythicHarvest !== null ||
     data?.worker !== null ||
-    data?.stakeDec !== null;
+    data?.stakeDec !== null ||
+    data?.unstakeDec !== null;
 
   return (
     <Card variant="outlined" sx={{ mb: 2 }}>
@@ -596,6 +598,77 @@ export default function TodayPanel({
                   </Typography>
                 )}
                 {txList(data.stakeDec.transactions)}
+              </Box>
+            )}
+
+            {data?.unstakeDec && (
+              <Box>
+                <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    Unstake DEC · {data.unstakeDec.runs} run
+                    {data.unstakeDec.runs !== 1 ? "s" : ""}
+                  </Typography>
+                  {anyFailed(data.unstakeDec.transactions) && (
+                    <Cancel sx={{ fontSize: 12, color: "error.main" }} />
+                  )}
+                  {allVerified(data.unstakeDec.transactions) && (
+                    <CheckCircle sx={{ fontSize: 12, color: "success.main" }} />
+                  )}
+                </Stack>
+                <Stack direction="row" gap={0.5} flexWrap="wrap">
+                  <Chip
+                    label={`Unstaked: ${data.unstakeDec.total_succeeded.toFixed(0)} DEC`}
+                    size="small"
+                    color="primary"
+                    variant="outlined"
+                    sx={{ fontSize: "0.7rem" }}
+                  />
+                  {data.unstakeDec.total_failed > 0 && (
+                    <Chip
+                      label={`Failed: ${data.unstakeDec.total_failed.toFixed(0)} DEC`}
+                      size="small"
+                      color="error"
+                      variant="outlined"
+                      sx={{ fontSize: "0.7rem" }}
+                    />
+                  )}
+                </Stack>
+                {Object.keys(
+                  data.unstakeDec.succeeded_json as Record<string, number>
+                ).length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    mt={0.5}
+                  >
+                    Succeeded:{" "}
+                    {Object.entries(
+                      data.unstakeDec.succeeded_json as Record<string, number>
+                    )
+                      .map(([uid, amt]) => `${uid} ${amt.toFixed(0)}`)
+                      .join(", ")}
+                  </Typography>
+                )}
+                {Object.keys(
+                  data.unstakeDec.failed_json as Record<string, number>
+                ).length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="error.main"
+                    display="block"
+                    mt={0.5}
+                  >
+                    Failed:{" "}
+                    {Object.entries(
+                      data.unstakeDec.failed_json as Record<string, number>
+                    )
+                      .map(([uid, amt]) => `${uid} ${amt.toFixed(0)}`)
+                      .join(", ")}
+                    {data.unstakeDec.error ? ` — ${data.unstakeDec.error}` : ""}
+                  </Typography>
+                )}
+                {txList(data.unstakeDec.transactions)}
               </Box>
             )}
           </Stack>

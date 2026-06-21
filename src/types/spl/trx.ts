@@ -153,13 +153,14 @@ export interface MarketPurchaseTrxData {
   by_seller: MarketPurchaseSellerResult[];
 }
 
-// ── dec_powerup_region ────────────────────────────────────────────────────────
-// Result of staking DEC into a region. Triggers an auto-harvest as a side
-// effect — we surface the key bits (efficiency change + the inner harvest
-// outcome) so callers can verify the stake landed and report what happened
-// during the implicit harvest.
+// ── dec_powerup_region / dec_powerdown_region ─────────────────────────────────
+// Result of staking (powerup) or unstaking (powerdown) DEC in a region. Both
+// trigger an auto-harvest as a side effect and return the identical envelope —
+// we surface the key bits (efficiency change + the inner harvest outcome) so
+// callers can verify the op landed and report what happened during the implicit
+// harvest. The two ops share this data shape.
 
-export interface DecPowerupRegionTrxData {
+export interface DecPowerRegionTrxData {
   pre_op_efficiency: number;
   post_op_efficiency: number;
   /** True when the auto-harvest sub-step ran cleanly. */
@@ -233,7 +234,8 @@ export type SplTrxResult =
   | { type: "market_renew_rental"; data: MarketRentTrxData }
   | { type: "market_purchase"; data: MarketPurchaseTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
-  | { type: "dec_powerup_region"; data: DecPowerupRegionTrxData }
+  | { type: "dec_powerup_region"; data: DecPowerRegionTrxData }
+  | { type: "dec_powerdown_region"; data: DecPowerRegionTrxData }
   | { type: "worksite_construction"; data: WorksiteConstructionTrxData }
   | { type: "cancel_construction"; data: CancelConstructionTrxData }
   | { type: "update_worksite"; data: UpdateWorksiteTrxData }

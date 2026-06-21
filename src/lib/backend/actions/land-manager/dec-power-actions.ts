@@ -5,18 +5,8 @@ import { cookies } from "next/headers";
 import { fetchProductionOverview } from "../../api/spl/spl-land-api";
 import { getAuthStatus } from "../auth-actions";
 
-export interface StakeDecRegionPlanItem {
-  region_uid: string;
-  region_number: number;
-  dec_stake_in_use: number;
-  dec_stake_needed: number;
-  shortfall: number;
-}
-
-export interface StakeDecPlan {
-  items: StakeDecRegionPlanItem[];
-  total_dec: number;
-}
+/** "up" = stake (power up), "down" = unstake (power down). */
+export type DecPowerDirection = "up" | "down";
 
 const EMPTY_STAKED_DEC: RegionStakedDEC = {
   regions: [],
@@ -87,22 +77,42 @@ export async function getRegionStakedDEC(
   };
 }
 
+export interface DecPowerRegionPlanItem {
+  region_uid: string;
+  region_number: number;
+  dec_stake_in_use: number;
+  dec_stake_needed: number;
+  /** DEC to power up (stake) or down (unstake) for this region. */
+  amount: number;
+}
+
+export interface DecPowerPlan {
+  items: DecPowerRegionPlanItem[];
+  total_dec: number;
+}
+
 /**
- * Build the plan of how much DEC to newly stake, and where.
+ * Build the plan of how much DEC to power up/down, and where.
  *
- * The amount that genuinely needs staking is the GLOBAL shortfall —
- * `max(0, totalRequired - totalStaked)` — not the sum of per-region gaps. A
- * region's `dec_stake_in_use` can read 0 while a building is in progress even
+ * The amount that genuinely needs moving is the GLOBAL gap, not the sum of
+ * per-region gaps:
+ *   - up   → `max(0, totalRequired - totalStaked)` (shortfall to stake)
+ *   - down → `max(0, totalStaked - totalRequired)` (excess to unstake)
+ *
+ * A region's `dec_stake_in_use` can read 0 while a building is in progress even
  * though that DEC is still staked in the global pool, which would otherwise
- * produce a false shortfall. When the global pool already covers (or exceeds)
- * total requirements, the plan is empty.
+ * produce a false shortfall (up) or hide a real excess. When the global pool
+ * already satisfies the direction, the plan is empty.
  *
- * The global shortfall is then distributed across the enabled regions that
- * still show an apparent gap, so the user knows where to stake.
+ * The global gap is then distributed across the enabled regions that still show
+ * an apparent per-region gap in that direction, so the user knows where to act.
+ * Staking rounds up (never under-stake); unstaking rounds down (never
+ * over-unstake below requirements).
  */
-export async function getStakeDecPlan(
-  enabledRegions: number[]
-): Promise<StakeDecPlan> {
+export async function getDecPowerPlan(
+  enabledRegions: number[],
+  direction: DecPowerDirection
+): Promise<DecPowerPlan> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
     return { items: [], total_dec: 0 };
@@ -114,18 +124,28 @@ export async function getStakeDecPlan(
   const { regions, totalStaked, totalRequired } =
     await getRegionStakedDEC(enabledRegions);
 
-  let remaining = Math.max(0, Math.ceil(totalRequired - totalStaked));
+  const round = direction === "up" ? Math.ceil : Math.floor;
+  const globalGap =
+    direction === "up"
+      ? totalRequired - totalStaked
+      : totalStaked - totalRequired;
+
+  let remaining = Math.max(0, round(globalGap));
   if (remaining <= 0) {
     return { items: [], total_dec: 0 };
   }
 
-  const items: StakeDecRegionPlanItem[] = [];
+  const items: DecPowerRegionPlanItem[] = [];
   let total_dec = 0;
   for (const r of [...regions].sort(
     (a, b) => a.region_number - b.region_number
   )) {
     if (remaining <= 0) break;
-    const gap = Math.ceil(Math.max(0, r.dec_stake_needed - r.dec_stake_in_use));
+    const regionGap =
+      direction === "up"
+        ? r.dec_stake_needed - r.dec_stake_in_use
+        : r.dec_stake_in_use - r.dec_stake_needed;
+    const gap = round(Math.max(0, regionGap));
     if (gap <= 0) continue;
     const amount = Math.min(gap, remaining);
     items.push({
@@ -133,7 +153,7 @@ export async function getStakeDecPlan(
       region_number: r.region_number,
       dec_stake_in_use: r.dec_stake_in_use,
       dec_stake_needed: r.dec_stake_needed,
-      shortfall: amount,
+      amount,
     });
     total_dec += amount;
     remaining -= amount;
@@ -161,7 +181,7 @@ function mergeAmounts(
   return merged;
 }
 
-export interface RecordStakeDecLogInput {
+export interface RecordDecPowerLogInput {
   player: string;
   /** region_uid → amount, broadcast & confirmed. */
   succeeded: Record<string, number>;
@@ -172,12 +192,14 @@ export interface RecordStakeDecLogInput {
 }
 
 /**
- * Persist a stake-DEC run. Always writes both succeeded and failed per region
- * so the admin can see what was actually staked vs. what was attempted but
- * didn't land. Upserts onto (date, player) — repeat runs accumulate.
+ * Persist a power up/down run. Stake and unstake are opposite operations, so
+ * each writes to its own table (`land_stake_dec_log` / `land_unstake_dec_log`).
+ * Always writes both succeeded and failed per region so the admin can see what
+ * actually landed vs. what was attempted. Upserts onto (date, player).
  */
-export async function recordStakeDecLog(
-  input: RecordStakeDecLogInput
+export async function recordDecPowerLog(
+  direction: DecPowerDirection,
+  input: RecordDecPowerLogInput
 ): Promise<void> {
   const { player, succeeded, failed, error, txIds } = input;
   const date = todayUtcDate();
@@ -185,41 +207,57 @@ export async function recordStakeDecLog(
   const totalSucceeded = Object.values(succeeded).reduce((s, v) => s + v, 0);
   const totalFailed = Object.values(failed).reduce((s, v) => s + v, 0);
 
-  const existing = await prisma.landStakeDecLog.findUnique({
-    where: { date_player: { date, player } },
+  const createData = {
+    date,
+    player,
+    succeeded_json: succeeded,
+    failed_json: failed,
+    total_succeeded: totalSucceeded,
+    total_failed: totalFailed,
+    error,
+    transactions: txIds,
+  };
+
+  const updateData = (existing: {
+    succeeded_json: unknown;
+    failed_json: unknown;
+  }) => ({
+    runs: { increment: 1 },
+    succeeded_json: mergeAmounts(
+      existing.succeeded_json as Record<string, number>,
+      succeeded
+    ),
+    failed_json: mergeAmounts(
+      existing.failed_json as Record<string, number>,
+      failed
+    ),
+    total_succeeded: { increment: totalSucceeded },
+    total_failed: { increment: totalFailed },
+    ...(error ? { error } : {}),
+    transactions: { push: txIds },
   });
 
-  if (existing) {
-    await prisma.landStakeDecLog.update({
-      where: { date_player: { date, player } },
-      data: {
-        runs: { increment: 1 },
-        succeeded_json: mergeAmounts(
-          existing.succeeded_json as Record<string, number>,
-          succeeded
-        ),
-        failed_json: mergeAmounts(
-          existing.failed_json as Record<string, number>,
-          failed
-        ),
-        total_succeeded: { increment: totalSucceeded },
-        total_failed: { increment: totalFailed },
-        ...(error ? { error } : {}),
-        transactions: { push: txIds },
-      },
-    });
+  const where = { date_player: { date, player } };
+
+  if (direction === "up") {
+    const existing = await prisma.landStakeDecLog.findUnique({ where });
+    if (existing) {
+      await prisma.landStakeDecLog.update({
+        where,
+        data: updateData(existing),
+      });
+    } else {
+      await prisma.landStakeDecLog.create({ data: createData });
+    }
   } else {
-    await prisma.landStakeDecLog.create({
-      data: {
-        date,
-        player,
-        succeeded_json: succeeded,
-        failed_json: failed,
-        total_succeeded: totalSucceeded,
-        total_failed: totalFailed,
-        error,
-        transactions: txIds,
-      },
-    });
+    const existing = await prisma.landUnstakeDecLog.findUnique({ where });
+    if (existing) {
+      await prisma.landUnstakeDecLog.update({
+        where,
+        data: updateData(existing),
+      });
+    } else {
+      await prisma.landUnstakeDecLog.create({ data: createData });
+    }
   }
 }

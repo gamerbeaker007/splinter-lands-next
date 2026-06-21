@@ -318,6 +318,32 @@ export function buildStakeDecRegionOp(
   ];
 }
 
+/**
+ * Power down (unstake) DEC from a region's power-up pool. Uses POSTING key.
+ * Maps to the SPL `sm_dec_powerdown_region` custom_json — the mirror of
+ * `buildStakeDecRegionOp`.
+ */
+export function buildUnstakeDecRegionOp(
+  username: string,
+  regionUid: string,
+  amount: number
+): [string, object] {
+  return [
+    "custom_json",
+    {
+      required_auths: [],
+      required_posting_auths: [username],
+      id: "sm_dec_powerdown_region",
+      json: JSON.stringify({
+        amount,
+        region_uid: regionUid,
+        app: APP,
+        n: generateNonce(),
+      }),
+    },
+  ];
+}
+
 /** Buy a resource by spending DEC from the trade hub in a region. */
 export function buildBuyWithDecOp(
   username: string,

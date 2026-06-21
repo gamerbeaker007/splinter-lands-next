@@ -7,7 +7,7 @@ import {
 import {
   RegionDECInfo,
   getRegionStakedDEC,
-} from "@/lib/backend/actions/land-manager/stake-dec-actions";
+} from "@/lib/backend/actions/land-manager/dec-power-actions";
 import { getWorkerEligibility } from "@/lib/backend/actions/land-manager/worker-actions";
 import { WorkerEligibilityResult } from "@/types/landManager";
 import { useEffect, useState } from "react";
