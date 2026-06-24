@@ -58,15 +58,6 @@ export interface HarvestAllTrxData {
 }
 
 // ── swap_tokens ───────────────────────────────────────────────────────────────
-// Covers buy-with-DEC, resource-to-DEC sell, same-symbol transfer, cross-symbol swap.
-
-/** Parsed from trx_info.data (the original broadcast op input). */
-export interface SwapTokensOpInput {
-  region_uid: string;
-  resource_amount: number; // the amount the player actually sent
-  resource_symbol: string;
-}
-
 /** Parsed from trx_info.result (what the engine confirms back). resource_amount is always 0 for sells. */
 export interface SwapTokensTrxData {
   resource: string;
@@ -125,6 +116,35 @@ export interface MarketRentTrxData {
   total_burn_fees_dec: number;
   total_referral_cut: number;
   by_seller: MarketRentSellerResult[];
+}
+
+export interface MarketItem {
+  market_item_id: number;
+  rental_tx: string;
+  rental_date: Date;
+  renter: string;
+  status: number;
+  market_account: string;
+  rental_days: number;
+  next_rental_payment: Date;
+  payment_currency: string;
+  payment_amount: number;
+  escrow_currency: string;
+  escrow_amount: number;
+  paid_amount: number;
+  cancel_tx: string;
+  cancel_player: string;
+  cancel_date: Date;
+  completed_date: Date | null;
+  dec_price: string | null;
+  id: string;
+  renewal_tx: string | null;
+  renewal_date: Date | null;
+  rental_season_id: number;
+}
+
+export interface MarketCancelRentalTrxData {
+  market_items: MarketItem[];
 }
 
 // ── market_purchase ─────────────────────────────────────────────────────────
@@ -222,16 +242,17 @@ export interface StakeChangeTrxData {
 }
 
 // ── Discriminated union ───────────────────────────────────────────────────────
-// For sm_land_operation ops, keyed by data.op. For sm_market_rent /
-// sm_stake_change, keyed by trx_info.type (the input data has no `op` field).
+// For sm_land_operation ops, keyed by data.op.
+// For sm_market_rent sm_stake_change, keyed by trx_info.type (the input data has no `op` field).
 
 export type SplTrxResult =
   | { type: "harvest_all"; data: HarvestAllTrxData }
-  | { type: "swap_tokens"; input: SwapTokensOpInput; data: SwapTokensTrxData }
+  | { type: "swap_tokens"; data: SwapTokensTrxData }
   | { type: "tax_collection"; data: TaxCollectionTrxData }
   | { type: "add_liquidity"; data: AddLiquidityTrxData }
   | { type: "market_rent"; data: MarketRentTrxData }
   | { type: "market_renew_rental"; data: MarketRentTrxData }
+  | { type: "market_cancel_rental"; data: MarketCancelRentalTrxData }
   | { type: "market_purchase"; data: MarketPurchaseTrxData }
   | { type: "stake_change"; data: StakeChangeTrxData }
   | { type: "dec_powerup_region"; data: DecPowerRegionTrxData }

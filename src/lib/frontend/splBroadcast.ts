@@ -1,3 +1,4 @@
+import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 import type { SplTrxResult, TrxLookupOutcome } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
@@ -90,7 +91,7 @@ export async function broadcastOperations(
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const txIds: string[] = [];
-  const batches = chunk(operations, MAX_OPS_PER_BROADCAST);
+  const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
   for (let i = 0; i < batches.length; i++) {
     const result = await keychain.broadcast({

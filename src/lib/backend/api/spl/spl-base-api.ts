@@ -1,3 +1,4 @@
+import { SPL_API_BASE } from "@/lib/shared/config/splApiConfig";
 import { LoginResponse } from "@/types/auth/auth";
 import { SplBalance } from "@/types/spl/balance";
 import { SplInventory } from "@/types/spl/inventory";
@@ -11,12 +12,13 @@ import type {
   AddLiquidityTrxData,
   DecPowerRegionTrxData,
   HarvestAllTrxData,
+  MarketCancelRentalTrxData,
+  MarketItem,
   MarketPurchaseTrxData,
   MarketRentTrxData,
   SetAuthorityTrxData,
   SplTrxResult,
   StakeChangeTrxData,
-  SwapTokensOpInput,
   SwapTokensTrxData,
   TaxCollectionTrxData,
   TrxLookupOutcome,
@@ -33,7 +35,7 @@ import logger from "../../log/logger.server";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
 const splBaseClient = axios.create({
-  baseURL: "https://api.splinterlands.com",
+  baseURL: SPL_API_BASE,
   timeout: 60000,
   headers: {
     "Accept-Encoding": "gzip, deflate, br, zstd",
@@ -434,14 +436,6 @@ function parseSwapTokens(d: Raw): SwapTokensTrxData {
   };
 }
 
-function parseSwapTokensInput(opInput: Raw): SwapTokensOpInput {
-  return {
-    region_uid: (opInput.region_uid as string) ?? "",
-    resource_amount: (opInput.resource_amount as number) ?? 0,
-    resource_symbol: (opInput.resource_symbol as string) ?? "",
-  };
-}
-
 function parseTaxCollection(d: Raw): TaxCollectionTrxData {
   return {
     deed_uid: (d.deed_uid as string) ?? "",
@@ -475,6 +469,12 @@ function parseMarketRent(d: Raw): MarketRentTrxData {
     total_burn_fees_dec: (d.total_burn_fees_dec as number) ?? 0,
     total_referral_cut: (d.total_referral_cut as number) ?? 0,
     by_seller: (d.by_seller as MarketRentTrxData["by_seller"]) ?? [],
+  };
+}
+
+function parseMarketCancelRental(d: Raw): MarketCancelRentalTrxData {
+  return {
+    market_items: (d.market_items as MarketItem[]) ?? [],
   };
 }
 
@@ -543,8 +543,8 @@ export async function fetchTransactionLookup(
     const outer = JSON.parse(trxInfo.result as string);
 
     const opData = JSON.parse(trxInfo.data as string) as Raw & { op?: string };
-    // sm_land_operation ops carry the op type in data.op; sm_market_rent /
-    // sm_stake_change have no `op` field and are identified by trx_info.type.
+    // sm_land_operation ops carry the op type in data.op;
+    // sm_market_rent, sm_stake_change have no `op` field and are identified by trx_info.type.
     const op = opData.op ?? (trxInfo.type as string | undefined);
 
     let result: SplTrxResult | null = null;
@@ -565,11 +565,7 @@ export async function fetchTransactionLookup(
         if (op === "harvest_all")
           result = { type: "harvest_all", data: parseHarvestAll(d) };
         else if (op === "swap_tokens")
-          result = {
-            type: "swap_tokens",
-            input: parseSwapTokensInput(opData),
-            data: parseSwapTokens(d),
-          };
+          result = { type: "swap_tokens", data: parseSwapTokens(d) };
         else if (op === "tax_collection")
           result = { type: "tax_collection", data: parseTaxCollection(d) };
         else if (op === "add_liquidity")
@@ -604,6 +600,18 @@ export async function fetchTransactionLookup(
         result = {
           type: "market_renew_rental",
           data: parseMarketRent(outer as Raw),
+        };
+        break;
+      }
+      case "market_cancel_rental": {
+        if (outer?.success === false) {
+          const error: string =
+            (outer?.error as string) ?? "Cancel rental transaction failed";
+          return { status: "failed", error };
+        }
+        result = {
+          type: "market_cancel_rental",
+          data: parseMarketCancelRental(outer as Raw),
         };
         break;
       }

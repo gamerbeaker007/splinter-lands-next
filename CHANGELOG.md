@@ -15,11 +15,32 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.14.0] - 2026-06-24
+
+### Added
+- Tests for determine trx. Because of the dhive code implementation is replicated we need notification when that changes / fails
+  Added to CI and release pipeline
+- Add possibility to run against mavs-sl apis and transactions (future preparations for testing buildings)
+  Set to "true" to point all SPL calls at the mavs-sl test stack (api/vapi/ broadcast), prefix every custom_json op id with "sl-mavs", and show a
+  "Test Mode Mavs-SL Active" badge. Leave unset/false for production.
+  Environment valriable NEXT_PUBLIC_SPL_DEV_API=
+
+
+### Fixed
+- **Land Manager: Cancel Rental** - Cancel rental not parse therefor 30 seconds timeout
+
+
+### Removed
+- remove undead code tpye definition of SwapTokensOpInput
+
+
+---
+
 ## [v1.13.2] - 2026-06-21
 
 
 ### Fixed
-- **Land Manager: Buy worker** - Protect buy and stake (buy was successful but stake was not) 
+- **Land Manager: Buy worker** - Protect buy and stake (buy was successful but stake was not)
 
 ---
 
