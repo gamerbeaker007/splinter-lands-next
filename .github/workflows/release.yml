@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: read
+
 env:
   IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/splinter-lands-next
 
