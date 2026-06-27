@@ -15,7 +15,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.14.0] - 2026-06-24
+## [v1.14.0] - 2026-06-27
 
 ### Added
 - Tests for determine trx. Because of the dhive code implementation is replicated we need notification when that changes / fails
@@ -28,6 +28,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Fixed
 - **Land Manager: Cancel Rental** - Cancel rental not parse therefor 30 seconds timeout
+- Refactor types structure for lookuptrx
 
 
 ### Removed
