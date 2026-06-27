@@ -3,7 +3,6 @@ import {
   getBulkRegionData,
   getDecBalance,
   getLandPools,
-  lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { buildAddLiquidityOp } from "@/lib/shared/operations/opBuilders";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
@@ -143,7 +142,7 @@ async function broadcastSellPhase(
   if (!res.success) {
     return { error: res.error ?? "Broadcast failed (sell phase)" };
   }
-  await waitForTransactions(res.txIds, lookupTransaction);
+  await waitForTransactions(res.txIds);
   return { txIds: res.txIds };
 }
 
@@ -261,7 +260,7 @@ async function broadcastLiquidityPhase(
       error: res.error ?? "Broadcast failed (add liquidity phase)",
     };
   }
-  await waitForTransactions(res.txIds, lookupTransaction);
+  await waitForTransactions(res.txIds);
   return { txIds: res.txIds, warning, error: null };
 }
 

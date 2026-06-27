@@ -10,10 +10,7 @@ import {
   recordPurchaseLog,
   recordRentalLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
-import {
-  getDecBalance,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
 import { purchaseOnBehalfOf } from "@/lib/backend/actions/land-manager/purchase-broadcast-actions";
 import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
 import {
@@ -291,10 +288,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         return;
       }
 
-      const actionResults = await waitForTransactions(
-        actionRes.txIds,
-        lookupTransaction
-      );
+      const actionResults = await waitForTransactions(actionRes.txIds);
 
       // Prefer actual DEC/USD from confirmed purchase results; fall back to the
       // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
@@ -302,9 +296,9 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
       let actualUsd = 0;
       let sawResult = false;
       for (const r of actionResults) {
-        if (r?.type === "market_purchase") {
-          actualDec += r.data.total_dec;
-          actualUsd += r.data.total_usd;
+        if (r?.op === "market_purchase") {
+          actualDec += r.result.total_dec;
+          actualUsd += r.result.total_usd;
           sawResult = true;
         }
       }
@@ -358,7 +352,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
           setBusy(false);
           return;
         }
-        await waitForTransactions(stakeRes.txIds, lookupTransaction);
+        await waitForTransactions(stakeRes.txIds);
       }
 
       const stakedCount = exec.plan.items

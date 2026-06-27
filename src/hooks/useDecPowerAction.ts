@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  getDecBalance,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   DecPowerDirection,
   DecPowerPlan,
@@ -172,7 +169,7 @@ export function useDecPowerAction({
       }
 
       if (res.txIds.length > 0) {
-        await waitForTransactions(res.txIds, lookupTransaction);
+        await waitForTransactions(res.txIds);
       }
 
       const totalSucceeded = Object.values(succeededByRegion).reduce(

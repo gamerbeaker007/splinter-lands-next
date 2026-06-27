@@ -3,7 +3,6 @@ import {
   getBulkRegionData,
   getDecBalance,
   getLandPools,
-  lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
 import {
@@ -98,7 +97,7 @@ export function useMakeHarvestableAction({
           if (!res.success) {
             setError(res.error ?? "Broadcast failed");
           } else {
-            await waitForTransactions(res.txIds, lookupTransaction);
+            await waitForTransactions(res.txIds);
             await recordMakeHarvestableLog(username, actions, res.txIds).catch(
               () => {}
             );

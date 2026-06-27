@@ -1,4 +1,3 @@
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   getRenewRentalPlan,
   getRenewRentalsEligibility,
@@ -114,7 +113,7 @@ export function useRenewRentalsAction({
           return;
         }
 
-        await waitForTransactions(rentRes.txIds, lookupTransaction);
+        await waitForTransactions(rentRes.txIds);
 
         // Force-bust the card collection cache so the Rental Overview shows
         // fresh rental_date / rental_days after the on-chain renewal.

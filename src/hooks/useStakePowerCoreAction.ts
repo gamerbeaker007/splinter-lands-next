@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  getPowerCoreInfo,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { getPowerCoreInfo } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -83,7 +80,7 @@ export function useStakePowerCoreAction({
           setError(result.error ?? "Broadcast failed");
           return;
         }
-        await waitForTransactions(result.txIds, lookupTransaction);
+        await waitForTransactions(result.txIds);
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Staking failed");

@@ -2,11 +2,21 @@
 
 export interface SplTrxInfo {
   id: string;
-  type: string; // always "land_operation" for land ops
+  /** Envelope type: "land_operation" for land ops; otherwise the op itself (e.g. "market_cancel_rental"). */
+  type: string;
   player: string;
-  data: string; // JSON string — contains { op, ... }
-  result: string; // double-JSON-encoded result envelope
+  /** JSON string of the op INPUT — for land_operation it contains `{ op, ... }`. */
+  data: string;
+  /**
+   * JSON string of the op OUTPUT. Two shapes depending on `type`:
+   *  - land_operation: `{ success, result: { success, error, data, ... } }` (the
+   *    op's payload is the inner `result.data`).
+   *  - everything else: the result envelope directly.
+   */
+  result: string;
   success: boolean;
+  error?: string | null;
+  error_code?: string;
   created_date: string;
 }
 
@@ -242,25 +252,30 @@ export interface StakeChangeTrxData {
 }
 
 // ── Discriminated union ───────────────────────────────────────────────────────
-// For sm_land_operation ops, keyed by data.op.
-// For sm_market_rent sm_stake_change, keyed by trx_info.type (the input data has no `op` field).
+// Each member is one parsed transaction outcome.
+//   `op`     — WHAT happened. NOTE this is NOT trx_info.type: for land_operation
+//              transactions it's the inner `data.op` (e.g. "swap_tokens"); for
+//              everything else it equals trx_info.type (e.g. "market_cancel_rental").
+//              The "land_operation" envelope itself never appears here.
+//   `result` — the parsed OUTPUT payload. (The API's `trx_info.data` is the INPUT
+//              and is not carried here — don't confuse the two.)
 
 export type SplTrxResult =
-  | { type: "harvest_all"; data: HarvestAllTrxData }
-  | { type: "swap_tokens"; data: SwapTokensTrxData }
-  | { type: "tax_collection"; data: TaxCollectionTrxData }
-  | { type: "add_liquidity"; data: AddLiquidityTrxData }
-  | { type: "market_rent"; data: MarketRentTrxData }
-  | { type: "market_renew_rental"; data: MarketRentTrxData }
-  | { type: "market_cancel_rental"; data: MarketCancelRentalTrxData }
-  | { type: "market_purchase"; data: MarketPurchaseTrxData }
-  | { type: "stake_change"; data: StakeChangeTrxData }
-  | { type: "dec_powerup_region"; data: DecPowerRegionTrxData }
-  | { type: "dec_powerdown_region"; data: DecPowerRegionTrxData }
-  | { type: "worksite_construction"; data: WorksiteConstructionTrxData }
-  | { type: "cancel_construction"; data: CancelConstructionTrxData }
-  | { type: "update_worksite"; data: UpdateWorksiteTrxData }
-  | { type: "set_authority"; data: SetAuthorityTrxData };
+  | { op: "harvest_all"; result: HarvestAllTrxData }
+  | { op: "swap_tokens"; result: SwapTokensTrxData }
+  | { op: "tax_collection"; result: TaxCollectionTrxData }
+  | { op: "add_liquidity"; result: AddLiquidityTrxData }
+  | { op: "market_rent"; result: MarketRentTrxData }
+  | { op: "market_renew_rental"; result: MarketRentTrxData }
+  | { op: "market_cancel_rental"; result: MarketCancelRentalTrxData }
+  | { op: "market_purchase"; result: MarketPurchaseTrxData }
+  | { op: "stake_change"; result: StakeChangeTrxData }
+  | { op: "dec_powerup_region"; result: DecPowerRegionTrxData }
+  | { op: "dec_powerdown_region"; result: DecPowerRegionTrxData }
+  | { op: "worksite_construction"; result: WorksiteConstructionTrxData }
+  | { op: "cancel_construction"; result: CancelConstructionTrxData }
+  | { op: "update_worksite"; result: UpdateWorksiteTrxData }
+  | { op: "set_authority"; result: SetAuthorityTrxData };
 
 /**
  * Outcome of a single transaction lookup.

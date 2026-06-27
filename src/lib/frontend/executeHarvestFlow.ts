@@ -1,4 +1,3 @@
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { buildRegionHarvestOnlyOp } from "@/lib/frontend/harvestOps";
 import {
   broadcastOperations,
@@ -56,7 +55,7 @@ export async function broadcastHarvest(
         error: res.error ?? "Harvest broadcast rejected",
       };
     }
-    await waitForTransactions(res.txIds, lookupTransaction);
+    await waitForTransactions(res.txIds);
     log.push(`✓ Harvest confirmed (${res.txIds.length} tx)`);
     return { success: true, txIds: res.txIds, log };
   } catch (err) {
