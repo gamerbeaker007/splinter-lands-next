@@ -1,6 +1,5 @@
 "use client";
 
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   broadcastOperations,
   waitForTransactions,
@@ -76,7 +75,7 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
           setResult(r);
           return r;
         }
-        await waitForTransactions(res.txIds, lookupTransaction);
+        await waitForTransactions(res.txIds);
         const r: WorksiteActionResult = { success: true, txIds: res.txIds };
         setResult(r);
         return r;
@@ -125,7 +124,7 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
           setResult(r);
           return r;
         }
-        await waitForTransactions(res.txIds, lookupTransaction);
+        await waitForTransactions(res.txIds);
         const r: WorksiteActionResult = { success: true, txIds: res.txIds };
         setResult(r);
         return r;
@@ -174,7 +173,7 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
           setResult(r);
           return r;
         }
-        await waitForTransactions(res.txIds, lookupTransaction);
+        await waitForTransactions(res.txIds);
         const r: WorksiteActionResult = { success: true, txIds: res.txIds };
         setResult(r);
         return r;

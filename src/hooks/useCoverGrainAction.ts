@@ -6,7 +6,6 @@ import {
   getDecBalance,
   getLandPools,
   getProductionOverview,
-  lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   buildCoverGrainOps,
@@ -134,7 +133,7 @@ export function useCoverGrainAction({
         setStatus("error");
         return;
       }
-      await waitForTransactions(res.txIds, lookupTransaction);
+      await waitForTransactions(res.txIds);
       // Record into the make-harvestable log (shows under "Make Harvestable" in
       // the Today panel). Don't fail the whole action if logging hiccups, but do
       // surface it — a silent miss is what makes "nothing in Today" hard to debug.

@@ -1,5 +1,7 @@
+import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
+import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
-import type { SplTrxResult, TrxLookupOutcome } from "@/types/spl/trx";
+import type { SplTrxResult } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import pLimit from "p-limit";
 import { formatError } from "./errorFormat";
@@ -22,10 +24,11 @@ export interface BroadcastResult {
  * - Stops immediately if any tx comes back as `failed` and throws with the error message.
  * - Returns the parsed result for each txId (in the same order), or null if not resolved before timeout.
  * - Throws with a user-visible message on timeout.
+ *
+ * Looks up via the SPL `lookupTransaction` action. A single tx is just `[txId]`.
  */
 export async function waitForTransactions(
-  txIds: string[],
-  lookup: (txId: string) => Promise<TrxLookupOutcome>
+  txIds: string[]
 ): Promise<(SplTrxResult | null)[]> {
   const results: (SplTrxResult | null)[] = txIds.map(() => null);
   const pending = new Set(txIds.map((_, i) => i));
@@ -37,7 +40,7 @@ export async function waitForTransactions(
     await Promise.all(
       [...pending].map((i) =>
         limit(async () => {
-          const outcome = await lookup(txIds[i]);
+          const outcome = await lookupTransaction(txIds[i]);
           if (outcome.status === "failed") {
             throw new Error(outcome.error);
           }
@@ -90,7 +93,7 @@ export async function broadcastOperations(
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const txIds: string[] = [];
-  const batches = chunk(operations, MAX_OPS_PER_BROADCAST);
+  const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
   for (let i = 0; i < batches.length; i++) {
     const result = await keychain.broadcast({

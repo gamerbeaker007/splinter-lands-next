@@ -130,9 +130,9 @@ export function useAuthorityStatusCore({
           }
           if (
             outcome.status === "success" &&
-            outcome.result.type === "set_authority"
+            outcome.result.op === "set_authority"
           ) {
-            const newAccounts = outcome.result.data[kind];
+            const newAccounts = outcome.result.result[kind];
             const newAuthorized = newAccounts
               .map((a) => a.toLowerCase())
               .includes(svc);

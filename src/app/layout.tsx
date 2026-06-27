@@ -1,5 +1,6 @@
 // app/layout.tsx
 import SideBar from "@/components/side-bar/SideBar";
+import TestModeChip from "@/components/test-mode/TestModeChip";
 import TopBar from "@/components/top-bar/TopBar";
 import { AuthProvider } from "@/lib/frontend/context/AuthContext";
 import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
@@ -41,6 +42,7 @@ export default function RootLayout({
                       </Box>
                     </Box>
                   </Box>
+                  <TestModeChip />
                 </PlayerProvider>
               </PageTitleProvider>
             </AuthProvider>

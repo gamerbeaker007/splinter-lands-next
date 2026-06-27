@@ -1,5 +1,9 @@
 import logger from "@/lib/backend/log/logger.server";
 import {
+  applyDevPrefixToOps,
+  LooseOp,
+} from "@/lib/shared/operations/devPrefix";
+import {
   Client,
   cryptoUtils,
   Operation,
@@ -15,7 +19,8 @@ const DEFAULT_RPC_NODES = [
   "https://api.deathwing.me",
 ];
 
-// Mirror @hiveio/dhive BroadcastAPI's default tx expiration window.
+// Mirror @hiveio/dhive BroadcastAPI's default tx expiration window
+// (BroadcastAPI.expireTime). See buildSignedTx for why we replicate it.
 const TX_EXPIRE_MS = 60_000;
 
 // On-chain verification window for a broadcast that threw — a flaky RPC proxy
@@ -85,8 +90,20 @@ function chunk<T>(arr: T[], n: number): T[][] {
  * but stops short of sending so we can compute the deterministic tx id up
  * front. That id is what lands on-chain, so it lets us verify a throwing
  * broadcast against the chain.
+ *
+ * IMPORTANT: this hand-replicates @hiveio/dhive 1.3.6's
+ * `BroadcastAPI.sendOperations` tx construction (ref_block_num / ref_block_prefix
+ * / expiration via TX_EXPIRE_MS, empty extensions) — see
+ * node_modules/@hiveio/dhive/lib/helpers/broadcast.js. If a dhive upgrade changes
+ * that construction or its serialization/signing, the tx id we compute here will
+ * no longer match what the node indexes and the verify-on-throw recovery silently
+ * stops working. hiveBroadcastService.node.test.ts pins the id for fixed inputs
+ * so such a drift fails CI before it can ship. Re-verify against dhive and update
+ * the golden value there intentionally when bumping dhive.
+ *
+ * Exported only for that test.
  */
-async function buildSignedTx(
+export async function buildSignedTx(
   client: Client,
   operations: Operation[],
   key: PrivateKey
@@ -163,7 +180,10 @@ export async function broadcastOpsAsService(
   }
 
   const txIds: string[] = [];
-  const batches = chunk(operations, MAX_OPS_PER_BROADCAST);
+  const prefixed = applyDevPrefixToOps(
+    operations as unknown as LooseOp[]
+  ) as unknown as Operation[];
+  const batches = chunk(prefixed, MAX_OPS_PER_BROADCAST);
   for (let i = 0; i < batches.length; i++) {
     let signed: SignedTransaction;
     let trxId: string;

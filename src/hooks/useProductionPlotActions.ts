@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  getPowerCoreInfo,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { getPowerCoreInfo } from "@/lib/backend/actions/land-manager/overview-actions";
 import { getPlotStakeAssets } from "@/lib/backend/actions/land-manager/production-actions";
 import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
 import {
@@ -216,7 +213,7 @@ export function useProductionPlotActions({
 
         if (broadcast.txIds.length > 0) {
           try {
-            await waitForTransactions(broadcast.txIds, lookupTransaction);
+            await waitForTransactions(broadcast.txIds);
           } catch (verifyErr) {
             phaseError =
               verifyErr instanceof Error
@@ -269,7 +266,7 @@ export function useProductionPlotActions({
           return { success: false, error: msg };
         }
         try {
-          await waitForTransactions(broadcast.txIds, lookupTransaction);
+          await waitForTransactions(broadcast.txIds);
         } catch (verifyErr) {
           const msg =
             verifyErr instanceof Error

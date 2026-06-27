@@ -1,8 +1,5 @@
 import { getTodayPaidDonations } from "@/lib/backend/actions/land-manager/donation-actions";
-import {
-  getBulkRegionData,
-  lookupTransaction,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   applyDailyCaps,
   buildDonationOps,
@@ -178,7 +175,7 @@ export function usePayDonations(username: string): UsePayDonations {
           );
           if (res.success) {
             txIds.push(...res.txIds);
-            await waitForTransactions(res.txIds, lookupTransaction);
+            await waitForTransactions(res.txIds);
           } else {
             donationError = res.error ?? "Resource donation broadcast rejected";
           }

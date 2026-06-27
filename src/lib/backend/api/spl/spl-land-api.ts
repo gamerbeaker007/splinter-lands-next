@@ -21,10 +21,11 @@ import axios from "axios";
 import * as rax from "retry-axios";
 import { NotFoundError } from "../../error";
 import logger, { logError } from "../../log/logger.server";
+import { SPL_VAPI_BASE } from "@/lib/shared/config/splApiConfig";
 import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
 
 const splLandClient = axios.create({
-  baseURL: "https://vapi.splinterlands.com",
+  baseURL: SPL_VAPI_BASE,
   timeout: 60000,
   headers: {
     "Accept-Encoding": "gzip, deflate, br, zstd",

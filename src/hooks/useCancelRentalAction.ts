@@ -1,6 +1,5 @@
 "use client";
 
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
 import {
   broadcastOperations,
@@ -48,7 +47,7 @@ export function useCancelRentalAction({
           setError(result.error ?? "Broadcast failed");
           return;
         }
-        await waitForTransactions(result.txIds, lookupTransaction);
+        await waitForTransactions(result.txIds);
         await refreshCardCollection();
         onSuccess?.();
       } catch (err) {

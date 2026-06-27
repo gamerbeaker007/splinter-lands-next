@@ -4,7 +4,6 @@ import {
   getBulkRegionData,
   getLandPools,
   getPlayerMythicDeeds,
-  lookupTransaction,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   applyDailyCaps,
@@ -141,7 +140,7 @@ export function useHarvestMythicsAction({
         }
 
         setInternalBusy("verifying");
-        await waitForTransactions(res.txIds, lookupTransaction);
+        await waitForTransactions(res.txIds);
 
         const harvestResults: MythicHarvestResult[] = mythicDeeds.map((d) => ({
           deed_uid: d.deed_uid,

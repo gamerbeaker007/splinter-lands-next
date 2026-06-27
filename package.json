@@ -1,12 +1,13 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.13.2",
+  "version": "1.14.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test:node": "vitest run --config vitest.node.config.ts",
     "lint:fix": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json}\"",
