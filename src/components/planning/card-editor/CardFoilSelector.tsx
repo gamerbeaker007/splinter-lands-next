@@ -93,7 +93,7 @@ export function CardFoilSelector({ value, set, onChange }: Props) {
     );
   }
 
-  const isLandSet = set === ("land" as CardSetNameLandValid);
+  const isLandSet = set === "land" || set === "verico";
   const multiplier = isLandSet
     ? cardFoilModifiersLandCard[value]
     : cardFoilModifiers[value];

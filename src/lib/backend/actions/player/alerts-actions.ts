@@ -181,7 +181,7 @@ function analyzeMissingBloodLineBoost(
       (!card.stake_end_date ||
         new Date(card.stake_end_date).getTime() >
           now.getTime() + threeDaysInMs);
-    const isLandSet = card.card_set === "land";
+    const isLandSet = card.card_set === "land" || card.card_set === "verico";
     const isStakedToPlayer = !card.delegated_to || card.delegated_to === player;
 
     if (!isStakedOnLand || !isLandSet || !isStakedToPlayer) continue;
