@@ -45,7 +45,7 @@ export const CardInfo: React.FC<Props> = ({
           const max_bcx = determineCardMaxBCX(card.card_set, rarity, card.foil);
 
           const landBoost =
-            card.card_set === "land"
+            card.card_set === "land" || card.card_set === "verico"
               ? determineLandBoosts(
                   rarity,
                   cardFoilOptions[card.foil],

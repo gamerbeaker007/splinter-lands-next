@@ -15,6 +15,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.15.1] - 2026-06-30
+
+### Fix
+
+- Add Verico land bonus (2x) like land set
+
+---
+
 ## [v1.15.0] - 2026-06-30
 
 ### Added
