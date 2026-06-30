@@ -335,6 +335,20 @@ export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
 }
 
 /**
+ * Determines the maximum consume discount (%) for lite grain from all cards.
+ * @param cardInput The list of cards to evaluate.
+ * @returns The maximum consume discount for grain resource. 0.1 means 10% discount.
+ */
+export function determineLiteGrainConsumeReduction(
+  cardInput: SlotInput[]
+): number {
+  return cardInput.reduce((max, card) => {
+    const discount = card.landBoosts?.liteConsumeGrainDiscount || 0;
+    return Math.max(max, discount);
+  }, 0);
+}
+
+/**
  * Determines the total bloodline boost (%) from all cards with Toil and Kin abilities.
  * Rules:
  * - If bloodlineBoost (number) applies it applies to all cards

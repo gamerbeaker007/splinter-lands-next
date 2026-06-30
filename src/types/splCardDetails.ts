@@ -2,7 +2,16 @@ import { CardBloodline } from "./planner";
 
 // Land ability types
 type LandAbilityWithValue = [
-  "RATIONING" | "DD" | "GRAIN" | "WOOD" | "STONE" | "IRON" | "AURA",
+  (
+    | "RATIONING"
+    | "RATIONING_LITE"
+    | "DD"
+    | "GRAIN"
+    | "WOOD"
+    | "STONE"
+    | "IRON"
+    | "AURA"
+  ),
   number,
 ];
 type LandAbilityWithBloodLine = ["BLOODLINE", number, CardBloodline];

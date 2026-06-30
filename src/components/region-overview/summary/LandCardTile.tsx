@@ -7,6 +7,7 @@ import {
   dec_stake_discount_icon_url,
   energized_icon_url,
   labors_luck_icon_url,
+  lite_rationing_icon_url,
   rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { RegionSummary } from "@/types/regionSummary";
@@ -25,6 +26,7 @@ export default function LandCardTile({ summary }: Props) {
   const countLaborsLuckUniqueOwners = summary.countLaborsLuckUniqueOwners || 0;
   const countBloodlinesBoost = summary.countBloodlinesBoost || 0;
   const countFoodDiscount = summary.countFoodDiscount || 0;
+  const countLiteFoodDiscount = summary.countLiteFoodDiscount || 0;
   const countDecStakeDiscount = summary.countDecStakeDiscount || 0;
 
   return (
@@ -82,7 +84,11 @@ export default function LandCardTile({ summary }: Props) {
                 imageUrl={rationing_icon_url}
                 count={Number(countFoodDiscount)}
               />
-
+              <SummaryTile
+                type="Lite Rationing"
+                imageUrl={lite_rationing_icon_url}
+                count={Number(countLiteFoodDiscount)}
+              />
               <SummaryTile
                 type="Bloodlines Boost"
                 imageUrl={bloodline_icon_url}

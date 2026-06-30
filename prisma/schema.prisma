@@ -227,6 +227,7 @@ model StakingDetail {
   card_abilities_boost               Float?
   card_bloodlines_boost              Float?
   grain_food_discount                Float?
+  lite_food_discount                 Float?
   dec_stake_needed_discount          Float?
   total_boost                        Float?
   total_base_pp_cap                  Float?

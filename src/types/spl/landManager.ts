@@ -142,6 +142,7 @@ export interface SplRegionOverviewPlot {
   grain_req_per_hour: number;
   grain_required: number;
   grain_food_discount: number;
+  lite_food_discount: number;
   plot_id: number;
   territory: string;
   site_capacity: number;

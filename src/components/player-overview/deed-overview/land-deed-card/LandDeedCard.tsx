@@ -132,6 +132,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         bloodlineBoost={deed.stakingDetail?.card_bloodlines_boost ?? 0}
         decDiscount={deed.stakingDetail?.dec_stake_needed_discount ?? 0}
         grainConsumeReduction={deed.stakingDetail?.grain_food_discount ?? 0}
+        liteConsumeReduction={deed.stakingDetail?.lite_food_discount ?? 0}
         productionBoost={deed.stakingDetail?.card_abilities_boost ?? 0}
         replacePowerCore={deed.stakingDetail?.is_energized ?? false}
         laborLuck={deed.stakingDetail?.has_labors_luck ?? false}

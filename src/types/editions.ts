@@ -18,6 +18,7 @@ import {
   edition_soulbound_rebellion_icon_url,
   edition_soulkeep_icon_url,
   edition_untamed_icon_url,
+  edition_verico_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 
 export const landCardSet = [
@@ -28,6 +29,7 @@ export const landCardSet = [
   "rebellion",
   "conclave",
   "land",
+  "verico",
 ];
 
 export const cardSetName = [...landCardSet, "gladius", "foundation"] as const;
@@ -165,6 +167,12 @@ export const editionMap: Record<number, EidtionTypeDef> = {
     setName: "escalation",
     editionIcon: edition_escalation_icon_url,
   },
+  21: {
+    displayName: "Verico",
+    urlName: "verico",
+    setName: "verico",
+    editionIcon: edition_verico_icon_url,
+  },
 } as const;
 
 export const cardSetIconMap: Record<CardSetName, string> = {
@@ -176,6 +184,7 @@ export const cardSetIconMap: Record<CardSetName, string> = {
   conclave: edition_conclave_arcana_icon_url,
   foundation: edition_foundation_icon_url,
   land: edition_land_card_icon_url,
+  verico: edition_verico_icon_url,
 };
 
 export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);

@@ -177,6 +177,7 @@ export const cardSetModifiers: Record<CardSetNameLandValid, number> = {
   rebellion: 0.5,
   conclave: 0.5,
   land: 1,
+  verico: 1,
 };
 
 export const cardFoilOptions = [

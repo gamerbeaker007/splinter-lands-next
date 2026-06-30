@@ -44,11 +44,13 @@ const sizeIcon = 30;
 
 export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
   const [open, setOpen] = useState(false);
+  console.log("LandBoostComponent boosts:", boosts);
   const hasAnyLandBoost = !!(
     boosts &&
     ((boosts?.produceBoost &&
       Object.values(boosts.produceBoost).some((value) => value > 0)) ||
       (boosts?.consumeGrainDiscount ?? 0) > 0 ||
+      (boosts?.liteConsumeGrainDiscount ?? 0) > 0 ||
       (boosts?.bloodlineBoost ?? 0) > 0 ||
       (boosts?.decDiscount ?? 0) > 0 ||
       boosts?.replacePowerCore ||
@@ -75,6 +77,10 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
 
   const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
     (boosts?.consumeGrainDiscount ?? 0) * 100
+  );
+
+  const [liteConsumeGrainDiscount, setLiteConsumeGrainDiscount] = useState(
+    (boosts?.liteConsumeGrainDiscount ?? 0) * 100
   );
 
   // Bloodline boost is now a simple number
@@ -111,6 +117,7 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
       }
 
       setConsumeGrainDiscount((boosts.consumeGrainDiscount ?? 0) * 100);
+      setLiteConsumeGrainDiscount((boosts.liteConsumeGrainDiscount ?? 0) * 100);
       setBloodlineBoost((boosts.bloodlineBoost ?? 0) * 100);
       setDecDiscount((boosts.decDiscount ?? 0) * 100);
       setReplacePowerCore(boosts.replacePowerCore);
@@ -133,12 +140,14 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
     const landBoost: LandBoost = {
       produceBoost,
       consumeGrainDiscount: consumeGrainDiscount / 100,
+      liteConsumeGrainDiscount: liteConsumeGrainDiscount / 100,
       bloodlineBoost: bloodlineBoost / 100,
       decDiscount: decDiscount / 100,
       replacePowerCore,
       laborLuck,
     };
 
+    console.log("Saving LandBoost:", landBoost);
     onSave(landBoost);
     setOpen(false);
   };
@@ -190,6 +199,11 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
       {consumeGrainDiscount > 0 && (
         <Typography fontSize={fontSizeToolTip}>
           Grain Consumption Discount: {consumeGrainDiscount}%
+        </Typography>
+      )}
+      {liteConsumeGrainDiscount > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Lite Grain Consumption Discount: {liteConsumeGrainDiscount}%
         </Typography>
       )}
       {bloodlineBoost > 0 && (
@@ -292,6 +306,25 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
               <PercentageSlider
                 value={consumeGrainDiscount}
                 onChange={setConsumeGrainDiscount}
+                label="Grain consumption discount"
+              />
+            </Box>
+
+            <Box>
+              <Image
+                src={RESOURCE_ICON_MAP["GRAIN"]}
+                alt={"Grain"}
+                width={sizeIcon}
+                height={sizeIcon}
+              />
+
+              <Typography gutterBottom>Rationing</Typography>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <PercentageSlider
+                value={liteConsumeGrainDiscount}
+                onChange={setLiteConsumeGrainDiscount}
                 label="Grain consumption discount"
               />
             </Box>

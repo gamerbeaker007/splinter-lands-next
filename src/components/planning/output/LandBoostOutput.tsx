@@ -1,6 +1,7 @@
 import {
   determineBloodlineBoost,
   determineGrainConsumeReduction,
+  determineLiteGrainConsumeReduction,
   determineProductionBoost,
 } from "@/lib/frontend/utils/plannerCalcs";
 import {
@@ -8,6 +9,7 @@ import {
   dec_stake_discount_icon_url,
   energized_icon_url,
   labors_luck_icon_url,
+  lite_rationing_icon_url,
   rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
@@ -22,6 +24,7 @@ import React from "react";
 
 type Props = {
   plotPlannerData: PlotPlannerData;
+  totalBasePP?: number;
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
@@ -33,7 +36,11 @@ function formatPercentage(value: number) {
   return `${Math.round(value * 100)}%`;
 }
 
-export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
+export const LandBoostOutput: React.FC<Props> = ({
+  plotPlannerData,
+  totalBasePP,
+  pos,
+}) => {
   const { x = "0px", y = "0px", w = "auto" } = pos || {};
   const { cardInput, worksiteType } = plotPlannerData;
 
@@ -47,6 +54,9 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
   const productionBoosts = determineProductionBoost(resource, cardInput);
 
   const totalGrainDiscount = determineGrainConsumeReduction(cardInput);
+  const totalLiteGrainDiscount = determineLiteGrainConsumeReduction(cardInput);
+
+  console.log("totalLiteGrainDiscount", totalLiteGrainDiscount);
 
   // Check for Replace Power Core
   const hasReplacePowerCore = cardInput.some(
@@ -146,13 +156,46 @@ export const LandBoostOutput: React.FC<Props> = ({ plotPlannerData, pos }) => {
                 >
                   <Image
                     src={rationing_icon_url}
-                    alt={"GRAIN"}
+                    alt={"RATIONING"}
                     width={sizeIcon}
                     height={sizeIcon}
                   />
                   <Typography fontSize={fontSize} color={fontColor}>
                     -{formatPercentage(totalGrainDiscount)}
                   </Typography>
+                </Box>
+              </Tooltip>
+            )}
+          </Stack>
+
+          {/* Consumption Discounts */}
+          {/* Warning when totalLiteGrainDiscount is found and basePP > 20K*/}
+          <Stack spacing={0.5}>
+            {totalLiteGrainDiscount > 0 && (
+              <Tooltip title="Rationing Lite" placement="top">
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.5,
+                  }}
+                >
+                  <Image
+                    src={lite_rationing_icon_url}
+                    alt={"RATIONING LITE"}
+                    width={sizeIcon}
+                    height={sizeIcon}
+                  />
+                  <Typography fontSize={fontSize} color={fontColor}>
+                    -{formatPercentage(totalLiteGrainDiscount)}
+                  </Typography>
+                  {totalBasePP && totalBasePP > 20_000 && (
+                    <Typography fontSize={fontSize} color="error">
+                      Warning: BasePP {">"} 20K Rationing Lite will not apply to
+                      grain consumption.
+                    </Typography>
+                  )}
                 </Box>
               </Tooltip>
             )}

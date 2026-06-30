@@ -95,6 +95,7 @@ export function filterDeeds<T extends DeedComplete>(
         (deed.stakingDetail?.card_bloodlines_boost ?? 0) > 0 ||
         (deed.stakingDetail?.dec_stake_needed_discount ?? 0) > 0 ||
         (deed.stakingDetail?.grain_food_discount ?? 0) > 0 ||
+        (deed.stakingDetail?.lite_food_discount ?? 0) > 0 ||
         (deed.stakingDetail?.card_abilities_boost ?? 0) > 0 ||
         (deed.stakingDetail?.is_energized ?? false) ||
         (deed.stakingDetail?.has_labors_luck ?? false);
