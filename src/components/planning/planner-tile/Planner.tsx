@@ -1,5 +1,11 @@
 "use client";
 import { Resource } from "@/constants/resource/resource";
+import {
+  calcCaptureRate,
+  calcProductionInfo,
+  calcTotalPP,
+  calcTotemChancePerHour,
+} from "@/lib/frontend/utils/plannerCalcs";
 import { determineBcxCap, determineLandBoosts } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
@@ -30,12 +36,6 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
-import {
-  calcCaptureRate,
-  calcProductionInfo,
-  calcTotalPP,
-  calcTotemChancePerHour,
-} from "@/lib/frontend/utils/plannerCalcs";
 import SlotEditor from "../card-editor/SlotEditor";
 import { PlannerControls } from "../deed-editor/PlanningControls";
 import { DECOutput } from "../output/DECOutput";
@@ -183,11 +183,12 @@ export default function Planner({
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
     const landboost =
-      setName === "land"
+      setName === "land" || setName === "verico"
         ? determineLandBoosts(rarity, cardFoilOptions[foil], bcx, splCard)
         : {
             produceBoost: {} as Record<Resource, number>,
             consumeGrainDiscount: 0,
+            liteConsumeGrainDiscount: 0,
             bloodlineBoost: 0,
             decDiscount: 0,
             replacePowerCore: false,
@@ -388,9 +389,12 @@ export default function Planner({
   };
 
   const updateSlot = (i: number, next: SlotInput) => {
-    let landBoost = {
+    // Preserve manually entered land boosts (e.g. for verico). The land set
+    // overrides this below by deriving boosts from the representative plot card.
+    let landBoost = next.landBoosts ?? {
       produceBoost: {} as Record<Resource, number>,
       consumeGrainDiscount: 0,
+      liteConsumeGrainDiscount: 0,
       bloodlineBoost: 0,
       decDiscount: 0,
       replacePowerCore: false,
@@ -524,6 +528,7 @@ export default function Planner({
 
         <LandBoostOutput
           plotPlannerData={plot}
+          totalBasePP={totalBasePP}
           pos={{ x: "550px", y: "30px", w: "210px" }}
         />
 

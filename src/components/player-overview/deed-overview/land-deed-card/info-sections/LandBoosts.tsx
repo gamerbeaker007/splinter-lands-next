@@ -17,6 +17,7 @@ type Props = {
   bloodlineBoost: number;
   decDiscount: number;
   grainConsumeReduction: number;
+  liteConsumeReduction: number;
   productionBoost: number;
   replacePowerCore: boolean;
   laborLuck: boolean;
@@ -32,6 +33,7 @@ export const LandBoosts: React.FC<Props> = ({
   bloodlineBoost,
   decDiscount,
   grainConsumeReduction,
+  liteConsumeReduction,
   productionBoost,
   replacePowerCore,
   laborLuck,
@@ -40,11 +42,13 @@ export const LandBoosts: React.FC<Props> = ({
   const { x, y, w } = pos;
 
   // Check if any boost exists
+  // boosts are positive, discounts are negative (e.g. -0.2 = 20% off)
   const hasAnyBoost =
     (productionBoost && productionBoost > 0) ||
     (bloodlineBoost && bloodlineBoost > 0) ||
-    (decDiscount && decDiscount > 0) ||
-    (grainConsumeReduction && grainConsumeReduction > 0) ||
+    (decDiscount && decDiscount < 0) ||
+    (grainConsumeReduction && grainConsumeReduction < 0) ||
+    (liteConsumeReduction && liteConsumeReduction < 0) ||
     replacePowerCore ||
     laborLuck;
 
@@ -139,6 +143,23 @@ export const LandBoosts: React.FC<Props> = ({
                 />
                 <Typography fontSize={fontSize} color={fontColor}>
                   {Math.round(grainConsumeReduction * 100)}%
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+          {liteConsumeReduction < 0 && (
+            <Tooltip
+              title={`Lite Consumption Reduction by ${Math.round(liteConsumeReduction * 100)}%`}
+            >
+              <Box display={"flex"} flexDirection={"column"}>
+                <Image
+                  src={rationing_icon_url}
+                  alt="Lite Reduction"
+                  width={iconSize}
+                  height={iconSize}
+                />
+                <Typography fontSize={fontSize} color={fontColor}>
+                  {Math.round(liteConsumeReduction * 100)}%
                 </Typography>
               </Box>
             </Tooltip>

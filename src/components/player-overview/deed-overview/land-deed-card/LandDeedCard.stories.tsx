@@ -132,8 +132,9 @@ const completeDeedFixture1: DeedComplete = {
     has_labors_luck: true,
     card_abilities_boost: 0.1,
     card_bloodlines_boost: 0.2,
-    grain_food_discount: 0.2,
-    dec_stake_needed_discount: 0.4,
+    grain_food_discount: -0.2,
+    lite_food_discount: -0.1,
+    dec_stake_needed_discount: -0.4,
     total_boost: 0.2,
     total_base_pp_cap: 100000,
     total_base_pp: 7500,
@@ -510,6 +511,7 @@ const cardDetails: SplCardDetails[] = [
     editions: "7",
     is_promo: false,
     tier: 7,
+    no_pp: false,
   },
   {
     id: 435,
@@ -522,6 +524,7 @@ const cardDetails: SplCardDetails[] = [
     editions: "7",
     is_promo: false,
     tier: 7,
+    no_pp: false,
   },
   {
     id: 450,
@@ -533,6 +536,7 @@ const cardDetails: SplCardDetails[] = [
     is_starter: false,
     editions: "7",
     is_promo: false,
+    no_pp: false,
   },
   {
     id: 505,
@@ -544,6 +548,7 @@ const cardDetails: SplCardDetails[] = [
     is_starter: false,
     editions: "10",
     is_promo: false,
+    no_pp: false,
   },
 ];
 

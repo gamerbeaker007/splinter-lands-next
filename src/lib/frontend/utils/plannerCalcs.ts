@@ -246,13 +246,20 @@ export function calcProductionInfo(
   const consumeGrainDiscount = determineGrainConsumeReduction(
     plotPlannerData.cardInput
   );
+  const consumeLiteGrainDiscount = determineLiteGrainConsumeReduction(
+    plotPlannerData.cardInput
+  );
+  // determine*Reduction return positive discounts (0.1 = 10% off) for display,
+  // but calcCostsV2 expects the API convention where a discount is negative
+  // (e.g. -0.1 = 10% off, applied as basePP * ... * (1 + rationing)). Negate here.
   const consume = calcCostsWithDEC(
     totalBasePP,
     prices,
     1,
     determineRecipe(resource),
     false, // in planning never under construction
-    consumeGrainDiscount
+    -consumeGrainDiscount,
+    -consumeLiteGrainDiscount
   );
 
   const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);
@@ -330,6 +337,20 @@ export function determineProductionBoost(
 export function determineGrainConsumeReduction(cardInput: SlotInput[]): number {
   return cardInput.reduce((max, card) => {
     const discount = card.landBoosts?.consumeGrainDiscount || 0;
+    return Math.max(max, discount);
+  }, 0);
+}
+
+/**
+ * Determines the maximum consume discount (%) for lite grain from all cards.
+ * @param cardInput The list of cards to evaluate.
+ * @returns The maximum consume discount for grain resource. 0.1 means 10% discount.
+ */
+export function determineLiteGrainConsumeReduction(
+  cardInput: SlotInput[]
+): number {
+  return cardInput.reduce((max, card) => {
+    const discount = card.landBoosts?.liteConsumeGrainDiscount || 0;
     return Math.max(max, discount);
   }, 0);
 }

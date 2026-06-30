@@ -25,6 +25,7 @@ import { ResourceWithDEC } from "@/types/productionInfo";
  * @param siteEfficiency
  * @param isConstruction
  * @param rationing grain_food_discount (negative = discount, used only in formula fallback)
+ * @param liteRationing lite_food_discount (negative = discount, used only in formula fallback)
  * @param recipe
  * @param grainReqPerHour pre-computed grain per hour from the API (worksiteDetail)
  */
@@ -33,14 +34,23 @@ export function calcCostsV2(
   siteEfficiency: number,
   isConstruction: boolean,
   rationing: number,
+  liteRationing: number,
   recipe?: ResourceRecipeItem[],
   grainReqPerHour?: number
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
+  // rationing and liteRationing are negative discounts (e.g. -0.1 = 10% off) and
+  // they stack, so we combine them for the grain calculation. Lite rationing does
+  // not count when basePP is greater than 20K.
+  const effectiveRationing =
+    liteRationing < 0 && basePP <= 20_000
+      ? rationing + liteRationing
+      : rationing;
+
   costs.GRAIN =
     grainReqPerHour ??
-    basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + rationing);
+    basePP * DEFAULT_GRAIN_COST * siteEfficiency * (1 + effectiveRationing);
 
   // When under construction, only GRAIN is consumed
   if (isConstruction) {
@@ -72,6 +82,7 @@ export function calcCostsWithDEC(
   recipe: ResourceRecipeItem[],
   isConstruction: boolean,
   rationing?: number,
+  liteRationing?: number,
   grainReqPerHour?: number
 ): ResourceWithDEC[] {
   const costs = calcCostsV2(
@@ -79,6 +90,7 @@ export function calcCostsWithDEC(
     siteEfficiency,
     isConstruction,
     rationing ?? 0,
+    liteRationing ?? 0,
     recipe,
     grainReqPerHour
   );

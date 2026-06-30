@@ -341,6 +341,7 @@ export function determineLandBoosts(
   const landboost = {
     produceBoost: {} as Record<Resource, number>,
     consumeGrainDiscount: 0,
+    liteConsumeGrainDiscount: 0,
     bloodlineBoost: 0,
     decDiscount: 0,
     replacePowerCore: false,
@@ -366,6 +367,9 @@ export function determineLandBoosts(
             break;
           case "RATIONING":
             landboost.consumeGrainDiscount = (ability[1] * -1) as number;
+            break;
+          case "RATIONING_LITE":
+            landboost.liteConsumeGrainDiscount = (ability[1] * -1) as number;
             break;
           case "BLOODLINE":
             landboost.bloodlineBoost = ability[1] as number;

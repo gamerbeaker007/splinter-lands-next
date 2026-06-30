@@ -131,6 +131,7 @@ export const edition_conclave_rewards_icon_url = edition_reward_icon_url;
 export const edition_eternal_icon_url = `${WEB_URL}website/icons/icon-edition-eternal.svg`;
 export const edition_land_card_icon_url = `${WEB_URL}website/icons/icon-edition-land.svg`;
 export const edition_escalation_icon_url = `${WEB_URL}website/icons/icon-edition-mini-set.svg`;
+export const edition_verico_icon_url = `${WEB_URL}website/icons/icon-edition-verico.svg`;
 
 export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_rarity_common_new.svg`;
 export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;
@@ -143,9 +144,13 @@ export const bloodline_icon_url = `${WEB_URL}website/abilities/summoner/ability_
 
 export const energized_icon_url = `${WEB_URL}website/abilities/ability_energized.png`;
 export const rationing_icon_url = `${WEB_URL}website/abilities/ability_rationing.png`;
+export const lite_rationing_icon_url = `${WEB_URL}website/abilities/ability_light-rationing.png`;
+export const alteration_icon_url = `${WEB_URL}website/abilities/ability_alteration.png`;
+export const glint_recovery_icon_url = `${WEB_URL}website/abilities/ability_glint-recovery.png`;
+export const fortune_seeker_icon_url = `${WEB_URL}website/abilities/ability_fortune-seeker.png`;
 export const labors_luck_icon_url = `${WEB_URL}website/abilities/ability_labors-luck.png`;
 export const dec_stake_discount_icon_url = `${WEB_URL}website/abilities/ability_dark-discount.png`;
-export const booldline_icon_url = `${WEB_URL}website/abilities/ability_toil-and-kin.png`;
+export const toil_and_kin_ability_icon_url = `${WEB_URL}website/abilities/ability_toil-and-kin.png`;
 
 export const bountiful_grain_icon_url = `${WEB_URL}website/abilities/ability_bountiful-grain.png`;
 export const bountiful_iron_icon_url = `${WEB_URL}website/abilities/ability_bountiful-iron.png`;

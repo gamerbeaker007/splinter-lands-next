@@ -30,6 +30,7 @@ const LandAbilityDot = ({ landBoosts }: Props) => {
     (landBoosts.produceBoost &&
       Object.values(landBoosts.produceBoost).some((value) => value > 0)) ||
     (landBoosts.consumeGrainDiscount ?? 0) > 0 ||
+    (landBoosts.liteConsumeGrainDiscount ?? 0) > 0 ||
     (landBoosts.bloodlineBoost ?? 0) > 0 ||
     (landBoosts.decDiscount ?? 0) > 0 ||
     landBoosts.replacePowerCore ||
@@ -98,6 +99,21 @@ const LandAbilityDot = ({ landBoosts }: Props) => {
               />
               <Typography fontSize={fontSize}>
                 Rationing: -{formatPercentage(landBoosts.consumeGrainDiscount)}
+              </Typography>
+            </Stack>
+          )}
+
+          {landBoosts.liteConsumeGrainDiscount > 0 && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <Image
+                src={rationing_icon_url}
+                alt="Rationing"
+                width={sizeIcon}
+                height={sizeIcon}
+              />
+              <Typography fontSize={fontSize}>
+                Lite Rationing: -
+                {formatPercentage(landBoosts.liteConsumeGrainDiscount)}
               </Typography>
             </Stack>
           )}

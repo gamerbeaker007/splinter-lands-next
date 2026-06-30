@@ -6,6 +6,7 @@ import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
   dec_icon_url,
+  lite_rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { LandBoost } from "@/types/planner/domain";
 import { CardBloodline } from "@/types/planner/primitives";
@@ -49,6 +50,7 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
     ((boosts?.produceBoost &&
       Object.values(boosts.produceBoost).some((value) => value > 0)) ||
       (boosts?.consumeGrainDiscount ?? 0) > 0 ||
+      (boosts?.liteConsumeGrainDiscount ?? 0) > 0 ||
       (boosts?.bloodlineBoost ?? 0) > 0 ||
       (boosts?.decDiscount ?? 0) > 0 ||
       boosts?.replacePowerCore ||
@@ -75,6 +77,10 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
 
   const [consumeGrainDiscount, setConsumeGrainDiscount] = useState(
     (boosts?.consumeGrainDiscount ?? 0) * 100
+  );
+
+  const [liteConsumeGrainDiscount, setLiteConsumeGrainDiscount] = useState(
+    (boosts?.liteConsumeGrainDiscount ?? 0) * 100
   );
 
   // Bloodline boost is now a simple number
@@ -111,6 +117,7 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
       }
 
       setConsumeGrainDiscount((boosts.consumeGrainDiscount ?? 0) * 100);
+      setLiteConsumeGrainDiscount((boosts.liteConsumeGrainDiscount ?? 0) * 100);
       setBloodlineBoost((boosts.bloodlineBoost ?? 0) * 100);
       setDecDiscount((boosts.decDiscount ?? 0) * 100);
       setReplacePowerCore(boosts.replacePowerCore);
@@ -133,6 +140,7 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
     const landBoost: LandBoost = {
       produceBoost,
       consumeGrainDiscount: consumeGrainDiscount / 100,
+      liteConsumeGrainDiscount: liteConsumeGrainDiscount / 100,
       bloodlineBoost: bloodlineBoost / 100,
       decDiscount: decDiscount / 100,
       replacePowerCore,
@@ -190,6 +198,11 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
       {consumeGrainDiscount > 0 && (
         <Typography fontSize={fontSizeToolTip}>
           Grain Consumption Discount: {consumeGrainDiscount}%
+        </Typography>
+      )}
+      {liteConsumeGrainDiscount > 0 && (
+        <Typography fontSize={fontSizeToolTip}>
+          Lite Grain Consumption Discount: {liteConsumeGrainDiscount}%
         </Typography>
       )}
       {bloodlineBoost > 0 && (
@@ -293,6 +306,30 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
                 value={consumeGrainDiscount}
                 onChange={setConsumeGrainDiscount}
                 label="Grain consumption discount"
+              />
+            </Box>
+
+            <Box
+              display={"flex"}
+              flexWrap={"wrap"}
+              alignItems={"center"}
+              gap={2}
+            >
+              <Image
+                src={lite_rationing_icon_url}
+                alt={"Rationing Lite"}
+                width={sizeIcon}
+                height={sizeIcon}
+              />
+
+              <Typography gutterBottom>Rationing Lite</Typography>
+            </Box>
+
+            <Box sx={{ mb: 3 }}>
+              <PercentageSlider
+                value={liteConsumeGrainDiscount}
+                onChange={setLiteConsumeGrainDiscount}
+                label="Lite grain consumption discount"
               />
             </Box>
 

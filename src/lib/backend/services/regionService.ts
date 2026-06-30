@@ -44,6 +44,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   const countAbilityBoost: Partial<Record<Resource, number>> = {};
   let countBloodlinesBoost = 0;
   let countFoodDiscount = 0;
+  let countLiteFoodDiscount = 0;
   let countDecStakeDiscount = 0;
   const totalAbilityBoostPP: Partial<Record<Resource, number>> = {};
   let totalBloodlinesBoostPP = 0;
@@ -101,10 +102,12 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
           (countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] ??
             0) + (staking.card_abilities_boost > 0 ? 1 : 0);
       }
-      countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0 > 0) ? 1 : 0;
-      countFoodDiscount += (staking.grain_food_discount ?? 0 > 0) ? 1 : 0;
+      // boosts are positive, discounts are negative (e.g. -0.2 = 20% off)
+      countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0) > 0 ? 1 : 0;
+      countFoodDiscount += (staking.grain_food_discount ?? 0) < 0 ? 1 : 0;
+      countLiteFoodDiscount += (staking.lite_food_discount ?? 0) < 0 ? 1 : 0;
       countDecStakeDiscount +=
-        (staking.dec_stake_needed_discount ?? 0 > 0) ? 1 : 0;
+        (staking.dec_stake_needed_discount ?? 0) < 0 ? 1 : 0;
 
       const abilityBoost = staking.total_card_abilities_boost_pp ?? 0;
       if (abilityBoost > 0) {
@@ -164,6 +167,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     countAbilityBoost: countAbilityBoost,
     countBloodlinesBoost: countBloodlinesBoost,
     countFoodDiscount: countFoodDiscount,
+    countLiteFoodDiscount: countLiteFoodDiscount,
     countDecStakeDiscount: countDecStakeDiscount,
     totalAbilityBoostPP: totalAbilityBoostPP,
     totalBloodlinesBoostPP: totalBloodlinesBoostPP,
@@ -395,6 +399,7 @@ export function enrichWithProductionInfo(
           ws.resource_recipe as unknown as ResourceRecipeItem[],
           ws.is_construction ?? false,
           st.grain_food_discount ?? 0,
+          st.lite_food_discount ?? 0,
           ws.grain_req_per_hour ?? undefined
         );
         const totalDECConsume = consumeCosts.reduce(
