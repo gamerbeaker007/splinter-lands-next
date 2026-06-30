@@ -42,11 +42,13 @@ export const LandBoosts: React.FC<Props> = ({
   const { x, y, w } = pos;
 
   // Check if any boost exists
+  // boosts are positive, discounts are negative (e.g. -0.2 = 20% off)
   const hasAnyBoost =
     (productionBoost && productionBoost > 0) ||
     (bloodlineBoost && bloodlineBoost > 0) ||
-    (decDiscount && decDiscount > 0) ||
-    (grainConsumeReduction && grainConsumeReduction > 0) ||
+    (decDiscount && decDiscount < 0) ||
+    (grainConsumeReduction && grainConsumeReduction < 0) ||
+    (liteConsumeReduction && liteConsumeReduction < 0) ||
     replacePowerCore ||
     laborLuck;
 

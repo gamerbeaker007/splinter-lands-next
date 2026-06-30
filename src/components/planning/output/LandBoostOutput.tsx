@@ -56,8 +56,6 @@ export const LandBoostOutput: React.FC<Props> = ({
   const totalGrainDiscount = determineGrainConsumeReduction(cardInput);
   const totalLiteGrainDiscount = determineLiteGrainConsumeReduction(cardInput);
 
-  console.log("totalLiteGrainDiscount", totalLiteGrainDiscount);
-
   // Check for Replace Power Core
   const hasReplacePowerCore = cardInput.some(
     (card) => card.landBoosts?.replacePowerCore

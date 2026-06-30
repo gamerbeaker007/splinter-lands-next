@@ -102,11 +102,12 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
           (countAbilityBoost[deed.worksiteDetail?.token_symbol as Resource] ??
             0) + (staking.card_abilities_boost > 0 ? 1 : 0);
       }
-      countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0 > 0) ? 1 : 0;
-      countFoodDiscount += (staking.grain_food_discount ?? 0 > 0) ? 1 : 0;
-      countLiteFoodDiscount += (staking.lite_food_discount ?? 0 > 0) ? 1 : 0;
+      // boosts are positive, discounts are negative (e.g. -0.2 = 20% off)
+      countBloodlinesBoost += (staking.card_bloodlines_boost ?? 0) > 0 ? 1 : 0;
+      countFoodDiscount += (staking.grain_food_discount ?? 0) < 0 ? 1 : 0;
+      countLiteFoodDiscount += (staking.lite_food_discount ?? 0) < 0 ? 1 : 0;
       countDecStakeDiscount +=
-        (staking.dec_stake_needed_discount ?? 0 > 0) ? 1 : 0;
+        (staking.dec_stake_needed_discount ?? 0) < 0 ? 1 : 0;
 
       const abilityBoost = staking.total_card_abilities_boost_pp ?? 0;
       if (abilityBoost > 0) {

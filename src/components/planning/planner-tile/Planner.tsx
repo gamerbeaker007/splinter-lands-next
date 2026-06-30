@@ -182,17 +182,6 @@ export default function Planner({
     const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
-    console.log("toSlotInput", {
-      idx,
-      setName,
-      rarity,
-      foil,
-      color,
-      element,
-      secondaryElement,
-      bcx,
-      bloodline,
-    });
     const landboost =
       setName === "land" || setName === "verico"
         ? determineLandBoosts(rarity, cardFoilOptions[foil], bcx, splCard)
@@ -400,7 +389,9 @@ export default function Planner({
   };
 
   const updateSlot = (i: number, next: SlotInput) => {
-    let landBoost = {
+    // Preserve manually entered land boosts (e.g. for verico). The land set
+    // overrides this below by deriving boosts from the representative plot card.
+    let landBoost = next.landBoosts ?? {
       produceBoost: {} as Record<Resource, number>,
       consumeGrainDiscount: 0,
       liteConsumeGrainDiscount: 0,

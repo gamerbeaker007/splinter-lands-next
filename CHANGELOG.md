@@ -15,6 +15,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.15.0] - 2026-06-30
+
+### Added
+
+- Add Verico as set
+- Fix planner with Rationing Lite
+
+---
+
 ## [v1.14.0] - 2026-06-27
 
 ### Added

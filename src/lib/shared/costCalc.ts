@@ -40,10 +40,11 @@ export function calcCostsV2(
 ): Record<Resource, number> {
   const costs: Record<string, number> = {};
 
-  // rationing and liteRationing do stack, so we need to combine them for the grain calculation
-  // when rationing lite and basePP is greater then 20K it will not count
+  // rationing and liteRationing are negative discounts (e.g. -0.1 = 10% off) and
+  // they stack, so we combine them for the grain calculation. Lite rationing does
+  // not count when basePP is greater than 20K.
   const effectiveRationing =
-    liteRationing > 0 && basePP < 20_000
+    liteRationing < 0 && basePP <= 20_000
       ? rationing + liteRationing
       : rationing;
 

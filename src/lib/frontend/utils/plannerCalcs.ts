@@ -246,13 +246,20 @@ export function calcProductionInfo(
   const consumeGrainDiscount = determineGrainConsumeReduction(
     plotPlannerData.cardInput
   );
+  const consumeLiteGrainDiscount = determineLiteGrainConsumeReduction(
+    plotPlannerData.cardInput
+  );
+  // determine*Reduction return positive discounts (0.1 = 10% off) for display,
+  // but calcCostsV2 expects the API convention where a discount is negative
+  // (e.g. -0.1 = 10% off, applied as basePP * ... * (1 + rationing)). Negate here.
   const consume = calcCostsWithDEC(
     totalBasePP,
     prices,
     1,
     determineRecipe(resource),
     false, // in planning never under construction
-    consumeGrainDiscount
+    -consumeGrainDiscount,
+    -consumeLiteGrainDiscount
   );
 
   const produce = calcProduction(resource, totalBoostedPP, prices, 1, spsRatio);

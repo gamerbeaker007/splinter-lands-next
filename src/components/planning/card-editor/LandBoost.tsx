@@ -6,6 +6,7 @@ import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   bloodline_icon_url,
   dec_icon_url,
+  lite_rationing_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { LandBoost } from "@/types/planner/domain";
 import { CardBloodline } from "@/types/planner/primitives";
@@ -44,7 +45,6 @@ const sizeIcon = 30;
 
 export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
   const [open, setOpen] = useState(false);
-  console.log("LandBoostComponent boosts:", boosts);
   const hasAnyLandBoost = !!(
     boosts &&
     ((boosts?.produceBoost &&
@@ -147,7 +147,6 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
       laborLuck,
     };
 
-    console.log("Saving LandBoost:", landBoost);
     onSave(landBoost);
     setOpen(false);
   };
@@ -310,22 +309,27 @@ export default function LandBoostComponent({ boosts, onSave }: LandBoostProps) {
               />
             </Box>
 
-            <Box>
+            <Box
+              display={"flex"}
+              flexWrap={"wrap"}
+              alignItems={"center"}
+              gap={2}
+            >
               <Image
-                src={RESOURCE_ICON_MAP["GRAIN"]}
-                alt={"Grain"}
+                src={lite_rationing_icon_url}
+                alt={"Rationing Lite"}
                 width={sizeIcon}
                 height={sizeIcon}
               />
 
-              <Typography gutterBottom>Rationing</Typography>
+              <Typography gutterBottom>Rationing Lite</Typography>
             </Box>
 
             <Box sx={{ mb: 3 }}>
               <PercentageSlider
                 value={liteConsumeGrainDiscount}
                 onChange={setLiteConsumeGrainDiscount}
-                label="Grain consumption discount"
+                label="Lite grain consumption discount"
               />
             </Box>
 
