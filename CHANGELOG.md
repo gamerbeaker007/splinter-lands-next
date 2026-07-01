@@ -15,6 +15,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.15.3] - 2026-06-30
+
+### Added
+
+- Add Alert when rantioing lite is active and you have more then 20K BasePP
+- Update Verico with auto fill land boost based on the card details.
+
+---
+
 ## [v1.15.2] - 2026-06-30
 
 ### Fix

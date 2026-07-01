@@ -37,6 +37,7 @@ export type DeedInfo = {
   basePP: number;
   boostPP: number;
   worksiteType?: WorksiteType;
+  rationingLite: number;
 };
 
 export type CountAlert = {
@@ -64,4 +65,5 @@ export type CardAlerts = {
   noPowerSource: DeedInfo[];
   powerCoreWhileEnergized: DeedInfo[];
   missingBloodLineBoost: DeedInfo[];
+  rationingLiteAlerts: DeedInfo[];
 };

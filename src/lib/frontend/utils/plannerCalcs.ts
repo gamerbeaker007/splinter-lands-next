@@ -126,7 +126,7 @@ export function calcLandPpPerBcx(
   const maxBasePP = basePPMax[rarity][foil === "regular" ? "regular" : "gold"];
   const maxBCX = determineCardMaxBCX(set, rarity, foilId);
   const ppPerBcx = maxBasePP / maxBCX;
-  const isLandCard = set === "land" || set === "verico";
+  const isLandCard = set === "land";
   const setModifier = cardSetModifiers[set] ?? 1;
   const foilModifier = isLandCard
     ? (cardFoilModifiersLandCard[foil] ?? 1)

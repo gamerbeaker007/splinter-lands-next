@@ -350,7 +350,7 @@ export function determineLandBoosts(
 
   const determineLevel = determineLevelFromBCX("land", rarity, foil, bcx);
 
-  const level = determineLevel !== null ? determineLevel : 1;
+  const level = determineLevel ?? 1;
   const landAbilities = splCard?.stats?.land_abilities ?? null;
 
   if (landAbilities && level > 0 && level <= 10) {
@@ -363,23 +363,23 @@ export function determineLandBoosts(
 
         switch (abilityType) {
           case "DD": // DEC Discount
-            landboost.decDiscount = (ability[1] * -1) as number;
+            landboost.decDiscount = ability[1] * -1;
             break;
           case "RATIONING":
-            landboost.consumeGrainDiscount = (ability[1] * -1) as number;
+            landboost.consumeGrainDiscount = ability[1] * -1;
             break;
           case "RATIONING_LITE":
-            landboost.liteConsumeGrainDiscount = (ability[1] * -1) as number;
+            landboost.liteConsumeGrainDiscount = ability[1] * -1;
             break;
           case "BLOODLINE":
-            landboost.bloodlineBoost = ability[1] as number;
+            landboost.bloodlineBoost = ability[1];
             break;
           case "GRAIN":
           case "WOOD":
           case "STONE":
           case "IRON":
           case "AURA":
-            landboost.produceBoost[abilityType] = ability[1] as number;
+            landboost.produceBoost[abilityType] = ability[1];
             break;
           case "ENERGIZED":
             landboost.replacePowerCore = true;
@@ -403,9 +403,9 @@ export function determineLandBoosts(
  * player and is currently staked on one of the authenticated player's plots.
  *
  * Conditions:
- * - `rental_type` is set  (card is on a market rental)
- * - `stake_plot` is set   (card is staked on a plot)
- * - `c.player !== username` (owner is someone else — player is the renter)
+ * - `rental_type` is set (card is on a market rental)
+ * - `stake_plot` is set (card is staked on a plot)
+ * - `c.player !== username` (an owner is someone else — player is the renter)
  */
 export function isRentedByPlayer(
   c: SplPlayerCardCollection,

@@ -65,10 +65,26 @@ export default function SlotEditor({
             {index + 1}
           </Typography>
         </Box>
-        <SetSelector value={value.set} onChange={onSelect("set")} />
+        <SetSelector
+          value={value.set}
+          isVerico={value.isVerico}
+          onChange={(selection) =>
+            selection === "verico"
+              ? // Verico is edition 21 within the land set: keep set="land",
+                // mark it Verico, and lock rarity to common.
+                onChange({
+                  ...value,
+                  set: "land",
+                  isVerico: true,
+                  rarity: "common",
+                })
+              : onChange({ ...value, set: selection, isVerico: false })
+          }
+        />
         <CardRaritySelector
           value={value.rarity}
           onChange={onSelect("rarity")}
+          disabled={value.isVerico}
         />
         <CardFoilSelector
           value={value.foil}

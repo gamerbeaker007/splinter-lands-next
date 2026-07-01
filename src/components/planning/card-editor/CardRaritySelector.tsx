@@ -16,9 +16,11 @@ import Image from "next/image";
 export type Props = {
   value: CardRarity;
   onChange: (tier: CardRarity) => void;
+  /** Locks the selector (e.g. Verico cards are common only). */
+  disabled?: boolean;
 };
 
-export function CardRaritySelector({ value, onChange }: Props) {
+export function CardRaritySelector({ value, onChange, disabled }: Props) {
   const handleChange = (e: SelectChangeEvent<CardRarity>) => {
     onChange(e.target.value as CardRarity);
   };
@@ -44,6 +46,7 @@ export function CardRaritySelector({ value, onChange }: Props) {
         <Select<CardRarity>
           value={value}
           onChange={handleChange}
+          disabled={disabled}
           displayEmpty
           renderValue={(val) => {
             const v = (val as CardRarity) ?? value;

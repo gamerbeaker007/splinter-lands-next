@@ -32,6 +32,13 @@ export interface PlotPlannerData {
 export interface SlotInput {
   id: number;
   set: CardSetNameLandValid;
+  /**
+   * Verico is not a real set: it is edition 21 within the land set. This flag
+   * marks a land slot as a Verico card (visual only). When set, boosts are
+   * derived from the representative Verico card detail (id 1001) and the rarity
+   * is locked to common.
+   */
+  isVerico?: boolean;
   rarity: CardRarity;
   bcx: number; // 0..400
   foil: CardFoil;

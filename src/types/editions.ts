@@ -29,7 +29,6 @@ export const landCardSet = [
   "rebellion",
   "conclave",
   "land",
-  "verico",
 ];
 
 export const cardSetName = [...landCardSet, "gladius", "foundation"] as const;
@@ -170,7 +169,7 @@ export const editionMap: Record<number, EidtionTypeDef> = {
   21: {
     displayName: "Verico",
     urlName: "verico",
-    setName: "verico",
+    setName: "land",
     editionIcon: edition_verico_icon_url,
   },
 } as const;
@@ -184,10 +183,17 @@ export const cardSetIconMap: Record<CardSetName, string> = {
   conclave: edition_conclave_arcana_icon_url,
   foundation: edition_foundation_icon_url,
   land: edition_land_card_icon_url,
-  verico: edition_verico_icon_url,
 };
 
 export const SOULBOUND_EDITIONS = new Set<number>([10, 13, 16]);
+
+/** Verico is edition 21, a common-only edition within the land set (not its own set). */
+export const VERICO_EDITION = 21;
+/**
+ * All Verico cards share the same land abilities, so a single representative
+ * card detail drives boost derivation for planner Verico slots.
+ */
+export const VERICO_CARD_DETAIL_ID = 1001;
 
 /** Cross-era edition ids shared across sets (set is taken from the card). */
 export const CROSS_ERA_EDITIONS = { promo: 2, reward: 3, extra: 17 } as const;

@@ -6,6 +6,7 @@ import {
   AssignmentInd,
   Block,
   FormatColorReset,
+  Grass,
   KeyboardDoubleArrowUp,
   Landscape,
   RemoveCircleOutline,
@@ -30,6 +31,7 @@ import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
 import { NoWorkersAlerts } from "./NoWorkersAlerts";
 import { PowerCoreAlerts } from "./PowerCoreAlerts";
+import { RationingLiteAlerts } from "./RationingLiteAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
 import { TooMuchPPAlerts } from "./TooMuchPPAlerts";
 
@@ -188,6 +190,18 @@ export default function AlertSection({
       // <TooMuchBasePPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
       dialogContent: (
         <TooMuchPPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
+      ),
+    },
+    {
+      key: "RationingLiteAlert",
+      label: "Rationing Lite Alert",
+      alertsCount: cardAlerts?.rationingLiteAlerts.length ?? 0,
+      icon: <Grass fontSize="large" />,
+      dialogTitle: "Rationing Lite Alert While More Then 20K Base PP",
+      dialogContent: (
+        <RationingLiteAlerts
+          rationingLiteAlerts={cardAlerts.rationingLiteAlerts}
+        />
       ),
     },
     {

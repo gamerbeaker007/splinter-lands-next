@@ -46,6 +46,7 @@ function createDeedInfo(deed: DeedComplete): DeedInfo {
     territory: deed.territory ?? "Unknown",
     basePP: deed.stakingDetail?.total_base_pp ?? 0,
     boostPP: deed.stakingDetail?.total_boost_pp ?? 0,
+    rationingLite: deed.stakingDetail?.lite_food_discount ?? 0,
   };
 }
 
@@ -86,14 +87,19 @@ export async function getPlayerCardAlerts(
       prices
     );
 
-    const ownedPowerCores =
-      Number(
-        playerBalances.find((b) => b.token === "POWER_CORE_PURCHASES")?.balance
-      ) ?? 0;
+    const ownedPowerCores = Number(
+      playerBalances.find((b) => b.token === "POWER_CORE_PURCHASES")?.balance ??
+        0
+    );
 
     // Analyze all alerts in a single pass through deeds
-    const { countAlerts, negativeAlerts, powerSourceAlerts, tooMuchBasePP } =
-      analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
+    const {
+      countAlerts,
+      negativeAlerts,
+      powerSourceAlerts,
+      tooMuchBasePP,
+      rationingLiteAlerts,
+    } = analyzeAllDeeds(enrichedPlayerData, ownedPowerCores);
 
     // Analyze cards for terrain bonuses
     const terrainBoostAlerts = analyzeTerrainBonuses(
@@ -120,6 +126,7 @@ export async function getPlayerCardAlerts(
       noPowerSource: powerSourceAlerts.noPowerSource,
       powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
       missingBloodLineBoost: missingBloodLineBoost,
+      rationingLiteAlerts: rationingLiteAlerts,
     };
   } catch (error) {
     logger.error(`Failed to get card alerts for ${trimmed}:`, error);
@@ -181,7 +188,7 @@ function analyzeMissingBloodLineBoost(
       (!card.stake_end_date ||
         new Date(card.stake_end_date).getTime() >
           now.getTime() + threeDaysInMs);
-    const isLandSet = card.card_set === "land" || card.card_set === "verico";
+    const isLandSet = card.card_set === "land";
     const isStakedToPlayer = !card.delegated_to || card.delegated_to === player;
 
     if (!isStakedOnLand || !isLandSet || !isStakedToPlayer) continue;
@@ -231,6 +238,7 @@ function analyzeAllDeeds(
     powerCoreWhileEnergized: DeedInfo[];
   };
   tooMuchBasePP: DeedInfo[];
+  rationingLiteAlerts: DeedInfo[];
 } {
   const countAlerts: CountAlert[] = [];
   const noWorkers: DeedInfo[] = [];
@@ -240,6 +248,7 @@ function analyzeAllDeeds(
   const powerCoreWhileEnergized: DeedInfo[] = [];
   const tooMuchBasePP: DeedInfo[] = [];
   let numberOfPowerCores = ownedPowerCores;
+  const rationingLiteDeeds: DeedInfo[] = [];
 
   // Single loop through all deeds
   for (const deed of deeds) {
@@ -296,6 +305,14 @@ function analyzeAllDeeds(
     if (isPowerCoreStaked) {
       numberOfPowerCores--;
     }
+
+    //Check rationing lite
+    if (
+      (deed.stakingDetail?.lite_food_discount ?? 0) < 0 &&
+      (deed.stakingDetail?.total_base_pp ?? 0) > 20_000
+    ) {
+      rationingLiteDeeds.push(deedInfo);
+    }
   }
 
   return {
@@ -311,6 +328,7 @@ function analyzeAllDeeds(
       powerCoreWhileEnergized,
     },
     tooMuchBasePP,
+    rationingLiteAlerts: rationingLiteDeeds,
   };
 }
 

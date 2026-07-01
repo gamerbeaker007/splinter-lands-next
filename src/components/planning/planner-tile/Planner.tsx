@@ -9,7 +9,11 @@ import {
 import { determineBcxCap, determineLandBoosts } from "@/lib/utils/cardUtil";
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
-import { CardSetNameLandValid } from "@/types/editions";
+import {
+  CardSetNameLandValid,
+  VERICO_CARD_DETAIL_ID,
+  VERICO_EDITION,
+} from "@/types/editions";
 import {
   CardBloodline,
   cardElementColorMap,
@@ -183,7 +187,7 @@ export default function Planner({
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
     const landboost =
-      setName === "land" || setName === "verico"
+      setName === "land"
         ? determineLandBoosts(rarity, cardFoilOptions[foil], bcx, splCard)
         : {
             produceBoost: {} as Record<Resource, number>,
@@ -198,6 +202,8 @@ export default function Planner({
     return {
       id: idx,
       set: setName,
+      // Verico is edition 21 within the land set (visual only).
+      isVerico: card.edition === VERICO_EDITION,
       rarity,
       bcx,
       foil: cardFoilOptions[foil],
@@ -406,15 +412,25 @@ export default function Planner({
     let secondaryElement = next.secondaryElement ?? null;
 
     if (next.set === "land") {
-      const id = {
-        common: 866,
-        rare: 867,
-        epic: 868,
-        legendary: 869,
-      }[next.rarity];
+      // Verico cards (edition 21) are all equivalent, so a single
+      // representative detail id drives their boosts. Regular land cards pick a
+      // representative by rarity.
+      const id = next.isVerico
+        ? VERICO_CARD_DETAIL_ID
+        : {
+            common: 866,
+            rare: 867,
+            epic: 868,
+            legendary: 869,
+          }[next.rarity];
 
       const landCard = cardDetails.find((cd) => cd.id === id);
-      bloodline = landCard?.sub_type as CardBloodline;
+
+      //When verico leave the bloodline as is, player need to set this manually!!!
+      bloodline = !next.isVerico
+        ? (landCard?.sub_type as CardBloodline)
+        : next.bloodline;
+
       element = cardElementColorMap[landCard?.color.toLowerCase() ?? "red"];
       secondaryElement = null;
 
