@@ -157,13 +157,21 @@ export function getDateSortValue(
   }
 }
 
-export const formatDate = (date: string) => {
-  return new Date(date).toLocaleString("en-GB", {
+/**
+ * Format a date as a string in the format "YYYY-MM-DD HH:mm:ss"
+ * @param dateValue
+ * @param includeTime
+ * @returns
+ */
+export const formatDate = (dateValue: Date | string, includeTime = true) => {
+  const date = typeof dateValue === "string" ? new Date(dateValue) : dateValue;
+
+  return date.toLocaleString("en-GB", {
     year: "numeric",
     month: "short",
     day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    hour: includeTime ? "2-digit" : undefined,
+    minute: includeTime ? "2-digit" : undefined,
     hour12: false,
     timeZone: "UTC",
   });

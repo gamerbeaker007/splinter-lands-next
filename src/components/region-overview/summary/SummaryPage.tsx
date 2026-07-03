@@ -1,8 +1,13 @@
 "use client";
 
+import LandCardVericoTile from "@/components/region-overview/summary/LandCardVericoTile";
 import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
 import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
+import {
+  getLandCardCollectionData,
+  LandCardCollectionResult,
+} from "@/lib/backend/actions/region/land-card-collection-actions";
 import { getRegionSummary } from "@/lib/backend/actions/region/summary-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionSummary } from "@/types/regionSummary";
@@ -16,6 +21,8 @@ import LandCardTile from "./LandCardTile";
 
 export default function SummaryPage() {
   const [summary, setSummary] = useState<RegionSummary | null>(null);
+  const [landCardData, setLandCardData] =
+    useState<LandCardCollectionResult | null>(null);
   const { filters } = useFilters();
 
   useEffect(() => {
@@ -24,7 +31,11 @@ export default function SummaryPage() {
     (async () => {
       try {
         const data = await getRegionSummary(filters);
+        const result = await getLandCardCollectionData({
+          filter_players: filters.filter_players ?? [],
+        });
         setSummary(data);
+        setLandCardData(result);
       } catch (error) {
         console.error(error);
       }
@@ -60,6 +71,7 @@ export default function SummaryPage() {
             />
 
             <LandCardTile summary={summary} />
+            {landCardData && <LandCardVericoTile summary={landCardData} />}
           </Stack>
         </>
       ) : (
