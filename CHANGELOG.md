@@ -15,6 +15,17 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.16.0] - 2026-07-04
+
+### Added
+
+- Add count for alteration/glin recovery/fortune seekers on a weekly basis
+
+### Fixed
+- Selection of element when verico is select in the planner
+
+---
+
 ## [v1.15.3] - 2026-06-30
 
 ### Added

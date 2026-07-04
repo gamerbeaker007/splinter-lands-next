@@ -1,0 +1,14 @@
+-- AlterTable
+ALTER TABLE "player_card_edition_summary" ADD COLUMN     "alteration" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "fortune_seeker" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "glint_recovery" INTEGER NOT NULL DEFAULT 0,
+ALTER COLUMN "total_cards" SET DEFAULT 0,
+ALTER COLUMN "foil_regular" SET DEFAULT 0,
+ALTER COLUMN "foil_gold" SET DEFAULT 0,
+ALTER COLUMN "foil_gold_arcane" SET DEFAULT 0,
+ALTER COLUMN "foil_black" SET DEFAULT 0,
+ALTER COLUMN "foil_black_arcane" SET DEFAULT 0,
+ALTER COLUMN "land_base_pp" SET DEFAULT 0,
+ALTER COLUMN "owned" SET DEFAULT 0,
+ALTER COLUMN "rented" SET DEFAULT 0,
+ALTER COLUMN "delegated" SET DEFAULT 0;

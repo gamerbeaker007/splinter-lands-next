@@ -308,17 +308,20 @@ model PlayerCardEditionSummary {
   date               DateTime @db.Date
   player             String
   card_set           String   // e.g. "chaos", "alpha", "rebellion"
-  total_cards        Int
-  foil_regular       Int
-  foil_gold          Int      // foil type 1
-  foil_gold_arcane   Int      // foil type 2
-  foil_black         Int      // foil type 3
-  foil_black_arcane  Int      // foil type 4
-  land_base_pp       Int
-  owned              Int
-  rented             Int
-  delegated          Int
-  rarity_level_counts Json   // { "common": { "1": { "regular": 5, "gold arcane": 2 }, "2": {} }, "rare": { ... } }
+  total_cards        Int     @default(0)
+  foil_regular       Int     @default(0)
+  foil_gold          Int     @default(0)  // foil type 1
+  foil_gold_arcane   Int     @default(0)  // foil type 2
+  foil_black         Int     @default(0)  // foil type 3
+  foil_black_arcane  Int     @default(0)  // foil type 4
+  land_base_pp       Int     @default(0)
+  owned              Int     @default(0)
+  rented             Int     @default(0)
+  delegated          Int     @default(0)
+  alteration         Int     @default(0) // The number of cards that are eligible for alterations (Skin Factory).
+  glint_recovery     Int     @default(0) // The number of cards that are eligible for glint recovery (Glint Bombs).
+  fortune_seeker     Int     @default(0) // The number of cards that are eligible for fortune seeker.
+  rarity_level_counts Json               // { "common": { "1": { "regular": 5, "gold arcane": 2 }, "2": {} }, "rare": { ... } }
 
   @@id([date, player, card_set])
   @@map("player_card_edition_summary")

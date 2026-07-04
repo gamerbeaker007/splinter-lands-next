@@ -16,6 +16,9 @@ export type LandCardSetSummary = {
   rented: number;
   delegated: number;
   player_count: number;
+  alteration_count: number;
+  glint_recovery_count: number;
+  fortune_seeker_count: number;
   // rarity name ("common".."legendary") -> level -> foil name ("regular","gold arcane", etc.) -> total count
   rarity_level_counts: RarityLevelCounts;
 };
@@ -52,6 +55,9 @@ export async function getLandCardCollectionData(filters?: {
         rented: 0,
         delegated: 0,
         player_count: 0,
+        alteration_count: 0,
+        fortune_seeker_count: 0,
+        glint_recovery_count: 0,
         rarity_level_counts: {},
       };
       byCardSet.set(row.card_set, agg);
@@ -67,6 +73,9 @@ export async function getLandCardCollectionData(filters?: {
     agg.owned += row.owned;
     agg.rented += row.rented;
     agg.delegated += row.delegated;
+    agg.alteration_count += row.alteration;
+    agg.glint_recovery_count += row.glint_recovery;
+    agg.fortune_seeker_count += row.fortune_seeker;
     agg.player_count += 1;
 
     // Merge rarity_level_counts JSON

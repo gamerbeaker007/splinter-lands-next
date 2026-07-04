@@ -9,6 +9,7 @@ import { cardFoilOptions, cardRarityOptions } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import pLimit from "p-limit";
+import { VERICO_EDITION } from "@/types/editions";
 
 const limit = pLimit(3);
 const MIN_INTERVAL_MS = 500;
@@ -75,6 +76,9 @@ type CardSetStats = {
   owned: number;
   rented: number;
   delegated: number;
+  fortune_seeker: number;
+  alteration: number;
+  glint_recovery: number;
   rarity_level_counts: RarityLevelCounts;
 };
 
@@ -126,6 +130,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
           const rarity = getCardRarity(card.card_detail_id, cardDetails);
           const level = card.level;
           const foil = card.foil;
+          const edition = card.edition;
 
           // --- Per-player card_set summary ---
           if (!cardSetMap.has(cardSet)) {
@@ -137,10 +142,13 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
               foil_black: 0,
               foil_black_arcane: 0,
               land_base_pp: 0,
+              fortune_seeker: 0,
+              alteration: 0,
+              glint_recovery: 0,
               owned: 0,
               rented: 0,
               delegated: 0,
-              rarity_level_counts: {} as RarityLevelCounts,
+              rarity_level_counts: {},
             });
           }
 
@@ -148,18 +156,28 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
           stats.total_cards++;
           stats.land_base_pp += Number(card.land_base_pp);
 
+          if (edition == VERICO_EDITION) {
+            if (card.level >= 4) {
+              stats.alteration++;
+            }
+            if (card.level >= 6) {
+              stats.glint_recovery++;
+            }
+            if (card.level >= 10) {
+              stats.fortune_seeker++;
+            }
+          }
+
           const foilCol: FoilCol = FOIL_COLS[foil] ?? "foil_regular";
           stats[foilCol]++;
 
           // Ownership: delegated_to being set means card is delegated out to someone
-          if (card.delegated_to != null) {
-            if (isActiveRental(card)) {
-              stats.rented++;
-            } else {
-              stats.delegated++;
-            }
-          } else {
+          if (card.delegated_to == null) {
             stats.owned++;
+          } else if (isActiveRental(card)) {
+            stats.rented++;
+          } else {
+            stats.delegated++;
           }
 
           // --- Per-player rarity/level/foil counts (stored in the row JSON) ---
