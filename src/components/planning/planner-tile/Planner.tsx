@@ -431,7 +431,11 @@ export default function Planner({
         ? (landCard?.sub_type as CardBloodline)
         : next.bloodline;
 
-      element = cardElementColorMap[landCard?.color.toLowerCase() ?? "red"];
+      // When verico leave the element as is, player need to set this manually!!!
+      element = !next.isVerico
+        ? cardElementColorMap[landCard?.color.toLowerCase() ?? "red"]
+        : next.element;
+
       secondaryElement = null;
 
       landBoost = determineLandBoosts(
