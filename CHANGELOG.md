@@ -15,6 +15,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.1x.x] - 2026-xx-xx
+
+### Updated
+
+- Update no_pp flag  SPL issue 82466 issue is solved.
+
+### Fixed
+
+---
 ## [v1.16.0] - 2026-07-04
 
 ### Added

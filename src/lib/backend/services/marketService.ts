@@ -70,10 +70,8 @@ export function getLowestCardPriceList(
     // Skip cards that produce no land base PP - they'd be a waste to stake on
     // land, but are usually the cheapest in their group so they'd otherwise win
     // the "lowest price" slot. filter out 0 pp cards
-    // NOTE: edition check could be removed once https://support.splinterlands.com/hc/en-us/requests/82466 issue is solved.
-    // edition 18 are the conclave rewards cards
     const detail = cardDetails.find((cd) => cd.id === card.card_detail_id);
-    if (detail?.no_pp || detail?.editions.includes("18")) continue;
+    if (detail?.no_pp) continue;
 
     const { name, rarity } = determineCardInfo(
       card.card_detail_id,
