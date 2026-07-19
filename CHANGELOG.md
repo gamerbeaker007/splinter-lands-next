@@ -21,7 +21,10 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - Update no_pp flag  SPL issue 82466 issue is solved.
 
+
 ### Fixed
+
+- Excpetion when no deeds owned (Land Manager)
 
 ---
 ## [v1.16.0] - 2026-07-04

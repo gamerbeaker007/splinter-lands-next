@@ -27,6 +27,9 @@ export async function getWorkerEligibility(
   }
 
   const regionData = await fetchRegionDataPlayer(auth.username);
+  if (!regionData || regionData.deeds.length === 0)
+    return { eligible: [], unpoweredSkipped: [] };
+
   const stakingByDeed = new Map(
     regionData.staking_details.map((s) => [s.deed_uid, s])
   );
