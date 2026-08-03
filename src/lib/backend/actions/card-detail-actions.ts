@@ -1,7 +1,11 @@
 "use server";
 
+import { CardBloodline } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
-import { getCachedCardDetailsData } from "../services/cardService";
+import {
+  getCachedCardBloodlineOptions,
+  getCachedCardDetailsData,
+} from "../services/cardService";
 
 /**
  * Get card details with caching.
@@ -13,4 +17,8 @@ export async function getCardDetails(): Promise<SplCardDetails[]> {
     throw new Error("No card details found");
   }
   return result;
+}
+
+export async function getCardBloodlineOptions(): Promise<CardBloodline[]> {
+  return getCachedCardBloodlineOptions();
 }

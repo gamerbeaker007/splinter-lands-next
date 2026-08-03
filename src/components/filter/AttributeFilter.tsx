@@ -14,6 +14,7 @@ import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 import { PPRangeFilter } from "./PPRangeFilter";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
+import FilterTerrainBoostGroup from "./terrain-boost/FilterTerrainBoostGroup";
 import FilterWorksiteGroup from "./worksite/FilterWorksiteGroup";
 
 type Props = {
@@ -80,6 +81,7 @@ export default function AttributeFilter({ options }: Props) {
       <FilterWorksiteGroup options={options.filter_worksites ?? []} />
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
+      <FilterTerrainBoostGroup options={options.filter_terrain_boosts ?? []} />
 
       {/* New PP min/max */}
       <Typography variant="subtitle2" sx={{ mt: 2 }}>

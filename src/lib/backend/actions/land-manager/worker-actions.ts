@@ -5,6 +5,7 @@ import {
   fetchRegionDataPlayer,
   fetchStakedAssets,
 } from "@/lib/backend/api/spl/spl-land-api";
+import { getBiomeModifiersFromStakingDetail } from "@/lib/utils/cardUtil";
 import {
   BuyPlan,
   RentalPlan,
@@ -59,14 +60,7 @@ export async function getWorkerEligibility(
       max_workers: maxWorkers,
       empty_slots: maxWorkers - workerCount,
       is_powered: staking.is_powered ?? false,
-      biome_modifiers: {
-        fire: staking.red_biome_modifier ?? 0,
-        water: staking.blue_biome_modifier ?? 0,
-        life: staking.white_biome_modifier ?? 0,
-        death: staking.black_biome_modifier ?? 0,
-        earth: staking.green_biome_modifier ?? 0,
-        dragon: staking.gold_biome_modifier ?? 0,
-      },
+      biome_modifiers: getBiomeModifiersFromStakingDetail(staking),
     };
 
     if (plot.is_powered) {

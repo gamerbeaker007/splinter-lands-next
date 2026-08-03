@@ -1,3 +1,4 @@
+import { getBiomeModifiersFromStakingDetail } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
@@ -101,6 +102,16 @@ export function filterDeeds<T extends DeedComplete>(
         (deed.stakingDetail?.has_labors_luck ?? false);
 
       if (filters.filter_has_land_ability !== hasAnyLandAbilities) return false;
+    }
+
+    if (filters.filter_positive_terrain_elements?.length) {
+      const biomeModifiers = getBiomeModifiersFromStakingDetail(
+        deed.stakingDetail
+      );
+      const hasPositiveBoost = filters.filter_positive_terrain_elements.some(
+        (element) => (biomeModifiers[element] ?? 0) > 0
+      );
+      if (!hasPositiveBoost) return false;
     }
 
     const basePP = deed.stakingDetail?.total_base_pp_after_cap;

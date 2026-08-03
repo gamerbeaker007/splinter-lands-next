@@ -1,5 +1,11 @@
 import { CardSetName } from "./editions";
-import { CardElement, CardFoil, CardRarity, LandBoost } from "./planner";
+import {
+  CardBloodline,
+  CardElement,
+  CardFoil,
+  CardRarity,
+  LandBoost,
+} from "./planner";
 
 /**
  * A player's land-eligible card, normalized for display and scoring.
@@ -24,6 +30,7 @@ export type PlayerLandCard = {
   bcxUnbound: number;
   foil: CardFoil;
   level: number;
+  bloodline: CardBloodline;
   landBoost: LandBoost | null;
   inSet: boolean;
   onWagon: boolean;

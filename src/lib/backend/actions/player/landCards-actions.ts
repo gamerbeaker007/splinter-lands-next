@@ -74,6 +74,8 @@ export async function getPlayerLandCards(
         bcxUnbound: card.bcx_unbound,
         foil: foil,
         level: card.level,
+        bloodline: (splCard?.sub_type ??
+          "Unknown") as PlayerLandCard["bloodline"],
         landBoost,
         inSet: card.set_id !== null,
         isListed: card.market_listing_type !== null,

@@ -96,6 +96,9 @@ const DEFAULT_CARD_FILTER: CardFilterOptions = {
   elements: [],
   foils: [],
   minPP: 0,
+  maxPP: 0,
+  bloodlines: [],
+  maxLevelOnly: false,
 };
 
 function fmt(n: number): string {

@@ -12,21 +12,23 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
-
----
-
-## [v1.1x.x] - 2026-xx-xx
-
 ### Updated
 
 - Update no_pp flag  SPL issue 82466 issue is solved.
 
+### Added
+
+- Land Manager worker picker now supports bloodline, max PP, and max-level-only filtering.
+- Deed-history roll tables now show the numeric roll value for fragment and labor's luck outcomes.
+- Production deed filters can now target plots with positive terrain boosts for selected elements.
 
 ### Fixed
 
+- DEC power-up/down summaries now correctly count successful batches when a single broadcast contains multiple region operations.
 - Excpetion when no deeds owned (Land Manager)
 
 ---
+
 ## [v1.16.0] - 2026-07-04
 
 ### Added

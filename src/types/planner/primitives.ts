@@ -369,54 +369,7 @@ export const worksiteSelectIconMap: Partial<Record<WorksiteType, string>> = {
   "Shard Mine": land_worksite_select_sps_icon_url,
 };
 
-export const CARD_BLOODLINES = [
-  "Avian",
-  "Awakened Beast",
-  "Bruteborn",
-  "Canisan",
-  "Celestial",
-  "Chimeric Beast",
-  "Corrupted",
-  "Dhampir",
-  "Divine Construct",
-  "Djinn",
-  "Dragon",
-  "Dragonkin",
-  "Drakoshan",
-  "Dwarf",
-  "Elemental",
-  "Elf",
-  "Feliform",
-  "Fey",
-  "Fiend",
-  "Fungoid",
-  "Giant",
-  "Gnome",
-  "Goblin",
-  "Golem",
-  "Halfling",
-  "Human",
-  "Leonine",
-  "Llamataur",
-  "Lycanthrope",
-  "Materran",
-  "Minotaur",
-  "Mundane Beast",
-  "Orc",
-  "Plant",
-  "Rodentian",
-  "Saurian",
-  "Skitterkin",
-  "Suidae",
-  "Tideborn",
-  "Tortisian",
-  "Treefolk",
-  "Ulund",
-  "Undead",
-] as const;
-
-export type CardBloodline = (typeof CARD_BLOODLINES)[number];
-export const cardBloodlineOptions = [...CARD_BLOODLINES];
+export type CardBloodline = string;
 
 export const bountifulResourceIconMap: Partial<Record<Resource, string>> = {
   GRAIN: bountiful_grain_icon_url,

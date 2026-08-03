@@ -1,6 +1,8 @@
 import { CardSetNameLandValid } from "./editions";
 import { CardElement, CardFoil, CardRarity } from "./planner";
 
+import { CardBloodline } from "./planner";
+
 export type CardFilterOptions = {
   onWagon?: boolean;
   inSet?: boolean;
@@ -29,4 +31,7 @@ export type CardFilterOptions = {
   elements: CardElement[];
   foils: CardFoil[];
   minPP: number;
+  maxPP?: number;
+  bloodlines?: CardBloodline[];
+  maxLevelOnly?: boolean;
 };

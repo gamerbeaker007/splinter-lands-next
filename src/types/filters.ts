@@ -1,6 +1,6 @@
 import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
-import { CardRarity } from "@/types/planner";
+import { CardElement, CardRarity } from "@/types/planner";
 
 export type FilterInput = {
   filter_regions?: number[];
@@ -11,6 +11,7 @@ export type FilterInput = {
   filter_worksites?: string[];
   filter_deed_type?: string[];
   filter_plot_status?: string[];
+  filter_terrain_boosts?: string[];
   filter_players?: string[];
   filter_developed?: boolean;
   filter_under_construction?: boolean;
@@ -19,6 +20,7 @@ export type FilterInput = {
   filter_base_pp_max?: number | null;
   filter_boosted_pp_min?: number | null;
   filter_boosted_pp_max?: number | null;
+  filter_positive_terrain_elements?: CardElement[];
   sorting?: SortSelection;
 };
 
