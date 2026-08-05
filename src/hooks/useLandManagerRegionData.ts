@@ -1,9 +1,4 @@
 "use client";
-
-import {
-  getRentedCardsList,
-  RentedCardsList,
-} from "@/lib/backend/actions/land-manager/rental-actions";
 import {
   RegionDECInfo,
   getRegionStakedDEC,
@@ -24,7 +19,6 @@ interface LandRegionData {
   globalShortfall: number;
   /** DEC staked beyond requirements: `max(0, totalStaked - totalRequired)`. */
   globalExcess: number;
-  rentedCards: RentedCardsList | null;
   loading: boolean;
 }
 
@@ -37,7 +31,6 @@ export function useLandManagerRegionData(
   const [stakedDEC, setStakedDEC] = useState<RegionDECInfo[]>([]);
   const [totalStaked, setTotalStaked] = useState(0);
   const [totalRequired, setTotalRequired] = useState(0);
-  const [rentedCards, setRentedCards] = useState<RentedCardsList | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,14 +38,12 @@ export function useLandManagerRegionData(
     Promise.all([
       getWorkerEligibility(enabledRegions),
       getRegionStakedDEC(enabledRegions),
-      getRentedCardsList(),
-    ]).then(([e, a, r]) => {
+    ]).then(([e, a]) => {
       if (!cancelled) {
         setEligibility(e);
         setStakedDEC(a.regions);
         setTotalStaked(a.totalStaked);
         setTotalRequired(a.totalRequired);
-        setRentedCards(r);
         setLoading(false);
       }
     });
@@ -71,7 +62,6 @@ export function useLandManagerRegionData(
     totalRequired,
     globalShortfall,
     globalExcess,
-    rentedCards,
     loading,
   };
 }

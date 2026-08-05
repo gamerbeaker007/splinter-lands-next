@@ -24,7 +24,7 @@ interface Props {
   tableProps: Omit<ProductionTableProps, "rows">;
 }
 
-/** A collapsible, paginated per-region section (mirrors the Worksites tab). */
+/** A collapsible, paginated per-region section (mirrors the Worksites page). */
 export default function ProductionRegionGroup({
   region,
   rows,

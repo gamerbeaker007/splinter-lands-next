@@ -9,14 +9,16 @@ type Props = {
   title: string;
   href: string;
   image: string;
+  newTab?: boolean;
 };
 
-export default function DefaultPageTile({ title, href, image }: Props) {
+export default function DefaultPageTile({ title, href, image, newTab }: Props) {
   return (
     <Card
       component={Link}
       suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
       href={href}
+      target={newTab ? "_blank" : "_self"}
       elevation={4}
       sx={{
         position: "relative",

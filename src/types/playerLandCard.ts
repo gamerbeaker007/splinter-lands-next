@@ -11,7 +11,7 @@ import {
  * A player's land-eligible card, normalized for display and scoring.
  *
  * Intentionally feature-neutral: consumed by both the planning Playground and
- * the Land Manager Production tab. Do not couple this to either feature — the
+ * the Land Manager Production page. Do not couple this to either feature — the
  * Playground may be removed in a future release.
  */
 export type PlayerLandCard = {

@@ -138,7 +138,7 @@ function RegionGroup({
 
 // ── Inner component (uses FilterContext) ─────────────────────────────────────
 
-function WorksiteTabContent({
+function WorksiteContentBody({
   username,
   enabledRegions,
   strategies,
@@ -218,7 +218,7 @@ function WorksiteTabContent({
     setFetchError(null);
     setRefreshKey((k) => k + 1);
     // Bubble up so page-level panels (Today log, alerts) reflect grain moves /
-    // feeds too — they don't share this tab's local refresh key.
+    // feeds too — they do not share this page's local refresh key.
     onSuccess?.();
   }, [onSuccess]);
 
@@ -392,7 +392,7 @@ function WorksiteTabContent({
 
 // ── Outer component — provides FilterContext ──────────────────────────────────
 
-export default function WorksiteTab({
+export default function WorksiteContent({
   username,
   enabledRegions,
   strategies,
@@ -401,7 +401,7 @@ export default function WorksiteTab({
   return (
     <FilterProvider>
       {/* player=null → categorical filters show site-wide options;
-          WorksiteTabContent narrows regions/tracts/plots via locationOverride. */}
+          WorksiteContentBody narrows regions/tracts/plots via locationOverride. */}
       <FilterDrawer
         player={null}
         filtersEnabled={{
@@ -413,7 +413,7 @@ export default function WorksiteTab({
           sorting: false,
         }}
       />
-      <WorksiteTabContent
+      <WorksiteContentBody
         username={username}
         enabledRegions={enabledRegions}
         strategies={strategies}

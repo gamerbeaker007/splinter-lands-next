@@ -17,6 +17,7 @@ import {
   getRentalExecutionPlan,
   RentalExecutionPlan,
 } from "@/lib/backend/actions/land-manager/rental-actions";
+import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
 import {
   broadcastOperations,
   waitForTransactions,
@@ -61,6 +62,8 @@ interface BaseParams {
   username: string;
   enabledRegions: number[];
   eligiblePlotCount?: number | null;
+  /** When set, restricts planning to only these deed UIDs (filtered Production plots). */
+  filteredDeedUids?: string[];
   onSuccess?: () => void;
 }
 interface RentParams extends BaseParams {
@@ -91,11 +94,15 @@ export interface UseWorkerAction<P extends WorkerExecPlan = WorkerExecPlan> {
 // Per-mode wiring: which plan to fetch, which authority to check, how to
 // broadcast phase 1, and how the run is logged. Everything else (balance
 // check, staking, verification, result bookkeeping) is shared.
-function rentMode(rental: RentalConfig, regions: number[]) {
+function rentMode(
+  rental: RentalConfig,
+  regions: number[],
+  filteredDeedUids?: string[]
+) {
   return {
     label: "rent",
     notConfiguredError: "Server-side renting is not configured.",
-    fetchPlan: () => getRentalExecutionPlan(regions, rental),
+    fetchPlan: () => getRentalExecutionPlan(regions, rental, filteredDeedUids),
     authority: getRentalAuthorityStatus,
     async broadcast(picks: WorkerPlanPick[]) {
       const marketIds = picks.map((p) => p.market_id);
@@ -122,11 +129,15 @@ function rentMode(rental: RentalConfig, regions: number[]) {
   };
 }
 
-function buyMode(buy: BuyConfig, regions: number[]) {
+function buyMode(
+  buy: BuyConfig,
+  regions: number[],
+  filteredDeedUids?: string[]
+) {
   return {
     label: "buy",
     notConfiguredError: "Server-side buying is not configured.",
-    fetchPlan: () => getBuyExecutionPlan(regions, buy),
+    fetchPlan: () => getBuyExecutionPlan(regions, buy, filteredDeedUids),
     authority: getPurchaseAuthorityStatus,
     async broadcast(picks: WorkerPlanPick[]) {
       const items = picks.map((p) => ({
@@ -168,6 +179,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
     username,
     enabledRegions,
     eligiblePlotCount = null,
+    filteredDeedUids,
     onSuccess,
   } = params;
   const mode = params.mode;
@@ -185,9 +197,9 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
   const strategy = useCallback(
     () =>
       mode === "rent"
-        ? rentMode(config as RentalConfig, enabledRegions)
-        : buyMode(config as BuyConfig, enabledRegions),
-    [mode, config, enabledRegions]
+        ? rentMode(config as RentalConfig, enabledRegions, filteredDeedUids)
+        : buyMode(config as BuyConfig, enabledRegions, filteredDeedUids),
+    [mode, config, enabledRegions, filteredDeedUids]
   );
 
   const prepareExecution = useCallback(async () => {
@@ -354,6 +366,8 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         }
         await waitForTransactions(stakeRes.txIds);
       }
+
+      await refreshCardCollection();
 
       const stakedCount = exec.plan.items
         .filter(

@@ -1,9 +1,9 @@
 "use client";
 
-import { buildConfirmColumns } from "@/components/land-manager/rental/WorkerConfirmDialog";
+import { buildConfirmColumns } from "@/components/land-manager/production/rental-actions/WorkerConfirmDialog";
 import WorkerPlotTable, {
   WorkerPlotColumn,
-} from "@/components/land-manager/rental/WorkerPlotTable";
+} from "@/components/land-manager/production/rental-actions/WorkerPlotTable";
 import { BuyPlan, RentalPlan } from "@/types/landManager";
 import {
   Alert,

@@ -12,20 +12,35 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+---
+
+## [v1.17.0] - 2026-08-05
+
 ### Updated
 
 - Update no_pp flag  SPL issue 82466 issue is solved.
+- **Land Manager: replaced tab navigation with page-based routing** — Harvest, Production, Worksite, and Rental Overview are now separate URL routes under `/land-manager/`.
+- **Land Manager Production page** now combines the production table, Rental Actions, Purchase Actions, and a Bulk Actions accordion in a single unified workflow.
+- **Rental and Purchase actions now operate on the currently filtered Production plots** — applying any active filter restricts which plots are considered for worker planning.
+- **DEC actions and Renew Rentals** moved into the Production page's Bulk Actions accordion; the standalone DEC Actions tab is removed.
+- **Rental Overview page** now includes Rental Authority, Renew Rentals, and the current rental table.
+- Rental Overview now focuses strictly on rented-card data and actions (summary, table, Renew Rentals, Rental Authority) and no longer shows production eligibility/plot sections.
+- **Powered and Unpowered filters** moved into the standard Land filter section (Filter Drawer) — available on the Production page via new `filter_powered` and `filter_workers` filter fields.
+- On large screens, opening the Production filter drawer now shifts page content left so table rows and right-side action buttons remain accessible.
+- Shared Land Manager state (auth, config, regions, refresh key) provided through a layout-level context, avoiding duplicate data fetching across pages.
 
 ### Added
 
 - Land Manager worker picker now supports bloodline, max PP, and max-level-only filtering.
 - Deed-history roll tables now show the numeric roll value for fragment and labor's luck outcomes.
 - Production deed filters can now target plots with positive terrain boosts for selected elements.
+- Link to spl-stats page
 
 ### Fixed
 
 - DEC power-up/down summaries now correctly count successful batches when a single broadcast contains multiple region operations.
 - Excpetion when no deeds owned (Land Manager)
+- Fixed stale worker selection after remove-then-add in Production Configure: Worker picker now force-refreshes card data on open and resets local picker state.
 
 ---
 

@@ -2,6 +2,13 @@ import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
 import { CardElement, CardRarity } from "@/types/planner";
 
+export type PoweredFilter = "all" | "powered" | "unpowered";
+export type WorkerFilter =
+  | "all"
+  | "hasWorkers"
+  | "hasEmptySlots"
+  | "fullyEmpty";
+
 export type FilterInput = {
   filter_regions?: number[];
   filter_tracts?: number[];
@@ -13,6 +20,8 @@ export type FilterInput = {
   filter_plot_status?: string[];
   filter_terrain_boosts?: string[];
   filter_players?: string[];
+  filter_powered?: PoweredFilter;
+  filter_workers?: WorkerFilter;
   filter_developed?: boolean;
   filter_under_construction?: boolean;
   filter_has_land_ability?: boolean;
@@ -31,6 +40,8 @@ export type EnableFilterOptions = {
   attributes: boolean;
   player: boolean;
   sorting: boolean;
+  /** Show powered/workers filter toggles in the Attributes filter section. */
+  poweredWorkers?: boolean;
 };
 
 export type CardFilterInput = {

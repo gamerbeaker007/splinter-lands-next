@@ -35,9 +35,9 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { SpotCardVM } from "./productionConfigTypes";
 import { scoreLandCard } from "./workerScoring";
 import { foilLabel } from "@/lib/utils/cardUtil";
+import { SpotCardVM } from "../productionConfigTypes";
 
 type WorkerSortKey =
   | "img"

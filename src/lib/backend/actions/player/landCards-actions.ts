@@ -21,14 +21,15 @@ import { filterCardCollection } from "../../helpers/filterPlayerCards";
  * first). Non-land cards are filtered out.
  */
 export async function getPlayerLandCards(
-  player: string
+  player: string,
+  force = false
 ): Promise<PlayerLandCard[]> {
   if (!player) {
     throw new Error("Player parameter is required");
   }
 
   const [cardCollection, cardDetails] = await Promise.all([
-    getCachedPlayerCardCollection(player),
+    getCachedPlayerCardCollection(player, force),
     getCachedCardDetailsData(),
   ]);
 

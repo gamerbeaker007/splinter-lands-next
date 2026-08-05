@@ -19,10 +19,16 @@ export interface BuyExecutionPlan {
  */
 export async function getBuyExecutionPlan(
   enabledRegions: number[],
-  buy: BuyConfig = DEFAULT_BUY_CONFIG
+  buy: BuyConfig = DEFAULT_BUY_CONFIG,
+  filteredDeedUids?: string[]
 ): Promise<BuyExecutionPlan> {
   const eligibility = await getWorkerEligibility(enabledRegions);
-  const plan = await buildBuyPlan(eligibility.eligible, buy);
+  let eligible = eligibility.eligible;
+  if (filteredDeedUids && filteredDeedUids.length > 0) {
+    const uidSet = new Set(filteredDeedUids);
+    eligible = eligible.filter((p) => uidSet.has(p.deed_uid));
+  }
+  const plan = await buildBuyPlan(eligible, buy);
   const emptySlotsByDeed = await fetchEmptySlotsByDeed(plan);
 
   return { plan, emptySlotsByDeed };

@@ -1,16 +1,37 @@
 "use client";
 
 import FilterDrawer from "@/components/filter/FilterDrawer";
+import BulkActionsAccordion from "@/components/land-manager/production/BulkActionsAccordion";
+import ConfigurePanel from "@/components/land-manager/production/ConfigurePanel";
+import ConfirmActionDialog, {
+  ACTION_META,
+} from "@/components/land-manager/production/ConfirmActionDialog";
+import ProductionRegionGroup from "@/components/land-manager/production/ProductionRegionGroup";
+import ProductionTable from "@/components/land-manager/production/ProductionTable";
+import WorkerActionsAccordions from "@/components/land-manager/production/worker-actions/WorkerActionsAccordions";
+import {
+  ProductionRow,
+  ProductionSortKey,
+  SortDirection,
+  sortRows,
+  toProductionRow,
+} from "@/components/land-manager/production/productionTypes";
+import WorkerConfirmDialog from "@/components/land-manager/production/rental-actions/WorkerConfirmDialog";
+import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
   ProductionActionKind,
   useProductionPlotActions,
 } from "@/hooks/useProductionPlotActions";
-import { getProductionTabData } from "@/lib/backend/actions/land-manager/production-actions";
+import { usePurchaseAuthorityStatus } from "@/hooks/usePurchaseAuthorityStatus";
+import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
+import { useWorkerAction } from "@/hooks/useWorkerAction";
+import { getProductionPageData } from "@/lib/backend/actions/land-manager/production-actions";
 import { filterDeeds } from "@/lib/filters";
 import {
   FilterProvider,
   useFilters,
 } from "@/lib/frontend/context/FilterContext";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import {
@@ -24,45 +45,19 @@ import {
   Button,
   Chip,
   CircularProgress,
-  FormControl,
-  InputLabel,
-  MenuItem,
   Pagination,
-  Select,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import ConfigurePanel from "./ConfigurePanel";
-import ConfirmActionDialog, { ACTION_META } from "./ConfirmActionDialog";
-import ProductionRegionGroup from "./ProductionRegionGroup";
-import ProductionTable from "./ProductionTable";
-import {
-  DEFAULT_PRODUCTION_FILTERS,
-  filterRows,
-  PoweredFilter,
-  ProductionFilterState,
-  ProductionRow,
-  ProductionSortKey,
-  SortDirection,
-  sortRows,
-  toProductionRow,
-  WorkerFilter,
-} from "./productionTypes";
 
 const PAGE_SIZE = 25;
 
-interface Props {
-  username: string;
-  /** Region numbers from the land manager config — pre-filters to these regions when set. */
-  enabledRegions?: number[];
-  /** Bubbled up after any action so page-level panels refresh too. */
-  onSuccess?: () => void;
-}
-
-/** Rows a given bulk action can actually act on (matches the hook's own skips). */
+/** Rows a given bulk action can act on. */
 function actionableRows(
   kind: ProductionActionKind,
   rows: ProductionRow[]
@@ -79,35 +74,46 @@ function actionableRows(
   }
 }
 
-function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
+// ── Inner component — uses FilterContext ─────────────────────────────────────
+
+function ProductionPageContent() {
+  const {
+    auth,
+    config,
+    refreshKey: ctxRefreshKey,
+    triggerRefresh,
+  } = useLandManagerContext();
+  const username = auth.username ?? "";
+  const enabledRegions = config.enabled_regions;
+
+  // Single shared call for DEC/rental/purchase eligibility data
+  const regionData = useLandManagerRegionData(enabledRegions, ctxRefreshKey);
+
+  const rentalAuthorityHook = useRentalAuthorityStatus();
+  const purchaseAuthorityHook = usePurchaseAuthorityStatus();
+
+  // ── Production table state ───────────────────────────────────────────────
   const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Only the powered + worker toggles live here; region/terrain/worksite/etc.
-  // come from the shared FilterDrawer below.
-  const [statusFilter, setStatusFilter] = useState<{
-    powered: PoweredFilter;
-    workers: WorkerFilter;
-  }>({ powered: "all", workers: "all" });
-  // Combined sort state — kept as one object so toggling direction is a single
-  // pure update (a nested setState here double-toggles under StrictMode).
+  const [localRefreshKey, setLocalRefreshKey] = useState(0);
   const [sort, setSort] = useState<{
     key: ProductionSortKey;
     dir: SortDirection;
   }>({ key: "netDEC", dir: "desc" });
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<"list" | "grouped">("list");
-
+  const [expandedDeedUids, setExpandedDeedUids] = useState<Set<string>>(
+    new Set()
+  );
   const [confirm, setConfirm] = useState<{
     kind: ProductionActionKind;
     rows: ProductionRow[];
   } | null>(null);
-  // Multiple plots can have their Configure panel open at once.
-  const [expandedDeedUids, setExpandedDeedUids] = useState<Set<string>>(
-    new Set()
-  );
+
+  // DEC row busy flags
+  const [stakeBusy, setStakeBusy] = useState(false);
+  const [unstakeBusy, setUnstakeBusy] = useState(false);
 
   const { filters, setLocationOverride } = useFilters();
 
@@ -120,21 +126,22 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
   const handleRefresh = useCallback(() => {
     setLoading(true);
     setFetchError(null);
-    setRefreshKey((k) => k + 1);
+    setLocalRefreshKey((k) => k + 1);
   }, []);
+
+  const handleSuccess = useCallback(() => {
+    handleRefresh();
+    triggerRefresh();
+  }, [handleRefresh, triggerRefresh]);
 
   const actions = useProductionPlotActions({
     username,
-    onSuccess: () => {
-      handleRefresh();
-      onSuccess?.();
-    },
+    onSuccess: handleSuccess,
   });
 
-  // Load (and reload) the player's deeds enriched with production info.
   useEffect(() => {
     let cancelled = false;
-    getProductionTabData().then(({ deeds, error }) => {
+    getProductionPageData().then(({ deeds, error }) => {
       if (cancelled) return;
       if (error) setFetchError(error);
       setAllDeeds(deeds);
@@ -143,9 +150,9 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [localRefreshKey]);
 
-  // Feed this player's live region/tract/plot lists into the FilterDrawer.
+  // Feed this player's live region/tract/plot lists into FilterDrawer.
   useEffect(() => {
     if (allDeeds.length === 0) return;
     const regions = new Set<number>();
@@ -163,13 +170,13 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
     });
   }, [allDeeds, setLocationOverride]);
 
-  // Deeds after the shared FilterDrawer + configured-region prefilter.
+  // Deeds after FilterDrawer filters (which now include powered/workers) + region pre-filter.
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
     if (allDeeds.length === 0) return [];
     const f: FilterInput = { ...filters };
-    delete f.filter_players; // data is always the current user
+    delete f.filter_players;
     let result = filterDeeds(allDeeds, f);
-    if (enabledRegions && enabledRegions.length > 0) {
+    if (enabledRegions.length > 0) {
       result = result.filter((d) => enabledRegions.includes(d.region_number));
     }
     return result;
@@ -180,17 +187,12 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
     [filteredDeeds]
   );
 
-  // Apply the powered/worker toggles (region/worksite already handled above).
-  const filteredRows = useMemo(() => {
-    const f: ProductionFilterState = {
-      ...DEFAULT_PRODUCTION_FILTERS,
-      powered: statusFilter.powered,
-      workers: statusFilter.workers,
-    };
-    return sortRows(filterRows(allRows, f), sort.key, sort.dir);
-  }, [allRows, statusFilter, sort]);
+  const filteredRows = useMemo(
+    () => sortRows(allRows, sort.key, sort.dir),
+    [allRows, sort]
+  );
 
-  // Reset pagination when the filtered set changes (render-phase reset).
+  // Reset pagination when filtered set changes (render-phase reset).
   const [lastLen, setLastLen] = useState(filteredRows.length);
   if (lastLen !== filteredRows.length) {
     setLastLen(filteredRows.length);
@@ -203,19 +205,52 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
   const groupedByRegion = useMemo(() => {
     const map = new Map<string, ProductionRow[]>();
     for (const r of filteredRows) {
-      const key = `${r.regionName || r.regionNumber}`;
+      const key = r.regionName || String(r.regionNumber);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(r);
     }
     return map;
   }, [filteredRows]);
 
+  // ── Rental / Purchase filtering ──────────────────────────────────────────
+  const filteredDeedUids = useMemo(
+    () => filteredDeeds.map((d) => d.deed_uid),
+    [filteredDeeds]
+  );
+
+  const filteredEligibleCount = useMemo(() => {
+    if (!regionData.eligibility) return null;
+    const set = new Set(filteredDeedUids);
+    return regionData.eligibility.eligible.filter((p) => set.has(p.deed_uid))
+      .length;
+  }, [regionData.eligibility, filteredDeedUids]);
+
+  // ── Worker action hooks ──────────────────────────────────────────────────
+  const rentAction = useWorkerAction({
+    mode: "rent",
+    username,
+    rental: config.rental,
+    enabledRegions,
+    eligiblePlotCount: filteredEligibleCount,
+    filteredDeedUids,
+    onSuccess: handleSuccess,
+  });
+  const buyAction = useWorkerAction({
+    mode: "buy",
+    username,
+    buy: config.buy,
+    enabledRegions,
+    eligiblePlotCount: filteredEligibleCount,
+    filteredDeedUids,
+    onSuccess: handleSuccess,
+  });
+
+  // ── Sort handler ─────────────────────────────────────────────────────────
   const handleSort = useCallback((key: ProductionSortKey) => {
     setSort((prev) => {
       if (prev.key === key) {
         return { key, dir: prev.dir === "asc" ? "desc" : "asc" };
       }
-      // Text columns default to ascending, numeric columns to descending.
       const numeric = key !== "label" && key !== "worksiteType";
       return { key, dir: numeric ? "desc" : "asc" };
     });
@@ -272,14 +307,41 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
   };
 
   const result = actions.result;
+  const decAnyBusy = stakeBusy || unstakeBusy;
 
   return (
     <Box>
-      {/* Toolbar */}
+      <WorkerActionsAccordions
+        rentalConfig={config.rental}
+        buyConfig={config.buy}
+        filteredEligibleCount={filteredEligibleCount}
+        rentAction={rentAction}
+        buyAction={buyAction}
+        rentalAuthority={rentalAuthorityHook}
+        purchaseAuthority={purchaseAuthorityHook}
+      />
+
+      <BulkActionsAccordion
+        username={username}
+        enabledRegions={enabledRegions}
+        filteredRows={filteredRows}
+        loading={loading}
+        busy={actions.busy}
+        regionData={regionData}
+        decAnyBusy={decAnyBusy}
+        onStakeBusy={setStakeBusy}
+        onUnstakeBusy={setUnstakeBusy}
+        onSuccess={handleSuccess}
+        onOpenBulkConfirm={openConfirm}
+        actionableRows={actionableRows}
+      />
+
+      {/* ── Toolbar ───────────────────────────────────────────────────────── */}
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
+        mt={1.5}
         mb={1.5}
         flexWrap="wrap"
         gap={1}
@@ -301,100 +363,24 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
             Refresh
           </Button>
         </Stack>
-
-        <Stack direction="row" gap={1} alignItems="center" flexWrap="wrap">
-          <FormControl size="small" sx={{ minWidth: 130 }}>
-            <InputLabel>Powered</InputLabel>
-            <Select
-              value={statusFilter.powered}
-              label="Powered"
-              onChange={(e) =>
-                setStatusFilter((s) => ({
-                  ...s,
-                  powered: e.target.value as PoweredFilter,
-                }))
-              }
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="powered">Powered</MenuItem>
-              <MenuItem value="unpowered">Unpowered</MenuItem>
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Workers</InputLabel>
-            <Select
-              value={statusFilter.workers}
-              label="Workers"
-              onChange={(e) =>
-                setStatusFilter((s) => ({
-                  ...s,
-                  workers: e.target.value as WorkerFilter,
-                }))
-              }
-            >
-              <MenuItem value="all">All</MenuItem>
-              <MenuItem value="hasWorkers">Has workers</MenuItem>
-              <MenuItem value="hasEmptySlots">Has empty slots</MenuItem>
-              <MenuItem value="fullyEmpty">Fully empty</MenuItem>
-            </Select>
-          </FormControl>
-
-          <ToggleButtonGroup
-            value={viewMode}
-            exclusive
-            size="small"
-            onChange={(_, v) => {
-              if (v) setViewMode(v);
-            }}
-          >
-            <ToggleButton value="list">
-              <ViewListIcon fontSize="small" />
-            </ToggleButton>
-            <ToggleButton value="grouped">
-              <ViewModuleIcon fontSize="small" />
-            </ToggleButton>
-          </ToggleButtonGroup>
-        </Stack>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          size="small"
+          onChange={(_, v) => {
+            if (v) setViewMode(v);
+          }}
+        >
+          <ToggleButton value="list">
+            <ViewListIcon fontSize="small" />
+          </ToggleButton>
+          <ToggleButton value="grouped">
+            <ViewModuleIcon fontSize="small" />
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Stack>
 
-      {/* Bulk actions over the filtered list */}
-      <Stack
-        direction="row"
-        gap={1}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Typography variant="caption" color="text.secondary">
-          Bulk ({filteredRows.length} filtered):
-        </Typography>
-        {(
-          [
-            "powerOn",
-            "unpower",
-            "removeWorkers",
-            "empty",
-          ] as ProductionActionKind[]
-        ).map((kind) => {
-          const targets = actionableRows(kind, filteredRows);
-          const meta = ACTION_META[kind];
-          return (
-            <Button
-              key={kind}
-              size="small"
-              variant="outlined"
-              color={meta.destructive ? "error" : "success"}
-              disabled={loading || actions.busy || targets.length === 0}
-              onClick={() => openConfirm(kind, targets)}
-            >
-              {meta.title} ({targets.length})
-            </Button>
-          );
-        })}
-      </Stack>
-
-      {/* Result / error feedback */}
+      {/* ── Feedback alerts ───────────────────────────────────────────────── */}
       {actions.error && (
         <Alert severity="error" sx={{ mb: 1.5 }} onClose={actions.clearError}>
           {actions.error}
@@ -434,14 +420,13 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
           )}
         </Alert>
       )}
-
       {fetchError && (
         <Alert severity="error" sx={{ mb: 1.5 }}>
           {fetchError}
         </Alert>
       )}
 
-      {/* Table(s) */}
+      {/* ── Table ─────────────────────────────────────────────────────────── */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CircularProgress />
@@ -480,6 +465,7 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
         </Box>
       )}
 
+      {/* ── Dialogs ───────────────────────────────────────────────────────── */}
       {confirm && (
         <ConfirmActionDialog
           open
@@ -490,21 +476,42 @@ function ProductionTabContent({ username, enabledRegions, onSuccess }: Props) {
           onConfirm={handleConfirm}
         />
       )}
+
+      {rentAction.executionPlan && (
+        <WorkerConfirmDialog
+          exec={rentAction.executionPlan}
+          busy={rentAction.busy}
+          decBalance={rentAction.decBalance}
+          onConfirm={() => rentAction.execute()}
+          onCancel={() => rentAction.clearExecutionPlan()}
+        />
+      )}
+
+      {buyAction.executionPlan && (
+        <WorkerConfirmDialog
+          exec={buyAction.executionPlan}
+          busy={buyAction.busy}
+          decBalance={buyAction.decBalance}
+          onConfirm={() => buyAction.execute()}
+          onCancel={() => buyAction.clearExecutionPlan()}
+        />
+      )}
     </Box>
   );
 }
 
-export default function ProductionTab({
-  username,
-  enabledRegions,
-  onSuccess,
-}: Props) {
+// ── Outer component — provides FilterContext ──────────────────────────────────
+
+export default function ProductionPage() {
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  const theme = useTheme();
+  const isLarge = useMediaQuery(theme.breakpoints.up("lg"));
+
   return (
     <FilterProvider>
-      {/* player=null → categorical filters show site-wide options;
-          ProductionTabContent narrows regions/tracts/plots via locationOverride. */}
       <FilterDrawer
         player={null}
+        onOpenChange={setDrawerOpen}
         filtersEnabled={{
           regions: true,
           tracts: true,
@@ -512,13 +519,17 @@ export default function ProductionTab({
           attributes: true,
           player: false,
           sorting: false,
+          poweredWorkers: true,
         }}
       />
-      <ProductionTabContent
-        username={username}
-        enabledRegions={enabledRegions}
-        onSuccess={onSuccess}
-      />
+      <Box
+        sx={{
+          transition: "margin-right 0.2s ease",
+          mr: isLarge && drawerOpen ? "330px" : 0,
+        }}
+      >
+        <ProductionPageContent />
+      </Box>
     </FilterProvider>
   );
 }
