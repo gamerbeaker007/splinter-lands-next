@@ -1,13 +1,13 @@
 // components/ItemBoosts.tsx
-import React from "react";
-import { Box, Typography, Avatar, Stack, Tooltip } from "@mui/material";
 import {
   land_hammer_icon_url,
   land_runi_power_core_icon_url,
   WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
-import { Item } from "@/types/stakedAssets";
 import { getTitleIcon } from "@/lib/utils/deedUtil";
+import { Item } from "@/types/stakedAssets";
+import { Avatar, Box, Stack, Tooltip, Typography } from "@mui/material";
+import React from "react";
 
 export type ItemBoostsProps = {
   items: Item[];
@@ -56,14 +56,18 @@ export const ItemBoosts: React.FC<ItemBoostsProps> = ({ items }) => {
     return (
       <Tooltip key={`${item.stake_type_uid}-${index}`} title={label}>
         <Box textAlign="center">
-          <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
+          <Typography
+            fontWeight="bold"
+            fontFamily="monospace"
+            fontSize="1.1rem"
+          >
             {boostPercent.toFixed(0)}%
           </Typography>
           <Avatar
             variant="square"
             src={url}
             alt={label}
-            sx={{ width: 55, height: 55, mt: 0.5 }}
+            sx={{ width: 45, height: 45, mt: 0.5 }}
           />
         </Box>
       </Tooltip>

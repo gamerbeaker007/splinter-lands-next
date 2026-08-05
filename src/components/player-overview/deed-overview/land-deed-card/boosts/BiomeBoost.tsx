@@ -1,11 +1,11 @@
-import React, { JSX } from "react";
-import { Box, Typography, Avatar, Stack } from "@mui/material";
 import {
   BiomeModifiers,
   landElementBgColor,
   landElementIconUrl,
 } from "@/lib/utils/cardUtil";
 import { cardElementOptions } from "@/types/planner";
+import { Avatar, Box, Stack, Typography } from "@mui/material";
+import React, { JSX } from "react";
 
 export type BiomeBoostsProps = {
   modifiers: BiomeModifiers;
@@ -29,7 +29,7 @@ export const BiomeBoosts: React.FC<BiomeBoostsProps> = ({ modifiers }) => {
           <Typography
             fontWeight="bold"
             fontFamily="monospace"
-            fontSize="14px"
+            fontSize="1.1rem"
             color={isPositive ? "green" : "red"}
           >
             {percent > 0 ? `+${percent.toFixed(0)}%` : `${percent.toFixed(0)}%`}

@@ -36,13 +36,13 @@ const RUNI_CARD_DETAIL_ID = 505;
 /**
  * Fetches the authenticated player's full deed data and enriches each deed with
  * `productionInfo` (rewards/hour produce value, consume cost, and netDEC). The
- * Production tab renders rewards-per-hour and net DEC straight from this — no
+ * Production page renders rewards-per-hour and net DEC straight from this — no
  * per-deed staked-asset calls are needed for the table (those are only fetched
  * at action time when unpowering / removing workers / emptying a plot).
  *
- * No caching — always fresh so the tab reflects the current on-chain state.
+ * No caching — always fresh so the page reflects the current on-chain state.
  */
-export async function getProductionTabData(): Promise<{
+export async function getProductionPageData(): Promise<{
   deeds: DeedComplete[];
   username: string | null;
   error?: string;

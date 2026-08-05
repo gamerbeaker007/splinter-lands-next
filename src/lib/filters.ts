@@ -1,3 +1,4 @@
+import { getBiomeModifiersFromStakingDetail } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
@@ -71,9 +72,11 @@ export function filterDeeds<T extends DeedComplete>(
     if (!isInFilter(filters.filter_tracts, deed.tract_number)) return false;
     if (!isInFilter(filters.filter_plots, deed.plot_number)) return false;
     if (!isInFilter(filters.filter_rarity, deed.rarity)) return false;
+
     const effectiveResource =
       deed.resource_symbol ?? parseLandStatsResources(deed.land_stats)[0];
     if (!isInFilter(filters.filter_resources, effectiveResource)) return false;
+
     if (!isInFilter(filters.filter_worksites, deed.worksite_type)) return false;
     if (!isInFilter(filters.filter_deed_type, deed.deed_type)) return false;
     if (!isInFilter(filters.filter_plot_status, deed.plot_status)) return false;
@@ -103,6 +106,16 @@ export function filterDeeds<T extends DeedComplete>(
       if (filters.filter_has_land_ability !== hasAnyLandAbilities) return false;
     }
 
+    if (filters.filter_positive_terrain_elements?.length) {
+      const biomeModifiers = getBiomeModifiersFromStakingDetail(
+        deed.stakingDetail
+      );
+      const hasPositiveBoost = filters.filter_positive_terrain_elements.some(
+        (element) => (biomeModifiers[element] ?? 0) > 0
+      );
+      if (!hasPositiveBoost) return false;
+    }
+
     const basePP = deed.stakingDetail?.total_base_pp_after_cap;
     if (
       !inRange(
@@ -123,6 +136,26 @@ export function filterDeeds<T extends DeedComplete>(
       )
     ) {
       return false;
+    }
+
+    if (filters.filter_powered && filters.filter_powered !== "all") {
+      const isPowered = deed.stakingDetail?.is_powered ?? false;
+      if (filters.filter_powered === "powered" && !isPowered) return false;
+      if (filters.filter_powered === "unpowered" && isPowered) return false;
+    }
+
+    if (filters.filter_workers && filters.filter_workers !== "all") {
+      const workerCount = deed.stakingDetail?.worker_count ?? 0;
+      const maxWorkers = deed.stakingDetail?.max_workers_allowed ?? 0;
+      if (filters.filter_workers === "hasWorkers" && workerCount === 0)
+        return false;
+      if (
+        filters.filter_workers === "hasEmptySlots" &&
+        workerCount >= maxWorkers
+      )
+        return false;
+      if (filters.filter_workers === "fullyEmpty" && workerCount !== 0)
+        return false;
     }
 
     return true;

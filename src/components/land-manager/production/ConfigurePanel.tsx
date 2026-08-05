@@ -31,8 +31,8 @@ import {
   stagedHasChanges,
 } from "./productionConfigTypes";
 import { EmptySpot, FilledCardSpot, FilledItemSpot } from "./SpotTile";
-import { projectPlot } from "./workerScoring";
-import WorkerSelectDialog from "./WorkerSelectDialog";
+import { projectPlot } from "./worker-actions/workerScoring";
+import WorkerSelectDialog from "./worker-actions/WorkerSelectDialog";
 
 /** Format a signed delta like "+1,234" / "-1,234" / "0". */
 function fmtDelta(n: number): string {
@@ -50,7 +50,7 @@ interface Props {
   deed: DeedComplete;
   username: string;
   actions: UseProductionPlotActions;
-  /** Called after a successful Save so the tab can reload. */
+  /** Called after a successful Save so the page can reload. */
   onSaved: () => void;
 }
 

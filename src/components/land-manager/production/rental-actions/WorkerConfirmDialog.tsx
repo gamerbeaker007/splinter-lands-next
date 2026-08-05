@@ -1,9 +1,6 @@
 "use client";
 
-import WorkerPlotTable, {
-  WorkerPlotColumn,
-} from "@/components/land-manager/rental/WorkerPlotTable";
-import WorkerCardPicksCell from "@/components/land-manager/rental/WorkerCardPicksCell";
+import WorkerCardPicksCell from "@/components/land-manager/production/rental-actions/WorkerCardPicksCell";
 import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import { parseLandStatsResources } from "@/lib/filters";
@@ -21,6 +18,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import WorkerPlotTable, { WorkerPlotColumn } from "./WorkerPlotTable";
 
 interface Props {
   exec: RentalExecutionPlan | BuyExecutionPlan;

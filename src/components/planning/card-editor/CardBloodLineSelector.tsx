@@ -1,9 +1,6 @@
 "use client";
-import {
-  CardBloodline,
-  cardBloodlineOptions,
-  CardElement,
-} from "@/types/planner";
+import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
+import { CardBloodline, CardElement } from "@/types/planner";
 import {
   Box,
   FormControl,
@@ -22,6 +19,8 @@ export type Props = {
 };
 
 export function CardBloodLineSelector({ value, onChange }: Props) {
+  const bloodlineOptions = useCardBloodlineOptions();
+
   const handleChange = (e: SelectChangeEvent<CardElement>) => {
     onChange(e.target.value as CardBloodline);
   };
@@ -62,7 +61,7 @@ export function CardBloodLineSelector({ value, onChange }: Props) {
               ".MuiOutlinedInput-notchedOutline": { border: "none" },
             }}
           >
-            {cardBloodlineOptions.map((bloodline) => (
+            {bloodlineOptions.map((bloodline) => (
               <MenuItem key={bloodline} value={bloodline}>
                 <ListItemIcon sx={{ minWidth: 32 }}>{bloodline}</ListItemIcon>
               </MenuItem>

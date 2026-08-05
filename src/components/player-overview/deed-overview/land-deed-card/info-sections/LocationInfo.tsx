@@ -16,8 +16,8 @@ export const LocationInfo: React.FC<Props> = ({
   tractNumber,
   plotNumber,
 }) => {
-  const iconSize = 20;
-  const fontSize = 12;
+  const iconSize = 25;
+  const fontSize = "1.1rem";
 
   return (
     <Stack
@@ -27,8 +27,8 @@ export const LocationInfo: React.FC<Props> = ({
       spacing={1}
       sx={{
         width: "90%",
-        minWidth: 160,
-        maxWidth: 240,
+        minWidth: 200,
+        maxWidth: 250,
         backgroundColor: "rgba(240, 240, 240, 0.85)",
         color: "#333",
         borderRadius: 1,

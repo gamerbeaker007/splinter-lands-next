@@ -18,7 +18,7 @@ import {
 } from "@/types/planner";
 import { PlayerLandCard } from "@/types/playerLandCard";
 import { Prices } from "@/types/price";
-import { SpotCardVM } from "./productionConfigTypes";
+import { SpotCardVM } from "../productionConfigTypes";
 
 /** Numeric foil id for a card's foil string (0 = regular). */
 function foilId(card: PlayerLandCard): number {

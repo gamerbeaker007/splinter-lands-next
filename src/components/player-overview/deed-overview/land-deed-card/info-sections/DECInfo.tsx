@@ -144,6 +144,8 @@ export const DECInfo: React.FC<Props> = ({
 }) => {
   const { x, y, w } = pos;
 
+  const fontSize = "1.1rem";
+
   const { consume, produce, netDEC } = productionInfo ?? {
     consume: null,
     produce: null,
@@ -172,11 +174,21 @@ export const DECInfo: React.FC<Props> = ({
         textAlign: "left",
       }}
     >
-      <Typography fontSize="1.0rem" fontWeight="bold" color={"white"} mb={0.5}>
+      <Typography
+        fontSize={fontSize}
+        fontWeight="bold"
+        color={"white"}
+        mb={0.5}
+      >
         Net Dec:
       </Typography>
 
-      <Box display="inline-flex" flexDirection="column" alignItems="flex-start">
+      <Box
+        display="inline-flex"
+        flexDirection="column"
+        alignItems="flex-start"
+        gap={0.1}
+      >
         <Box display="inline-flex" alignItems="center" gap={0.2}>
           <Tooltip
             title={tooltipContent(
@@ -200,7 +212,7 @@ export const DECInfo: React.FC<Props> = ({
             </Box>
           </Tooltip>
           <Typography
-            fontSize="1.0rem"
+            fontSize={fontSize}
             fontWeight="bold"
             color={netDEC >= 0 ? "green" : "error"}
           >
@@ -210,7 +222,7 @@ export const DECInfo: React.FC<Props> = ({
         </Box>
 
         {resource !== "AURA" && includeFee && (
-          <Typography variant="caption" color="gray" fontSize="0.625rem">
+          <Typography variant="caption" color="gray" fontSize={fontSize}>
             {isTax ? "" : "(incl. hub fee)"}
           </Typography>
         )}

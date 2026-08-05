@@ -26,6 +26,17 @@ const PPMultiplierDot = ({ rarity, foil, bcx, max_bcx, basePP }: Props) => {
 
   return multiplier.toFixed(0) != "1" ? (
     <Tooltip
+      slotProps={{
+        tooltip: {
+          sx: {
+            fontSize: "1.0rem",
+            "& strong": {
+              fontSize: "1.0rem",
+              fontWeight: 700,
+            },
+          },
+        },
+      }}
       title={
         <>
           <strong>Base PP Multiplier:</strong>

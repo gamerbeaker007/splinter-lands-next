@@ -74,6 +74,9 @@ export default function PlaygroundDeedGrid({
       elements: [],
       foils: [],
       minPP: 0,
+      maxPP: 0,
+      bloodlines: [],
+      maxLevelOnly: false,
     }
   );
   const { prices } = usePrices();

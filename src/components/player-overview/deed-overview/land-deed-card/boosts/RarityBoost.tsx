@@ -18,7 +18,7 @@ export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
   return (
     <Tooltip title={"Rarity Boost"}>
       <Box textAlign="center">
-        <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
+        <Typography fontWeight="bold" fontFamily="monospace" fontSize="1.1rem">
           {boostPercent.toFixed(0)}%
         </Typography>
         <Box mt={0.5} justifyItems={"center"}>
@@ -26,7 +26,7 @@ export const RarityBoost: React.FC<RarityBoostProps> = ({ rarity, boost }) => {
             variant="square"
             src={imgUrl}
             alt={rarity}
-            sx={{ width: 55, height: 55 }}
+            sx={{ width: 45, height: 45 }}
           />
         </Box>
       </Box>

@@ -36,12 +36,12 @@ export const InfoItem: React.FC<InfoItemProps> = ({
         sx={{ minWidth: "220px" }} // adjust to your preferred width
       >
         <Box minWidth={"100px"}>
-          <Typography fontSize="0.9rem" fontWeight="bold">
+          <Typography fontSize="1.0rem" fontWeight="bold">
             {title}:
           </Typography>
         </Box>
         <Box>
-          <Typography fontSize="0.85rem">{text}</Typography>
+          <Typography fontSize="1.0rem">{text}</Typography>
         </Box>
       </Box>
     </Box>
@@ -57,7 +57,16 @@ export const InfoItem: React.FC<InfoItemProps> = ({
         textAlign: "left",
       }}
     >
-      {tooltip ? <Tooltip title={tooltip}>{content}</Tooltip> : content}
+      {tooltip ? (
+        <Tooltip
+          slotProps={{ tooltip: { sx: { fontSize: "1.1rem" } } }}
+          title={tooltip}
+        >
+          {content}
+        </Tooltip>
+      ) : (
+        content
+      )}
     </Box>
   );
 };

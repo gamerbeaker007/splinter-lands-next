@@ -8,7 +8,7 @@ type Props = {
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const fontSize = "0.85rem";
+const fontSize = "1.0rem";
 const iconSize = 20;
 const fontColor = "common.white";
 

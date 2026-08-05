@@ -1,16 +1,49 @@
-"use client";
-
+import LandManagerPageSkeleton from "@/app/land-manager/loading";
+import LandManagerProvider from "@/components/land-manager/LandManagerProvider";
+import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
+import { getLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
+import { getProductionOverview } from "@/lib/backend/actions/land-manager/overview-actions";
+import {
+  DEFAULT_LAND_MANAGER_CONFIG,
+  LandManagerAuthStatus,
+} from "@/lib/frontend/context/LandManagerContext";
 import { Container } from "@mui/material";
-import { ReactNode } from "react";
+import { ReactNode, Suspense } from "react";
 
-type landManagerProps = {
+async function LandManagerLayoutContent({ children }: { children: ReactNode }) {
+  const auth = (await getAuthStatus()) as LandManagerAuthStatus;
+
+  const [config, overview] = await Promise.all([
+    getLandManagerConfig(),
+    auth.authenticated
+      ? getProductionOverview()
+      : Promise.resolve({ regions: [] }),
+  ]);
+
+  const resolvedConfig =
+    config ?? DEFAULT_LAND_MANAGER_CONFIG(auth.username ?? "");
+
+  return (
+    <LandManagerProvider
+      auth={auth}
+      initialConfig={resolvedConfig}
+      allRegions={overview.regions}
+    >
+      {children}
+    </LandManagerProvider>
+  );
+}
+
+export default function LandManagerLayout({
+  children,
+}: {
   children: ReactNode;
-};
-
-export default function PlanningLayout({ children }: landManagerProps) {
+}) {
   return (
     <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
-      {children}
+      <Suspense fallback={<LandManagerPageSkeleton />}>
+        <LandManagerLayoutContent>{children}</LandManagerLayoutContent>
+      </Suspense>
     </Container>
   );
 }

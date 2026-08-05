@@ -105,6 +105,7 @@ export const ProgressBar = ({ percentage, label, icon }: ProgressBarProps) => {
             top: "50%",
             transform: "translate(-50%, -50%)",
             lineHeight: 1,
+            fontSize: "1.0rem",
             fontWeight: 600,
             color: "white",
             whiteSpace: "nowrap",

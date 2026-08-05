@@ -6,6 +6,7 @@ import FoilIcon from "@/components/ui/FoilIcon";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import {
+  CardBloodline,
   CardElement,
   cardElementOptions,
   CardFoil,
@@ -16,14 +17,19 @@ import {
 } from "@/types/planner";
 import { PlayerLandCard } from "@/types/playground";
 import {
+  Autocomplete,
   Box,
   Button,
+  Checkbox,
+  Chip,
+  FormControlLabel,
   Paper,
   Stack,
   TextField,
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
+import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
 import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 
 type LandCardFilterProps = {
@@ -87,6 +93,8 @@ export default function LandCardFilter({
   filterOptions,
   onFilterChange,
 }: Readonly<LandCardFilterProps>) {
+  const bloodlineOptions = useCardBloodlineOptions();
+
   const availableStats = useMemo(() => {
     const onWagonCount = cards.filter((c) => c.onWagon).length;
     const inSetCount = cards.filter((c) => c.inSet).length;
@@ -136,6 +144,10 @@ export default function LandCardFilter({
 
   const handleMinPPChange = (value: number) => {
     onFilterChange({ ...filterOptions, minPP: Math.max(0, value) });
+  };
+
+  const handleMaxPPChange = (value: number) => {
+    onFilterChange({ ...filterOptions, maxPP: Math.max(0, value) });
   };
 
   const getElementIcon = (element: string) => {
@@ -301,7 +313,7 @@ export default function LandCardFilter({
           />
         </Box>
 
-        {/* Min PP Filter */}
+        {/* PP Filters */}
         <Box sx={{ minWidth: 200, maxWidth: 300 }}>
           <TextField
             label="Min PP"
@@ -314,6 +326,57 @@ export default function LandCardFilter({
             helperText={`Max: ${availableStats.maxPP}`}
           />
         </Box>
+        <Box sx={{ minWidth: 200, maxWidth: 300 }}>
+          <TextField
+            label="Max PP"
+            type="number"
+            value={filterOptions.maxPP ?? 0}
+            onChange={(e) => handleMaxPPChange(Number(e.target.value))}
+            size="small"
+            fullWidth
+            inputProps={{ min: 0, max: availableStats.maxPP, step: 10 }}
+            helperText={`Max: ${availableStats.maxPP}`}
+          />
+        </Box>
+
+        <Box>
+          <Typography variant="body2" gutterBottom>
+            Bloodline:
+          </Typography>
+          <Autocomplete
+            multiple
+            size="small"
+            options={bloodlineOptions}
+            value={(filterOptions.bloodlines ?? []) as CardBloodline[]}
+            onChange={(_, value) =>
+              onFilterChange({ ...filterOptions, bloodlines: value })
+            }
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => {
+                const { key, ...tagProps } = getTagProps({ index });
+
+                return (
+                  <Chip key={key} label={option} size="small" {...tagProps} />
+                );
+              })
+            }
+            renderInput={(params) => (
+              <TextField {...params} placeholder="Any bloodline" />
+            )}
+          />
+        </Box>
+
+        <FormControlLabel
+          control={
+            <Checkbox
+              checked={Boolean(filterOptions.maxLevelOnly)}
+              onChange={(_, checked) =>
+                onFilterChange({ ...filterOptions, maxLevelOnly: checked })
+              }
+            />
+          }
+          label="Max level only"
+        />
 
         {/* Last-used Filter (min days since last used; 0 = off) */}
         <Box sx={{ minWidth: 200, maxWidth: 300 }}>

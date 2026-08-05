@@ -9,7 +9,7 @@ import { getAuthStatus } from "../auth-actions";
  * Fetches a fresh copy of the authenticated player's full deed data from the
  * Splinterlands API and maps it to DeedComplete (worksite + staking joined).
  *
- * No caching — always fresh so the Worksites tab reflects the current state.
+ * No caching — always fresh so the Worksites page reflects the current state.
  */
 export async function getPlayerWorksiteData(): Promise<{
   deeds: DeedComplete[];

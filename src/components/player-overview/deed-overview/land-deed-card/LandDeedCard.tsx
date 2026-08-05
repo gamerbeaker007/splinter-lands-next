@@ -119,12 +119,12 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         regionNumber={regionNumber}
         tractNumber={tractNumber}
         plotNumber={plotNumber}
-        pos={{ x: "570px", y: "60px", w: "auto" }}
+        pos={{ x: "570px", y: "45px", w: "auto" }}
       />
 
       <WorksiteInfo
         worksiteType={deed.worksiteDetail?.worksite_type ?? "Undeveloped"}
-        pos={{ x: "20px", y: "45px", w: "400px" }}
+        pos={{ x: "15px", y: "45px", w: "400px" }}
       />
 
       <LandBoosts
@@ -136,7 +136,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         productionBoost={deed.stakingDetail?.card_abilities_boost ?? 0}
         replacePowerCore={deed.stakingDetail?.is_energized ?? false}
         laborLuck={deed.stakingDetail?.has_labors_luck ?? false}
-        pos={{ x: "430px", y: "45px", w: "120px" }}
+        pos={{ x: "430px", y: "45px", w: "135px" }}
       />
 
       <StoreInfo
@@ -161,14 +161,14 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
       {(resource === "TAX" || resource === "RESEARCH") && (
         <TotemChanceOutput
           estimateChange={deed.worksiteDetail?.estimated_totem_chance ?? 0}
-          pos={{ x: "350px", y: "120px", w: "110px" }}
+          pos={{ x: "330px", y: "120px", w: "110px" }}
         />
       )}
 
       {resource === "TAX" && (
         <CaptureRateOutput
           captureRate={deed.worksiteDetail?.captured_tax_rate ?? 0}
-          pos={{ x: "350px", y: "90px", w: "110px" }}
+          pos={{ x: "330px", y: "90px", w: "110px" }}
         />
       )}
 
@@ -186,20 +186,20 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         goldBiomeBoost={deed.stakingDetail?.gold_biome_modifier ?? 0}
         stakedAssets={deed.stakedAssets ?? null}
         cardDetails={cardDetails}
-        pos={{ x: "20px", y: "170px", w: "auto" }}
+        pos={{ x: "15px", y: "170px", w: "auto" }}
       />
 
       <CardInfo
         stakedAssets={deed.stakedAssets!}
         cardDetails={cardDetails}
-        pos={{ x: "20px", y: "290px", w: "465px" }}
+        pos={{ x: "15px", y: "290px", w: "465px" }}
       />
 
       <ConsumeProduceInfo
         produce={productionInfo?.produce}
         consume={productionInfo?.consume}
         resource={resource as Resource}
-        pos={{ x: isTax ? "525px" : "600px", y: "200px", w: "auto" }}
+        pos={{ x: isTax ? "515px" : "600px", y: "180px", w: "auto" }}
       />
 
       <DECInfo
@@ -208,7 +208,7 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         isPerHour={isTax ? false : true}
         pos={{
           x: isTax ? "675px" : "600px",
-          y: isTax ? "200px" : "300px",
+          y: isTax ? "180px" : "310px",
           w: "auto",
         }}
       />

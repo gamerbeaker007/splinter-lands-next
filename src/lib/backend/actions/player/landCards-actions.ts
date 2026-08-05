@@ -21,14 +21,15 @@ import { filterCardCollection } from "../../helpers/filterPlayerCards";
  * first). Non-land cards are filtered out.
  */
 export async function getPlayerLandCards(
-  player: string
+  player: string,
+  force = false
 ): Promise<PlayerLandCard[]> {
   if (!player) {
     throw new Error("Player parameter is required");
   }
 
   const [cardCollection, cardDetails] = await Promise.all([
-    getCachedPlayerCardCollection(player),
+    getCachedPlayerCardCollection(player, force),
     getCachedCardDetailsData(),
   ]);
 
@@ -74,6 +75,8 @@ export async function getPlayerLandCards(
         bcxUnbound: card.bcx_unbound,
         foil: foil,
         level: card.level,
+        bloodline: (splCard?.sub_type ??
+          "Unknown") as PlayerLandCard["bloodline"],
         landBoost,
         inSet: card.set_id !== null,
         isListed: card.market_listing_type !== null,

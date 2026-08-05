@@ -1,11 +1,17 @@
 import { CardSetName } from "./editions";
-import { CardElement, CardFoil, CardRarity, LandBoost } from "./planner";
+import {
+  CardBloodline,
+  CardElement,
+  CardFoil,
+  CardRarity,
+  LandBoost,
+} from "./planner";
 
 /**
  * A player's land-eligible card, normalized for display and scoring.
  *
  * Intentionally feature-neutral: consumed by both the planning Playground and
- * the Land Manager Production tab. Do not couple this to either feature — the
+ * the Land Manager Production page. Do not couple this to either feature — the
  * Playground may be removed in a future release.
  */
 export type PlayerLandCard = {
@@ -24,6 +30,7 @@ export type PlayerLandCard = {
   bcxUnbound: number;
   foil: CardFoil;
   level: number;
+  bloodline: CardBloodline;
   landBoost: LandBoost | null;
   inSet: boolean;
   onWagon: boolean;

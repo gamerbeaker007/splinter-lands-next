@@ -1,5 +1,6 @@
-import { CROSS_ERA_EDITIONS } from "@/types/editions";
+import { determineMaxLevelFromRarityFoil } from "@/lib/utils/cardUtil";
 import { CardFilterOptions } from "@/types/cardFilter";
+import { CROSS_ERA_EDITIONS } from "@/types/editions";
 import { PlayerLandCard } from "@/types/playerLandCard";
 
 /**
@@ -132,10 +133,38 @@ export function filterAvailableCards(
     );
   }
 
+  if (cardFilterOptions.bloodlines?.length) {
+    filtered = filtered.filter((card) =>
+      cardFilterOptions.bloodlines!.includes(card.bloodline)
+    );
+  }
+
   if (cardFilterOptions.minPP > 0) {
     filtered = filtered.filter(
       (card) => card.landBasePP >= cardFilterOptions.minPP
     );
+  }
+
+  if (cardFilterOptions.maxPP !== undefined && cardFilterOptions.maxPP > 0) {
+    filtered = filtered.filter(
+      (card) => card.landBasePP <= cardFilterOptions.maxPP!
+    );
+  }
+
+  if (cardFilterOptions.maxLevelOnly) {
+    filtered = filtered.filter((card) => {
+      console.log(
+        "filterAvailableCards",
+        card.name,
+        card.rarity,
+        card.foil,
+        card.level,
+        determineMaxLevelFromRarityFoil(card.rarity, card.foil)
+      );
+      return (
+        card.level === determineMaxLevelFromRarityFoil(card.rarity, card.foil)
+      );
+    });
   }
 
   return filtered;

@@ -29,27 +29,6 @@ export interface ProductionRow {
   listed: boolean;
 }
 
-export type PoweredFilter = "all" | "powered" | "unpowered";
-export type WorkerFilter =
-  | "all"
-  | "hasWorkers"
-  | "hasEmptySlots"
-  | "fullyEmpty";
-
-export interface ProductionFilterState {
-  regions: number[];
-  worksiteTypes: string[];
-  powered: PoweredFilter;
-  workers: WorkerFilter;
-}
-
-export const DEFAULT_PRODUCTION_FILTERS: ProductionFilterState = {
-  regions: [],
-  worksiteTypes: [],
-  powered: "all",
-  workers: "all",
-};
-
 export type ProductionSortKey =
   | "label"
   | "regionNumber"
@@ -102,40 +81,6 @@ export function toProductionRow(deed: DeedComplete): ProductionRow {
     hasStakedItems,
     listed: deed.listed ?? false,
   };
-}
-
-/** Unique worksite types present in the rows (sorted, undeveloped last). */
-export function availableWorksiteTypes(rows: ProductionRow[]): string[] {
-  const set = new Set(rows.map((r) => r.worksiteType));
-  return [...set].sort((a, b) => {
-    if (a === "") return 1;
-    if (b === "") return -1;
-    return a.localeCompare(b);
-  });
-}
-
-/** Unique region numbers present in the rows (ascending). */
-export function availableRegions(rows: ProductionRow[]): number[] {
-  return [...new Set(rows.map((r) => r.regionNumber))].sort((a, b) => a - b);
-}
-
-export function filterRows(
-  rows: ProductionRow[],
-  f: ProductionFilterState
-): ProductionRow[] {
-  return rows.filter((r) => {
-    if (f.regions.length > 0 && !f.regions.includes(r.regionNumber))
-      return false;
-    if (f.worksiteTypes.length > 0 && !f.worksiteTypes.includes(r.worksiteType))
-      return false;
-    if (f.powered === "powered" && !r.powered) return false;
-    if (f.powered === "unpowered" && r.powered) return false;
-    if (f.workers === "hasWorkers" && r.workerCount === 0) return false;
-    if (f.workers === "hasEmptySlots" && r.workerCount >= r.maxWorkers)
-      return false;
-    if (f.workers === "fullyEmpty" && r.workerCount !== 0) return false;
-    return true;
-  });
 }
 
 export function sortRows(

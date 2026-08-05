@@ -166,6 +166,7 @@ export default function FragmentRollsSection({
                 <TableCell>Date</TableCell>
                 <TableCell>Type</TableCell>
                 <TableCell>Chance %</TableCell>
+                <TableCell>Roll</TableCell>
                 <TableCell>Success</TableCell>
                 <TableCell>Reward</TableCell>
               </TableRow>
@@ -187,6 +188,9 @@ export default function FragmentRollsSection({
                       </TableCell>
                       <TableCell>
                         {((roll.fragment_chance ?? 0) * 100).toFixed(4)}%
+                      </TableCell>
+                      <TableCell>
+                        {((roll.fragment_roll ?? 0) * 100).toFixed(1)}
                       </TableCell>
                       <TableCell>
                         {roll.fragment_found ? (
@@ -217,6 +221,9 @@ export default function FragmentRollsSection({
                       </TableCell>
                       <TableCell>
                         {((roll.labors_luck_chance ?? 0) * 100).toFixed(4)}%
+                      </TableCell>
+                      <TableCell>
+                        {((roll.labors_luck_roll ?? 0) * 100).toFixed(1)}
                       </TableCell>
                       <TableCell>
                         {roll.labors_luck_uid ? (

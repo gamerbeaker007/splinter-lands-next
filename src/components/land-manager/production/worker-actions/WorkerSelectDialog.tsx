@@ -35,9 +35,9 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { SpotCardVM } from "./productionConfigTypes";
 import { scoreLandCard } from "./workerScoring";
 import { foilLabel } from "@/lib/utils/cardUtil";
+import { SpotCardVM } from "../productionConfigTypes";
 
 type WorkerSortKey =
   | "img"
@@ -96,6 +96,9 @@ const DEFAULT_CARD_FILTER: CardFilterOptions = {
   elements: [],
   foils: [],
   minPP: 0,
+  maxPP: 0,
+  bloodlines: [],
+  maxLevelOnly: false,
 };
 
 function fmt(n: number): string {

@@ -9,10 +9,14 @@ import Container from "@mui/material/Container";
 const temp_image =
   "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
 
+const spl_stats =
+  "https://files.peakd.com/file/peakd-hive/beaker007/23tSKnFQVREdG5gFbEZFWqAYNMB6cREM9oMiy4asHybefQfoYw927KUivHGhGp3ycuiKD.png";
+
 const defaultBoxHeight = 200;
 
 const defaultBoxStyle = {
   height: defaultBoxHeight,
+  maxWidth: 350,
   flexBasis: { xs: "100%", sm: "45%", md: "30%" },
   // flexGrow: 1,
 };
@@ -56,6 +60,14 @@ export default function Home() {
             title="Land Manager"
             href="/land-manager"
             image={temp_image}
+          />
+        </Box>
+        <Box sx={defaultBoxStyle}>
+          <DefaultPageTile
+            title="SPL Stats"
+            href="https://spl-stats.com"
+            image={spl_stats}
+            newTab={true}
           />
         </Box>
       </Box>

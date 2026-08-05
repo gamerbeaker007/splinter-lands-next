@@ -137,10 +137,16 @@ export interface RentalExecutionPlan {
 
 export async function getRentalExecutionPlan(
   enabledRegions: number[],
-  rental: RentalConfig = DEFAULT_RENTAL_CONFIG
+  rental: RentalConfig = DEFAULT_RENTAL_CONFIG,
+  filteredDeedUids?: string[]
 ): Promise<RentalExecutionPlan> {
   const eligibility = await getWorkerEligibility(enabledRegions);
-  const plan = await buildRentalPlan(eligibility.eligible, rental);
+  let eligible = eligibility.eligible;
+  if (filteredDeedUids && filteredDeedUids.length > 0) {
+    const uidSet = new Set(filteredDeedUids);
+    eligible = eligible.filter((p) => uidSet.has(p.deed_uid));
+  }
+  const plan = await buildRentalPlan(eligible, rental);
   const emptySlotsByDeed = await fetchEmptySlotsByDeed(plan);
 
   return { plan, emptySlotsByDeed };

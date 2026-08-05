@@ -10,7 +10,7 @@ type Props = {
   pos?: { x?: CSSSize; y?: CSSSize; w?: CSSSize };
 };
 
-const fontSize = "0.85rem";
+const fontSize = "1.0rem";
 const iconSize = 25;
 
 export const TotemChanceOutput: React.FC<Props> = ({
@@ -42,7 +42,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
           </Typography>
         }
       >
-        <Box display="flex" flexDirection="row" minWidth="210px" gap={1}>
+        <Box display="flex" flexDirection="row" minWidth="210px" gap={0.4}>
           <Box display="flex" alignItems="center">
             <Image
               src={totem_fragment_common_icon_url}
@@ -52,7 +52,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
               style={{ display: "block" }}
             />
           </Box>
-          <Box display="flex" justifyContent="space-between" flex={1}>
+          <Box display="flex">
             <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
               {(estimateChange * 100).toLocaleString(undefined, {
                 maximumFractionDigits: 2,

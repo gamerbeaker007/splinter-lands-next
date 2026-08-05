@@ -89,6 +89,30 @@ export const landElementLabel: Record<CardElement, string> = {
 
 export type BiomeModifiers = Record<CardElement, number>;
 
+export function getBiomeModifiersFromStakingDetail(
+  stakingDetail:
+    | {
+        red_biome_modifier?: number | null;
+        blue_biome_modifier?: number | null;
+        white_biome_modifier?: number | null;
+        black_biome_modifier?: number | null;
+        green_biome_modifier?: number | null;
+        gold_biome_modifier?: number | null;
+      }
+    | null
+    | undefined
+): BiomeModifiers {
+  return {
+    fire: stakingDetail?.red_biome_modifier ?? 0,
+    water: stakingDetail?.blue_biome_modifier ?? 0,
+    life: stakingDetail?.white_biome_modifier ?? 0,
+    death: stakingDetail?.black_biome_modifier ?? 0,
+    earth: stakingDetail?.green_biome_modifier ?? 0,
+    dragon: stakingDetail?.gold_biome_modifier ?? 0,
+    neutral: 0,
+  };
+}
+
 // ----------------------------------
 // BCX Map
 // ----------------------------------
@@ -325,11 +349,8 @@ export function determineMaxLevelFromRarityFoil(
   rarity: CardRarity,
   foil: CardFoil
 ): number {
-  if (foil === "regular") {
-    return combine_rates[rarity].length;
-  } else {
-    return combine_rates_gold[rarity].length;
-  }
+  const rates = foil === "regular" ? combine_rates : combine_rates_gold;
+  return rates[rarity]?.length ?? 0;
 }
 
 export function determineLandBoosts(

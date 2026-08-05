@@ -17,6 +17,7 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { useCallback, useState } from "react";
+import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 
 interface Params {
   username: string;
@@ -152,10 +153,12 @@ export function useDecPowerAction({
       );
       txIds.push(...res.txIds);
 
-      // Mirror the operation order: each tx id corresponds to the next region
-      // in the plan. If broadcast failed mid-way, the rest are "attempted but
-      // failed" and recorded as such.
-      const succeededCount = res.txIds.length;
+      // Mirror the operation order: each tx id corresponds to a successful
+      // batch, not a single op. Mark all ops in successful batches as landed,
+      // and everything after the last confirmed batch as failed.
+      const succeededCount = res.success
+        ? Math.min(plan.items.length, res.txIds.length * MAX_OPS_PER_BROADCAST)
+        : res.txIds.length;
       for (let i = 0; i < plan.items.length; i++) {
         const it = plan.items[i];
         if (i < succeededCount) {

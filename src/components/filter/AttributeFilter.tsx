@@ -1,9 +1,16 @@
 "use client";
 
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { FilterInput } from "@/types/filters";
+import {
+  EnableFilterOptions,
+  FilterInput,
+  PoweredFilter,
+  WorkerFilter,
+} from "@/types/filters";
 import {
   Box,
+  MenuItem,
+  Select,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
@@ -14,10 +21,12 @@ import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 import { PPRangeFilter } from "./PPRangeFilter";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
+import FilterTerrainBoostGroup from "./terrain-boost/FilterTerrainBoostGroup";
 import FilterWorksiteGroup from "./worksite/FilterWorksiteGroup";
 
 type Props = {
   options: FilterInput;
+  filtersEnabled?: Partial<EnableFilterOptions>;
 };
 
 type BooleanFilterKey =
@@ -38,7 +47,7 @@ function triStateValue(v: boolean | undefined): "any" | "yes" | "no" {
   return "any";
 }
 
-export default function AttributeFilter({ options }: Props) {
+export default function AttributeFilter({ options, filtersEnabled }: Props) {
   const { filters, setFilters } = useFilters();
 
   const setBoolean = (key: BooleanFilterKey, next: "any" | "yes" | "no") => {
@@ -80,6 +89,7 @@ export default function AttributeFilter({ options }: Props) {
       <FilterWorksiteGroup options={options.filter_worksites ?? []} />
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
+      <FilterTerrainBoostGroup options={options.filter_terrain_boosts ?? []} />
 
       {/* New PP min/max */}
       <Typography variant="subtitle2" sx={{ mt: 2 }}>
@@ -127,6 +137,56 @@ export default function AttributeFilter({ options }: Props) {
           </Box>
         ))}
       </Stack>
+
+      {filtersEnabled?.poweredWorkers && (
+        <Stack gap={1.5} sx={{ mt: 2 }}>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Powered
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={filters.filter_powered ?? "all"}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v)
+                  setFilters((prev) => ({
+                    ...prev,
+                    filter_powered: v as PoweredFilter,
+                  }));
+              }}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="powered">Powered</MenuItem>
+              <MenuItem value="unpowered">Unpowered</MenuItem>
+            </Select>
+          </Box>
+          <Box>
+            <Typography variant="caption" color="text.secondary">
+              Workers
+            </Typography>
+            <Select
+              size="small"
+              fullWidth
+              value={filters.filter_workers ?? "all"}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v)
+                  setFilters((prev) => ({
+                    ...prev,
+                    filter_workers: v as WorkerFilter,
+                  }));
+              }}
+            >
+              <MenuItem value="all">All</MenuItem>
+              <MenuItem value="hasWorkers">Has workers</MenuItem>
+              <MenuItem value="hasEmptySlots">Has empty worker slots</MenuItem>
+              <MenuItem value="fullyEmpty">Has no workers</MenuItem>
+            </Select>
+          </Box>
+        </Stack>
+      )}
     </Box>
   );
 }

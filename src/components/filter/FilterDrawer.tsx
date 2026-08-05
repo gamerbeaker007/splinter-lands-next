@@ -17,8 +17,13 @@ import Sorting from "./Sorting";
 type Props = {
   player?: string | null;
   filtersEnabled?: Partial<EnableFilterOptions>;
+  onOpenChange?: (open: boolean) => void;
 };
-export default function FilterDrawer({ player, filtersEnabled }: Props) {
+export default function FilterDrawer({
+  player,
+  filtersEnabled,
+  onOpenChange,
+}: Props) {
   const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
     null
   );
@@ -40,8 +45,9 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
     (async () => {
       const isLarge = window.innerWidth >= 1024;
       setDrawerOpen(isLarge);
+      onOpenChange?.(isLarge);
     })();
-  }, []);
+  }, [onOpenChange]);
 
   // Merge any location override on top of the fetched (site-wide) options.
   // Categorical filters always use the fetched options.
@@ -51,7 +57,11 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
     return { ...availableOptions, ...locationOverride };
   }, [availableOptions, locationOverride]);
 
-  const toggleDrawer = () => setDrawerOpen((prev) => !prev);
+  const toggleDrawer = () => {
+    const next = !drawerOpen;
+    setDrawerOpen(next);
+    onOpenChange?.(next);
+  };
 
   if (!effectiveOptions) return <div>Loading filters...</div>;
 
@@ -135,7 +145,10 @@ export default function FilterDrawer({ player, filtersEnabled }: Props) {
             />
           )}
           {filtersEnabled?.attributes !== false && (
-            <AttributeFilter options={effectiveOptions} />
+            <AttributeFilter
+              options={effectiveOptions}
+              filtersEnabled={filtersEnabled}
+            />
           )}
           {filtersEnabled?.player !== false && (
             <PlayerFilter options={effectiveOptions} />

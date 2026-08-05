@@ -1,7 +1,5 @@
 "use client";
 
-import DecPowerDialog from "@/components/land-manager/dec-actions/DecPowerDialog";
-import { DEC_POWER_VARIANTS } from "@/components/land-manager/dec-actions/decPowerVariant";
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
 import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
 import {
@@ -13,6 +11,8 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import DecPowerDialog from "./DecPowerDialog";
+import { DEC_POWER_VARIANTS } from "./decPowerVariant";
 
 interface Props {
   username: string;
