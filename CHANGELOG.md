@@ -41,6 +41,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - DEC power-up/down summaries now correctly count successful batches when a single broadcast contains multiple region operations.
 - Excpetion when no deeds owned (Land Manager)
 - Fixed stale worker selection after remove-then-add in Production Configure: Worker picker now force-refreshes card data on open and resets local picker state.
+- Fix fonts on deed overview (all a bit bigger)
 
 ---
 

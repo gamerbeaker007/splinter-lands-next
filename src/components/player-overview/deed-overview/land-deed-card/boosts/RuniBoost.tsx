@@ -27,7 +27,7 @@ export const RuniBoost: React.FC<RuniBoostProps> = ({
 
   return (
     <Box textAlign="center">
-      <Typography fontWeight="bold" fontFamily="monospace" fontSize="14px">
+      <Typography fontWeight="bold" fontFamily="monospace" fontSize="1.1rem">
         {runiBoost * 100}%
       </Typography>
       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, zoom: "70%" }}>

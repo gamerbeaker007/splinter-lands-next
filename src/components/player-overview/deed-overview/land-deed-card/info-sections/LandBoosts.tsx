@@ -25,8 +25,16 @@ type Props = {
 };
 
 const iconSize = 25;
-const fontSize = "0.7rem";
+const fontSize = "0.9rem";
 const fontColor = "common.white";
+
+const tooltTipSlotProps = {
+  tooltip: {
+    sx: {
+      fontSize: "1.1rem",
+    },
+  },
+};
 
 export const LandBoosts: React.FC<Props> = ({
   resource,
@@ -81,6 +89,7 @@ export const LandBoosts: React.FC<Props> = ({
         >
           {productionBoost > 0 && (
             <Tooltip
+              slotProps={tooltTipSlotProps}
               title={`Production Boost ${capitalize(resource.toLowerCase())} by ${productionBoostPct}%`}
             >
               <Box display={"flex"} flexDirection={"column"}>
@@ -98,6 +107,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {bloodlineBoost > 0 && (
             <Tooltip
+              slotProps={tooltTipSlotProps}
               title={`Bloodline Boost by ${Math.round(bloodlineBoost * 100)}%`}
             >
               <Box display={"flex"} flexDirection={"column"}>
@@ -107,7 +117,7 @@ export const LandBoosts: React.FC<Props> = ({
                   width={iconSize}
                   height={iconSize}
                 />
-                <Typography fontSize={12}>
+                <Typography fontSize={fontSize} color={fontColor}>
                   {Math.round(bloodlineBoost * 100)}%
                 </Typography>
               </Box>
@@ -115,6 +125,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {decDiscount < 0 && (
             <Tooltip
+              slotProps={tooltTipSlotProps}
               title={`DEC Stake Discount by ${Math.round(decDiscount * 100)}%`}
             >
               <Box display={"flex"} flexDirection={"column"}>
@@ -132,6 +143,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {grainConsumeReduction < 0 && (
             <Tooltip
+              slotProps={tooltTipSlotProps}
               title={`Grain Consumption Reduction by ${Math.round(grainConsumeReduction * 100)}%`}
             >
               <Box display={"flex"} flexDirection={"column"}>
@@ -149,6 +161,7 @@ export const LandBoosts: React.FC<Props> = ({
           )}
           {liteConsumeReduction < 0 && (
             <Tooltip
+              slotProps={tooltTipSlotProps}
               title={`Lite Consumption Reduction by ${Math.round(liteConsumeReduction * 100)}%`}
             >
               <Box display={"flex"} flexDirection={"column"}>
@@ -165,7 +178,7 @@ export const LandBoosts: React.FC<Props> = ({
             </Tooltip>
           )}
           {replacePowerCore && (
-            <Tooltip title="Replaces Power Core">
+            <Tooltip slotProps={tooltTipSlotProps} title="Replaces Power Core">
               <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={energized_icon_url}
@@ -178,7 +191,7 @@ export const LandBoosts: React.FC<Props> = ({
             </Tooltip>
           )}
           {laborLuck && (
-            <Tooltip title="Labor's Luck">
+            <Tooltip slotProps={tooltTipSlotProps} title="Labor's Luck">
               <Box display={"flex"} flexDirection={"column"}>
                 <Image
                   src={labors_luck_icon_url}

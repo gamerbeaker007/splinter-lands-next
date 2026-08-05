@@ -1,5 +1,4 @@
 import { formatLargeNumber } from "@/lib/formatters";
-import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { getCardImgV2 } from "@/lib/utils/cardUtil";
 import { cardFoilOptions, LandBoost, RarityColor } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
@@ -35,15 +34,15 @@ export default function CardTile({
   landBoosts,
 }: Props) {
   const isFoil = foil === 1 || foil === 2;
+  const isRuni = name === "Runi";
 
   const hasTerrainBoost = terrain_boost != 0;
   const hasNegativeTerrain = terrain_boost < 0;
   const hasPositiveTerrain = terrain_boost > 0;
   const terrain_boost_pct = (terrain_boost * 100).toFixed(0);
-  const img =
-    name === "Runi"
-      ? `https://runi.splinterlands.com/cards/${uid}.jpg`
-      : getCardImgV2(name, edition, cardFoilOptions[foil]);
+  const img = isRuni
+    ? `https://runi.splinterlands.com/cards/${uid}.jpg`
+    : getCardImgV2(name, edition, cardFoilOptions[foil]);
 
   const displayPP = Number(boosted_pp !== undefined ? boosted_pp : base_pp);
 
@@ -119,6 +118,17 @@ export default function CardTile({
           {/* Bottom-right warning if terrain boost is negative */}
           {hasTerrainBoost && (
             <Tooltip
+              slotProps={{
+                tooltip: {
+                  sx: {
+                    fontSize: "1rem",
+                    "& strong": {
+                      fontSize: "1rem",
+                      fontWeight: 700,
+                    },
+                  },
+                },
+              }}
               title={
                 hasNegativeTerrain
                   ? "This card has a negative terrain boost."
@@ -155,6 +165,17 @@ export default function CardTile({
         </Box>
 
         <Tooltip
+          slotProps={{
+            tooltip: {
+              sx: {
+                fontSize: "1.1rem",
+                "& strong": {
+                  fontSize: "1.1rem",
+                  fontWeight: 700,
+                },
+              },
+            },
+          }}
           title={
             <>
               <strong>Production Power (PP):</strong>
@@ -176,18 +197,14 @@ export default function CardTile({
             justifyContent={"center"}
             bgcolor="rgba(70, 71, 70, 0.9)"
             color="white"
-            fontSize="0.625rem"
             px={0.6}
             borderRadius={"0px 0px 10px 10px"}
             gap={0.5}
           >
-            <Image
-              src={land_hammer_icon_url}
-              alt="hammer"
-              width={15}
-              height={15}
-            />
-            <Typography fontSize="0.9rem">
+            <Typography
+              fontSize={isRuni ? "1.3rem" : "1.1rem"}
+              fontWeight="bold"
+            >
               {formatLargeNumber(Number(displayPP.toFixed(0)))}
             </Typography>
           </Box>

@@ -54,14 +54,29 @@ export const PlotInfo: React.FC<Props> = ({
         )}
 
         <Stack>
-          <Typography variant="subtitle1" fontWeight="bold" color="white">
+          <Typography
+            variant="subtitle1"
+            fontSize="1.2rem"
+            fontWeight="bold"
+            color="white"
+          >
             {deedType}
           </Typography>
 
-          <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
+          <Typography
+            fontSize="1rem"
+            variant="body2"
+            color="white"
+            sx={{ opacity: 0.9 }}
+          >
             {territory}
           </Typography>
-          <Typography variant="body2" color="white" sx={{ opacity: 0.9 }}>
+          <Typography
+            fontSize="1rem"
+            variant="body2"
+            color="white"
+            sx={{ opacity: 0.9 }}
+          >
             {regionName}
           </Typography>
         </Stack>

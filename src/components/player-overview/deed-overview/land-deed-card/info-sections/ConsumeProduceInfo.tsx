@@ -25,7 +25,7 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
 
   const suffix = isTax ? "" : "\h";
   const iconSize = isTax ? 25 : 35;
-  const fontSize = isTax ? "0.975rem" : "1.0rem";
+  const fontSize = "1.1rem";
 
   (produce ?? []).sort(
     (a, b) => RESOURCES.indexOf(a.resource) - RESOURCES.indexOf(b.resource)
@@ -51,17 +51,22 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
         textAlign: "left",
       }}
     >
-      <Typography fontSize="1.0rem" fontWeight="bold" mb={0.5} color="white">
+      <Typography fontSize="1.1rem" fontWeight="bold" mb={0.5} color="white">
         {isTax ? "Ready to Collect:" : "Production:"}
       </Typography>
-      <Box display="flex" flexDirection="column" alignItems="flex-start">
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="flex-start"
+        gap={0.1}
+      >
         <Box display="flex" alignItems="center" gap={0.5}>
           <Tooltip
             arrow
             placement="top"
             title={
               <Box>
-                <Typography fontSize="0.75rem" fontWeight="bold" mb={0.5}>
+                <Typography fontSize={fontSize} fontWeight="bold" mb={0.5}>
                   Consumes:
                 </Typography>
                 {consume &&
@@ -111,7 +116,7 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
                         {row.resource === "GRAIN" && (
                           <Typography
                             variant="caption"
-                            fontSize={10}
+                            fontSize={fontSize}
                             color="white"
                           >
                             {`net: ${(row.amount - grainConsumed).toFixed(1)}`}{" "}
@@ -126,12 +131,7 @@ export const ConsumeProduceInfo: React.FC<Props> = ({
           </Tooltip>
         </Box>
 
-        <Typography
-          variant="caption"
-          color="gray"
-          fontSize="0.625rem"
-          sx={{ mt: 0.25 }}
-        >
+        <Typography variant="caption" color="gray" fontSize={fontSize}>
           {isTax ? "" : "(incl. tax)"}
         </Typography>
       </Box>
