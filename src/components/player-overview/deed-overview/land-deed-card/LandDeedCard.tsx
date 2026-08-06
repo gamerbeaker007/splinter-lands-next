@@ -101,7 +101,12 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
         }}
       >
         <DeedHistoryLink deedUid={deed.deed_uid!} />
-        <ManageLink regionNumber={regionNumber} plotId={plotId} />
+        <ManageLink
+          regionNumber={regionNumber}
+          plotId={plotId}
+          tractNumber={tractNumber}
+          plotNumber={plotNumber}
+        />
         <HarvestLink regionNumber={regionNumber} />
       </Stack>
 

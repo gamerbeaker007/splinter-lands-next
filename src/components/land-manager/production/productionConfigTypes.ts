@@ -2,23 +2,23 @@ import {
   ConfigCard,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
+import { PlotBoostOverrides } from "@/lib/frontend/utils/deedToPlotPlanner";
 import {
-  StakeChangeInput,
   STAKE_TYPE_UID_LAND_POWER_CORE,
   STAKE_TYPE_UID_LAND_RUNI,
   STAKE_TYPE_UID_LAND_TITLE,
   STAKE_TYPE_UID_LAND_TOTEM,
   STAKE_TYPE_UID_LAND_WORKER,
+  StakeChangeInput,
 } from "@/lib/shared/operations/opBuilders";
-import { PlotBoostOverrides } from "@/lib/frontend/utils/deedToPlotPlanner";
 import {
   CardElement,
   CardRarity,
-  TitleTier,
-  titleModifiers,
-  TotemTier,
-  totemModifiers,
   RuniTier,
+  TitleTier,
+  TotemTier,
+  titleModifiers,
+  totemModifiers,
 } from "@/types/planner";
 
 /**
@@ -49,6 +49,7 @@ export interface SpotCardVM {
   onWagon: boolean;
   inSet: boolean;
   isListed: boolean;
+  isOnCooldown: boolean;
 }
 
 /**
@@ -78,7 +79,7 @@ export interface StagedConfig {
 export const MAX_WORKER_SLOTS = 5;
 
 function cardToVM(card: ConfigCard): SpotCardVM {
-  return { ...card, fromChain: true };
+  return { ...card, fromChain: true, isOnCooldown: false };
 }
 
 /**

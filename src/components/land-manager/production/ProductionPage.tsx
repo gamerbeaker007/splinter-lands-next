@@ -51,11 +51,25 @@ import {
   ToggleButtonGroup,
   Typography,
   useMediaQuery,
-  useTheme,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const PAGE_SIZE = 25;
+
+type ParsedLocationQuery = {
+  hasAllParams: boolean;
+  region: number | null;
+  tract: number | null;
+  plot: number | null;
+};
+
+function parsePositiveInt(value: string | null): number | null {
+  if (value == null) return null;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) return null;
+  return n;
+}
 
 /** Rows a given bulk action can act on. */
 function actionableRows(
@@ -115,12 +129,39 @@ function ProductionPageContent() {
   const [stakeBusy, setStakeBusy] = useState(false);
   const [unstakeBusy, setUnstakeBusy] = useState(false);
 
-  const { filters, setLocationOverride } = useFilters();
+  const { filters, setFilters, setLocationOverride } = useFilters();
+  const searchParams = useSearchParams();
+  const appliedLocationQueryRef = useRef<string | null>(null);
+  const pendingAutoOpenDeedUidRef = useRef<string | null>(null);
+
+  const parsedLocationQuery = useMemo<ParsedLocationQuery>(() => {
+    const regionRaw = searchParams.get("region");
+    const tractRaw = searchParams.get("tract");
+    const plotRaw = searchParams.get("plot");
+    return {
+      hasAllParams: regionRaw !== null && tractRaw !== null && plotRaw !== null,
+      region: parsePositiveInt(regionRaw),
+      tract: parsePositiveInt(tractRaw),
+      plot: parsePositiveInt(plotRaw),
+    };
+  }, [searchParams]);
 
   const deedByUid = useMemo(() => {
     const map = new Map<string, DeedComplete>();
     for (const d of allDeeds) map.set(d.deed_uid, d);
     return map;
+  }, [allDeeds]);
+
+  const availableLocations = useMemo(() => {
+    const regions = new Set<number>();
+    const tracts = new Set<number>();
+    const plots = new Set<number>();
+    for (const d of allDeeds) {
+      regions.add(d.region_number);
+      tracts.add(d.tract_number);
+      plots.add(d.plot_number);
+    }
+    return { regions, tracts, plots };
   }, [allDeeds]);
 
   const handleRefresh = useCallback(() => {
@@ -170,6 +211,80 @@ function ProductionPageContent() {
     });
   }, [allDeeds, setLocationOverride]);
 
+  useEffect(() => {
+    if (loading) return;
+
+    const queryKey = [
+      parsedLocationQuery.region ?? "",
+      parsedLocationQuery.tract ?? "",
+      parsedLocationQuery.plot ?? "",
+      parsedLocationQuery.hasAllParams ? "all" : "partial",
+    ].join("|");
+
+    if (appliedLocationQueryRef.current === queryKey) return;
+    appliedLocationQueryRef.current = queryKey;
+
+    if (allDeeds.length === 0) {
+      pendingAutoOpenDeedUidRef.current = null;
+      return;
+    }
+
+    const next: Partial<FilterInput> = {};
+    let hasAnyValid = false;
+
+    if (
+      parsedLocationQuery.region !== null &&
+      availableLocations.regions.has(parsedLocationQuery.region)
+    ) {
+      next.filter_regions = [parsedLocationQuery.region];
+      hasAnyValid = true;
+    }
+    if (
+      parsedLocationQuery.tract !== null &&
+      availableLocations.tracts.has(parsedLocationQuery.tract)
+    ) {
+      next.filter_tracts = [parsedLocationQuery.tract];
+      hasAnyValid = true;
+    }
+    if (
+      parsedLocationQuery.plot !== null &&
+      availableLocations.plots.has(parsedLocationQuery.plot)
+    ) {
+      next.filter_plots = [parsedLocationQuery.plot];
+      hasAnyValid = true;
+    }
+
+    // Apply URL location filters deterministically and clear stale location keys.
+    setFilters((prev) => {
+      const merged: FilterInput = { ...prev };
+      delete merged.filter_regions;
+      delete merged.filter_tracts;
+      delete merged.filter_plots;
+      if (hasAnyValid) {
+        Object.assign(merged, next);
+      }
+      return merged;
+    });
+
+    if (
+      parsedLocationQuery.hasAllParams &&
+      next.filter_regions?.length === 1 &&
+      next.filter_tracts?.length === 1 &&
+      next.filter_plots?.length === 1
+    ) {
+      const matches = allDeeds.filter(
+        (d) =>
+          d.region_number === next.filter_regions?.[0] &&
+          d.tract_number === next.filter_tracts?.[0] &&
+          d.plot_number === next.filter_plots?.[0]
+      );
+      pendingAutoOpenDeedUidRef.current =
+        matches.length === 1 ? matches[0].deed_uid : null;
+    } else {
+      pendingAutoOpenDeedUidRef.current = null;
+    }
+  }, [loading, allDeeds, parsedLocationQuery, availableLocations, setFilters]);
+
   // Deeds after FilterDrawer filters (which now include powered/workers) + region pre-filter.
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
     if (allDeeds.length === 0) return [];
@@ -211,6 +326,25 @@ function ProductionPageContent() {
     }
     return map;
   }, [filteredRows]);
+
+  useEffect(() => {
+    const pendingAutoOpenDeedUid = pendingAutoOpenDeedUidRef.current;
+    if (!pendingAutoOpenDeedUid || loading) return;
+    // Wait until URL filters have propagated: the exact target deed must be
+    // the sole visible row. Using the pre-filter count guards against opening
+    // at the wrong page when filteredRows still contains all deeds.
+    if (
+      filteredRows.length !== 1 ||
+      filteredRows[0].deedUid !== pendingAutoOpenDeedUid
+    )
+      return;
+    pendingAutoOpenDeedUidRef.current = null;
+    setTimeout(() => {
+      setViewMode("list");
+      setPage(1);
+      setExpandedDeedUids(new Set([pendingAutoOpenDeedUid]));
+    }, 0);
+  }, [loading, filteredRows]);
 
   // ── Rental / Purchase filtering ──────────────────────────────────────────
   const filteredDeedUids = useMemo(
@@ -504,8 +638,9 @@ function ProductionPageContent() {
 
 export default function ProductionPage() {
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const theme = useTheme();
-  const isLarge = useMediaQuery(theme.breakpoints.up("lg"));
+  // FilterDrawer auto-opens from 1024px up; match that threshold so content
+  // shifts whenever the persistent drawer is visible.
+  const isDrawerDesktop = useMediaQuery("(min-width:1024px)");
 
   return (
     <FilterProvider>
@@ -525,7 +660,7 @@ export default function ProductionPage() {
       <Box
         sx={{
           transition: "margin-right 0.2s ease",
-          mr: isLarge && drawerOpen ? "330px" : 0,
+          mr: isDrawerDesktop && drawerOpen ? "330px" : 0,
         }}
       >
         <ProductionPageContent />

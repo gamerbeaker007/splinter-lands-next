@@ -159,6 +159,7 @@ export default function AssetPickerDialog({
       onWagon: false,
       inSet: false,
       isListed: false,
+      isOnCooldown: false,
     };
     onPick({ kind: "runi", runi: vm });
   };

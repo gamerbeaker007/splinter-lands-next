@@ -106,6 +106,11 @@ export function filterDeeds<T extends DeedComplete>(
       if (filters.filter_has_land_ability !== hasAnyLandAbilities) return false;
     }
 
+    if (filters.filter_has_runi !== undefined) {
+      const hasRuni = (deed.stakingDetail?.runi_boost ?? 0) > 0;
+      if (filters.filter_has_runi !== hasRuni) return false;
+    }
+
     if (filters.filter_positive_terrain_elements?.length) {
       const biomeModifiers = getBiomeModifiersFromStakingDetail(
         deed.stakingDetail

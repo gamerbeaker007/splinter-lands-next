@@ -2,6 +2,7 @@ import {
   deedToPlotPlannerData,
   PlotBoostOverrides,
 } from "@/lib/frontend/utils/deedToPlotPlanner";
+import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 import {
   calcProductionInfo,
   calcTotalPP,
@@ -75,7 +76,8 @@ export function scoreLandCard(
     fromChain: false,
     onWagon: card.onWagon,
     inSet: card.inSet,
-    isListed: card.isListed,
+    isListed: card.isListed && card.owned, // only show listed if owned (not delegated)
+    isOnCooldown: isCooldownActive(card.landCooldownDate || card.survivalDate),
   };
 }
 

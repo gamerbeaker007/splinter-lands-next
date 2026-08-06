@@ -277,6 +277,23 @@ export interface LandManagerConfig {
   buy: BuyConfig;
 }
 
+export function createDefaultLandManagerConfig(
+  username: string
+): LandManagerConfig {
+  return {
+    player: username,
+    enabled_regions: [],
+    make_harvestable_strategies: DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
+    donation: DEFAULT_DONATION_CONFIG,
+    post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
+    post_harvest_excluded_resources: [],
+    post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
+    post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
+    rental: DEFAULT_RENTAL_CONFIG,
+    buy: DEFAULT_BUY_CONFIG,
+  };
+}
+
 // === Mythic deeds (Keeps & Castles) ===
 
 export interface MythicDeed {

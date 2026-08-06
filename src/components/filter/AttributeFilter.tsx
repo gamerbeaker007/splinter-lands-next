@@ -7,15 +7,8 @@ import {
   PoweredFilter,
   WorkerFilter,
 } from "@/types/filters";
-import {
-  Box,
-  MenuItem,
-  Select,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from "@mui/material";
+import { Box, MenuItem, Select, Stack, Typography } from "@mui/material";
+import TriStateBooleanFilter from "./TriStateBooleanFilter";
 import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 import { PPRangeFilter } from "./PPRangeFilter";
@@ -32,20 +25,15 @@ type Props = {
 type BooleanFilterKey =
   | "filter_developed"
   | "filter_under_construction"
-  | "filter_has_land_ability";
+  | "filter_has_land_ability"
+  | "filter_has_runi";
 
 const BOOLEAN_FILTER_LABELS: Record<BooleanFilterKey, string> = {
   filter_developed: "Developed",
   filter_under_construction: "Under construction",
   filter_has_land_ability: "Has land ability",
+  filter_has_runi: "Has Runi",
 };
-
-/** undefined = "any" (no filter), true = "yes", false = "no" */
-function triStateValue(v: boolean | undefined): "any" | "yes" | "no" {
-  if (v === true) return "yes";
-  if (v === false) return "no";
-  return "any";
-}
 
 export default function AttributeFilter({ options, filtersEnabled }: Props) {
   const { filters, setFilters } = useFilters();
@@ -109,32 +97,21 @@ export default function AttributeFilter({ options, filtersEnabled }: Props) {
         onChange={updateBoostedPP}
       />
 
-      <Stack gap={1.5} sx={{ mt: 2 }}>
+      <Stack gap={1} sx={{ mt: 1.5 }}>
         {(
           [
             "filter_developed",
             "filter_under_construction",
             "filter_has_land_ability",
+            "filter_has_runi",
           ] as BooleanFilterKey[]
         ).map((key) => (
-          <Box key={key}>
-            <Typography variant="caption" color="text.secondary">
-              {BOOLEAN_FILTER_LABELS[key]}
-            </Typography>
-            <ToggleButtonGroup
-              size="small"
-              exclusive
-              fullWidth
-              value={triStateValue(filters[key])}
-              onChange={(_, v) => {
-                if (v) setBoolean(key, v as "any" | "yes" | "no");
-              }}
-            >
-              <ToggleButton value="any">Any</ToggleButton>
-              <ToggleButton value="yes">Yes</ToggleButton>
-              <ToggleButton value="no">No</ToggleButton>
-            </ToggleButtonGroup>
-          </Box>
+          <TriStateBooleanFilter
+            key={key}
+            label={BOOLEAN_FILTER_LABELS[key]}
+            value={filters[key]}
+            onChange={(v) => setBoolean(key, v)}
+          />
         ))}
       </Stack>
 

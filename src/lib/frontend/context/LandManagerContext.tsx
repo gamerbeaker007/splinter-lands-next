@@ -1,13 +1,7 @@
 "use client";
 
 import {
-  DEFAULT_BUY_CONFIG,
-  DEFAULT_DONATION_CONFIG,
-  DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
-  DEFAULT_POST_HARVEST_POOL_PCT,
-  DEFAULT_POST_HARVEST_SELL_PCT,
-  DEFAULT_POST_HARVEST_STRATEGY,
-  DEFAULT_RENTAL_CONFIG,
+  createDefaultLandManagerConfig,
   LandManagerConfig,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
@@ -81,15 +75,4 @@ export function useLandManagerContext(): LandManagerContextType {
 
 export const DEFAULT_LAND_MANAGER_CONFIG = (
   username: string
-): LandManagerConfig => ({
-  player: username,
-  enabled_regions: [],
-  make_harvestable_strategies: DEFAULT_MAKE_HARVESTABLE_STRATEGIES,
-  donation: DEFAULT_DONATION_CONFIG,
-  post_harvest_strategy: DEFAULT_POST_HARVEST_STRATEGY,
-  post_harvest_excluded_resources: [],
-  post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
-  post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
-  rental: DEFAULT_RENTAL_CONFIG,
-  buy: DEFAULT_BUY_CONFIG,
-});
+): LandManagerConfig => createDefaultLandManagerConfig(username);

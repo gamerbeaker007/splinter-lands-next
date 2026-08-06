@@ -1,6 +1,6 @@
+import { CardElement, CardRarity } from "@/types/planner";
 import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
-import { CardElement, CardRarity } from "@/types/planner";
 
 export type PoweredFilter = "all" | "powered" | "unpowered";
 export type WorkerFilter =
@@ -25,6 +25,7 @@ export type FilterInput = {
   filter_developed?: boolean;
   filter_under_construction?: boolean;
   filter_has_land_ability?: boolean;
+  filter_has_runi?: boolean;
   filter_base_pp_min?: number | null;
   filter_base_pp_max?: number | null;
   filter_boosted_pp_min?: number | null;

@@ -1,11 +1,12 @@
 "use client";
 
 import LandCardFilter from "@/components/cards/LandCardFilter";
-import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import CardTableIcon from "@/components/player-overview/collection-overview/CardTableIcon";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { getPlayerLandCards } from "@/lib/backend/actions/player/landCards-actions";
+import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
+import { foilLabel } from "@/lib/utils/cardUtil";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { DeedComplete } from "@/types/deed";
 import { cardSetIconMap, editionMap } from "@/types/editions";
@@ -30,14 +31,14 @@ import {
   TablePagination,
   TableRow,
   TableSortLabel,
+  TextField,
   Tooltip,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
-import { scoreLandCard } from "./workerScoring";
-import { foilLabel } from "@/lib/utils/cardUtil";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { SpotCardVM } from "../productionConfigTypes";
+import { scoreLandCard } from "./workerScoring";
 
 type WorkerSortKey =
   | "img"
@@ -133,6 +134,8 @@ function isLandSelectable(
     return { valid: false, reason: "Card is on wagon" };
   } else if (card.isListed) {
     return { valid: false, reason: "Card is listed" };
+  } else if (card.isOnCooldown) {
+    return { valid: false, reason: "Card is on cooldown" };
   } else if (!isSelected && selected >= emptySlots) {
     return { valid: false, reason: "No empty slots available" };
   }
@@ -155,6 +158,7 @@ export default function WorkerSelectDialog({
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<WorkerSortKey>("boostedPP");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [boostedJumpInput, setBoostedJumpInput] = useState("");
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
@@ -222,6 +226,47 @@ export default function WorkerSelectDialog({
     onConfirm(picks);
   };
 
+  const jumpToBoostedPP = useCallback(
+    (rawValue: string) => {
+      const trimmed = rawValue.trim();
+      if (!trimmed || rows.length === 0) return;
+
+      const target = Number(trimmed);
+      if (!Number.isFinite(target)) return;
+
+      let bestIndex = -1;
+      let bestDistance = Number.POSITIVE_INFINITY;
+      let bestValue = Number.POSITIVE_INFINITY;
+
+      rows.forEach((row, index) => {
+        const value = row.boostedPP;
+        const distance = Math.abs(value - target);
+        if (
+          distance < bestDistance ||
+          (distance === bestDistance &&
+            (value < bestValue || (value === bestValue && index < bestIndex)))
+        ) {
+          bestIndex = index;
+          bestDistance = distance;
+          bestValue = value;
+        }
+      });
+
+      if (bestIndex >= 0) {
+        setPage(Math.floor(bestIndex / rowsPerPage));
+      }
+    },
+    [rows, rowsPerPage]
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => {
+      jumpToBoostedPP(boostedJumpInput);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [boostedJumpInput, jumpToBoostedPP, open]);
+
   const paginated = rows.slice(
     page * rowsPerPage,
     page * rowsPerPage + rowsPerPage
@@ -274,11 +319,28 @@ export default function WorkerSelectDialog({
                 minWidth: 0,
               }}
             >
+              <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 1 }}>
+                <TextField
+                  size="small"
+                  label="Jump to Boosted PP"
+                  placeholder="e.g. 1200"
+                  value={boostedJumpInput}
+                  onChange={(e) => setBoostedJumpInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      jumpToBoostedPP(boostedJumpInput);
+                    }
+                  }}
+                  sx={{ width: 220 }}
+                />
+              </Box>
+
               <Box
                 sx={{
                   flex: 1,
                   minWidth: 0,
-                  maxHeight: "60vh",
+                  maxHeight: "100vh",
                   overflow: "auto",
                 }}
               >

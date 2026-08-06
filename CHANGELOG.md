@@ -14,6 +14,33 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.18.0] - 2026-08-06
+
+### Added
+
+- Land Manager Production filters now include a tri-state **Has Runi** option (`Any`, `Yes`, `No`) using `runi_boost > 0` as the has-Runi rule.
+- Worker selection now supports **Jump to Boosted PP**: Enter a Boosted PP target to navigate to the first exact match, or deterministically to the closest value (tie-break prefers the lower value).
+- Land Manager Production route now reads optional `region`, `tract`, and `plot` query params to prefill location filters.
+- Added cooldown also as reason why a card cannot be placed on land
+
+### Changed
+
+- Reworked the reusable tri-state boolean filter UI to a more compact layout with reduced vertical spacing and tighter option buttons.
+- Deed Overview **Manage Plot** action now opens a menu with two destinations: **Open in Splinterlands** and **Open in Land Manager**.
+
+### Improved
+
+- When `region`, `tract`, and `plot` are all provided and resolve to a single matching Production plot, the page auto-opens that plot's Configure panel after data/filtering is ready.
+- Partial or invalid Production location query params are handled gracefully: valid params still prefill filters, invalid ones are ignored, and no auto-open is triggered.
+
+### Fixed
+
+- When card is listed it also needs to be owned, only then its not selectable to place on land
+- Fix when not logged in land manager was not working
+- Fix / Re added maintenance gaurd again
+
+---
+
 ## [v1.17.0] - 2026-08-05
 
 ### Updated
