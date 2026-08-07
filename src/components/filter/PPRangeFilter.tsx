@@ -31,7 +31,7 @@ export function PPRangeFilter({ min, max, onChange }: Props) {
   };
 
   return (
-    <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+    <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
       <TextField
         label="PP min"
         size="small"

@@ -1,9 +1,10 @@
 "use client";
 
 import { filterPlaygroundDeeds } from "@/components/planning/playground/util/deedFilters";
-import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { usePrices } from "@/hooks/usePrices";
+import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 
+import LandCardFilter from "@/components/cards/LandCardFilter";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { SlotInput } from "@/types/planner";
 import {
@@ -21,7 +22,6 @@ import ClearActionsPanel from "./ClearActionsPanel";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
 import ExportButtons from "./ExportButtons";
-import LandCardFilter from "@/components/cards/LandCardFilter";
 import PlaygroundFilter from "./PlaygroundFilter";
 import PlaygroundOverview from "./PlaygroundOverview";
 import { calculateSummary } from "./util/calculatedSummary";
@@ -62,6 +62,7 @@ export default function PlaygroundDeedGrid({
   });
   const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
     {
+      cardName: "",
       onWagon: undefined,
       inSet: undefined,
       isListed: undefined,

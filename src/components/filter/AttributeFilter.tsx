@@ -8,13 +8,15 @@ import {
   WorkerFilter,
 } from "@/types/filters";
 import { Box, MenuItem, Select, Stack, Typography } from "@mui/material";
-import TriStateBooleanFilter from "./TriStateBooleanFilter";
 import FilterDeedTypeGroup from "./deed-type/FilterDeedTypeGroup";
 import FilterPlotStatusGroup from "./plot-status/FilterPlotStatusGroup";
 import { PPRangeFilter } from "./PPRangeFilter";
 import FilterRarityGroup from "./rarity/FilterRarityGroup";
 import FilterResourceGroup from "./resource/FilterResourceGroup";
 import FilterTerrainBoostGroup from "./terrain-boost/FilterTerrainBoostGroup";
+import FilterTitleGroup from "./title/FilterTitleGroup";
+import FilterTotemGroup from "./totem/FilterTotemGroup";
+import TriStateBooleanFilter from "./TriStateBooleanFilter";
 import FilterWorksiteGroup from "./worksite/FilterWorksiteGroup";
 
 type Props = {
@@ -77,6 +79,8 @@ export default function AttributeFilter({ options, filtersEnabled }: Props) {
       <FilterWorksiteGroup options={options.filter_worksites ?? []} />
       <FilterDeedTypeGroup options={options.filter_deed_type ?? []} />
       <FilterPlotStatusGroup options={options.filter_plot_status ?? []} />
+      <FilterTitleGroup options={options.filter_title_tier ?? []} />
+      <FilterTotemGroup options={options.filter_totem_tier ?? []} />
       <FilterTerrainBoostGroup options={options.filter_terrain_boosts ?? []} />
 
       {/* New PP min/max */}

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import CardBooleanFilter from "./CardBooleanFilter";
 import CardFilterRarityGroup from "./CardFilterRarityGroup";
 import CardFilterSetGroup from "./CardFilterSetGroup";
+import CardNameFilter from "./CardNameFilter";
 import ResetCardFiltersButton from "./ResetCardFiltersButton";
 import CardDayFilter from "@/components/cardFilter/CardDayFilter";
 
@@ -86,6 +87,10 @@ export default function CardFilterDrawer() {
       >
         <CardFilterSetGroup />
         <CardFilterRarityGroup />
+
+        <FormGroup sx={{ mt: 2 }}>
+          <CardNameFilter />
+        </FormGroup>
 
         <FormGroup sx={{ mt: 2 }}>
           <CardBooleanFilter title="On Land" filterKey="filter_on_land" />

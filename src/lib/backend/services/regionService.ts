@@ -6,6 +6,12 @@ import { ResourceRecipeItem, TAX_RATE } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import { FilterInput } from "@/types/filters";
+import {
+  titleModifiers,
+  TitleTier,
+  totemModifiers,
+  TotemTier,
+} from "@/types/planner";
 import { Prices } from "@/types/price";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { ProductionPoints } from "@/types/productionPoints";
@@ -232,6 +238,37 @@ export async function getActiveDeedCountByRegion(
 export async function getAvailableFilterValues(
   player: string | null
 ): Promise<FilterInput> {
+  const BOOST_EPSILON = 1e-9;
+  const titleTierOrder: Exclude<TitleTier, "none">[] = [
+    "rare",
+    "epic",
+    "legendary",
+  ];
+  const totemTierOrder: Exclude<TotemTier, "none">[] = [
+    "common",
+    "rare",
+    "epic",
+    "legendary",
+  ];
+
+  const titleTierForBoost = (
+    boost: number
+  ): Exclude<TitleTier, "none"> | null => {
+    for (const tier of titleTierOrder) {
+      if (Math.abs(boost - titleModifiers[tier]) <= BOOST_EPSILON) return tier;
+    }
+    return null;
+  };
+
+  const totemTierForBoost = (
+    boost: number
+  ): Exclude<TotemTier, "none"> | null => {
+    for (const tier of totemTierOrder) {
+      if (Math.abs(boost - totemModifiers[tier]) <= BOOST_EPSILON) return tier;
+    }
+    return null;
+  };
+
   let blob = await getCachedRegionDataSSR();
   if (player) {
     blob = filterDeeds(blob, { filter_players: [player] });
@@ -247,6 +284,8 @@ export async function getAvailableFilterValues(
     filter_deed_type: new Set<string>(),
     filter_plot_status: new Set<string>(),
     filter_players: new Set<string>(),
+    filter_title_tier: new Set<Exclude<TitleTier, "none">>(),
+    filter_totem_tier: new Set<Exclude<TotemTier, "none">>(),
   };
 
   for (const deed of blob) {
@@ -261,6 +300,14 @@ export async function getAvailableFilterValues(
     if (deed.deed_type) values.filter_deed_type.add(deed.deed_type);
     if (deed.plot_status) values.filter_plot_status.add(deed.plot_status);
     if (deed.player) values.filter_players.add(deed.player);
+
+    const titleBoost = deed.stakingDetail?.total_title_boost ?? 0;
+    const titleTier = titleTierForBoost(titleBoost);
+    if (titleTier) values.filter_title_tier.add(titleTier);
+
+    const totemBoost = deed.stakingDetail?.total_totem_boost ?? 0;
+    const totemTier = totemTierForBoost(totemBoost);
+    if (totemTier) values.filter_totem_tier.add(totemTier);
   }
 
   return {
@@ -273,6 +320,12 @@ export async function getAvailableFilterValues(
     filter_deed_type: [...values.filter_deed_type].sort(),
     filter_plot_status: [...values.filter_plot_status].sort(),
     filter_players: [...values.filter_players].sort(),
+    filter_title_tier: titleTierOrder.filter((tier) =>
+      values.filter_title_tier.has(tier)
+    ),
+    filter_totem_tier: totemTierOrder.filter((tier) =>
+      values.filter_totem_tier.has(tier)
+    ),
   };
 }
 

@@ -88,6 +88,7 @@ function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
 }
 
 const DEFAULT_CARD_FILTER: CardFilterOptions = {
+  cardName: "",
   rarities: [],
   sets: [],
   editions: [],

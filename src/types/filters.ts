@@ -1,4 +1,4 @@
-import { CardElement, CardRarity } from "@/types/planner";
+import { CardElement, CardRarity, TitleTier, TotemTier } from "@/types/planner";
 import { CardSetNameLandValid } from "./editions";
 import { SortSelection } from "./sorting";
 
@@ -26,6 +26,8 @@ export type FilterInput = {
   filter_under_construction?: boolean;
   filter_has_land_ability?: boolean;
   filter_has_runi?: boolean;
+  filter_title_tier?: Exclude<TitleTier, "none">[];
+  filter_totem_tier?: Exclude<TotemTier, "none">[];
   filter_base_pp_min?: number | null;
   filter_base_pp_max?: number | null;
   filter_boosted_pp_min?: number | null;
@@ -46,6 +48,7 @@ export type EnableFilterOptions = {
 };
 
 export type CardFilterInput = {
+  filter_card_name?: string;
   filter_set?: CardSetNameLandValid[];
   filter_rarity?: CardRarity[];
   filter_on_land?: boolean;

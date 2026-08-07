@@ -1,5 +1,6 @@
-import { Box, Typography } from "@mui/material";
-import FilterPlotStatusIcon from "./FilterPlotStatusIcon";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
+import { WEB_URL } from "@/lib/shared/statics_icon_urls";
+import IconFilterGroup from "../shared/IconFilterGroup";
 
 type Props = {
   options: string[];
@@ -15,22 +16,37 @@ const plotStatusOrder: Record<string, number> = {
 };
 
 export default function FilterPlotStatusGroup({ options }: Props) {
+  const { filters, setFilters } = useFilters();
   if (options.length === 0) return null;
+
   const sortedOptions = [...options].sort((a, b) => {
     const aRank = plotStatusOrder[a.toLowerCase()] ?? Infinity;
     const bRank = plotStatusOrder[b.toLowerCase()] ?? Infinity;
     return aRank - bRank;
   });
 
-  return (
-    <>
-      <Typography variant="body2">Land Type:</Typography>
+  const selected = Array.isArray(filters.filter_plot_status)
+    ? filters.filter_plot_status
+    : [];
 
-      <Box sx={{ display: "flow", gap: 1 }}>
-        {sortedOptions.map((plotStatus) => (
-          <FilterPlotStatusIcon key={plotStatus} name={plotStatus} />
-        ))}
-      </Box>
-    </>
+  const landPlotIconUrl = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
+
+  const onToggle = (name: string) => {
+    const updated = selected.includes(name)
+      ? selected.filter((item) => item !== name)
+      : [...selected, name];
+    setFilters((prev) => ({ ...prev, filter_plot_status: updated }));
+  };
+
+  return (
+    <IconFilterGroup
+      label="Land Type"
+      options={sortedOptions}
+      selected={selected}
+      onToggle={onToggle}
+      getImage={(name) =>
+        landPlotIconUrl.replace("__NAME__", name.toLowerCase())
+      }
+    />
   );
 }

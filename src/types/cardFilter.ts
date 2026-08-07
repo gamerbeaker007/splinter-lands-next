@@ -4,6 +4,7 @@ import { CardElement, CardFoil, CardRarity } from "./planner";
 import { CardBloodline } from "./planner";
 
 export type CardFilterOptions = {
+  cardName?: string;
   onWagon?: boolean;
   inSet?: boolean;
   /** Card is listed on the market */

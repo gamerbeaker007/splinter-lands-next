@@ -1,8 +1,10 @@
 "use client";
 
-import FilterIcon from "@/components/filter/FilterIcon";
 import LandEditionSetFilter from "@/components/cards/LandEditionSetFilter";
+import FilterIcon from "@/components/filter/FilterIcon";
 import FoilIcon from "@/components/ui/FoilIcon";
+import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
+import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import {
@@ -29,8 +31,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useMemo } from "react";
-import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
-import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 
 type LandCardFilterProps = {
   cards: PlayerLandCard[];
@@ -394,6 +394,22 @@ export default function LandCardFilter({
             fullWidth
             inputProps={{ min: 0, step: 1 }}
             helperText="0 = any"
+          />
+        </Box>
+
+        <Box sx={{ minWidth: 200, maxWidth: 300 }}>
+          <TextField
+            label="Search card name"
+            value={filterOptions.cardName ?? ""}
+            onChange={(e) =>
+              onFilterChange({
+                ...filterOptions,
+                cardName: e.target.value,
+              })
+            }
+            size="small"
+            fullWidth
+            placeholder="contains (case-insensitive)"
           />
         </Box>
 

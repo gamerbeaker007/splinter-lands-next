@@ -38,6 +38,13 @@ export function filterAvailableCards(
   // Filter out Runi (no workers)
   filtered = filtered.filter((card) => card.cardDetailId !== 505);
 
+  const cardNameQuery = cardFilterOptions.cardName?.trim().toLowerCase();
+  if (cardNameQuery) {
+    filtered = filtered.filter((card) =>
+      card.name.toLowerCase().includes(cardNameQuery)
+    );
+  }
+
   // Apply card filters
   if (cardFilterOptions.onWagon !== undefined) {
     filtered = filtered.filter((card) =>

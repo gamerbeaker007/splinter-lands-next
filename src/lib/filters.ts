@@ -1,7 +1,10 @@
 import { getBiomeModifiersFromStakingDetail } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
+import { titleModifiers, totemModifiers } from "@/types/planner";
 import { SortDirection, SortOptionKey } from "@/types/sorting";
+
+const BOOST_EPSILON = 1e-9;
 
 /**
  * land_stats.resources uses raw names that don't always match the canonical
@@ -109,6 +112,28 @@ export function filterDeeds<T extends DeedComplete>(
     if (filters.filter_has_runi !== undefined) {
       const hasRuni = (deed.stakingDetail?.runi_boost ?? 0) > 0;
       if (filters.filter_has_runi !== hasRuni) return false;
+    }
+
+    if (filters.filter_title_tier?.length) {
+      const allowedBoosts = filters.filter_title_tier.map(
+        (tier) => titleModifiers[tier]
+      );
+      const totalTitleBoost = deed.stakingDetail?.total_title_boost ?? 0;
+      const matchesTitle = allowedBoosts.some(
+        (boost) => Math.abs(totalTitleBoost - boost) <= BOOST_EPSILON
+      );
+      if (!matchesTitle) return false;
+    }
+
+    if (filters.filter_totem_tier?.length) {
+      const allowedBoosts = filters.filter_totem_tier.map(
+        (tier) => totemModifiers[tier]
+      );
+      const totalTotemBoost = deed.stakingDetail?.total_totem_boost ?? 0;
+      const matchesTotem = allowedBoosts.some(
+        (boost) => Math.abs(totalTotemBoost - boost) <= BOOST_EPSILON
+      );
+      if (!matchesTotem) return false;
     }
 
     if (filters.filter_positive_terrain_elements?.length) {

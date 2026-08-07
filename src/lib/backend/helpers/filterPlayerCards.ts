@@ -58,6 +58,7 @@ export function filterCardCollection(
   filters?: CardFilterInput
 ): SplPlayerCardCollection[] {
   const {
+    filter_card_name,
     filter_on_land,
     filter_in_set,
     filter_on_wagon,
@@ -69,6 +70,11 @@ export function filterCardCollection(
     filter_land_cooldown,
     filter_survival_cooldown,
   } = filters ?? {};
+
+  const cardNameQuery = filter_card_name?.trim().toLowerCase() ?? "";
+  const cardNameById = new Map(
+    cardDetails.map((detail) => [detail.id, detail.name.toLowerCase()])
+  );
 
   return cards.filter((c) => {
     //  Exclude special/unsupported sets
@@ -86,6 +92,12 @@ export function filterCardCollection(
 
     // Rarity (resolve once; used below)
     const rarityName = findCardRarity(cardDetails, c.card_detail_id);
+
+    // Card name contains filter (case-insensitive)
+    if (cardNameQuery.length > 0) {
+      const cardName = cardNameById.get(c.card_detail_id) ?? "";
+      if (!cardName.includes(cardNameQuery)) return false;
+    }
 
     // onLand
     const isOnLand = c.stake_plot != null && c.stake_end_date == null;

@@ -14,6 +14,23 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.19.0] - 2026-08-07
+
+### Added
+
+- Deed filters now include a **Totem** icon filter (`Common`, `Rare`, `Epic`, `Legendary`) based on `total_totem_boost` thresholds.
+- Deed filters now include a **Title** icon filter (`Rare`, `Epic`, `Legendary`) based on `total_title_boost` thresholds.
+- Card Filter Drawer now includes a **Search card name** input using case-insensitive `contains` matching and filtering as the user types.
+
+### Changed
+
+- Refactored icon-based deed filters into a shared reusable icon-group building block to reduce duplicated filter UI/toggle logic and keep behavior consistent.
+- Replaced separate per-filter Storybook stories in `components/filter` with one consolidated **Filter Drawer Overview** story that shows filters together in a drawer-like layout.
+
+### Removed
+
+- Removed redundant one-off deed icon wrapper components that were replaced by shared filter-group composition.
+
 ## [v1.18.0] - 2026-08-06
 
 ### Added

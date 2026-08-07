@@ -1,6 +1,7 @@
 import { CardElement, cardElementOptions } from "@/types/planner";
-import { Box, Typography } from "@mui/material";
-import FilterTerrainBoostIcon from "./FilterTerrainBoostIcon";
+import { useFilters } from "@/lib/frontend/context/FilterContext";
+import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import IconFilterGroup from "../shared/IconFilterGroup";
 
 type Props = {
   options?: CardElement[];
@@ -18,6 +19,8 @@ const elementOrder: Record<CardElement, number> = {
 };
 
 export default function FilterTerrainBoostGroup({ options }: Props) {
+  const { filters, setFilters } = useFilters();
+
   const rawOptions =
     options && options.length > 0
       ? options
@@ -32,15 +35,29 @@ export default function FilterTerrainBoostGroup({ options }: Props) {
     return aRank - bRank;
   });
 
-  return (
-    <>
-      <Typography variant="body2">Positive Terrain Boost:</Typography>
+  const selected = Array.isArray(filters.filter_positive_terrain_elements)
+    ? filters.filter_positive_terrain_elements
+    : [];
 
-      <Box sx={{ display: "flow", gap: 1 }}>
-        {sortedOptions.map((element) => (
-          <FilterTerrainBoostIcon key={element} name={element} />
-        ))}
-      </Box>
-    </>
+  const onToggle = (name: CardElement) => {
+    const updated = selected.includes(name)
+      ? selected.filter((item) => item !== name)
+      : [...selected, name];
+    setFilters((prev) => ({
+      ...prev,
+      filter_positive_terrain_elements: updated,
+    }));
+  };
+
+  return (
+    <IconFilterGroup
+      label="Positive Terrain Boost"
+      options={sortedOptions}
+      selected={selected}
+      onToggle={onToggle}
+      getImage={(name) =>
+        land_default_element_icon_url_placeholder.replace("__NAME__", name)
+      }
+    />
   );
 }
