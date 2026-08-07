@@ -14,6 +14,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.19.1] - 2026-08-07
+
+### Fixed
+
+- Land Manager DEC alerts now evaluate DEC stake totals across all owned regions instead of only configured enabled regions.
+- Land Manager DEC alerts now show a regional imbalance warning when some regions are short while others are over-staked, even when the global DEC total nets to zero shortfall/excess.
+- Land Manager DEC power up/down now plans and executes across all owned regions, and DEC controls are available even when no regions are enabled in config.
+
+---
+
 ## [v1.19.0] - 2026-08-07
 
 ### Added

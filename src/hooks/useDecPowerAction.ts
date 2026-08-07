@@ -1,27 +1,26 @@
 "use client";
 
-import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   DecPowerDirection,
   DecPowerPlan,
   getDecPowerPlan,
   recordDecPowerLog,
 } from "@/lib/backend/actions/land-manager/dec-power-actions";
-import {
-  buildStakeDecRegionOp,
-  buildUnstakeDecRegionOp,
-} from "@/lib/shared/operations/opBuilders";
+import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   broadcastOperations,
   KeychainKeyTypes,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
-import { useCallback, useState } from "react";
+import {
+  buildStakeDecRegionOp,
+  buildUnstakeDecRegionOp,
+} from "@/lib/shared/operations/opBuilders";
 import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
+import { useCallback, useState } from "react";
 
 interface Params {
   username: string;
-  enabledRegions: number[];
   direction: DecPowerDirection;
   onSuccess?: () => void;
 }
@@ -51,7 +50,6 @@ export interface UseDecPowerAction {
 
 export function useDecPowerAction({
   username,
-  enabledRegions,
   direction,
   onSuccess,
 }: Params): UseDecPowerAction {
@@ -76,7 +74,7 @@ export function useDecPowerAction({
     setDecBalance(null);
     try {
       const [plan, balance] = await Promise.all([
-        getDecPowerPlan(enabledRegions, direction),
+        getDecPowerPlan(direction),
         needsBalance && username
           ? getDecBalance(username)
           : Promise.resolve(null),
@@ -88,7 +86,7 @@ export function useDecPowerAction({
     } finally {
       setBusy(false);
     }
-  }, [enabledRegions, direction, needsBalance, username]);
+  }, [direction, needsBalance, username]);
 
   const execute = useCallback(async () => {
     if (!username) {
@@ -106,7 +104,7 @@ export function useDecPowerAction({
     let balance: number | null;
     try {
       [plan, balance] = await Promise.all([
-        getDecPowerPlan(enabledRegions, direction),
+        getDecPowerPlan(direction),
         needsBalance ? getDecBalance(username) : Promise.resolve(null),
       ]);
     } catch (err) {
@@ -228,16 +226,7 @@ export function useDecPowerAction({
     } finally {
       setBusy(false);
     }
-  }, [
-    username,
-    enabledRegions,
-    direction,
-    needsBalance,
-    buildOp,
-    noun,
-    verb,
-    onSuccess,
-  ]);
+  }, [username, direction, needsBalance, buildOp, noun, verb, onSuccess]);
 
   return {
     busy,

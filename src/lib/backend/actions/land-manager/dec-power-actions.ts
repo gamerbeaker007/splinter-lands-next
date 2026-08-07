@@ -23,7 +23,7 @@ export interface RegionDECInfo {
 }
 
 export interface RegionStakedDEC {
-  /** Per-region rows for the enabled regions, sorted by region number. */
+  /** Per-region rows for the selected scope, sorted by region number. */
   regions: RegionDECInfo[];
   /**
    * Account-wide DEC currently staked (the global `dark_energy` pool). This is
@@ -37,21 +37,24 @@ export interface RegionStakedDEC {
 }
 
 export async function getRegionStakedDEC(
-  enabledRegions: number[]
+  regionNumbers?: number[] | null
 ): Promise<RegionStakedDEC> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) return EMPTY_STAKED_DEC;
-  if (enabledRegions.length === 0) return EMPTY_STAKED_DEC;
+  if (Array.isArray(regionNumbers) && regionNumbers.length === 0) {
+    return EMPTY_STAKED_DEC;
+  }
 
   const cookieStore = await cookies();
   const jwt = cookieStore.get("jwt_token")?.value ?? null;
   if (!jwt) return EMPTY_STAKED_DEC;
 
   const { regions } = await fetchProductionOverview(auth.username, jwt);
-  const enabledSet = new Set(enabledRegions);
+  const hasRegionFilter = Array.isArray(regionNumbers);
+  const regionSet = hasRegionFilter ? new Set(regionNumbers) : null;
 
-  const enabled = regions
-    .filter((r) => enabledSet.has(r.region_number))
+  const selectedRegions = regions
+    .filter((r) => !regionSet || regionSet.has(r.region_number))
     .map((r) => ({
       region_number: r.region_number,
       region_uid: r.region_uid,
@@ -61,17 +64,24 @@ export async function getRegionStakedDEC(
     }))
     .sort((a, b) => a.region_number - b.region_number);
 
-  const totalDECRequired = enabled.reduce(
+  const totalDECRequired = selectedRegions.reduce(
     (sum, r) => sum + r.dec_stake_needed,
     0
   );
-  const totalDECStaked = enabled.reduce(
+  const totalDECStaked = selectedRegions.reduce(
     (sum, r) => sum + r.dec_stake_in_use,
     0
   );
 
+  const scopeLabel = hasRegionFilter
+    ? `regions=${regionNumbers?.join(",")}`
+    : "all";
+
+  console.log(
+    `getRegionStakedDEC: scope=${scopeLabel} totalRequired=${totalDECRequired} totalStaked=${totalDECStaked}`
+  );
   return {
-    regions: enabled,
+    regions: selectedRegions,
     totalStaked: totalDECStaked,
     totalRequired: totalDECRequired,
   };
@@ -104,25 +114,20 @@ export interface DecPowerPlan {
  * produce a false shortfall (up) or hide a real excess. When the global pool
  * already satisfies the direction, the plan is empty.
  *
- * The global gap is then distributed across the enabled regions that still show
+ * The global gap is then distributed across the player's regions that still show
  * an apparent per-region gap in that direction, so the user knows where to act.
  * Staking rounds up (never under-stake); unstaking rounds down (never
  * over-unstake below requirements).
  */
 export async function getDecPowerPlan(
-  enabledRegions: number[],
   direction: DecPowerDirection
 ): Promise<DecPowerPlan> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
     return { items: [], total_dec: 0 };
   }
-  if (enabledRegions.length === 0) {
-    return { items: [], total_dec: 0 };
-  }
 
-  const { regions, totalStaked, totalRequired } =
-    await getRegionStakedDEC(enabledRegions);
+  const { regions, totalStaked, totalRequired } = await getRegionStakedDEC();
 
   const round = direction === "up" ? Math.ceil : Math.floor;
   const globalGap =

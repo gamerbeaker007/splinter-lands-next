@@ -2,11 +2,17 @@
 
 import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
 import {
+  getRegionStakedDEC,
+  RegionDECInfo,
+} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import {
   getPlotConfigureData,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
+import { calcStakedDecNeeded } from "@/lib/frontend/utils/plannerCalcs";
 import { DeedComplete } from "@/types/deed";
+import { cardFoilOptions, runiModifiers, SlotInput } from "@/types/planner";
 import { Prices } from "@/types/price";
 import {
   Alert,
@@ -46,6 +52,56 @@ function deltaColor(n: number, higherIsBetter = true): string {
   return good ? "success.main" : "error.main";
 }
 
+function fmtInt(n: number): string {
+  return Math.round(n).toLocaleString("en-US");
+}
+
+function fmtPct(n: number): string {
+  return `${n.toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+function fmtPctDelta(n: number): string {
+  const abs = Math.abs(n).toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
+  return n > 0 ? `+${abs}%` : n < 0 ? `-${abs}%` : "0.0%";
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function toPlannerSlotInput(
+  card: {
+    set: string;
+    rarity: SpotCardVM["rarity"];
+    bcx: number;
+    foil: number;
+    element: SpotCardVM["element"];
+    secondaryElement: SpotCardVM["secondaryElement"];
+    bloodline?: string;
+    landBoosts?: SlotInput["landBoosts"] | null;
+  },
+  id: number
+): SlotInput {
+  return {
+    id,
+    set: card.set as SlotInput["set"],
+    rarity: card.rarity,
+    bcx: card.bcx,
+    foil: cardFoilOptions[card.foil] ?? "regular",
+    element: card.element,
+    secondaryElement: card.secondaryElement,
+    bloodline: (card.bloodline ?? "Unknown") as SlotInput["bloodline"],
+    landBoosts: card.landBoosts ?? undefined,
+  };
+}
+
 interface Props {
   deed: DeedComplete;
   username: string;
@@ -64,6 +120,7 @@ export default function ConfigurePanel({
   const [staged, setStaged] = useState<StagedConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [regionDEC, setRegionDEC] = useState<RegionDECInfo | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   // Bumping reloadKey re-runs the loader; this flips the spinner back on
   // without calling setState synchronously inside the effect.
@@ -118,24 +175,34 @@ export default function ConfigurePanel({
 
   useEffect(() => {
     let cancelled = false;
-    getPlotConfigureData(deed.deed_uid)
-      .then((d) => {
+    (async () => {
+      try {
+        const [plotData, regionData] = await Promise.all([
+          getPlotConfigureData(deed.deed_uid),
+          getRegionStakedDEC().catch(() => null),
+        ]);
         if (cancelled) return;
-        setData(d);
-        setStaged(initStagedConfig(d));
+        setData(plotData);
+        setStaged(initStagedConfig(plotData));
+        setRegionDEC(
+          regionData?.regions.find(
+            (r) => r.region_number === deed.region_number
+          ) ?? null
+        );
         setError(null);
-      })
-      .catch((err) => {
-        if (!cancelled)
+      } catch (err) {
+        if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load plot");
-      })
-      .finally(() => {
+          setRegionDEC(null);
+        }
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [deed.deed_uid, reloadKey]);
+  }, [deed.deed_uid, deed.region_number, reloadKey]);
 
   const handlePick = useCallback(
     (result: PickerResult) => {
@@ -180,6 +247,13 @@ export default function ConfigurePanel({
     if (!data || !staged) return;
     const input = diffStagedConfig(data, staged);
     if (!stagedHasChanges(input)) return;
+
+    if (shortfallWarningMessage) {
+      if (!window.confirm(`${shortfallWarningMessage}\n\nSave anyway?`)) {
+        return;
+      }
+    }
+
     const res = await actions.saveStakeChange(deed.deed_uid, input);
     if (res.success) {
       reload();
@@ -233,6 +307,119 @@ export default function ConfigurePanel({
   const netDelta = projection
     ? projection.next.netDEC - projection.current.netDEC
     : 0;
+
+  // Estimate plot DEC needed using the same planner formula as PriceOutput,
+  // then anchor to the live current staking value for stable deltas.
+  const currentStaking = deed.stakingDetail;
+  const stagedWorkers = staged.workers.filter(Boolean) as SpotCardVM[];
+  const currentSlotsForDec = data.workers.map((w, i) =>
+    toPlannerSlotInput(w, i + 1)
+  );
+  const nextSlotsForDec = stagedWorkers.map((w, i) =>
+    toPlannerSlotInput(w, i + 1)
+  );
+
+  const currentDecProjection = calcStakedDecNeeded(
+    currentSlotsForDec,
+    Boolean(data.runi)
+  );
+  const nextDecProjection = calcStakedDecNeeded(
+    nextSlotsForDec,
+    Boolean(staged.runi)
+  );
+  const currentObservedDecNeeded = toFiniteNumber(
+    currentStaking?.total_dec_stake_needed,
+    0
+  );
+  const projectionScale =
+    currentDecProjection.decNeeded > 0
+      ? toFiniteNumber(
+          currentObservedDecNeeded / currentDecProjection.decNeeded
+        )
+      : 1;
+
+  const currentDecStakeNeeded = currentObservedDecNeeded;
+  const nextDecStakeNeeded = toFiniteNumber(
+    nextDecProjection.decNeeded * projectionScale,
+    currentDecStakeNeeded
+  );
+  const decStakeNeededDelta = nextDecStakeNeeded - currentDecStakeNeeded;
+
+  // Plot total boost should follow staking boost components (total_boost)
+  // rather than PP ratio. Keep non-item/runi boosts as baseline and swap in
+  // staged title/totem/runi boosts for projection.
+  const currentRuniBoost = data.runi
+    ? runiModifiers[data.runi.foil > 0 ? "gold" : "regular"]
+    : toFiniteNumber(currentStaking?.runi_boost, 0);
+  const currentTitleBoost = toFiniteNumber(
+    data.title?.boost ?? currentStaking?.title_boost,
+    0
+  );
+  const currentTotemBoost = toFiniteNumber(
+    data.totem?.boost ?? currentStaking?.totem_boost,
+    0
+  );
+  const currentTotalBoostFromApi = toFiniteNumber(
+    currentStaking?.total_boost,
+    Number.NaN
+  );
+  const currentTotalBoostFromParts =
+    toFiniteNumber(currentStaking?.deed_rarity_boost, 0) +
+    toFiniteNumber(currentStaking?.card_abilities_boost, 0) +
+    toFiniteNumber(currentStaking?.card_bloodlines_boost, 0) +
+    toFiniteNumber(currentStaking?.deed_status_token_boost, 0) +
+    currentRuniBoost +
+    currentTitleBoost +
+    currentTotemBoost;
+  const currentTotalBoost = Number.isFinite(currentTotalBoostFromApi)
+    ? currentTotalBoostFromApi
+    : currentTotalBoostFromParts;
+
+  const staticBoostBase = Math.max(
+    0,
+    currentTotalBoost - currentRuniBoost - currentTitleBoost - currentTotemBoost
+  );
+  const stagedRuniBoost = staged.runi
+    ? runiModifiers[staged.runi.foil > 0 ? "gold" : "regular"]
+    : 0;
+  const stagedTitleBoost = toFiniteNumber(staged.title?.boost, 0);
+  const stagedTotemBoost = toFiniteNumber(staged.totem?.boost, 0);
+  const nextTotalBoost = toFiniteNumber(
+    staticBoostBase + stagedRuniBoost + stagedTitleBoost + stagedTotemBoost,
+    currentTotalBoost
+  );
+  const boostDelta = nextTotalBoost - currentTotalBoost;
+
+  const regionImpact =
+    regionDEC && projection
+      ? (() => {
+          const currentRequired = toFiniteNumber(regionDEC.dec_stake_needed, 0);
+          const inUse = toFiniteNumber(regionDEC.dec_stake_in_use, 0);
+          const projectedRequired = currentRequired + decStakeNeededDelta;
+          const currentShortfall = Math.max(0, currentRequired - inUse);
+          const projectedShortfall = Math.max(0, projectedRequired - inUse);
+          return {
+            currentShortfall,
+            projectedShortfall,
+            shortfallIncrease: Math.max(
+              0,
+              projectedShortfall - currentShortfall
+            ),
+          };
+        })()
+      : null;
+
+  const shortfallWarningMessage =
+    dirty && regionImpact && regionImpact.projectedShortfall > 0
+      ? regionImpact.shortfallIncrease > 0
+        ? `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+            regionImpact.projectedShortfall
+          )} DEC (increase ${fmtInt(regionImpact.shortfallIncrease)} DEC).`
+        : `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+            regionImpact.projectedShortfall
+          )} DEC.`
+      : null;
+
   const consumeDeltas: { resource: string; amount: number }[] = projection
     ? (() => {
         const m = new Map<string, number>();
@@ -363,6 +550,12 @@ export default function ConfigurePanel({
         )}
       </Stack>
 
+      {shortfallWarningMessage && (
+        <Alert severity="warning" sx={{ mt: 0.75 }}>
+          {shortfallWarningMessage}
+        </Alert>
+      )}
+
       {/* Projected impact of the staged change */}
       {dirty && projection && (
         <Stack
@@ -378,6 +571,25 @@ export default function ConfigurePanel({
             <Typography variant={"caption"} color={deltaColor(ppDelta)}>
               {fmtDelta(ppDelta)}
             </Typography>
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            DEC needed: {fmtInt(currentDecStakeNeeded)} {"->"}{" "}
+            {fmtInt(nextDecStakeNeeded)} (
+            <Box
+              component="span"
+              sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+            >
+              {fmtDelta(Math.round(decStakeNeededDelta))}
+            </Box>
+            )
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Total boost: {fmtPct(currentTotalBoost * 100)} {"->"}{" "}
+            {fmtPct(nextTotalBoost * 100)} (
+            <Box component="span" sx={{ color: deltaColor(boostDelta * 100) }}>
+              {fmtPctDelta(boostDelta * 100)}
+            </Box>
+            )
           </Typography>
           <Typography variant="caption" color={"text.secondary"}>
             Rewards/hr:{" "}

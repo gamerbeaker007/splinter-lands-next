@@ -6,6 +6,7 @@ export interface ProductionRow {
   regionUid: string;
   regionNumber: number;
   regionName: string;
+  rarity: string;
   tractNumber: number;
   plotNumber: number;
   /** P-{region}-{tract}-{plot}. */
@@ -31,6 +32,7 @@ export interface ProductionRow {
 
 export type ProductionSortKey =
   | "label"
+  | "rarity"
   | "regionNumber"
   | "worksiteType"
   | "rewardsPerHour"
@@ -66,6 +68,7 @@ export function toProductionRow(deed: DeedComplete): ProductionRow {
     regionUid: deed.region_uid,
     regionNumber: deed.region_number,
     regionName: deed.region_name ?? "",
+    rarity: (deed.rarity ?? "common").toLowerCase(),
     tractNumber: deed.tract_number,
     plotNumber: deed.plot_number,
     label: `P-${deed.region_number}-${deed.tract_number}-${deed.plot_number}`,
@@ -81,6 +84,23 @@ export function toProductionRow(deed: DeedComplete): ProductionRow {
     hasStakedItems,
     listed: deed.listed ?? false,
   };
+}
+
+function rarityRank(rarity: string): number {
+  switch (rarity.toLowerCase()) {
+    case "common":
+      return 0;
+    case "rare":
+      return 1;
+    case "epic":
+      return 2;
+    case "legendary":
+      return 3;
+    case "mythic":
+      return 4;
+    default:
+      return 99;
+  }
 }
 
 export function sortRows(
@@ -100,6 +120,9 @@ export function sortRows(
         break;
       case "regionNumber":
         cmp = a.regionNumber - b.regionNumber;
+        break;
+      case "rarity":
+        cmp = rarityRank(a.rarity) - rarityRank(b.rarity);
         break;
       case "worksiteType":
         cmp = worksiteLabel(a.worksiteType).localeCompare(

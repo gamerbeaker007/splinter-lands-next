@@ -2,9 +2,10 @@
 
 import { ACTION_META } from "@/components/land-manager/production/ConfirmActionDialog";
 import { ProductionRow } from "@/components/land-manager/production/productionTypes";
+import RenewRentalsActionControl from "@/components/land-manager/production/rental-actions/RenewRentalsActionControl";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
-import RenewRentalsActionControl from "@/components/land-manager/production/rental-actions/RenewRentalsActionControl";
+import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import {
   Accordion,
   AccordionDetails,
@@ -14,12 +15,10 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
 import DecPowerRow from "./dec-actions/DecPowerRow";
 
 interface Props {
   username: string;
-  enabledRegions: number[];
   filteredRows: ProductionRow[];
   loading: boolean;
   busy: boolean;
@@ -43,7 +42,6 @@ interface Props {
 
 export default function BulkActionsAccordion({
   username,
-  enabledRegions,
   filteredRows,
   loading,
   busy,
@@ -106,28 +104,24 @@ export default function BulkActionsAccordion({
         >
           DEC Power:
         </Typography>
-        {enabledRegions.length > 0 && (
-          <Stack direction="column" gap={0.5} mb={1.5}>
-            <DecPowerRow
-              username={username}
-              enabledRegions={enabledRegions}
-              direction="up"
-              availableTotal={Math.ceil(regionData.globalShortfall)}
-              anyBusy={decAnyBusy}
-              onBusyChange={onStakeBusy}
-              onSuccess={onSuccess}
-            />
-            <DecPowerRow
-              username={username}
-              enabledRegions={enabledRegions}
-              direction="down"
-              availableTotal={Math.floor(regionData.globalExcess)}
-              anyBusy={decAnyBusy}
-              onBusyChange={onUnstakeBusy}
-              onSuccess={onSuccess}
-            />
-          </Stack>
-        )}
+        <Stack direction="column" gap={0.5} mb={1.5}>
+          <DecPowerRow
+            username={username}
+            direction="up"
+            availableTotal={Math.ceil(regionData.globalShortfall)}
+            anyBusy={decAnyBusy}
+            onBusyChange={onStakeBusy}
+            onSuccess={onSuccess}
+          />
+          <DecPowerRow
+            username={username}
+            direction="down"
+            availableTotal={Math.floor(regionData.globalExcess)}
+            anyBusy={decAnyBusy}
+            onBusyChange={onUnstakeBusy}
+            onSuccess={onSuccess}
+          />
+        </Stack>
 
         <Divider sx={{ my: 1.5 }} />
 

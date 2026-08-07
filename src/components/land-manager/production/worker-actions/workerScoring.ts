@@ -66,6 +66,8 @@ export function scoreLandCard(
     foil: fid,
     bcx: card.bcx,
     maxBcx: determineCardMaxBCX(card.set, card.rarity, fid),
+    bloodline: card.bloodline,
+    landBoosts: card.landBoost,
     basePP,
     boostedPP,
     terrainBoost: bestTerrainBonusPct(
@@ -84,7 +86,14 @@ export function scoreLandCard(
 /** Minimal card shape needed to build a planner SlotInput. */
 type SlotCardLike = Pick<
   SpotCardVM,
-  "set" | "rarity" | "bcx" | "foil" | "element" | "secondaryElement"
+  | "set"
+  | "rarity"
+  | "bcx"
+  | "foil"
+  | "element"
+  | "secondaryElement"
+  | "bloodline"
+  | "landBoosts"
 >;
 
 function spotCardToSlotInput(card: SlotCardLike, id: number): SlotInput {
@@ -96,7 +105,8 @@ function spotCardToSlotInput(card: SlotCardLike, id: number): SlotInput {
     foil: cardFoilOptions[card.foil] ?? "regular",
     element: card.element,
     secondaryElement: card.secondaryElement,
-    bloodline: "Unknown" as CardBloodline,
+    bloodline: (card.bloodline ?? "Unknown") as CardBloodline,
+    landBoosts: card.landBoosts ?? undefined,
   };
 }
 

@@ -9,7 +9,7 @@ import { useEffect, useState } from "react";
 
 interface LandRegionData {
   eligibility: WorkerEligibilityResult | null;
-  /** Per-region DEC rows for the enabled regions. */
+  /** Per-region DEC rows for all owned regions. */
   stakedDEC: RegionDECInfo[];
   /** Account-wide DEC currently staked (global `dark_energy` pool). */
   totalStaked: number;
@@ -37,7 +37,7 @@ export function useLandManagerRegionData(
     let cancelled = false;
     Promise.all([
       getWorkerEligibility(enabledRegions),
-      getRegionStakedDEC(enabledRegions),
+      getRegionStakedDEC(),
     ]).then(([e, a]) => {
       if (!cancelled) {
         setEligibility(e);

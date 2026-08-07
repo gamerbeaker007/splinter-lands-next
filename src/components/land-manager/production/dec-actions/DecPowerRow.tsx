@@ -16,7 +16,6 @@ import { DEC_POWER_VARIANTS } from "./decPowerVariant";
 
 interface Props {
   username: string;
-  enabledRegions: number[];
   direction: DecPowerDirection;
   /** Global amount available to act on (shortfall for stake, excess for unstake). */
   availableTotal: number;
@@ -31,7 +30,6 @@ function fmtInt(value: number): string {
 
 export default function DecPowerRow({
   username,
-  enabledRegions,
   direction,
   availableTotal,
   anyBusy,
@@ -42,7 +40,6 @@ export default function DecPowerRow({
   const Icon = variant.icon;
   const action = useDecPowerAction({
     username,
-    enabledRegions,
     direction,
     onSuccess,
   });

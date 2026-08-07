@@ -2,6 +2,10 @@
 
 import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
 import {
+  land_default_off_icon_url_placeholder,
+  land_mythic_icon_url,
+} from "@/lib/shared/statics_icon_urls";
+import {
   DeleteSweep as DeleteSweepIcon,
   PersonRemove as PersonRemoveIcon,
   PowerOff as PowerOffIcon,
@@ -23,6 +27,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { Fragment, ReactNode } from "react";
 import {
   ProductionRow,
@@ -43,6 +48,7 @@ interface HeadCell {
 
 const HEAD_CELLS: HeadCell[] = [
   { key: "label", label: "Plot", numeric: false },
+  { key: "rarity", label: "Rarity", numeric: false },
   { key: "regionNumber", label: "Region", numeric: false },
   { key: "worksiteType", label: "Worksite", numeric: false },
   { key: "rewardsPerHour", label: "Rewards/hr", numeric: true },
@@ -67,10 +73,16 @@ export interface ProductionTableProps {
   renderConfigure: (deedUid: string) => ReactNode;
 }
 
-const COLUMN_COUNT = 10; // 9 data columns + actions
+const COLUMN_COUNT = 11; // 10 data columns + actions
 
 function fmtPP(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+}
+
+function rarityIcon(rarity: string): string {
+  return rarity === "mythic"
+    ? land_mythic_icon_url
+    : land_default_off_icon_url_placeholder.replace("__NAME__", rarity);
 }
 
 export default function ProductionTable({
@@ -112,6 +124,18 @@ export default function ProductionTable({
             <Fragment key={r.deedUid}>
               <TableRow hover>
                 <TableCell>{r.label}</TableCell>
+                <TableCell>
+                  <Tooltip title={r.rarity}>
+                    <span>
+                      <Image
+                        src={rarityIcon(r.rarity)}
+                        alt={r.rarity}
+                        width={18}
+                        height={18}
+                      />
+                    </span>
+                  </Tooltip>
+                </TableCell>
                 <TableCell>
                   <Typography variant="body2" noWrap>
                     {r.regionName || r.regionNumber}

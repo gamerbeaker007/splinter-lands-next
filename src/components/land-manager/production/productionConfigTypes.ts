@@ -14,6 +14,7 @@ import {
 import {
   CardElement,
   CardRarity,
+  LandBoost,
   RuniTier,
   TitleTier,
   TotemTier,
@@ -41,6 +42,8 @@ export interface SpotCardVM {
   foil: number;
   bcx: number;
   maxBcx: number;
+  bloodline?: string;
+  landBoosts?: LandBoost | null;
   basePP: number;
   boostedPP: number;
   terrainBoost: number;
