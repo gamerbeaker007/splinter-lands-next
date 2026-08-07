@@ -1,6 +1,5 @@
 import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
-import { Bolt, FlashOff } from "@mui/icons-material";
-import { SvgIconComponent } from "@mui/icons-material";
+import { Bolt, FlashOff, SvgIconComponent } from "@mui/icons-material";
 
 export interface DecPowerVariant {
   /** "Stake" / "Unstake" — button + confirm labels. */
