@@ -101,22 +101,34 @@ export interface DecPowerPlan {
   total_dec: number;
 }
 
+function sumRegionalShortfall(regions: RegionDECInfo[]): number {
+  return regions.reduce(
+    (sum, r) => sum + Math.max(0, r.dec_stake_needed - r.dec_stake_in_use),
+    0
+  );
+}
+
+function sumRegionalOverStake(regions: RegionDECInfo[]): number {
+  return regions.reduce(
+    (sum, r) => sum + Math.max(0, r.dec_stake_in_use - r.dec_stake_needed),
+    0
+  );
+}
+
 /**
  * Build the plan of how much DEC to power up/down, and where.
  *
- * The amount that genuinely needs moving is the GLOBAL gap, not the sum of
- * per-region gaps:
- *   - up   → `max(0, totalRequired - totalStaked)` (shortfall to stake)
- *   - down → `max(0, totalStaked - totalRequired)` (excess to unstake)
+ * The amount that genuinely needs moving is usually the GLOBAL gap:
+ *   - up   → `max(0, totalRequired - totalStaked)`
+ *   - down → `max(0, totalStaked - totalRequired)`
  *
- * A region's `dec_stake_in_use` can read 0 while a building is in progress even
- * though that DEC is still staked in the global pool, which would otherwise
- * produce a false shortfall (up) or hide a real excess. When the global pool
- * already satisfies the direction, the plan is empty.
+ * Rebalancing exception: when global totals are balanced but regions are
+ * uneven (some short, others over-staked), both directions expose a
+ * rebalancing target of `min(sumShortfall, sumOverStake)` so users can move
+ * DEC between regions manually (unstake over regions, stake short regions).
  *
- * The global gap is then distributed across the player's regions that still show
- * an apparent per-region gap in that direction, so the user knows where to act.
- * Staking rounds up (never under-stake); unstaking rounds down (never
+ * The selected target is distributed across regions that show a directional
+ * gap. Staking rounds up (never under-stake); unstaking rounds down (never
  * over-unstake below requirements).
  */
 export async function getDecPowerPlan(
@@ -135,7 +147,16 @@ export async function getDecPowerPlan(
       ? totalRequired - totalStaked
       : totalStaked - totalRequired;
 
-  let remaining = Math.max(0, round(globalGap));
+  const regionalShortfall = sumRegionalShortfall(regions);
+  const regionalOverStake = sumRegionalOverStake(regions);
+  const globallyBalanced = Math.abs(totalRequired - totalStaked) < 1e-6;
+  const rebalanceTarget = globallyBalanced
+    ? Math.min(regionalShortfall, regionalOverStake)
+    : 0;
+
+  const targetRaw = globalGap > 0 ? globalGap : rebalanceTarget;
+
+  let remaining = Math.max(0, round(targetRaw));
   if (remaining <= 0) {
     return { items: [], total_dec: 0 };
   }

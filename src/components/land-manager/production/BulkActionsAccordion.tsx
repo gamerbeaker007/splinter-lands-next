@@ -24,7 +24,7 @@ interface Props {
   busy: boolean;
   regionData: Pick<
     ReturnType<typeof useLandManagerRegionData>,
-    "globalShortfall" | "globalExcess"
+    "stakeActionable" | "unstakeActionable"
   >;
   decAnyBusy: boolean;
   onStakeBusy: (busy: boolean) => void;
@@ -108,7 +108,7 @@ export default function BulkActionsAccordion({
           <DecPowerRow
             username={username}
             direction="up"
-            availableTotal={Math.ceil(regionData.globalShortfall)}
+            availableTotal={Math.ceil(regionData.stakeActionable)}
             anyBusy={decAnyBusy}
             onBusyChange={onStakeBusy}
             onSuccess={onSuccess}
@@ -116,7 +116,7 @@ export default function BulkActionsAccordion({
           <DecPowerRow
             username={username}
             direction="down"
-            availableTotal={Math.floor(regionData.globalExcess)}
+            availableTotal={Math.floor(regionData.unstakeActionable)}
             anyBusy={decAnyBusy}
             onBusyChange={onUnstakeBusy}
             onSuccess={onSuccess}
