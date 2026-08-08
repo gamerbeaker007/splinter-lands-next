@@ -84,7 +84,7 @@ const LAND_SET_DEFS: LandSetDef[] = [
   {
     setName: "land",
     label: "Land",
-    nativeEditions: [19],
+    nativeEditions: [19, 21],
     hasPromo: false,
     hasReward: false,
     hasExtra: false,

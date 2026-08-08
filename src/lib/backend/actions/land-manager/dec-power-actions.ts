@@ -77,9 +77,6 @@ export async function getRegionStakedDEC(
     ? `regions=${regionNumbers?.join(",")}`
     : "all";
 
-  console.log(
-    `getRegionStakedDEC: scope=${scopeLabel} totalRequired=${totalDECRequired} totalStaked=${totalDECStaked}`
-  );
   return {
     regions: selectedRegions,
     totalStaked: totalDECStaked,
