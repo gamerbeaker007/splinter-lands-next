@@ -1,4 +1,4 @@
-import type { Preview } from "@storybook/nextjs-vite";
+import type { Preview } from "@storybook/nextjs";
 import { withMuiTheme } from "./ThemeDecorator";
 
 export const decorators = [withMuiTheme];

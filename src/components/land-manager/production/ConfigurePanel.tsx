@@ -10,19 +10,39 @@ import {
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
-import { calcStakedDecNeeded } from "@/lib/frontend/utils/plannerCalcs";
+import { deedToPlotPlannerData } from "@/lib/frontend/utils/deedToPlotPlanner";
+import {
+  calcStakedDecNeeded,
+  determineBloodlineBoost,
+  determineDeedResourceBoost,
+  determineProductionBoost,
+} from "@/lib/frontend/utils/plannerCalcs";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
-import { cardFoilOptions, runiModifiers, SlotInput } from "@/types/planner";
+import {
+  cardFoilOptions,
+  plotRarityModifiers,
+  resourceWorksiteMap,
+  runiModifiers,
+  SlotInput,
+  titleModifiers,
+  totemModifiers,
+} from "@/types/planner";
 import { Prices } from "@/types/price";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  Collapse,
+  Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { MdInfo } from "react-icons/md";
 import AssetPickerDialog, {
   PickerKind,
   PickerResult,
@@ -63,18 +83,19 @@ function fmtPct(n: number): string {
   })}%`;
 }
 
-function fmtPctDelta(n: number): string {
-  const abs = Math.abs(n).toLocaleString("en-US", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
+function fmtFraction(n: number, fraction = 3): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: fraction,
+    maximumFractionDigits: fraction,
   });
-  return n > 0 ? `+${abs}%` : n < 0 ? `-${abs}%` : "0.0%";
 }
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
   const n = typeof value === "number" ? value : Number(value);
   return Number.isFinite(n) ? n : fallback;
 }
+
+const IMPACT_ROW_TRANSITION_MS = 2000;
 
 function toPlannerSlotInput(
   card: {
@@ -319,6 +340,21 @@ export default function ConfigurePanel({
     toPlannerSlotInput(w, i + 1)
   );
 
+  const currentPlotPlannerData = deedToPlotPlannerData(
+    deed,
+    currentSlotsForDec,
+    boostOverrides({ title: data.title, totem: data.totem, runi: data.runi })
+  );
+  const nextPlotPlannerData = deedToPlotPlannerData(
+    deed,
+    nextSlotsForDec,
+    boostOverrides({
+      title: staged.title,
+      totem: staged.totem,
+      runi: staged.runi,
+    })
+  );
+
   const currentDecProjection = calcStakedDecNeeded(
     currentSlotsForDec,
     Boolean(data.runi)
@@ -345,48 +381,53 @@ export default function ConfigurePanel({
   );
   const decStakeNeededDelta = nextDecStakeNeeded - currentDecStakeNeeded;
 
-  // Plot total boost should follow staking boost components (total_boost)
-  // rather than PP ratio. Keep non-item/runi boosts as baseline and swap in
-  // staged title/totem/runi boosts for projection.
-  const currentRuniBoost = data.runi
-    ? runiModifiers[data.runi.foil > 0 ? "gold" : "regular"]
-    : toFiniteNumber(currentStaking?.runi_boost, 0);
-  const currentTitleBoost = toFiniteNumber(
-    data.title?.boost ?? currentStaking?.title_boost,
-    0
-  );
-  const currentTotemBoost = toFiniteNumber(
-    data.totem?.boost ?? currentStaking?.totem_boost,
-    0
-  );
-  const currentTotalBoostFromApi = toFiniteNumber(
-    currentStaking?.total_boost,
-    Number.NaN
-  );
-  const currentTotalBoostFromParts =
-    toFiniteNumber(currentStaking?.deed_rarity_boost, 0) +
-    toFiniteNumber(currentStaking?.card_abilities_boost, 0) +
-    toFiniteNumber(currentStaking?.card_bloodlines_boost, 0) +
-    toFiniteNumber(currentStaking?.deed_status_token_boost, 0) +
-    currentRuniBoost +
-    currentTitleBoost +
-    currentTotemBoost;
-  const currentTotalBoost = Number.isFinite(currentTotalBoostFromApi)
-    ? currentTotalBoostFromApi
-    : currentTotalBoostFromParts;
+  const calcPlannerTotalBoost = (
+    cardInput: SlotInput[],
+    plotRarity: keyof typeof plotRarityModifiers,
+    plotStatus: typeof currentPlotPlannerData.plotStatus,
+    worksiteType: typeof currentPlotPlannerData.worksiteType,
+    title: keyof typeof titleModifiers,
+    totem: keyof typeof totemModifiers,
+    runi: keyof typeof runiModifiers
+  ) => {
+    const productionBoost = determineProductionBoost(
+      resourceWorksiteMap[worksiteType],
+      cardInput
+    );
+    const deedResourceBoost = determineDeedResourceBoost(
+      plotStatus,
+      worksiteType
+    );
+    const bloodlineBoost =
+      determineBloodlineBoost(cardInput).totalBloodlineBoost;
+    return (
+      plotRarityModifiers[plotRarity] +
+      titleModifiers[title] +
+      totemModifiers[totem] +
+      runiModifiers[runi] +
+      deedResourceBoost +
+      productionBoost +
+      bloodlineBoost
+    );
+  };
 
-  const staticBoostBase = Math.max(
-    0,
-    currentTotalBoost - currentRuniBoost - currentTitleBoost - currentTotemBoost
+  const currentTotalBoost = calcPlannerTotalBoost(
+    currentPlotPlannerData.cardInput,
+    currentPlotPlannerData.plotRarity,
+    currentPlotPlannerData.plotStatus,
+    currentPlotPlannerData.worksiteType,
+    currentPlotPlannerData.title,
+    currentPlotPlannerData.totem,
+    currentPlotPlannerData.runi
   );
-  const stagedRuniBoost = staged.runi
-    ? runiModifiers[staged.runi.foil > 0 ? "gold" : "regular"]
-    : 0;
-  const stagedTitleBoost = toFiniteNumber(staged.title?.boost, 0);
-  const stagedTotemBoost = toFiniteNumber(staged.totem?.boost, 0);
-  const nextTotalBoost = toFiniteNumber(
-    staticBoostBase + stagedRuniBoost + stagedTitleBoost + stagedTotemBoost,
-    currentTotalBoost
+  const nextTotalBoost = calcPlannerTotalBoost(
+    nextPlotPlannerData.cardInput,
+    nextPlotPlannerData.plotRarity,
+    nextPlotPlannerData.plotStatus,
+    nextPlotPlannerData.worksiteType,
+    nextPlotPlannerData.title,
+    nextPlotPlannerData.totem,
+    nextPlotPlannerData.runi
   );
   const boostDelta = nextTotalBoost - currentTotalBoost;
 
@@ -556,69 +597,148 @@ export default function ConfigurePanel({
         </Alert>
       )}
 
-      {/* Projected impact of the staged change */}
-      {dirty && projection && (
-        <Stack
-          direction="row"
-          gap={1.5}
-          flexWrap="wrap"
-          alignItems="center"
-          sx={{ mt: 0.75 }}
-        >
-          <Typography variant="caption">Projected change:</Typography>
-          <Typography variant="caption">
-            PP:{" "}
-            <Typography variant={"caption"} color={deltaColor(ppDelta)}>
-              {fmtDelta(ppDelta)}
-            </Typography>
-          </Typography>
+      {projection && (
+        <Paper variant="outlined" sx={{ mt: 0.75, p: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            DEC needed: {fmtInt(currentDecStakeNeeded)} {"->"}{" "}
-            {fmtInt(nextDecStakeNeeded)} (
-            <Box
-              component="span"
-              sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+            Configure summary
+          </Typography>
+
+          <Stack
+            direction="row"
+            gap={1.5}
+            flexWrap="wrap"
+            alignItems="center"
+            sx={{ mt: 0.5 }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Current PP: {fmtInt(projection.current.boostedPP)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current DEC needed: {fmtInt(currentDecStakeNeeded)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current total boost: {fmtPct(currentTotalBoost * 100)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current rewards/hr:{" "}
+              {fmtFraction(projection.current.produce[0]?.amount ?? 0)}{" "}
+              {produceResource}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current net: {fmtFraction(projection.current.netDEC)} DEC
+            </Typography>
+          </Stack>
+
+          <Collapse in={dirty} timeout={IMPACT_ROW_TRANSITION_MS}>
+            <Stack
+              direction="row"
+              gap={1.5}
+              flexWrap="wrap"
+              alignItems="center"
+              sx={{
+                mt: 0.75,
+                pt: 0.75,
+                borderTop: "1px solid",
+                borderColor: "divider",
+              }}
             >
-              {fmtDelta(Math.round(decStakeNeededDelta))}
-            </Box>
-            )
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Total boost: {fmtPct(currentTotalBoost * 100)} {"->"}{" "}
-            {fmtPct(nextTotalBoost * 100)} (
-            <Box component="span" sx={{ color: deltaColor(boostDelta * 100) }}>
-              {fmtPctDelta(boostDelta * 100)}
-            </Box>
-            )
-          </Typography>
-          <Typography variant="caption" color={"text.secondary"}>
-            Rewards/hr:{" "}
-            <Typography variant={"caption"} color={deltaColor(produceDelta)}>
-              {fmtDelta(produceDelta)} {produceResource}
-            </Typography>
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Consume/hr:{" "}
-            {consumeDeltas.length === 0
-              ? "no change"
-              : consumeDeltas.map((c, i) => (
-                  <Box
-                    key={c.resource}
-                    component="span"
-                    sx={{ color: deltaColor(c.amount, false) }}
-                  >
-                    {i > 0 ? ", " : ""}
-                    {fmtDelta(c.amount)} {c.resource}
+              <Typography variant="caption" color="text.secondary">
+                New PP: {fmtInt(projection.next.boostedPP)} (
+                <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
+                  {fmtDelta(ppDelta)}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New DEC needed: {fmtInt(nextDecStakeNeeded)} (
+                <Box
+                  component="span"
+                  sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+                >
+                  {fmtDelta(Math.round(decStakeNeededDelta))}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New total boost: {fmtPct(nextTotalBoost * 100)} (
+                <Box component="span" sx={{ color: deltaColor(boostDelta) }}>
+                  {fmtDelta(Math.round(boostDelta * 100))}%
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New rewards/hr:{" "}
+                {fmtFraction(projection.next.produce[0]?.amount ?? 0)}{" "}
+                {produceResource} (
+                <Box component="span" sx={{ color: deltaColor(produceDelta) }}>
+                  {fmtDelta(produceDelta)}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New net: {fmtFraction(projection.next.netDEC)} DEC (
+                <Box component="span" sx={{ color: deltaColor(netDelta) }}>
+                  {fmtDelta(netDelta)}
+                </Box>
+                )
+              </Typography>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Tooltip
+                  arrow
+                  placement="top"
+                  title={
+                    <Box>
+                      <Typography fontSize={12} fontWeight="bold" mb={0.5}>
+                        Consumes:
+                      </Typography>
+                      {consumeDeltas.length > 0 &&
+                        consumeDeltas.map((row, idx) => {
+                          const icon = RESOURCE_ICON_MAP[row.resource];
+                          return (
+                            <Box
+                              key={idx}
+                              display="flex"
+                              alignItems="center"
+                              gap={0.5}
+                              mb={0.25}
+                            >
+                              {icon && (
+                                <Image
+                                  src={icon}
+                                  alt={row.resource}
+                                  width={15}
+                                  height={15}
+                                />
+                              )}
+                              <Typography fontSize={12}>
+                                {row.amount.toFixed(1)} /hr
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                    </Box>
+                  }
+                >
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="caption" color="text.secondary">
+                      Consume/hr:{" "}
+                    </Typography>
+                    {consumeDeltas.length === 0 && "no change"}
+                    {consumeDeltas.length === 1 && (
+                      <Typography
+                        variant="caption"
+                        color={deltaColor(consumeDeltas[0].amount)}
+                      >
+                        {consumeDeltas[0].amount.toFixed(1)} /hr
+                      </Typography>
+                    )}
+                    {consumeDeltas.length > 1 && <MdInfo size={15} />}
                   </Box>
-                ))}
-          </Typography>
-          <Typography variant="caption">
-            Net{" "}
-            <Typography variant={"caption"} color={deltaColor(netDelta)}>
-              {fmtDelta(netDelta)} DEC
-            </Typography>
-          </Typography>
-        </Stack>
+                </Tooltip>
+              </Box>
+            </Stack>
+          </Collapse>
+        </Paper>
       )}
 
       {picker && (

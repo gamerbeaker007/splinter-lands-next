@@ -4,6 +4,7 @@ import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
 import {
   land_default_off_icon_url_placeholder,
   land_mythic_icon_url,
+  WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
 import {
   DeleteSweep as DeleteSweepIcon,
@@ -13,6 +14,7 @@ import {
   Tune as TuneIcon,
 } from "@mui/icons-material";
 import {
+  capitalize,
   Chip,
   Collapse,
   IconButton,
@@ -44,11 +46,33 @@ interface HeadCell {
   key: ProductionSortKey;
   label: string;
   numeric: boolean;
+  width?: number;
+  iconCell?: boolean;
 }
+
+const ICON_COLUMN_WIDTH = 50;
+
+const iconCellSx = {
+  width: ICON_COLUMN_WIDTH,
+  minWidth: ICON_COLUMN_WIDTH,
+  maxWidth: ICON_COLUMN_WIDTH,
+  px: 0.5,
+};
 
 const HEAD_CELLS: HeadCell[] = [
   { key: "label", label: "Plot", numeric: false },
-  { key: "rarity", label: "Rarity", numeric: false },
+  {
+    key: "rarity",
+    label: "R",
+    numeric: false,
+    iconCell: true,
+  },
+  {
+    key: "plotStatus",
+    label: "S",
+    numeric: false,
+    iconCell: true,
+  },
   { key: "regionNumber", label: "Region", numeric: false },
   { key: "worksiteType", label: "Worksite", numeric: false },
   { key: "rewardsPerHour", label: "Rewards/hr", numeric: true },
@@ -85,6 +109,11 @@ function rarityIcon(rarity: string): string {
     : land_default_off_icon_url_placeholder.replace("__NAME__", rarity);
 }
 
+function plotStatusIcon(plotStatus: string): string {
+  const landPlotIconUrl = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
+  return landPlotIconUrl.replace("__NAME__", plotStatus.toLowerCase());
+}
+
 export default function ProductionTable({
   rows,
   sortKey,
@@ -104,8 +133,11 @@ export default function ProductionTable({
             {HEAD_CELLS.map((cell) => (
               <TableCell
                 key={cell.key}
-                align={cell.numeric ? "right" : "left"}
+                align={
+                  cell.iconCell ? "center" : cell.numeric ? "right" : "left"
+                }
                 sortDirection={sortKey === cell.key ? sortDir : false}
+                sx={cell.iconCell ? iconCellSx : { width: cell.width }}
               >
                 <TableSortLabel
                   active={sortKey === cell.key}
@@ -124,7 +156,7 @@ export default function ProductionTable({
             <Fragment key={r.deedUid}>
               <TableRow hover>
                 <TableCell>{r.label}</TableCell>
-                <TableCell>
+                <TableCell sx={iconCellSx}>
                   <Tooltip title={r.rarity}>
                     <span>
                       <Image
@@ -136,12 +168,26 @@ export default function ProductionTable({
                     </span>
                   </Tooltip>
                 </TableCell>
+                <TableCell sx={iconCellSx}>
+                  <Tooltip title={r.plotStatus}>
+                    <span>
+                      <Image
+                        src={plotStatusIcon(r.plotStatus)}
+                        alt={r.plotStatus}
+                        width={18}
+                        height={18}
+                      />
+                    </span>
+                  </Tooltip>
+                </TableCell>
                 <TableCell>
                   <Typography variant="body2" noWrap>
                     {r.regionName || r.regionNumber}
                   </Typography>
                 </TableCell>
-                <TableCell>{worksiteLabel(r.worksiteType)}</TableCell>
+                <TableCell>
+                  {capitalize(worksiteLabel(r.worksiteType).toLowerCase())}
+                </TableCell>
                 <TableCell align="right">
                   {r.rewardsPerHour > 0 ? (
                     <Typography variant="body2" noWrap>

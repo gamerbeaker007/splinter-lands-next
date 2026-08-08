@@ -22,6 +22,12 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Land Manager DEC alerts now show a regional imbalance warning when some regions are short while others are over-staked, even when the global DEC total nets to zero shortfall/excess.
 - Land Manager DEC power up/down now plans and executes across all owned regions, and DEC controls are available even when no regions are enabled in config.
 - Verico set added to filters
+- Production Configure panel now recalculates bloodline boost from the live staged worker lineup (planner-style), so removing/replacing cards updates bloodline boost immediately instead of keeping stale values.
+
+### Changed
+
+- Production Configure panel summary now keeps the current baseline row visible and reveals an animated staged row (2s transition) with new values and color-coded deltas.
+- Storybook framework migrated from `@storybook/nextjs-vite` to `@storybook/nextjs` to reduce maintenance and audit risk in the Storybook setup.
 
 ---
 

@@ -1,9 +1,5 @@
 // This file has been automatically migrated to valid ESM format by Storybook.
-import type { StorybookConfig } from "@storybook/nextjs-vite";
-import { resolve } from "path";
-import { fileURLToPath } from "url";
-
-const __dirname = fileURLToPath(new URL(".", import.meta.url));
+import type { StorybookConfig } from "@storybook/nextjs";
 
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
@@ -13,20 +9,7 @@ const config: StorybookConfig = {
     "@storybook/addon-a11y",
     "@storybook/addon-vitest",
   ],
-  framework: {
-    name: "@storybook/nextjs-vite",
-    options: {},
-  },
+  framework: "@storybook/nextjs",
   staticDirs: ["../public"],
-  viteFinal: async (config) => {
-    // Add path alias resolution for Vite
-    if (config.resolve) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        "@": resolve(__dirname, "../src"),
-      };
-    }
-    return config;
-  },
 };
 export default config;

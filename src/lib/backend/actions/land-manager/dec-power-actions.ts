@@ -73,10 +73,6 @@ export async function getRegionStakedDEC(
     0
   );
 
-  const scopeLabel = hasRegionFilter
-    ? `regions=${regionNumbers?.join(",")}`
-    : "all";
-
   return {
     regions: selectedRegions,
     totalStaked: totalDECStaked,
