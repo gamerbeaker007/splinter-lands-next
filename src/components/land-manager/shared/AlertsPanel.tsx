@@ -41,7 +41,6 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
     loading,
   } = useLandManagerRegionData(enabledRegions, refreshKey);
 
-  if (enabledRegions.length === 0) return null;
   if (loading) {
     return (
       <Box sx={{ mb: 2 }}>
@@ -68,6 +67,17 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
       over: Math.max(0, r.dec_stake_in_use - r.dec_stake_needed),
     }))
     .filter((x) => x.over > 0);
+  const regionalShortfallTotal = Math.ceil(
+    regionsWithShortfall.reduce((sum, x) => sum + x.shortfall, 0)
+  );
+  const regionalOverTotal = Math.floor(
+    regionsOverStaked.reduce((sum, x) => sum + x.over, 0)
+  );
+  const hasRegionalImbalance =
+    shortfall === 0 &&
+    excess === 0 &&
+    regionsWithShortfall.length > 0 &&
+    regionsOverStaked.length > 0;
 
   const eligiblePlots = eligibility?.eligible ?? [];
   const totalEmptyEligible = eligiblePlots.reduce(
@@ -81,7 +91,8 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
     !hasPoweredEmpty &&
     unpoweredPlots.length === 0 &&
     shortfall === 0 &&
-    excess === 0
+    excess === 0 &&
+    !hasRegionalImbalance
   )
     return null;
 
@@ -232,6 +243,71 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
                   </Table>
                 </Box>
               )}
+            </Stack>
+          ) : hasRegionalImbalance ? (
+            <Stack gap={1}>
+              <Alert severity="warning">
+                <Typography variant="caption" display="block">
+                  Regional DEC imbalance detected:{" "}
+                  {fmtNum(regionalShortfallTotal)}
+                  DEC short across some regions while{" "}
+                  {fmtNum(regionalOverTotal)}
+                  DEC is over-staked in others. Global DEC is balanced, but DEC
+                  needs to be moved between regions.
+                </Typography>
+              </Alert>
+
+              <Box sx={{ overflowX: "auto" }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Region</TableCell>
+                      <TableCell align="right">In use</TableCell>
+                      <TableCell align="right">Needed</TableCell>
+                      <TableCell align="right">Gap</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {[...regionsWithShortfall, ...regionsOverStaked].map(
+                      (row) => {
+                        const isShortfall = "shortfall" in row;
+                        const gap = isShortfall ? row.shortfall : row.over;
+                        return (
+                          <TableRow key={row.region.region_number}>
+                            <TableCell>
+                              <Typography variant="caption">
+                                R{row.region.region_number}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="caption">
+                                {fmtNum(row.region.dec_stake_in_use)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography variant="caption">
+                                {fmtNum(row.region.dec_stake_needed)}
+                              </Typography>
+                            </TableCell>
+                            <TableCell align="right">
+                              <Typography
+                                variant="caption"
+                                color={
+                                  isShortfall ? "warning.main" : "info.main"
+                                }
+                                fontWeight="bold"
+                              >
+                                {isShortfall ? "-" : "+"}
+                                {fmtNum(gap)}
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      }
+                    )}
+                  </TableBody>
+                </Table>
+              </Box>
             </Stack>
           ) : (
             <Stack direction="row" gap={1} alignItems="center">

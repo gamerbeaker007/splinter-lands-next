@@ -1,6 +1,5 @@
 import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
-import { Bolt, FlashOff } from "@mui/icons-material";
-import { SvgIconComponent } from "@mui/icons-material";
+import { Bolt, FlashOff, SvgIconComponent } from "@mui/icons-material";
 
 export interface DecPowerVariant {
   /** "Stake" / "Unstake" — button + confirm labels. */
@@ -33,9 +32,10 @@ export const DEC_POWER_VARIANTS: Record<DecPowerDirection, DecPowerVariant> = {
     icon: Bolt,
     amountHeader: "Stake",
     emptyMessage:
-      "No DEC stake shortfall in any enabled region. Nothing to stake.",
-    enabledTooltip: "Stake DEC into regions short of needed stake",
-    disabledTooltip: "No DEC stake shortfall in enabled regions",
+      "No DEC stake shortfall or rebalance target across your regions. Nothing to stake.",
+    enabledTooltip:
+      "Stake DEC into regions short of needed stake (or rebalance between regions)",
+    disabledTooltip: "No DEC stake shortfall or rebalance target",
     showBalance: true,
   },
   down: {
@@ -45,10 +45,11 @@ export const DEC_POWER_VARIANTS: Record<DecPowerDirection, DecPowerVariant> = {
     color: "warning",
     icon: FlashOff,
     amountHeader: "Unstake",
-    emptyMessage: "No DEC excess in any enabled region. Nothing to unstake.",
+    emptyMessage:
+      "No DEC stake excess or rebalance target across your regions. Nothing to unstake.",
     enabledTooltip:
-      "Power down (unstake) DEC from regions staked beyond needed",
-    disabledTooltip: "No DEC stake excess in enabled regions",
+      "Power down (unstake) DEC from regions staked beyond needed (or rebalance between regions)",
+    disabledTooltip: "No DEC stake excess or rebalance target",
     showBalance: false,
   },
 };

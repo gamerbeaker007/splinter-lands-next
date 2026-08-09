@@ -1,14 +1,14 @@
 import PriceCardItem from "@/components/planning/output/PriceCardItem";
 import PriceItem from "@/components/planning/output/PriceItem";
 import { formatNumberWithSuffix } from "@/lib/formatters";
+import { calcStakedDecNeeded } from "@/lib/frontend/utils/plannerCalcs";
 import {
   findLowestCardPrice,
   findLowestDeedPrice,
   findLowestTitlePrice,
   findLowestTotemPrice,
 } from "@/lib/frontend/utils/plannerValueCalcs";
-import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import { cardFoilOptions, PlotPlannerData, SlotInput } from "@/types/planner";
+import { PlotPlannerData } from "@/types/planner";
 import { LowestMarketData } from "@/types/planner/market/market";
 import { SplPriceData } from "@/types/price";
 import { SplCardDetails } from "@/types/splCardDetails";
@@ -33,15 +33,6 @@ type Props = {
   tokenPriceData: SplPriceData | null;
   marketData: LowestMarketData | null;
 };
-
-function calcStakedDECNeeded(cards: SlotInput[]) {
-  return cards.reduce((acc, card) => {
-    const cardFoilId = cardFoilOptions.indexOf(card.foil);
-    const maxBCX = determineCardMaxBCX(card.set, card.rarity, cardFoilId);
-    const perBCX = 10_000 / maxBCX;
-    return acc + card.bcx * perBCX;
-  }, 0);
-}
 
 export default function PriceOutput({
   plot,
@@ -101,13 +92,9 @@ export default function PriceOutput({
     ? 0
     : powerCoreDEC * (tokenPriceData?.dec ?? 0);
 
-  let stakedDECNeeded = hasRuni ? 0 : calcStakedDECNeeded(cards);
-  const totalDecDiscount = plot.cardInput.reduce((sum, card) => {
-    return sum + (card.landBoosts?.decDiscount || 0);
-  }, 0);
-  stakedDECNeeded = Math.max(
-    0,
-    stakedDECNeeded - stakedDECNeeded * totalDecDiscount
+  const { decNeeded: stakedDECNeeded, totalDecDiscount } = calcStakedDecNeeded(
+    cards,
+    hasRuni
   );
   const stakedDECinUSD = stakedDECNeeded * (tokenPriceData?.dec ?? 0);
 

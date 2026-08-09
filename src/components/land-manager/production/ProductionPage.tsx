@@ -8,7 +8,6 @@ import ConfirmActionDialog, {
 } from "@/components/land-manager/production/ConfirmActionDialog";
 import ProductionRegionGroup from "@/components/land-manager/production/ProductionRegionGroup";
 import ProductionTable from "@/components/land-manager/production/ProductionTable";
-import WorkerActionsAccordions from "@/components/land-manager/production/worker-actions/WorkerActionsAccordions";
 import {
   ProductionRow,
   ProductionSortKey,
@@ -17,6 +16,7 @@ import {
   toProductionRow,
 } from "@/components/land-manager/production/productionTypes";
 import WorkerConfirmDialog from "@/components/land-manager/production/rental-actions/WorkerConfirmDialog";
+import WorkerActionsAccordions from "@/components/land-manager/production/worker-actions/WorkerActionsAccordions";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
   ProductionActionKind,
@@ -457,7 +457,6 @@ function ProductionPageContent() {
 
       <BulkActionsAccordion
         username={username}
-        enabledRegions={enabledRegions}
         filteredRows={filteredRows}
         loading={loading}
         busy={actions.busy}

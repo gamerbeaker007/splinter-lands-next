@@ -14,6 +14,7 @@ import {
 import {
   CardElement,
   CardRarity,
+  LandBoost,
   RuniTier,
   TitleTier,
   TotemTier,
@@ -41,6 +42,8 @@ export interface SpotCardVM {
   foil: number;
   bcx: number;
   maxBcx: number;
+  bloodline?: string;
+  landBoosts?: LandBoost | null;
   basePP: number;
   boostedPP: number;
   terrainBoost: number;
@@ -198,12 +201,31 @@ function tierForBoost<T extends string>(
   boost: number | null | undefined,
   fallback: T
 ): T {
-  if (!boost) return fallback;
-  return (
-    (Object.entries(modifiers) as [T, number][]).find(
-      ([, value]) => value === boost
-    )?.[0] ?? fallback
+  if (boost == null) return fallback;
+
+  const parsedBoost = Number(boost);
+  if (!Number.isFinite(parsedBoost)) return fallback;
+
+  const entries = Object.entries(modifiers) as [T, number][];
+
+  // API values can carry floating-point noise (e.g. 0.1000000001).
+  const EPSILON = 1e-6;
+  const exactish = entries.find(
+    ([, value]) => Math.abs(value - parsedBoost) <= EPSILON
   );
+  if (exactish) return exactish[0];
+
+  // If no exact-ish match, use the nearest tier for defensive robustness.
+  const nearest = entries.reduce(
+    (best, entry) => {
+      const diff = Math.abs(entry[1] - parsedBoost);
+      if (!best || diff < best.diff) return { tier: entry[0], diff };
+      return best;
+    },
+    null as { tier: T; diff: number } | null
+  );
+
+  return nearest?.tier ?? fallback;
 }
 
 /**

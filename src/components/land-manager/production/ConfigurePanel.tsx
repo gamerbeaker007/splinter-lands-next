@@ -2,21 +2,47 @@
 
 import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
 import {
+  getRegionStakedDEC,
+  RegionDECInfo,
+} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import {
   getPlotConfigureData,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
+import { deedToPlotPlannerData } from "@/lib/frontend/utils/deedToPlotPlanner";
+import {
+  calcStakedDecNeeded,
+  determineBloodlineBoost,
+  determineDeedResourceBoost,
+  determineProductionBoost,
+} from "@/lib/frontend/utils/plannerCalcs";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
+import {
+  cardFoilOptions,
+  plotRarityModifiers,
+  resourceWorksiteMap,
+  runiModifiers,
+  SlotInput,
+  titleModifiers,
+  totemModifiers,
+} from "@/types/planner";
 import { Prices } from "@/types/price";
 import {
   Alert,
   Box,
   Button,
   CircularProgress,
+  Collapse,
+  Paper,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { MdInfo } from "react-icons/md";
 import AssetPickerDialog, {
   PickerKind,
   PickerResult,
@@ -46,6 +72,57 @@ function deltaColor(n: number, higherIsBetter = true): string {
   return good ? "success.main" : "error.main";
 }
 
+function fmtInt(n: number): string {
+  return Math.round(n).toLocaleString("en-US");
+}
+
+function fmtPct(n: number): string {
+  return `${n.toLocaleString("en-US", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  })}%`;
+}
+
+function fmtFraction(n: number, fraction = 3): string {
+  return n.toLocaleString("en-US", {
+    minimumFractionDigits: fraction,
+    maximumFractionDigits: fraction,
+  });
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+const IMPACT_ROW_TRANSITION_MS = 2000;
+
+function toPlannerSlotInput(
+  card: {
+    set: string;
+    rarity: SpotCardVM["rarity"];
+    bcx: number;
+    foil: number;
+    element: SpotCardVM["element"];
+    secondaryElement: SpotCardVM["secondaryElement"];
+    bloodline?: string;
+    landBoosts?: SlotInput["landBoosts"] | null;
+  },
+  id: number
+): SlotInput {
+  return {
+    id,
+    set: card.set as SlotInput["set"],
+    rarity: card.rarity,
+    bcx: card.bcx,
+    foil: cardFoilOptions[card.foil] ?? "regular",
+    element: card.element,
+    secondaryElement: card.secondaryElement,
+    bloodline: (card.bloodline ?? "Unknown") as SlotInput["bloodline"],
+    landBoosts: card.landBoosts ?? undefined,
+  };
+}
+
 interface Props {
   deed: DeedComplete;
   username: string;
@@ -64,6 +141,7 @@ export default function ConfigurePanel({
   const [staged, setStaged] = useState<StagedConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [regionDEC, setRegionDEC] = useState<RegionDECInfo | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   // Bumping reloadKey re-runs the loader; this flips the spinner back on
   // without calling setState synchronously inside the effect.
@@ -118,24 +196,34 @@ export default function ConfigurePanel({
 
   useEffect(() => {
     let cancelled = false;
-    getPlotConfigureData(deed.deed_uid)
-      .then((d) => {
+    (async () => {
+      try {
+        const [plotData, regionData] = await Promise.all([
+          getPlotConfigureData(deed.deed_uid),
+          getRegionStakedDEC().catch(() => null),
+        ]);
         if (cancelled) return;
-        setData(d);
-        setStaged(initStagedConfig(d));
+        setData(plotData);
+        setStaged(initStagedConfig(plotData));
+        setRegionDEC(
+          regionData?.regions.find(
+            (r) => r.region_number === deed.region_number
+          ) ?? null
+        );
         setError(null);
-      })
-      .catch((err) => {
-        if (!cancelled)
+      } catch (err) {
+        if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load plot");
-      })
-      .finally(() => {
+          setRegionDEC(null);
+        }
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [deed.deed_uid, reloadKey]);
+  }, [deed.deed_uid, deed.region_number, reloadKey]);
 
   const handlePick = useCallback(
     (result: PickerResult) => {
@@ -180,6 +268,13 @@ export default function ConfigurePanel({
     if (!data || !staged) return;
     const input = diffStagedConfig(data, staged);
     if (!stagedHasChanges(input)) return;
+
+    if (shortfallWarningMessage) {
+      if (!window.confirm(`${shortfallWarningMessage}\n\nSave anyway?`)) {
+        return;
+      }
+    }
+
     const res = await actions.saveStakeChange(deed.deed_uid, input);
     if (res.success) {
       reload();
@@ -233,6 +328,139 @@ export default function ConfigurePanel({
   const netDelta = projection
     ? projection.next.netDEC - projection.current.netDEC
     : 0;
+
+  // Estimate plot DEC needed using the same planner formula as PriceOutput,
+  // then anchor to the live current staking value for stable deltas.
+  const currentStaking = deed.stakingDetail;
+  const stagedWorkers = staged.workers.filter(Boolean) as SpotCardVM[];
+  const currentSlotsForDec = data.workers.map((w, i) =>
+    toPlannerSlotInput(w, i + 1)
+  );
+  const nextSlotsForDec = stagedWorkers.map((w, i) =>
+    toPlannerSlotInput(w, i + 1)
+  );
+
+  const currentPlotPlannerData = deedToPlotPlannerData(
+    deed,
+    currentSlotsForDec,
+    boostOverrides({ title: data.title, totem: data.totem, runi: data.runi })
+  );
+  const nextPlotPlannerData = deedToPlotPlannerData(
+    deed,
+    nextSlotsForDec,
+    boostOverrides({
+      title: staged.title,
+      totem: staged.totem,
+      runi: staged.runi,
+    })
+  );
+
+  const currentDecProjection = calcStakedDecNeeded(
+    currentSlotsForDec,
+    Boolean(data.runi)
+  );
+  const nextDecProjection = calcStakedDecNeeded(
+    nextSlotsForDec,
+    Boolean(staged.runi)
+  );
+  const currentObservedDecNeeded = toFiniteNumber(
+    currentStaking?.total_dec_stake_needed,
+    0
+  );
+  const projectionScale =
+    currentDecProjection.decNeeded > 0
+      ? toFiniteNumber(
+          currentObservedDecNeeded / currentDecProjection.decNeeded
+        )
+      : 1;
+
+  const currentDecStakeNeeded = currentObservedDecNeeded;
+  const nextDecStakeNeeded = toFiniteNumber(
+    nextDecProjection.decNeeded * projectionScale,
+    currentDecStakeNeeded
+  );
+  const decStakeNeededDelta = nextDecStakeNeeded - currentDecStakeNeeded;
+
+  const calcPlannerTotalBoost = (
+    cardInput: SlotInput[],
+    plotRarity: keyof typeof plotRarityModifiers,
+    plotStatus: typeof currentPlotPlannerData.plotStatus,
+    worksiteType: typeof currentPlotPlannerData.worksiteType,
+    title: keyof typeof titleModifiers,
+    totem: keyof typeof totemModifiers,
+    runi: keyof typeof runiModifiers
+  ) => {
+    const productionBoost = determineProductionBoost(
+      resourceWorksiteMap[worksiteType],
+      cardInput
+    );
+    const deedResourceBoost = determineDeedResourceBoost(
+      plotStatus,
+      worksiteType
+    );
+    const bloodlineBoost =
+      determineBloodlineBoost(cardInput).totalBloodlineBoost;
+    return (
+      plotRarityModifiers[plotRarity] +
+      titleModifiers[title] +
+      totemModifiers[totem] +
+      runiModifiers[runi] +
+      deedResourceBoost +
+      productionBoost +
+      bloodlineBoost
+    );
+  };
+
+  const currentTotalBoost = calcPlannerTotalBoost(
+    currentPlotPlannerData.cardInput,
+    currentPlotPlannerData.plotRarity,
+    currentPlotPlannerData.plotStatus,
+    currentPlotPlannerData.worksiteType,
+    currentPlotPlannerData.title,
+    currentPlotPlannerData.totem,
+    currentPlotPlannerData.runi
+  );
+  const nextTotalBoost = calcPlannerTotalBoost(
+    nextPlotPlannerData.cardInput,
+    nextPlotPlannerData.plotRarity,
+    nextPlotPlannerData.plotStatus,
+    nextPlotPlannerData.worksiteType,
+    nextPlotPlannerData.title,
+    nextPlotPlannerData.totem,
+    nextPlotPlannerData.runi
+  );
+  const boostDelta = nextTotalBoost - currentTotalBoost;
+
+  const regionImpact =
+    regionDEC && projection
+      ? (() => {
+          const currentRequired = toFiniteNumber(regionDEC.dec_stake_needed, 0);
+          const inUse = toFiniteNumber(regionDEC.dec_stake_in_use, 0);
+          const projectedRequired = currentRequired + decStakeNeededDelta;
+          const currentShortfall = Math.max(0, currentRequired - inUse);
+          const projectedShortfall = Math.max(0, projectedRequired - inUse);
+          return {
+            currentShortfall,
+            projectedShortfall,
+            shortfallIncrease: Math.max(
+              0,
+              projectedShortfall - currentShortfall
+            ),
+          };
+        })()
+      : null;
+
+  const shortfallWarningMessage =
+    dirty && regionImpact && regionImpact.projectedShortfall > 0
+      ? regionImpact.shortfallIncrease > 0
+        ? `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+            regionImpact.projectedShortfall
+          )} DEC (increase ${fmtInt(regionImpact.shortfallIncrease)} DEC).`
+        : `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+            regionImpact.projectedShortfall
+          )} DEC.`
+      : null;
+
   const consumeDeltas: { resource: string; amount: number }[] = projection
     ? (() => {
         const m = new Map<string, number>();
@@ -363,50 +591,154 @@ export default function ConfigurePanel({
         )}
       </Stack>
 
-      {/* Projected impact of the staged change */}
-      {dirty && projection && (
-        <Stack
-          direction="row"
-          gap={1.5}
-          flexWrap="wrap"
-          alignItems="center"
-          sx={{ mt: 0.75 }}
-        >
-          <Typography variant="caption">Projected change:</Typography>
-          <Typography variant="caption">
-            PP:{" "}
-            <Typography variant={"caption"} color={deltaColor(ppDelta)}>
-              {fmtDelta(ppDelta)}
-            </Typography>
-          </Typography>
-          <Typography variant="caption" color={"text.secondary"}>
-            Rewards/hr:{" "}
-            <Typography variant={"caption"} color={deltaColor(produceDelta)}>
-              {fmtDelta(produceDelta)} {produceResource}
-            </Typography>
-          </Typography>
+      {shortfallWarningMessage && (
+        <Alert severity="warning" sx={{ mt: 0.75 }}>
+          {shortfallWarningMessage}
+        </Alert>
+      )}
+
+      {projection && (
+        <Paper variant="outlined" sx={{ mt: 0.75, p: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Consume/hr:{" "}
-            {consumeDeltas.length === 0
-              ? "no change"
-              : consumeDeltas.map((c, i) => (
-                  <Box
-                    key={c.resource}
-                    component="span"
-                    sx={{ color: deltaColor(c.amount, false) }}
-                  >
-                    {i > 0 ? ", " : ""}
-                    {fmtDelta(c.amount)} {c.resource}
-                  </Box>
-                ))}
+            Configure summary
           </Typography>
-          <Typography variant="caption">
-            Net{" "}
-            <Typography variant={"caption"} color={deltaColor(netDelta)}>
-              {fmtDelta(netDelta)} DEC
+
+          <Stack
+            direction="row"
+            gap={1.5}
+            flexWrap="wrap"
+            alignItems="center"
+            sx={{ mt: 0.5 }}
+          >
+            <Typography variant="caption" color="text.secondary">
+              Current PP: {fmtInt(projection.current.boostedPP)}
             </Typography>
-          </Typography>
-        </Stack>
+            <Typography variant="caption" color="text.secondary">
+              Current DEC needed: {fmtInt(currentDecStakeNeeded)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current total boost: {fmtPct(currentTotalBoost * 100)}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current rewards/hr:{" "}
+              {fmtFraction(projection.current.produce[0]?.amount ?? 0)}{" "}
+              {produceResource}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Current net: {fmtFraction(projection.current.netDEC)} DEC
+            </Typography>
+          </Stack>
+
+          <Collapse in={dirty} timeout={IMPACT_ROW_TRANSITION_MS}>
+            <Stack
+              direction="row"
+              gap={1.5}
+              flexWrap="wrap"
+              alignItems="center"
+              sx={{
+                mt: 0.75,
+                pt: 0.75,
+                borderTop: "1px solid",
+                borderColor: "divider",
+              }}
+            >
+              <Typography variant="caption" color="text.secondary">
+                New PP: {fmtInt(projection.next.boostedPP)} (
+                <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
+                  {fmtDelta(ppDelta)}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New DEC needed: {fmtInt(nextDecStakeNeeded)} (
+                <Box
+                  component="span"
+                  sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+                >
+                  {fmtDelta(Math.round(decStakeNeededDelta))}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New total boost: {fmtPct(nextTotalBoost * 100)} (
+                <Box component="span" sx={{ color: deltaColor(boostDelta) }}>
+                  {fmtDelta(Math.round(boostDelta * 100))}%
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New rewards/hr:{" "}
+                {fmtFraction(projection.next.produce[0]?.amount ?? 0)}{" "}
+                {produceResource} (
+                <Box component="span" sx={{ color: deltaColor(produceDelta) }}>
+                  {fmtDelta(produceDelta)}
+                </Box>
+                )
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                New net: {fmtFraction(projection.next.netDEC)} DEC (
+                <Box component="span" sx={{ color: deltaColor(netDelta) }}>
+                  {fmtDelta(netDelta)}
+                </Box>
+                )
+              </Typography>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Tooltip
+                  arrow
+                  placement="top"
+                  title={
+                    <Box>
+                      <Typography fontSize={12} fontWeight="bold" mb={0.5}>
+                        Consumes:
+                      </Typography>
+                      {consumeDeltas.length > 0 &&
+                        consumeDeltas.map((row, idx) => {
+                          const icon = RESOURCE_ICON_MAP[row.resource];
+                          return (
+                            <Box
+                              key={idx}
+                              display="flex"
+                              alignItems="center"
+                              gap={0.5}
+                              mb={0.25}
+                            >
+                              {icon && (
+                                <Image
+                                  src={icon}
+                                  alt={row.resource}
+                                  width={15}
+                                  height={15}
+                                />
+                              )}
+                              <Typography fontSize={12}>
+                                {row.amount.toFixed(1)} /hr
+                              </Typography>
+                            </Box>
+                          );
+                        })}
+                    </Box>
+                  }
+                >
+                  <Box display="flex" alignItems="center" gap={0.5}>
+                    <Typography variant="caption" color="text.secondary">
+                      Consume/hr:{" "}
+                    </Typography>
+                    {consumeDeltas.length === 0 && "no change"}
+                    {consumeDeltas.length === 1 && (
+                      <Typography
+                        variant="caption"
+                        color={deltaColor(consumeDeltas[0].amount)}
+                      >
+                        {consumeDeltas[0].amount.toFixed(1)} /hr
+                      </Typography>
+                    )}
+                    {consumeDeltas.length > 1 && <MdInfo size={15} />}
+                  </Box>
+                </Tooltip>
+              </Box>
+            </Stack>
+          </Collapse>
+        </Paper>
       )}
 
       {picker && (

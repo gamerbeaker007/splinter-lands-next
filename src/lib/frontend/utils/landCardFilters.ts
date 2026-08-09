@@ -160,14 +160,6 @@ export function filterAvailableCards(
 
   if (cardFilterOptions.maxLevelOnly) {
     filtered = filtered.filter((card) => {
-      console.log(
-        "filterAvailableCards",
-        card.name,
-        card.rarity,
-        card.foil,
-        card.level,
-        determineMaxLevelFromRarityFoil(card.rarity, card.foil)
-      );
       return (
         card.level === determineMaxLevelFromRarityFoil(card.rarity, card.foil)
       );

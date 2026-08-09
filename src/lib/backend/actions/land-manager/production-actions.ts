@@ -22,10 +22,18 @@ import {
   bcxForLevel,
   determineCardInfo,
   determineCardMaxBCX,
+  determineLandBoosts,
   findCardElement,
 } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
-import { cardElementColorMap, CardElement, CardRarity } from "@/types/planner";
+import {
+  CardBloodline,
+  CardElement,
+  cardElementColorMap,
+  cardFoilOptions,
+  CardRarity,
+  LandBoost,
+} from "@/types/planner";
 import { Card } from "@/types/stakedAssets";
 import pLimit from "p-limit";
 import { getAuthStatus } from "../auth-actions";
@@ -303,6 +311,8 @@ export interface ConfigCard {
   foil: number;
   bcx: number;
   maxBcx: number;
+  bloodline?: CardBloodline;
+  landBoosts?: LandBoost;
   basePP: number;
   boostedPP: number;
   terrainBoost: number;
@@ -359,9 +369,14 @@ export async function getPlotConfigureData(
   const toConfigCard = (c: Card): ConfigCard => {
     const { name, rarity } = determineCardInfo(c.card_detail_id, cardDetails);
     const splCard = cardDetails.find((cd) => cd.id === c.card_detail_id);
+    const foil = cardFoilOptions[c.foil] ?? "regular";
     const secondaryElement: CardElement | null = splCard?.secondary_color
       ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
       : null;
+    const landBoosts =
+      c.card_set === "land"
+        ? determineLandBoosts(rarity, foil, c.bcx, splCard)
+        : undefined;
     return {
       uid: c.uid,
       name,
@@ -373,6 +388,8 @@ export async function getPlotConfigureData(
       foil: c.foil,
       bcx: c.bcx,
       maxBcx: determineCardMaxBCX(c.card_set, rarity, c.foil),
+      bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
+      landBoosts,
       basePP: Number(c.base_pp_after_cap),
       boostedPP: Number(c.total_harvest_pp),
       terrainBoost: Number(c.terrain_boost),

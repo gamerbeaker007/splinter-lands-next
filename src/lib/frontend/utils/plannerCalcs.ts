@@ -7,6 +7,7 @@ import {
 } from "@/lib/shared/costCalc";
 import { TAX_RATE } from "@/lib/shared/statics";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid } from "@/types/editions";
 import {
   basePPMax,
   bestTerrainBonusPct,
@@ -14,6 +15,7 @@ import {
   CardFoil,
   cardFoilModifiers,
   cardFoilModifiersLandCard,
+  cardFoilOptions,
   CardRarity,
   cardSetModifiers,
   deedResourceBoostRules,
@@ -32,7 +34,6 @@ import {
 import { Prices } from "@/types/price";
 import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
-import { CardSetNameLandValid } from "@/types/editions";
 
 export function determineDeedResourceBoost(
   plotStatus: PlotStatus,
@@ -132,6 +133,52 @@ export function calcLandPpPerBcx(
     ? (cardFoilModifiersLandCard[foil] ?? 1)
     : (cardFoilModifiers[foil] ?? 1);
   return ppPerBcx * setModifier * foilModifier;
+}
+
+/**
+ * Planner-consistent estimate of DEC needed to stake the given workers.
+ * Mirrors the formula used by the price output:
+ * - base DEC from BCX/maxBCX per worker
+ * - reduced by sum of `decDiscount` boosts
+ * - set to 0 when a Runi is present
+ */
+export function calcStakedDecNeeded(
+  cardInput: SlotInput[],
+  hasRuni: boolean
+): {
+  baseDecNeeded: number;
+  totalDecDiscount: number;
+  decNeeded: number;
+} {
+  if (hasRuni) {
+    return {
+      baseDecNeeded: 0,
+      totalDecDiscount: 0,
+      decNeeded: 0,
+    };
+  }
+
+  const baseDecNeeded = cardInput.reduce((acc, card) => {
+    const cardFoilId = cardFoilOptions.indexOf(card.foil);
+    const maxBCX = determineCardMaxBCX(card.set, card.rarity, cardFoilId);
+    const perBCX = 10_000 / maxBCX;
+    return acc + card.bcx * perBCX;
+  }, 0);
+
+  const totalDecDiscount = cardInput.reduce((sum, card) => {
+    return sum + (card.landBoosts?.decDiscount || 0);
+  }, 0);
+
+  const decNeeded = Math.max(
+    0,
+    baseDecNeeded - baseDecNeeded * totalDecDiscount
+  );
+
+  return {
+    baseDecNeeded,
+    totalDecDiscount,
+    decNeeded,
+  };
 }
 
 function calcBasePP(slot: SlotInput) {
