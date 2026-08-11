@@ -16,22 +16,28 @@ export function usePlayerDeeds(playerName: string | null) {
       return;
     }
 
+    let cancelled = false;
     const fetchDeeds = async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await getPlayerDeeds(playerName);
+        if (cancelled) return;
         setDeeds(data);
       } catch (err) {
+        if (cancelled) return;
         console.error("Failed to fetch player deeds:", err);
         setError(err instanceof Error ? err.message : "Failed to load deeds");
         setDeeds(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchDeeds();
+    return () => {
+      cancelled = true;
+    };
   }, [playerName]);
 
   return { deeds, loading, error };

@@ -4,7 +4,7 @@ import {
 } from "@/lib/backend/actions/player/enriched-deed-actions";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Two-phase hook for SSR-friendly deed loading with progress indication:
@@ -23,7 +23,15 @@ export function useEnrichedPlayerDeeds(
   const [total, setTotal] = useState<number>(0);
   const [warning, setWarning] = useState<string | null>(null);
 
+  // Monotonically increasing id so only the most recent request may write
+  // state. Guards against stale responses landing out of order when the
+  // filters/player change while a request is still in flight.
+  const requestIdRef = useRef(0);
+
   const fetchDeeds = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const isStale = () => requestIdRef.current !== requestId;
+
     if (!playerName || !filters) {
       setDeeds([]);
       setError(null);
@@ -46,6 +54,7 @@ export function useEnrichedPlayerDeeds(
       // Phase 1: Fast call to get filtered deeds (without staked assets)
       setLoadingText("Gathering player data...");
       const result = await getFilteredEnrichedPlayerDeeds(playerName, filters);
+      if (isStale()) return;
 
       setWarning(result.warning);
       setTotal(result.total);
@@ -61,10 +70,12 @@ export function useEnrichedPlayerDeeds(
       // Each server action internally processes 10 deeds in parallel
       const BATCH_SIZE = 10;
       for (let i = 0; i < result.deeds.length; i += BATCH_SIZE) {
+        if (isStale()) return;
         const batch = result.deeds.slice(i, i + BATCH_SIZE);
 
         // Single server action call that processes the entire batch in parallel
         const enrichedBatch = await enrichDeedsWithStakedAssets(batch);
+        if (isStale()) return;
 
         enrichedDeeds.push(...enrichedBatch);
         enrichedCount += enrichedBatch.length;
@@ -78,9 +89,11 @@ export function useEnrichedPlayerDeeds(
       }
 
       // Update deeds only once when all enrichment is complete
+      if (isStale()) return;
       setDeeds(enrichedDeeds);
       setLoadingText(null);
     } catch (err) {
+      if (isStale()) return;
       console.error("Failed to fetch enriched player deeds:", err);
       setError(
         err instanceof Error ? err.message : "Failed to load enriched deeds"
@@ -88,7 +101,7 @@ export function useEnrichedPlayerDeeds(
       setDeeds([]);
       setLoadingText("An error occurred while loading deeds.");
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   }, [playerName, filters]);
 

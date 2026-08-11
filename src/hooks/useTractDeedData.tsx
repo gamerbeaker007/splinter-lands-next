@@ -4,7 +4,7 @@ import { enrichDeedsWithStakedAssets } from "@/lib/backend/actions/player/enrich
 import { getFilteredEnrichedTractDeeds } from "@/lib/backend/actions/region/tract-deed-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { DeedComplete } from "@/types/deed";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 /**
  * Two-phase hook for SSR-friendly tract deed loading with progress indication:
@@ -24,7 +24,15 @@ export const useTractDeedData = (
   const [warning, setWarning] = useState<string | null>(null);
   const { filters } = useFilters();
 
+  // Monotonically increasing id so only the most recent request may write
+  // state. Guards against stale responses landing out of order when the
+  // region/tract/filters change while a request is still in flight.
+  const requestIdRef = useRef(0);
+
   const fetchDeeds = useCallback(async () => {
+    const requestId = ++requestIdRef.current;
+    const isStale = () => requestIdRef.current !== requestId;
+
     if (!filters || !selectedRegion || !selectedTract) {
       setDeeds([]);
       setError(null);
@@ -55,6 +63,7 @@ export const useTractDeedData = (
       };
 
       const result = await getFilteredEnrichedTractDeeds(updatedFilters);
+      if (isStale()) return;
 
       setWarning(result.warning);
       setTotal(result.total);
@@ -70,10 +79,12 @@ export const useTractDeedData = (
       // Each server action internally processes with concurrency limit of 5
       const BATCH_SIZE = 10;
       for (let i = 0; i < result.deeds.length; i += BATCH_SIZE) {
+        if (isStale()) return;
         const batch = result.deeds.slice(i, i + BATCH_SIZE);
 
         // Single server action call that processes the entire batch in parallel
         const enrichedBatch = await enrichDeedsWithStakedAssets(batch);
+        if (isStale()) return;
 
         enrichedDeeds.push(...enrichedBatch);
         enrichedCount += enrichedBatch.length;
@@ -87,15 +98,17 @@ export const useTractDeedData = (
       }
 
       // Update deeds only once when all enrichment is complete
+      if (isStale()) return;
       setDeeds(enrichedDeeds);
       setLoadingText(null);
     } catch (err) {
+      if (isStale()) return;
       console.error("Failed to load tract deed data:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
       setLoadingText(null);
       setDeeds([]);
     } finally {
-      setLoading(false);
+      if (!isStale()) setLoading(false);
     }
   }, [filters, selectedRegion, selectedTract]);
 

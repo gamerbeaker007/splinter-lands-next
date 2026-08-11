@@ -4,7 +4,7 @@ import { getPlayerCardCollection as getPlayerCardCollectionGrouped } from "@/lib
 import { useAuth } from "@/lib/frontend/context/AuthContext";
 import { CardFilterInput } from "@/types/filters";
 import { GroupedCardRow } from "@/types/groupedCardRow";
-import { useCallback, useEffect, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 
 /**
  * Client-side hook for fetching player card collection using server actions
@@ -22,8 +22,16 @@ export function usePlayerCardPP(
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Monotonically increasing id so only the most recent request may write
+  // state. Guards against stale responses landing out of order when the
+  // player/filters change while a request is still in flight.
+  const requestIdRef = useRef(0);
+
   const fetchData = useCallback(
     async (force: boolean = false) => {
+      const requestId = ++requestIdRef.current;
+      const isStale = () => requestIdRef.current !== requestId;
+
       if (!player || player.trim() === "") {
         setCardPPResult(null);
         setError("Player is required.");
@@ -38,9 +46,11 @@ export function usePlayerCardPP(
           cardFilters,
           force
         );
+        if (isStale()) return result;
         setCardPPResult(result);
         return result;
       } catch (err) {
+        if (isStale()) return null;
         const message = err instanceof Error ? err.message : "Unknown error";
 
         // Handle expired authentication

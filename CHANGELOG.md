@@ -12,6 +12,12 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+
+## [v1.20.1] - 2026-08-05
+
+### Fixed
+- The fetch hooks using cancellation guard now (when selecting multiple filter quickly).
+
 ---
 
 ## [v1.20.0] - 2026-08-07

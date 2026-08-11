@@ -18,24 +18,30 @@ export function usePlayerCollection(playerName: string | null) {
       return;
     }
 
+    let cancelled = false;
     const fetchCollection = async () => {
       setLoading(true);
       setError(null);
       try {
         const data = await getPlayerCollection(playerName);
+        if (cancelled) return;
         setCollection(data);
       } catch (err) {
+        if (cancelled) return;
         console.error("Failed to fetch player collection:", err);
         setError(
           err instanceof Error ? err.message : "Failed to load collection"
         );
         setCollection(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchCollection();
+    return () => {
+      cancelled = true;
+    };
   }, [playerName]);
 
   return { collection, loading, error };

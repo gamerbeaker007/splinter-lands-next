@@ -12,19 +12,25 @@ export function usePlayerInventory(playerName: string | null) {
       return;
     }
 
+    let cancelled = false;
     const fetchInventory = async () => {
       setLoadingInventory(true);
       try {
         const data = await getPlayerInventory(playerName);
+        if (cancelled) return;
         setInventory(data);
       } catch (err) {
+        if (cancelled) return;
         console.error("Failed to load inventory:", err);
         setInventory([]);
       } finally {
-        setLoadingInventory(false);
+        if (!cancelled) setLoadingInventory(false);
       }
     };
     fetchInventory();
+    return () => {
+      cancelled = true;
+    };
   }, [playerName]);
 
   return { inventory, loadingInventory };
