@@ -95,6 +95,13 @@ function toFiniteNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function sameUid(
+  a: { uid: string } | null | undefined,
+  b: { uid: string } | null | undefined
+): boolean {
+  return (a?.uid ?? null) === (b?.uid ?? null);
+}
+
 const IMPACT_ROW_TRANSITION_MS = 2000;
 
 function toPlannerSlotInput(
@@ -282,6 +289,11 @@ export default function ConfigurePanel({
     }
   };
 
+  const originalStaged = useMemo(
+    () => (data ? initStagedConfig(data) : null),
+    [data]
+  );
+
   if (loading) {
     return (
       <Box sx={{ display: "flex", justifyContent: "center", py: 3 }}>
@@ -296,7 +308,7 @@ export default function ConfigurePanel({
       </Alert>
     );
   }
-  if (!data || !staged) return null;
+  if (!data || !staged || !originalStaged) return null;
 
   // Worksites cap at MAX_WORKER_SLOTS workers. We intentionally do NOT use
   // `deed.stakingDetail.max_workers_allowed` here: it reports 0 while a plot is
@@ -312,6 +324,36 @@ export default function ConfigurePanel({
   const changeInput = diffStagedConfig(data, staged);
   const dirty = stagedHasChanges(changeInput);
   const busy = actions.busy;
+
+  const powerCoreChanged = !sameUid(staged.powerCore, originalStaged.powerCore);
+  const runiChanged = !sameUid(staged.runi, originalStaged.runi);
+  const totemChanged = !sameUid(staged.totem, originalStaged.totem);
+  const titleChanged = !sameUid(staged.title, originalStaged.title);
+  const workerChangedByIndex = workerSlots.map(
+    (worker, idx) => !sameUid(worker, originalStaged.workers[idx])
+  );
+
+  const resetPowerCore = () =>
+    setStaged((prev) =>
+      prev ? { ...prev, powerCore: originalStaged.powerCore } : prev
+    );
+  const resetRuni = () =>
+    setStaged((prev) => (prev ? { ...prev, runi: originalStaged.runi } : prev));
+  const resetWorker = (idx: number) =>
+    setStaged((prev) => {
+      if (!prev) return prev;
+      const workers = [...prev.workers];
+      workers[idx] = originalStaged.workers[idx] ?? null;
+      return { ...prev, workers };
+    });
+  const resetTotem = () =>
+    setStaged((prev) =>
+      prev ? { ...prev, totem: originalStaged.totem } : prev
+    );
+  const resetTitle = () =>
+    setStaged((prev) =>
+      prev ? { ...prev, title: originalStaged.title } : prev
+    );
 
   // Projected deltas (staged − current). Consume is per-resource (GRAIN/IRON/…).
   const ppDelta = projection
@@ -484,88 +526,186 @@ export default function ConfigurePanel({
         sx={{ mb: 1.5 }}
       >
         {/* Power Core */}
-        {staged.powerCore ? (
-          <FilledItemSpot
-            label="Power Core"
-            item={staged.powerCore}
-            disabled={busy}
-            onClear={() => setStaged({ ...staged, powerCore: null })}
-          />
-        ) : (
-          <EmptySpot
-            label="Power Core"
-            disabled={busy}
-            onClick={() => setPicker("powerCore")}
-          />
-        )}
-
-        {/* Runi */}
-        {staged.runi ? (
-          <FilledCardSpot
-            label="Runi"
-            card={staged.runi}
-            disabled={busy}
-            onClear={() => setStaged({ ...staged, runi: null })}
-          />
-        ) : (
-          <EmptySpot
-            label="Runi"
-            disabled={busy}
-            onClick={() => setPicker("runi")}
-          />
-        )}
-
-        {/* Workers */}
-        {workerSlots.map((w, i) =>
-          w ? (
-            <FilledCardSpot
-              key={`worker-${i}`}
-              label={`Worker ${i + 1}`}
-              card={w}
+        <Stack spacing={0.35} alignItems="center">
+          {staged.powerCore ? (
+            <FilledItemSpot
+              label="Power Core"
+              item={staged.powerCore}
               disabled={busy}
-              onClear={() => clearWorker(i)}
+              onClear={() => setStaged({ ...staged, powerCore: null })}
             />
           ) : (
             <EmptySpot
-              key={`worker-${i}`}
-              label={`Worker ${i + 1}`}
+              label="Power Core"
               disabled={busy}
-              onClick={() => setWorkerOpen(true)}
+              onClick={() => setPicker("powerCore")}
             />
-          )
-        )}
+          )}
+          {powerCoreChanged && (
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              disabled={busy}
+              onClick={resetPowerCore}
+              sx={{
+                minWidth: 0,
+                px: 0.5,
+                py: 0,
+                fontSize: 11,
+                textTransform: "none",
+              }}
+            >
+              Reset
+            </Button>
+          )}
+        </Stack>
+
+        {/* Runi */}
+        <Stack spacing={0.35} alignItems="center">
+          {staged.runi ? (
+            <FilledCardSpot
+              label="Runi"
+              card={staged.runi}
+              disabled={busy}
+              onClear={() => setStaged({ ...staged, runi: null })}
+            />
+          ) : (
+            <EmptySpot
+              label="Runi"
+              disabled={busy}
+              onClick={() => setPicker("runi")}
+            />
+          )}
+          {runiChanged && (
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              disabled={busy}
+              onClick={resetRuni}
+              sx={{
+                minWidth: 0,
+                px: 0.5,
+                py: 0,
+                fontSize: 11,
+                textTransform: "none",
+              }}
+            >
+              Reset
+            </Button>
+          )}
+        </Stack>
+
+        {/* Workers */}
+        {workerSlots.map((w, i) => (
+          <Stack key={`worker-${i}`} spacing={0.35} alignItems="center">
+            {w ? (
+              <FilledCardSpot
+                label={`Worker ${i + 1}`}
+                card={w}
+                disabled={busy}
+                onClear={() => clearWorker(i)}
+              />
+            ) : (
+              <EmptySpot
+                label={`Worker ${i + 1}`}
+                disabled={busy}
+                onClick={() => setWorkerOpen(true)}
+              />
+            )}
+            {workerChangedByIndex[i] && (
+              <Button
+                size="small"
+                variant="text"
+                color="inherit"
+                disabled={busy}
+                onClick={() => resetWorker(i)}
+                sx={{
+                  minWidth: 0,
+                  px: 0.5,
+                  py: 0,
+                  fontSize: 11,
+                  textTransform: "none",
+                }}
+              >
+                Reset
+              </Button>
+            )}
+          </Stack>
+        ))}
 
         {/* Totem */}
-        {staged.totem ? (
-          <FilledItemSpot
-            label="Totem"
-            item={staged.totem}
-            disabled={busy}
-            onClear={() => setStaged({ ...staged, totem: null })}
-          />
-        ) : (
-          <EmptySpot
-            label="Totem"
-            disabled={busy}
-            onClick={() => setPicker("totem")}
-          />
-        )}
+        <Stack spacing={0.35} alignItems="center">
+          {staged.totem ? (
+            <FilledItemSpot
+              label="Totem"
+              item={staged.totem}
+              disabled={busy}
+              onClear={() => setStaged({ ...staged, totem: null })}
+            />
+          ) : (
+            <EmptySpot
+              label="Totem"
+              disabled={busy}
+              onClick={() => setPicker("totem")}
+            />
+          )}
+          {totemChanged && (
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              disabled={busy}
+              onClick={resetTotem}
+              sx={{
+                minWidth: 0,
+                px: 0.5,
+                py: 0,
+                fontSize: 11,
+                textTransform: "none",
+              }}
+            >
+              Reset
+            </Button>
+          )}
+        </Stack>
 
         {/* Title */}
-        {staged.title ? (
-          <FilledItemSpot
-            label="Title"
-            item={staged.title}
-            disabled={busy}
-            onClear={() => setStaged({ ...staged, title: null })}
-          />
-        ) : (
-          <EmptySpot
-            label="Title"
-            disabled={busy}
-            onClick={() => setPicker("title")}
-          />
-        )}
+        <Stack spacing={0.35} alignItems="center">
+          {staged.title ? (
+            <FilledItemSpot
+              label="Title"
+              item={staged.title}
+              disabled={busy}
+              onClear={() => setStaged({ ...staged, title: null })}
+            />
+          ) : (
+            <EmptySpot
+              label="Title"
+              disabled={busy}
+              onClick={() => setPicker("title")}
+            />
+          )}
+          {titleChanged && (
+            <Button
+              size="small"
+              variant="text"
+              color="inherit"
+              disabled={busy}
+              onClick={resetTitle}
+              sx={{
+                minWidth: 0,
+                px: 0.5,
+                py: 0,
+                fontSize: 11,
+                textTransform: "none",
+              }}
+            >
+              Reset
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
       <Stack direction="row" gap={1} alignItems="center">

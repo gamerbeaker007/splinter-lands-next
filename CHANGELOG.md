@@ -12,6 +12,18 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+## [v1.20.2] - 2026-08-12
+
+### Added
+
+- Land Manager Production Configure panel now shows a small per-slot **Reset** action under each configurable spot (Power Core, Runi, Worker slots, Totem, Title) when that specific spot has staged changes, allowing single-spot restore without discarding all other edits.
+
+### Changed
+
+- The existing global **Reset** action in the Production Configure panel remains and still restores all staged changes at once.
+
+---
+
 
 ## [v1.20.1] - 2026-08-05
 
