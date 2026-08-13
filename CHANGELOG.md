@@ -12,6 +12,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+---
+## [v1.20.3] - 2026-08-13
+
+### Added
+
+- Added power and worker filters to deed overview
+
+---
+
 ## [v1.20.2] - 2026-08-12
 
 ### Added

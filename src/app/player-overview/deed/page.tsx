@@ -13,6 +13,8 @@ const filterOptions = {
   attributes: true,
   player: false,
   sorting: true,
+  poweredWorkers: true,
+  workers: true,
 };
 
 export default function Deed() {
