@@ -107,6 +107,7 @@ export default function HarvestPage() {
         postHarvestExcludedResources={config.post_harvest_excluded_resources}
         postHarvestSellPct={config.post_harvest_sell_pct}
         postHarvestPoolPct={config.post_harvest_pool_pct}
+        topUpPoolStrategies={config.top_up_pool_strategies}
         hasMythics={
           enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
         }

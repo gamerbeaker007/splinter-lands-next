@@ -8,6 +8,7 @@ import {
   savePostHarvestExcludedResources,
   savePostHarvestStrategy,
   saveRentalConfig,
+  saveTopUpPoolStrategies,
 } from "@/lib/backend/actions/land-manager/config-actions";
 import {
   BuyConfig,
@@ -19,6 +20,7 @@ import {
   MakeHarvestableStrategy,
   PostHarvestStrategy,
   RentalConfig,
+  TopUpPoolStrategy,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
@@ -38,6 +40,7 @@ import EnabledRegionsSection from "./EnabledRegionsSection";
 import MakeHarvestableSection from "./MakeHarvestableSection";
 import PostHarvestSection from "./PostHarvestSection";
 import RentEmptyWorkersSection from "./RentEmptyWorkersSection";
+import TopUpPoolSection from "./TopUpPoolSection";
 
 interface Props {
   open: boolean;
@@ -74,6 +77,9 @@ export default function ConfigDialog({
   const [poolPct, setPoolPct] = useState<number>(
     config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT
   );
+  const [topUpStrategies, setTopUpStrategies] = useState<TopUpPoolStrategy[]>(
+    config.top_up_pool_strategies
+  );
   const [rental, setRental] = useState<RentalConfig>(config.rental);
   const [buy, setBuy] = useState<BuyConfig>(config.buy);
   const [saving, setSaving] = useState(false);
@@ -93,27 +99,42 @@ export default function ConfigDialog({
     setExcludedResources(config.post_harvest_excluded_resources ?? []);
     setSellPct(config.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT);
     setPoolPct(config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT);
+    setTopUpStrategies(config.top_up_pool_strategies);
     setRental(config.rental);
     setBuy(config.buy);
     setError(null);
     onClose();
   };
 
-  const toggleStrategy = (s: MakeHarvestableStrategy) => {
-    setStrategies((prev) =>
-      prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
-    );
-  };
+  /** Add/remove a strategy from an ordered preferred/fallback list. */
+  function toggleIn<T extends string>(
+    setter: (fn: (prev: T[]) => T[]) => void
+  ): (s: T) => void {
+    return (s) =>
+      setter((prev) =>
+        prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]
+      );
+  }
 
-  const moveStrategy = (s: MakeHarvestableStrategy, dir: -1 | 1) => {
-    const idx = strategies.indexOf(s);
-    if (idx === -1) return;
-    const next = [...strategies];
-    const target = idx + dir;
-    if (target < 0 || target >= next.length) return;
-    [next[idx], next[target]] = [next[target], next[idx]];
-    setStrategies(next);
-  };
+  /** Swap a strategy with its neighbour, changing its priority. */
+  function moveIn<T extends string>(
+    current: T[],
+    setter: (next: T[]) => void
+  ): (s: T, dir: -1 | 1) => void {
+    return (s, dir) => {
+      const idx = current.indexOf(s);
+      const target = idx + dir;
+      if (idx === -1 || target < 0 || target >= current.length) return;
+      const next = [...current];
+      [next[idx], next[target]] = [next[target], next[idx]];
+      setter(next);
+    };
+  }
+
+  const toggleStrategy = toggleIn<MakeHarvestableStrategy>(setStrategies);
+  const moveStrategy = moveIn(strategies, setStrategies);
+  const toggleTopUpStrategy = toggleIn<TopUpPoolStrategy>(setTopUpStrategies);
+  const moveTopUpStrategy = moveIn(topUpStrategies, setTopUpStrategies);
 
   const handleSave = async () => {
     setSaving(true);
@@ -124,6 +145,7 @@ export default function ConfigDialog({
       donationResult,
       postHarvestResult,
       excludedResult,
+      topUpResult,
       rentalResult,
       buyResult,
     ] = await Promise.all([
@@ -132,28 +154,24 @@ export default function ConfigDialog({
       saveDonationConfig(donation),
       savePostHarvestStrategy(postHarvestStrategy, sellPct, poolPct),
       savePostHarvestExcludedResources(excludedResources),
+      saveTopUpPoolStrategies(topUpStrategies),
       saveRentalConfig(rental),
       saveBuyConfig(buy),
     ]);
     setSaving(false);
-    const err =
-      regionsResult.error ??
-      strategiesResult.error ??
-      donationResult.error ??
-      postHarvestResult.error ??
-      excludedResult.error ??
-      rentalResult.error ??
-      buyResult.error;
-    if (
-      !regionsResult.success ||
-      !strategiesResult.success ||
-      !donationResult.success ||
-      !postHarvestResult.success ||
-      !excludedResult.success ||
-      !rentalResult.success ||
-      !buyResult.success
-    ) {
-      setError(err ?? "Save failed");
+    const results = [
+      regionsResult,
+      strategiesResult,
+      donationResult,
+      postHarvestResult,
+      excludedResult,
+      topUpResult,
+      rentalResult,
+      buyResult,
+    ];
+    const failed = results.find((r) => !r.success);
+    if (failed) {
+      setError(failed.error ?? "Save failed");
       return;
     }
     onSaved({
@@ -165,6 +183,7 @@ export default function ConfigDialog({
       post_harvest_excluded_resources: excludedResources,
       post_harvest_sell_pct: sellPct,
       post_harvest_pool_pct: poolPct,
+      top_up_pool_strategies: topUpStrategies,
       rental,
       buy,
     });
@@ -206,6 +225,12 @@ export default function ConfigDialog({
           poolPct={poolPct}
           onSellPctChange={setSellPct}
           onPoolPctChange={setPoolPct}
+        />
+
+        <TopUpPoolSection
+          strategies={topUpStrategies}
+          onToggle={toggleTopUpStrategy}
+          onMove={moveTopUpStrategy}
         />
 
         <RentEmptyWorkersSection rental={rental} onChange={setRental} />

@@ -150,6 +150,30 @@ export function buildAddLiquidityOp(
   });
 }
 
+/**
+ * Withdraw liquidity from a resource pool back into `regionUid`.
+ *
+ * `sharesOut` is a FRACTION of the player's own LP position (1 = the whole
+ * position), NOT an absolute share count — e.g. 0.001 withdraws 0.1% of the
+ * position and returns the matching slice of both resource and DEC. The engine
+ * derives both amounts, so `resource_amount`/`dec_amount` stay 0.
+ */
+export function buildRemoveLiquidityOp(
+  username: string,
+  regionUid: string,
+  resourceSymbol: string,
+  sharesOut: number
+): [string, object] {
+  return customJsonOp(username, {
+    op: "remove_liquidity",
+    region_uid: regionUid,
+    resource_amount: 0,
+    dec_amount: 0,
+    shares_out: sharesOut,
+    resource_symbol: resourceSymbol,
+  });
+}
+
 export function buildTaxCollectionOp(
   username: string,
   regionUid: string,

@@ -13,12 +13,14 @@ import {
   DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
   DEFAULT_RENTAL_STRATEGY,
+  DEFAULT_TOP_UP_POOL_STRATEGIES,
   DonationConfig,
   LandManagerConfig,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
   RentalConfig,
   RentalStrategy,
+  TopUpPoolStrategy,
 } from "@/types/landManager";
 import { getAuthStatus } from "../auth-actions";
 
@@ -53,6 +55,9 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       row?.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT,
     post_harvest_pool_pct:
       row?.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT,
+    top_up_pool_strategies:
+      (row?.top_up_pool_strategies as TopUpPoolStrategy[]) ??
+      DEFAULT_TOP_UP_POOL_STRATEGIES,
     rental: {
       strategy:
         (row?.rental_strategy as RentalStrategy) ?? DEFAULT_RENTAL_STRATEGY,
@@ -211,6 +216,31 @@ export async function saveMakeHarvestableStrategies(
     return { success: false, error: msg };
   }
 }
+export async function saveTopUpPoolStrategies(
+  strategies: TopUpPoolStrategy[]
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  try {
+    await prisma.landManagerConfig.upsert({
+      where: { player: auth.username },
+      update: { top_up_pool_strategies: strategies },
+      create: {
+        player: auth.username,
+        enabled_regions: [],
+        top_up_pool_strategies: strategies,
+      },
+    });
+    return { success: true };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, error: msg };
+  }
+}
+
 export async function savePostHarvestStrategy(
   strategy: PostHarvestStrategy,
   sellPct?: number,

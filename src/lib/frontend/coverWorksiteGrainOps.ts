@@ -1,4 +1,5 @@
 import { effectiveBalance, EMPTY_BALANCE } from "@/lib/shared/landManagerUtils";
+import { PoolHolding } from "@/lib/shared/poolPositionUtils";
 import { ActionSummary, MakeHarvestableStrategy } from "@/types/landManager";
 import {
   SplHarvestableResource,
@@ -54,6 +55,8 @@ export function buildCoverGrainOps(params: {
   strategies: MakeHarvestableStrategy[];
   decBalance: number;
   pools: SplLandPool[];
+  /** Player liquidity positions, needed only when the `pool` strategy is enabled. */
+  poolHoldings?: Record<string, PoolHolding>;
 }): CoverGrainResult {
   const {
     username,
@@ -65,6 +68,7 @@ export function buildCoverGrainOps(params: {
     strategies,
     decBalance,
     pools,
+    poolHoldings,
   } = params;
 
   const targetUid = targetRegion.region_uid;
@@ -102,7 +106,7 @@ export function buildCoverGrainOps(params: {
   // Target feeds from stored grain only — exclude its ready grain from effective.
   effective[targetUid] = { ...effective[targetUid], GRAIN: currentGrain };
 
-  const balances: RegionBalances = { effective, stored };
+  const balances: RegionBalances = { effective, stored, poolHoldings };
 
   const { ops, log, actions } = buildMakeHarvestableOps(
     regions,

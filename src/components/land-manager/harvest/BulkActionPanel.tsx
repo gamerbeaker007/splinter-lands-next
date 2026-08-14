@@ -1,15 +1,17 @@
 "use client";
 
-import DryRunDialog from "@/components/land-manager/harvest/DryRunDialog";
+import ActionPlanDialog from "@/components/land-manager/harvest/ActionPlanDialog";
 import HarvestAllRow from "@/components/land-manager/harvest/HarvestAllRow";
 import HarvestMythicsRow from "@/components/land-manager/harvest/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/harvest/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/harvest/ProcessResourcesRow";
+import TopUpPoolsRow from "@/components/land-manager/harvest/TopUpPoolsRow";
 import {
   DonationConfig,
-  DryRunResult,
+  ActionPlan,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
+  TopUpPoolStrategy,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Box, Stack } from "@mui/material";
@@ -26,6 +28,7 @@ interface Props {
   postHarvestExcludedResources: string[];
   postHarvestSellPct: number;
   postHarvestPoolPct: number;
+  topUpPoolStrategies: TopUpPoolStrategy[];
   hasMythics: boolean;
   onSuccess?: () => void;
 }
@@ -40,16 +43,23 @@ export default function BulkActionPanel({
   postHarvestExcludedResources,
   postHarvestSellPct,
   postHarvestPoolPct,
+  topUpPoolStrategies,
   hasMythics,
   onSuccess,
 }: Props) {
   const router = useRouter();
-  const [dryRun, setDryRun] = useState<DryRunResult | null>(null);
+  // Every action is plan-then-confirm: a row builds its plan and hands it here
+  // together with the executor, and only the dialog's Confirm broadcasts it.
+  const [pending, setPending] = useState<{
+    plan: ActionPlan;
+    confirm: () => Promise<void>;
+  } | null>(null);
   const [busyMap, setBusyMap] = useState({
     harvest: false,
     makeHarvestable: false,
     processResources: false,
     mythicHarvest: false,
+    topUpPools: false,
   });
 
   const visibleRegions = regions.filter((r) =>
@@ -78,6 +88,11 @@ export default function BulkActionPanel({
     []
   );
 
+  const onTopUpPoolsBusy = useCallback(
+    (b: boolean) => setBusyMap((m) => ({ ...m, topUpPools: b })),
+    []
+  );
+
   const anyBusy = useMemo(
     () => Object.values(busyMap).some(Boolean),
     [busyMap]
@@ -94,7 +109,7 @@ export default function BulkActionPanel({
           donation={donation}
           anyBusy={anyBusy}
           onBusyChange={onHarvestBusy}
-          onDryRun={setDryRun}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
 
@@ -104,7 +119,7 @@ export default function BulkActionPanel({
           strategies={strategies}
           anyBusy={anyBusy}
           onBusyChange={onMakeHarvestableBusy}
-          onDryRun={setDryRun}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
 
@@ -115,7 +130,7 @@ export default function BulkActionPanel({
           hasMythics={hasMythics}
           anyBusy={anyBusy}
           onBusyChange={onMythicHarvestBusy}
-          onDryRun={setDryRun}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
 
@@ -128,13 +143,34 @@ export default function BulkActionPanel({
           poolPct={postHarvestPoolPct}
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
-          onDryRun={setDryRun}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
+          onSuccess={afterSuccess}
+        />
+
+        {/* Closes the rolling-buffer loop: Make Harvestable draws matured
+            liquidity out, Top Up Pools puts next week's worth back in. */}
+        <TopUpPoolsRow
+          username={username}
+          visibleRegions={visibleRegions}
+          strategies={topUpPoolStrategies}
+          anyBusy={anyBusy}
+          onBusyChange={onTopUpPoolsBusy}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
       </Stack>
 
-      {dryRun && (
-        <DryRunDialog result={dryRun} onClose={() => setDryRun(null)} />
+      {pending && (
+        <ActionPlanDialog
+          plan={pending.plan}
+          busy={anyBusy}
+          onConfirm={async () => {
+            await pending.confirm();
+            // The row's own alerts report the outcome, so close either way.
+            setPending(null);
+          }}
+          onClose={() => setPending(null)}
+        />
       )}
     </Box>
   );

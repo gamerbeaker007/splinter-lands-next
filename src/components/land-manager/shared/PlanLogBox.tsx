@@ -10,7 +10,7 @@ interface Props {
   maxHeight?: number;
 }
 
-/** Monospace scroll box for displaying a planned-operations log (dry run, cover proposal, …). */
+/** Monospace scroll box for displaying a planned-operations log (action plan, cover proposal, …). */
 export default function PlanLogBox({
   lines,
   emptyText = "(nothing to do)",
