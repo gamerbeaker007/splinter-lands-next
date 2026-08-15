@@ -13,7 +13,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
  */
 export function usePlayerRegionData(
   playerName: string | null,
-  filters: FilterInput | null
+  filters: FilterInput | null,
+  includeTaxes: boolean = true,
+  includeTransferFee: boolean = true
 ) {
   const [data, setData] = useState<PlayerRegionDataType | null>(null);
   const [taxData, setTaxData] = useState<RegionTaxSummary[] | null>(null);
@@ -49,7 +51,13 @@ export function usePlayerRegionData(
       try {
         // Fetch both in parallel
         const [regionData, taxDataResult] = await Promise.all([
-          getPlayerRegionData(playerName, filters, force),
+          getPlayerRegionData(
+            playerName,
+            filters,
+            includeTaxes,
+            includeTransferFee,
+            force
+          ),
           getPlayerTaxData(playerName),
         ]);
         if (isStale()) return;
@@ -70,7 +78,7 @@ export function usePlayerRegionData(
         if (!isStale()) setLoading(false);
       }
     },
-    [playerName, filters]
+    [playerName, filters, includeTaxes, includeTransferFee]
   );
 
   useEffect(() => {

@@ -292,9 +292,15 @@ export async function getCachedPlayerOverviewData(
 }
 
 export async function processPlayerRegionInformation(
-  playerData: DeedComplete[]
+  playerData: DeedComplete[],
+  includeTaxes: boolean = true,
+  includeTransferFee: boolean = true
 ): Promise<PlayerRegionDataType> {
-  const regionSummary = prepareSummary(playerData, true, true);
+  const regionSummary = prepareSummary(
+    playerData,
+    includeTaxes,
+    includeTransferFee
+  );
 
   // add totals (dec + resources
   // dec + per resource

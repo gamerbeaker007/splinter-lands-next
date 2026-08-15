@@ -17,6 +17,8 @@ import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
 export async function getPlayerRegionData(
   player: string,
   filters: FilterInput,
+  includeTaxes: boolean = true,
+  includeTransferFee: boolean = true,
   force: boolean = false
 ): Promise<PlayerRegionDataType> {
   try {
@@ -26,7 +28,11 @@ export async function getPlayerRegionData(
       throw new Error("No data found");
     }
 
-    const result = await processPlayerRegionInformation(playerData);
+    const result = await processPlayerRegionInformation(
+      playerData,
+      includeTaxes,
+      includeTransferFee
+    );
     return result;
   } catch (err) {
     console.error("Failed to load player region data", err);

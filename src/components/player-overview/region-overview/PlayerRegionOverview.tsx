@@ -7,18 +7,30 @@ import { usePlayerRegionData } from "@/hooks/usePlayerRegionData";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Refresh } from "@mui/icons-material";
-import { Box, Button, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  Checkbox,
+  FormControlLabel,
+  FormGroup,
+  Typography,
+} from "@mui/material";
+import { useState } from "react";
 import ProductionTotalsDEC from "./ProductionTotalsDEC";
 import TaxTotalsDEC from "./TaxTotalsDEC";
 
 export default function PlayerRegionOverview() {
   const { selectedPlayer } = usePlayer();
   const { filters } = useFilters();
+  const [includeTaxes, setIncludeTaxes] = useState(true);
+  const [includeTransferFee, setIncludeTransferFee] = useState(true);
 
   // Use server action hook
   const { data, taxData, loadingText, refetch } = usePlayerRegionData(
     selectedPlayer,
-    filters
+    filters,
+    includeTaxes,
+    includeTransferFee
   );
 
   return (
@@ -42,6 +54,28 @@ export default function PlayerRegionOverview() {
           {taxData ? <TaxTotalsDEC taxData={taxData} /> : null}
           {data ? (
             <>
+              <FormGroup row>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={includeTaxes}
+                      onChange={(e) => setIncludeTaxes(e.target.checked)}
+                    />
+                  }
+                  label="Include Taxes"
+                />
+
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={includeTransferFee}
+                      onChange={(e) => setIncludeTransferFee(e.target.checked)}
+                    />
+                  }
+                  label="Include Transfer Fee"
+                />
+              </FormGroup>
+
               <Typography variant="h6" mt={2}>
                 🌍 Total Net (All Regions)
               </Typography>

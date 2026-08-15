@@ -13,6 +13,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [Unreleased]
 
 ---
+
+## [v1.21.1] - 2026-08-14
+
+### Added
+
+- Player overview (Region) Add Include Taxed and Include Transfer Fee
+
+---
 ## [v1.21.0] - 2026-08-14
 
 ### Added
@@ -88,7 +96,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Top Up Pools no longer treats fractional region balances as a usable source. Sub-10 amounts
   are ignored, so a region holding e.g. 0.047 GRAIN no longer produces an `add_liquidity` op
   that deposits nothing (its DEC side rounds to 0) and burns a block slot.
- 
+
 ---
 
 ## [v1.20.3] - 2026-08-13
