@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.21.2] - 2026-08-14
+
+### Changed
+
+- Update layout Player (Region Overview)
+
+
+---
+
 ## [v1.21.1] - 2026-08-14
 
 ### Added

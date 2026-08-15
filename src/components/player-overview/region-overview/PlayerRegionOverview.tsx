@@ -11,6 +11,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Divider,
   FormControlLabel,
   FormGroup,
   Typography,
@@ -50,10 +51,19 @@ export default function PlayerRegionOverview() {
             Refresh Data
           </Button>
 
-          <ProductionTotalsDEC totalDec={data?.totals.totalDEC || 0} />
-          {taxData ? <TaxTotalsDEC taxData={taxData} /> : null}
+          <Box display="flex" flexWrap="wrap" alignItems="center" mt={2}>
+            <ProductionTotalsDEC totalDec={data?.totals.totalDEC || 0} />
+            {taxData ? <TaxTotalsDEC taxData={taxData} /> : null}
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
           {data ? (
             <>
+              <Typography variant="h4" mt={2}>
+                Production Overview
+              </Typography>
+
               <FormGroup row>
                 <FormControlLabel
                   control={
@@ -77,11 +87,12 @@ export default function PlayerRegionOverview() {
               </FormGroup>
 
               <Typography variant="h6" mt={2}>
-                🌍 Total Net (All Regions)
+                🌍 Total Net (All Regions):
               </Typography>
+
               <TotalsCardList regionTotals={data.totals} />
-              <Typography variant="h4" mt={2}>
-                Production Overview
+              <Typography variant="h6" mt={2}>
+                🗺️ Per Region:
               </Typography>
               <RegionCardList data={data.regionSummary} />
             </>
@@ -89,8 +100,9 @@ export default function PlayerRegionOverview() {
 
           {taxData ? (
             <>
+              <Divider sx={{ my: 2 }} />
               <Typography variant="h4" mt={2}>
-                Tax Income:
+                Tax Overview:
               </Typography>
               <TaxCardList data={taxData} />
             </>
