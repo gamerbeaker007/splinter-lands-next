@@ -13,6 +13,84 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [Unreleased]
 
 ---
+## [v1.21.0] - 2026-08-14
+
+### Added
+
+- **Make Harvestable — new `pool` strategy.** Resolves a resource shortage by withdrawing
+  from the player's liquidity position instead of transferring, swapping or buying. Only the
+  portion that has matured past the 30-day vesting lock is used, so the withdrawal pays no
+  10% trade-hub fee and no early-exit penalty — making it the cheapest source and the new
+  **first** default strategy (`["pool", "transfer", "swap", "buy_dec"]`). Existing
+  configurations gain `pool` at the front of their list while keeping their own order. The
+  DEC that comes out alongside the resource is credited to the plan, so a later `buy_dec`
+  step can spend it. Available in both planning and live execution, and in the worksite
+  "cover grain deficit" flow.
+
+- **Top Up Pools — new one-click post-processing action** on the Harvest tab, after Harvest.
+  Adds roughly one week of consumption (+10% safety margin) back into the liquidity pools so
+  it matures into tax-free withdrawal fuel for Make Harvestable — the opposite side of a
+  rolling 30-day buffer. Weekly consumption is read from live **rates** — each worksite's
+  `grain_req_per_hour` for food, and the region's `resource_recipes` × its production rate for
+  WOOD/STONE/IRON inputs — so it stays correct immediately after a harvest and assumes nothing
+  about harvest cadence. Where a region has accrued long enough to be a meaningful sample, the
+  accrued cost is used as an independent cross-check and a material disagreement is surfaced
+  in the plan. It is an incremental top-up: an existing multi-week pool balance does not
+  reduce this week's target.
+
+- **Top Up Pools strategies** use an ordered preferred/fallback model — `use_owned_dec`,
+  `sell_resource`, `swap_resource` and `buy_resources` can each be enabled, disabled and
+  reordered. Each strategy covers as much of the resource's *outstanding* target as it can,
+  with the next enabled strategy picking up the remainder. For example,
+  `["use_owned_dec", "buy_resources"]` deposits what you hold and then buys the shortfall,
+  while `["buy_resources"]` alone buys the whole target and leaves region balances untouched.
+  A strategy absent from the list is never used, not even implicitly, and a resource the
+  enabled strategies cannot fund in full is skipped rather than partially deposited. The
+  plan shows how much each strategy covers.
+
+  The new `swap_resource` strategy funds a resource's weekly top-up from the *surplus of a
+  different* resource — useful for a lopsided account that is short on grain while sitting on
+  wood it will never burn. The resource side uses one `swap_tokens` op (two AMM hops at 5%
+  each, ~9.75% total — materially cheaper than selling for DEC and buying back at 10% + 10%).
+  The DEC side comes from the wallet, falling back to selling a little more of the same donor
+  when the wallet is short, so the strategy still works on an empty wallet. Donors are
+  protected: every resource keeps its own weekly target plus one week of its own consumption
+  reserved, and only the surplus above that can be swapped away — fixing grain can never turn
+  wood into the skipped resource. `swap_resource` is disabled by default; enable and order it
+  in **Config → Top Up Pools — Strategy Order**. The plan names the donor resource and the
+  amount spent.
+
+- **Pool buffer warning** in the Land Manager alert panel when a resource's pool reserves fall
+  below the recommended 5-week consumption buffer, listing total, unlocked and weekly figures.
+  Shown only when the `pool` Make Harvestable strategy is enabled — the buffer exists to feed
+  that strategy, so a player who only deposits has nothing to act on.
+
+### Changed
+
+- The Today panel's Process Resources section now also covers Top Up Pools activity and
+  reports resource purchases separately from pool additions.
+
+- **Every Land Manager bulk action is now plan-then-confirm.** The separate **Dry Run** buttons
+  are gone: one button per action builds the plan, shows it in a dialog, and broadcasts nothing
+  until **Confirm & Execute** is pressed. Applies to Harvest All, Make All Harvestable, Harvest
+  Mythics, Process Resources, Top Up Pools, and Stake / Unstake DEC. Action buttons now end in
+  `…` to signal that they open a plan rather than acting immediately, their tooltips say so,
+  and the Land Manager guidance note has been updated accordingly.
+
+### Fixed
+
+- Land Manager panels (region resource table, pool-buffer alert) could show pre-action
+  balances after a bulk action completed. Building a plan primed the 30-second server-side
+  region cache, and the post-action refresh then won a cache hit on that snapshot. Every
+  action that moves resources, DEC or liquidity now invalidates the player's cached region
+  and liquidity data before triggering the refresh.
+
+- Top Up Pools no longer treats fractional region balances as a usable source. Sub-10 amounts
+  are ignored, so a region holding e.g. 0.047 GRAIN no longer produces an `add_liquidity` op
+  that deposits nothing (its DEC side rounds to 0) and burns a block slot.
+ 
+---
+
 ## [v1.20.3] - 2026-08-13
 
 ### Added

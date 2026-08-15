@@ -1,9 +1,11 @@
 "use client";
 
+import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
-import { NATURAL_RESOURCES, RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
+  Box,
   CircularProgress,
   Paper,
   Table,
@@ -15,8 +17,8 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { useEffect, useState } from "react";
-import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 
 interface Props {
   regions: SplProductionOverviewRegion[];
@@ -24,8 +26,26 @@ interface Props {
   refreshKey?: number;
 }
 
-function fmt(n: number) {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 0 });
+export function fmt(number: number) {
+  const parts = new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    compactDisplay: "short",
+    maximumFractionDigits: 3,
+  }).formatToParts(number);
+
+  return (
+    <>
+      {parts.map((part, index) =>
+        part.type === "compact" ? (
+          <strong key={index} style={{ marginLeft: "2px" }}>
+            {part.value}
+          </strong>
+        ) : (
+          part.value
+        )
+      )}
+    </>
+  );
 }
 
 export default function RegionResourceSummary({
@@ -79,13 +99,21 @@ export default function RegionResourceSummary({
               </TableCell>
               {NATURAL_RESOURCES.map((sym) => (
                 <TableCell key={sym} align="right">
-                  <Typography
-                    variant="caption"
-                    fontWeight="bold"
-                    sx={{ color: RESOURCE_COLOR_MAP[sym] ?? "inherit" }}
+                  <Box
+                    display="flex"
+                    alignItems="right"
+                    justifyContent={"right"}
+                    gap={0.5}
                   >
-                    {sym}
-                  </Typography>
+                    <Tooltip title={sym} placement={"top"}>
+                      <Image
+                        src={RESOURCE_ICON_MAP[sym]}
+                        alt={sym}
+                        width={16}
+                        height={16}
+                      />
+                    </Tooltip>
+                  </Box>
                 </TableCell>
               ))}
             </TableRow>
@@ -111,14 +139,7 @@ export default function RegionResourceSummary({
                     </TableCell>
                     {NATURAL_RESOURCES.map((sym) => (
                       <TableCell key={sym} align="right">
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            color: b
-                              ? (RESOURCE_COLOR_MAP[sym] ?? "text.primary")
-                              : "text.disabled",
-                          }}
-                        >
+                        <Typography variant="caption">
                           {b ? fmt(b[sym] ?? 0) : "—"}
                         </Typography>
                       </TableCell>

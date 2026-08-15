@@ -298,10 +298,24 @@ export default function TodayPanel({
                         color="text.secondary"
                         display="block"
                       >
-                        {a.type} {a.from_symbol}
-                        {a.from_symbol !== a.to_symbol ? `→${a.to_symbol}` : ""}
-                        : {a.from_region} → {a.to_region}{" "}
-                        {a.in_amount.toFixed(0)} → {a.out_amount.toFixed(0)}
+                        {a.type === "pool" ? (
+                          // For pool withdrawals in_amount is a share FRACTION
+                          // of the position, not a resource amount.
+                          <>
+                            pool {a.to_symbol}: withdrew{" "}
+                            {(a.in_amount * 100).toFixed(1)}% of position →{" "}
+                            {a.out_amount.toFixed(0)} in {a.to_region}
+                          </>
+                        ) : (
+                          <>
+                            {a.type} {a.from_symbol}
+                            {a.from_symbol !== a.to_symbol
+                              ? `→${a.to_symbol}`
+                              : ""}
+                            : {a.from_region} → {a.to_region}{" "}
+                            {a.in_amount.toFixed(0)} → {a.out_amount.toFixed(0)}
+                          </>
+                        )}
                       </Typography>
                     )
                   )}
@@ -314,7 +328,8 @@ export default function TodayPanel({
               <Box>
                 <Stack direction="row" alignItems="center" gap={0.5} mb={0.5}>
                   <Typography variant="caption" color="text.secondary">
-                    Process Resources · {data.postHarvest.runs} run
+                    Process Resources / Top Up Pools · {data.postHarvest.runs}{" "}
+                    run
                     {data.postHarvest.runs !== 1 ? "s" : ""}
                   </Typography>
                   {anyFailed(data.postHarvest.transactions) && (
@@ -328,48 +343,71 @@ export default function TodayPanel({
                   {(() => {
                     const actions = data.postHarvest
                       .actions_json as PostHarvestActionSummary[];
-                    // Aggregate by (type, symbol)
-                    const sold: Record<
-                      string,
-                      { resource_in: number; dec_amount: number }
-                    > = {};
-                    const added: Record<
-                      string,
-                      { resource_in: number; dec_amount: number }
-                    > = {};
+                    // Aggregate by (type, symbol). Top Up Pools shares this log
+                    // with Process Resources, so buys appear here too.
+                    type Totals = {
+                      resource_in: number;
+                      dec_amount: number;
+                      resource_out: number;
+                    };
+                    const buckets: Record<
+                      PostHarvestActionSummary["type"],
+                      Record<string, Totals>
+                    > = {
+                      sell_for_dec: {},
+                      buy_resource: {},
+                      add_to_pool: {},
+                      swap_resource: {},
+                    };
                     for (const a of actions) {
-                      const bucket = a.type === "sell_for_dec" ? sold : added;
-                      if (!bucket[a.symbol])
-                        bucket[a.symbol] = { resource_in: 0, dec_amount: 0 };
-                      bucket[a.symbol].resource_in += a.resource_in;
-                      bucket[a.symbol].dec_amount += a.dec_amount;
+                      const bucket = buckets[a.type] ?? buckets.add_to_pool;
+                      // A swap has two symbols, so both belong in the key —
+                      // otherwise WOOD→GRAIN and WOOD→IRON would merge into one
+                      // meaningless row.
+                      const key =
+                        a.type === "swap_resource" && a.to_symbol
+                          ? `${a.symbol} → ${a.to_symbol}`
+                          : a.symbol;
+                      if (!bucket[key])
+                        bucket[key] = {
+                          resource_in: 0,
+                          dec_amount: 0,
+                          resource_out: 0,
+                        };
+                      bucket[key].resource_in += a.resource_in;
+                      bucket[key].dec_amount += a.dec_amount;
+                      bucket[key].resource_out += a.resource_out ?? 0;
                     }
+                    const LABELS: Record<
+                      PostHarvestActionSummary["type"],
+                      (sym: string, v: Totals) => string
+                    > = {
+                      sell_for_dec: (sym, v) =>
+                        `Sold: ${v.resource_in.toFixed(0)} ${sym} → ${v.dec_amount.toFixed(3)} DEC`,
+                      buy_resource: (sym, v) =>
+                        `Bought: ${v.dec_amount.toFixed(3)} DEC → ${v.resource_in.toFixed(0)} ${sym}`,
+                      add_to_pool: (sym, v) =>
+                        `Added: ${v.resource_in.toFixed(0)} ${sym} | ${v.dec_amount.toFixed(3)} DEC`,
+                      // `sym` is already "FROM → TO" here.
+                      swap_resource: (sym, v) =>
+                        `Swapped: ${v.resource_in.toFixed(0)} → ${v.resource_out.toFixed(0)} (${sym})`,
+                    };
                     const rows: React.ReactNode[] = [];
-                    for (const [sym, v] of Object.entries(sold)) {
-                      rows.push(
-                        <Typography
-                          key={`sold-${sym}`}
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Sold: {v.resource_in.toFixed(0)} {sym} →{" "}
-                          {v.dec_amount.toFixed(3)} DEC
-                        </Typography>
-                      );
-                    }
-                    for (const [sym, v] of Object.entries(added)) {
-                      rows.push(
-                        <Typography
-                          key={`added-${sym}`}
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                        >
-                          Added: {v.resource_in.toFixed(0)} {sym} |{" "}
-                          {v.dec_amount.toFixed(3)} DEC
-                        </Typography>
-                      );
+                    for (const [type, bucket] of Object.entries(buckets)) {
+                      const label =
+                        LABELS[type as PostHarvestActionSummary["type"]];
+                      for (const [sym, v] of Object.entries(bucket)) {
+                        rows.push(
+                          <Typography
+                            key={`${type}-${sym}`}
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                          >
+                            {label(sym, v)}
+                          </Typography>
+                        );
+                      }
                     }
                     return rows;
                   })()}

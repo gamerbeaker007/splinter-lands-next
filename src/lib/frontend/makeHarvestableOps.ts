@@ -1,7 +1,12 @@
 import {
   buildBuyWithDecOp,
+  buildRemoveLiquidityOp,
   buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
+import {
+  PoolHolding,
+  sharesFractionForResource,
+} from "@/lib/shared/poolPositionUtils";
 import {
   aggregateCosts,
   computeDecNeededForResource,
@@ -21,6 +26,12 @@ import { SplLandPool } from "@/types/spl/landPools";
 
 export const DEFICIT_BUFFER = 1.02;
 
+/**
+ * Don't spend a transaction on a pool withdrawal smaller than this — a dust
+ * withdrawal burns a block slot without meaningfully shrinking the deficit.
+ */
+const MIN_POOL_WITHDRAWAL = 1;
+
 interface Ctx {
   username: string;
   pools: SplLandPool[];
@@ -36,6 +47,12 @@ interface Ctx {
   log: string[];
   decBalance: number;
   actions: ActionSummary[];
+  // The player's liquidity position per resource, plus how much of each
+  // position this plan has already committed. Positions are account-wide (not
+  // per region), so several regions drawing on the same resource must share
+  // one budget or the plan would withdraw the same liquidity twice.
+  holdings: Record<string, PoolHolding>;
+  usedPoolFraction: Record<string, number>;
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -136,6 +153,107 @@ function commitSwap(
 }
 
 // ── Strategies ────────────────────────────────────────────────────────────────
+
+/**
+ * Withdraw matured liquidity straight into the region that is short.
+ *
+ * This is the cheapest source available: liquidity older than 30 days leaves
+ * the pool at face value, whereas transfer/swap/buy all pay the 10% trade-hub
+ * fee. Only the unlocked slice is ever touched — withdrawing vested liquidity
+ * would incur a 10% early-exit penalty and defeat the point of the strategy.
+ *
+ * The withdrawal returns DEC alongside the resource; that DEC lands in the
+ * wallet and is credited to the running balance so a later `buy_dec` step can
+ * use it.
+ */
+function tryPool(
+  ctx: Ctx,
+  region: SplProductionOverviewRegion,
+  cost: CostEntry,
+  deficit: number
+): boolean {
+  const holding = ctx.holdings[cost.symbol];
+  if (!holding || holding.resource <= 0) {
+    ctx.log.push(`  - Pool: no ${cost.symbol} liquidity position`);
+    return false;
+  }
+
+  const used = ctx.usedPoolFraction[cost.symbol] ?? 0;
+  const wanted = deficit * DEFICIT_BUFFER;
+  const fraction = sharesFractionForResource(holding, wanted, used);
+
+  if (fraction <= 0) {
+    ctx.log.push(
+      holding.unlockedFraction <= 0
+        ? `  - Pool: all ${cost.symbol} liquidity is still within the 30-day lock`
+        : `  - Pool: unlocked ${cost.symbol} liquidity already fully committed in this plan`
+    );
+    return false;
+  }
+
+  // shares_out is a fraction of the position and the engine reads 3 decimals.
+  // Round UP: a large position relative to a small deficit would otherwise
+  // truncate to 0.000 and withdraw nothing. Over-withdrawing is harmless — the
+  // surplus simply lands in the region — but it must still not reach into the
+  // locked slice, so fall back to the largest unlocked step that does fit.
+  const remainingUnlocked = Math.max(0, holding.unlockedFraction - used);
+  let sharesOut = Math.ceil(fraction * 1000) / 1000;
+  if (sharesOut > remainingUnlocked) {
+    sharesOut = Math.floor(remainingUnlocked * 1000) / 1000;
+  }
+  if (sharesOut <= 0) {
+    ctx.log.push(
+      `  - Pool: unlocked ${cost.symbol} position is too small to withdraw (needs at least 0.1% of the position)`
+    );
+    return false;
+  }
+
+  const resourceOut = sharesOut * holding.resource;
+  if (resourceOut < MIN_POOL_WITHDRAWAL) {
+    ctx.log.push(
+      `  - Pool: withdrawable ${cost.symbol} (${resourceOut.toFixed(3)}) below minimum`
+    );
+    return false;
+  }
+
+  const decOut = sharesOut * holding.dec;
+
+  ctx.ops.push(
+    buildRemoveLiquidityOp(
+      ctx.username,
+      region.region_uid,
+      cost.symbol,
+      sharesOut
+    )
+  );
+  ctx.usedPoolFraction[cost.symbol] = used + sharesOut;
+  ctx.working[region.region_uid][cost.symbol] =
+    (ctx.working[region.region_uid][cost.symbol] ?? 0) + resourceOut;
+  ctx.stored[region.region_uid][cost.symbol] =
+    (ctx.stored[region.region_uid][cost.symbol] ?? 0) + resourceOut;
+  ctx.decBalance += decOut;
+
+  ctx.actions.push({
+    type: "pool",
+    from_region: "POOL",
+    to_region: region.name,
+    from_symbol: cost.symbol,
+    to_symbol: cost.symbol,
+    in_amount: sharesOut,
+    out_amount: Number.parseFloat(resourceOut.toFixed(3)),
+  });
+
+  if (resourceOut >= deficit) {
+    ctx.log.push(
+      `  ✓ Pool: withdraw ${(sharesOut * 100).toFixed(1)}% of ${cost.symbol} position → ${resourceOut.toFixed(3)} ${cost.symbol} + ${decOut.toFixed(3)} DEC in ${region.name} (no fee)`
+    );
+    return true;
+  }
+  ctx.log.push(
+    `  ~ Pool partial: withdraw ${(sharesOut * 100).toFixed(1)}% → ${resourceOut.toFixed(3)} ${cost.symbol} (still short ${(deficit - resourceOut).toFixed(0)}; rest is locked)`
+  );
+  return false;
+}
 
 function tryTransfer(
   ctx: Ctx,
@@ -342,6 +460,7 @@ function tryBuyDec(
 }
 
 const STRATEGY_FN: Record<MakeHarvestableStrategy, typeof tryTransfer> = {
+  pool: tryPool,
   transfer: tryTransfer,
   swap: trySwap,
   buy_dec: tryBuyDec,
@@ -354,6 +473,13 @@ export interface RegionBalances {
   effective: Record<string, Record<string, number>>;
   /** Stored balance only (caps what can leave a region via swap/transfer). */
   stored: Record<string, Record<string, number>>;
+  /**
+   * The player's liquidity position per resource symbol, already converted to
+   * resource/DEC units. Account-wide, not per region. Omit (or leave empty) to
+   * disable the `pool` strategy — it then reports "no liquidity position" and
+   * falls through to the next strategy.
+   */
+  poolHoldings?: Record<string, PoolHolding>;
 }
 
 export function buildMakeHarvestableOps(
@@ -397,6 +523,8 @@ export function buildMakeHarvestableOps(
     log: [],
     decBalance: initialDecBalance,
     actions: [],
+    holdings: balances.poolHoldings ?? {},
+    usedPoolFraction: {},
   };
 
   for (const region of visibleRegions) {

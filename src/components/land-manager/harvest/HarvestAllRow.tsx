@@ -1,17 +1,10 @@
 "use client";
 
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
-import { DonationConfig, DryRunResult } from "@/types/landManager";
+import { DonationConfig, ActionPlan } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
-import {
-  Alert,
-  Button,
-  ButtonGroup,
-  CircularProgress,
-  Stack,
-  Tooltip,
-} from "@mui/material";
+import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -20,7 +13,7 @@ interface Props {
   donation: DonationConfig;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
-  onDryRun: (result: DryRunResult) => void;
+  onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
   onSuccess: () => void;
 }
 
@@ -30,7 +23,7 @@ export default function HarvestAllRow({
   donation,
   anyBusy,
   onBusyChange,
-  onDryRun,
+  onPlan,
   onSuccess,
 }: Props) {
   const action = useHarvestAllAction({
@@ -44,9 +37,15 @@ export default function HarvestAllRow({
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
 
-  async function run(isDryRun: boolean) {
-    const dr = await action.execute(isDryRun);
-    if (dr) onDryRun(dr);
+  // Build the plan first and hand it to the confirm dialog; only the
+  // dialog's Confirm actually broadcasts.
+  async function run() {
+    const plan = await action.execute(true);
+    if (plan) {
+      onPlan(plan, async () => {
+        await action.execute(false);
+      });
+    }
   }
 
   return (
@@ -58,31 +57,26 @@ export default function HarvestAllRow({
         alignItems="center"
         mb={1.5}
       >
-        <ButtonGroup size="small" disabled={anyBusy}>
-          <Button
-            variant="contained"
-            color="success"
-            startIcon={
-              action.busy ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <HarvestIcon fontSize="small" />
-              )
-            }
-            onClick={() => run(false)}
-          >
-            Harvest All
-          </Button>
-          <Tooltip title="Show planned operations without broadcasting">
+        <Tooltip title="Harvest every enabled region — shows the plan for confirmation first">
+          <span>
             <Button
-              variant="outlined"
+              size="small"
+              disabled={anyBusy}
+              variant="contained"
               color="success"
-              onClick={() => run(true)}
+              startIcon={
+                action.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <HarvestIcon fontSize="small" />
+                )
+              }
+              onClick={run}
             >
-              Dry Run
+              Harvest All…
             </Button>
-          </Tooltip>
-        </ButtonGroup>
+          </span>
+        </Tooltip>
       </Stack>
 
       {action.result?.success && (

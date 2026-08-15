@@ -5,8 +5,12 @@ import {
   getBulkRegionData,
   getDecBalance,
   getLandPools,
+  getPlayerPoolPositions,
   getProductionOverview,
+  invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { computePoolHolding } from "@/lib/shared/poolPositionUtils";
+import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   buildCoverGrainOps,
   CoverGrainResult,
@@ -17,6 +21,7 @@ import {
 } from "@/lib/frontend/splBroadcast";
 import { MakeHarvestableStrategy } from "@/types/landManager";
 import { DeedComplete } from "@/types/deed";
+import { SplPlayerPoolPosition } from "@/types/spl/landPools";
 import { useCallback, useState } from "react";
 
 export type CoverGrainStatus =
@@ -86,11 +91,22 @@ export function useCoverGrainAction({
         }
 
         const regionUids = regions.map((r) => r.region_uid);
-        const [{ harvestable, balances }, dec, { pools }] = await Promise.all([
-          getBulkRegionData(regionUids, true),
-          getDecBalance(username),
-          getLandPools(),
-        ]);
+        const usesPool = strategies.includes("pool");
+        const [{ harvestable, balances }, dec, { pools }, positions] =
+          await Promise.all([
+            getBulkRegionData(regionUids, true),
+            getDecBalance(username),
+            getLandPools(),
+            usesPool
+              ? getPlayerPoolPositions(username, NATURAL_RESOURCES, true)
+              : Promise.resolve({} as Record<string, SplPlayerPoolPosition>),
+          ]);
+        const poolHoldings = Object.fromEntries(
+          Object.entries(positions).map(([symbol, position]) => [
+            symbol,
+            computePoolHolding(position, pools),
+          ])
+        );
 
         const result = buildCoverGrainOps({
           username,
@@ -102,6 +118,7 @@ export function useCoverGrainAction({
           strategies,
           decBalance: dec,
           pools,
+          poolHoldings,
         });
 
         setPlan(result);
@@ -140,6 +157,9 @@ export function useCoverGrainAction({
       await recordMakeHarvestableLog(username, plan.actions, res.txIds).catch(
         (err) => console.error("Failed to record make-harvestable log", err)
       );
+      // Clear the cached pre-action snapshot so the refresh below reads
+      // post-action balances rather than winning a cache hit on stale data.
+      await invalidatePlayerRegionCaches().catch(() => {});
       setStatus("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");

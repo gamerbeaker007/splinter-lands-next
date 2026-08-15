@@ -6,6 +6,7 @@ import {
 import {
   getBulkRegionData,
   getLandPools,
+  invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   applyDailyCaps,
@@ -28,7 +29,7 @@ import {
 import {
   DEFAULT_DONATION_RECIPIENT,
   DonationConfig,
-  DryRunResult,
+  ActionPlan,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
@@ -55,7 +56,7 @@ interface UseHarvestAllAction {
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
-  execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
+  execute: (planOnly: boolean) => Promise<ActionPlan | null>;
 }
 
 const EMPTY_BALANCE: Record<string, number> = {
@@ -83,7 +84,7 @@ export function useHarvestAllAction({
     username.toLowerCase() !== DEFAULT_DONATION_RECIPIENT.toLowerCase();
 
   const doExecute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> => {
+    async (planOnly: boolean): Promise<ActionPlan | null> => {
       setBusy(true);
       setResult(null);
       setError(null);
@@ -91,7 +92,7 @@ export function useHarvestAllAction({
         const [{ harvestable, balances }, { pools }] = await Promise.all([
           getBulkRegionData(
             visibleRegions.map((r) => r.region_uid),
-            !isDryRun
+            !planOnly
           ),
           getLandPools(),
         ]);
@@ -109,7 +110,7 @@ export function useHarvestAllAction({
           )
         );
 
-        if (isDryRun) {
+        if (planOnly) {
           const log: string[] = [];
           for (const region of eligibleRegions) {
             const built = buildRegionHarvestOnlyOp(username, region);
@@ -138,7 +139,7 @@ export function useHarvestAllAction({
             capped
           );
           log.push(...donationLog);
-          return { title: "Dry Run — Harvest All", log };
+          return { title: "Review plan — Harvest All", log };
         }
 
         if (eligibleRegions.length === 0) {
@@ -203,6 +204,9 @@ export function useHarvestAllAction({
           donations: donationOutcome,
           log: [...harvestRes.log, ...donationOutcome.log],
         });
+        // Clear the cached pre-action snapshot so the refresh below reads
+        // post-action balances rather than winning a cache hit on stale data.
+        await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -222,8 +226,8 @@ export function useHarvestAllAction({
   );
 
   const execute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> =>
-      doExecute(isDryRun),
+    async (planOnly: boolean): Promise<ActionPlan | null> =>
+      doExecute(planOnly),
     [doExecute]
   );
 

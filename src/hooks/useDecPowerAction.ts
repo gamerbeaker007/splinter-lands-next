@@ -36,12 +36,12 @@ export interface DecPowerExecuteResult {
 
 export interface UseDecPowerAction {
   busy: boolean;
-  dryRun: DecPowerPlan | null;
+  plan: DecPowerPlan | null;
   /** Player DEC balance — only fetched when staking (`direction === "up"`). */
   decBalance: number | null;
   result: DecPowerExecuteResult | null;
   error: string | null;
-  clearDryRun: () => void;
+  clearPlan: () => void;
   clearResult: () => void;
   clearError: () => void;
   preview: () => Promise<void>;
@@ -54,7 +54,7 @@ export function useDecPowerAction({
   onSuccess,
 }: Params): UseDecPowerAction {
   const [busy, setBusy] = useState(false);
-  const [dryRun, setDryRun] = useState<DecPowerPlan | null>(null);
+  const [plan, setPlan] = useState<DecPowerPlan | null>(null);
   const [decBalance, setDecBalance] = useState<number | null>(null);
   const [result, setResult] = useState<DecPowerExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -70,7 +70,7 @@ export function useDecPowerAction({
   const preview = useCallback(async () => {
     setBusy(true);
     setError(null);
-    setDryRun(null);
+    setPlan(null);
     setDecBalance(null);
     try {
       const [plan, balance] = await Promise.all([
@@ -79,7 +79,7 @@ export function useDecPowerAction({
           ? getDecBalance(username)
           : Promise.resolve(null),
       ]);
-      setDryRun(plan);
+      setPlan(plan);
       setDecBalance(balance);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -98,7 +98,7 @@ export function useDecPowerAction({
     setResult(null);
 
     // Re-fetch right before broadcast — the in_use / needed numbers can
-    // have moved since the dry run dialog opened (other tabs, manual stakes,
+    // have moved since the plan dialog opened (other tabs, manual stakes,
     // etc.). The freshly-fetched plan is what we actually broadcast.
     let plan: DecPowerPlan;
     let balance: number | null;
@@ -116,7 +116,7 @@ export function useDecPowerAction({
       setBusy(false);
       return;
     }
-    setDryRun(plan);
+    setPlan(plan);
     setDecBalance(balance);
 
     if (plan.items.length === 0) {
@@ -203,7 +203,7 @@ export function useDecPowerAction({
       }).catch(() => {});
 
       if (!phaseError) {
-        setDryRun(null);
+        setPlan(null);
         onSuccess?.();
       }
     } catch (err) {
@@ -230,11 +230,11 @@ export function useDecPowerAction({
 
   return {
     busy,
-    dryRun,
+    plan,
     decBalance,
     result,
     error,
-    clearDryRun: () => setDryRun(null),
+    clearPlan: () => setPlan(null),
     clearResult: () => setResult(null),
     clearError: () => setError(null),
     preview,

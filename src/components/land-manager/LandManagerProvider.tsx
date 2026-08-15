@@ -139,9 +139,11 @@ function LandManagerShell({ children }: { children: ReactNode }) {
           </li>
           <li>
             <Typography variant="body2">
-              Always run <strong>Dry Run</strong> first to review exactly what
-              operations will be executed — then confirm with{" "}
-              <strong>Execute</strong>.
+              Every action shows you its plan first. Buttons ending in{" "}
+              <strong>…</strong> open a dialog listing exactly which operations
+              will run — nothing is broadcast until you press{" "}
+              <strong>Confirm &amp; Execute</strong>. Read the plan before
+              confirming.
             </Typography>
           </li>
           <li>
@@ -191,8 +193,17 @@ function LandManagerShell({ children }: { children: ReactNode }) {
 
       <TodayPanel refreshKey={refreshKey} />
 
+      {/* The buffer only matters to a player who actually withdraws from the
+          pools: its whole purpose is to keep matured liquidity available to the
+          `pool` make-harvestable strategy. Someone who only deposits (Top Up
+          Pools enabled, `pool` disabled) has nothing to act on, so the warning
+          would be pure noise for them. */}
       <AlertsPanel
         enabledRegions={config.enabled_regions}
+        allRegions={allRegions}
+        poolStrategyEnabled={config.make_harvestable_strategies.includes(
+          "pool"
+        )}
         refreshKey={refreshKey}
       />
 
@@ -239,6 +250,7 @@ export default function LandManagerProvider({
 }: Props) {
   return (
     <LandManagerContextProvider
+      key={auth.username ?? "anonymous"}
       auth={auth}
       initialConfig={initialConfig}
       allRegions={allRegions}

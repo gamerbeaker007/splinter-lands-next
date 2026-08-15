@@ -2,7 +2,7 @@
 
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import {
-  DryRunResult,
+  ActionPlan,
   POST_HARVEST_STRATEGY_LABELS,
   PostHarvestStrategy,
 } from "@/types/landManager";
@@ -15,7 +15,6 @@ import {
   Chip,
   CircularProgress,
   Stack,
-  Tooltip,
 } from "@mui/material";
 import { useEffect } from "react";
 
@@ -28,7 +27,7 @@ interface Props {
   poolPct: number;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
-  onDryRun: (result: DryRunResult) => void;
+  onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
   onSuccess: () => void;
 }
 
@@ -41,7 +40,7 @@ export default function ProcessResourcesRow({
   poolPct,
   anyBusy,
   onBusyChange,
-  onDryRun,
+  onPlan,
   onSuccess,
 }: Props) {
   const action = useProcessResourcesAction({
@@ -58,9 +57,15 @@ export default function ProcessResourcesRow({
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
 
-  async function run(isDryRun: boolean) {
-    const dr = await action.execute(isDryRun);
-    if (dr) onDryRun(dr);
+  // Build the plan first and hand it to the confirm dialog; only the
+  // dialog's Confirm actually broadcasts.
+  async function run() {
+    const plan = await action.execute(true);
+    if (plan) {
+      onPlan(plan, async () => {
+        await action.execute(false);
+      });
+    }
   }
 
   const strategyLabel =
@@ -91,19 +96,10 @@ export default function ProcessResourcesRow({
                 <SavingsIcon fontSize="small" />
               )
             }
-            onClick={() => run(false)}
+            onClick={run}
           >
-            Process Resources
+            Process Resources…
           </Button>
-          <Tooltip title="Show planned operations without broadcasting">
-            <Button
-              variant="outlined"
-              color="secondary"
-              onClick={() => run(true)}
-            >
-              Dry Run
-            </Button>
-          </Tooltip>
         </ButtonGroup>
 
         <Chip

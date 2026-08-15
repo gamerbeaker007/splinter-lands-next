@@ -2,14 +2,7 @@
 
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
 import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
-import {
-  Alert,
-  Button,
-  ButtonGroup,
-  CircularProgress,
-  Stack,
-  Tooltip,
-} from "@mui/material";
+import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import DecPowerDialog from "./DecPowerDialog";
 import { DEC_POWER_VARIANTS } from "./decPowerVariant";
@@ -43,9 +36,7 @@ export default function DecPowerRow({
     direction,
     onSuccess,
   });
-  const [dialogMode, setDialogMode] = useState<"dryrun" | "confirm" | null>(
-    null
-  );
+  const [planOpen, setPlanOpen] = useState(false);
 
   useEffect(() => {
     onBusyChange(action.busy);
@@ -55,17 +46,15 @@ export default function DecPowerRow({
 
   const handleConfirm = async () => {
     await action.execute();
-    // Close the confirm dialog only on a clean run; partial / failed
-    // runs keep the dialog open so the user can see what landed.
-    if (!action.error) setDialogMode(null);
+    // Close only on a clean run; partial / failed runs keep the dialog open so
+    // the user can see what landed.
+    if (!action.error) setPlanOpen(false);
   };
 
-  const openDryRun = async () => {
-    setDialogMode("dryrun");
-    await action.preview();
-  };
-  const openConfirm = async () => {
-    setDialogMode("confirm");
+  // One button, one path: build the plan, show it, and broadcast only on
+  // confirmation.
+  const openPlan = async () => {
+    setPlanOpen(true);
     await action.preview();
   };
 
@@ -82,47 +71,32 @@ export default function DecPowerRow({
         alignItems="center"
         mb={1.5}
       >
-        <ButtonGroup size="small" disabled={disabled}>
-          <Tooltip
-            title={
-              availableTotal <= 0
-                ? variant.disabledTooltip
-                : variant.enabledTooltip
-            }
-          >
-            <span>
-              <Button
-                variant="contained"
-                color={variant.color}
-                startIcon={
-                  action.busy ? (
-                    <CircularProgress size={14} color="inherit" />
-                  ) : (
-                    <Icon fontSize="small" />
-                  )
-                }
-                disabled={disabled}
-                onClick={openConfirm}
-              >
-                {variant.verb} DEC{" "}
-              </Button>
-            </span>
-          </Tooltip>
-          <Tooltip
-            title={`Show planned ${variant.verb.toLowerCase()} without broadcasting`}
-          >
-            <span>
-              <Button
-                variant="outlined"
-                color={variant.color}
-                disabled={disabled}
-                onClick={openDryRun}
-              >
-                Dry Run
-              </Button>
-            </span>
-          </Tooltip>
-        </ButtonGroup>
+        <Tooltip
+          title={
+            availableTotal <= 0
+              ? variant.disabledTooltip
+              : `${variant.enabledTooltip} — shows the plan for confirmation first`
+          }
+        >
+          <span>
+            <Button
+              size="small"
+              variant="contained"
+              color={variant.color}
+              startIcon={
+                action.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <Icon fontSize="small" />
+                )
+              }
+              disabled={disabled}
+              onClick={openPlan}
+            >
+              {variant.verb} DEC…
+            </Button>
+          </span>
+        </Tooltip>
       </Stack>
 
       {action.result?.success && (
@@ -147,17 +121,16 @@ export default function DecPowerRow({
         </Alert>
       )}
 
-      {dialogMode && action.dryRun && (
+      {planOpen && action.plan && (
         <DecPowerDialog
           direction={direction}
-          plan={action.dryRun}
+          plan={action.plan}
           decBalance={action.decBalance}
           busy={action.busy}
-          mode={dialogMode}
-          onConfirm={dialogMode === "confirm" ? handleConfirm : undefined}
+          onConfirm={handleConfirm}
           onClose={() => {
-            setDialogMode(null);
-            action.clearDryRun();
+            setPlanOpen(false);
+            action.clearPlan();
           }}
         />
       )}

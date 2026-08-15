@@ -1,10 +1,15 @@
-// === Dry-run result (shared across bulk action hooks) ===
+// === Action plan (shared across bulk action hooks) ===
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { CardRarity } from "./planner";
 
-export interface DryRunResult {
+/**
+ * What an action intends to do, rendered for confirmation before anything is
+ * broadcast. Every bulk action hook exposes `execute(planOnly)`: `true` returns
+ * this plan and touches nothing, `false` broadcasts it.
+ */
+export interface ActionPlan {
   title: string;
   log: string[];
 }
@@ -52,9 +57,22 @@ export const DEFAULT_DONATION_CONFIG: DonationConfig = {
 
 // === Make Harvestable strategy ===
 
-export type MakeHarvestableStrategy = "transfer" | "swap" | "buy_dec";
+export type MakeHarvestableStrategy = "pool" | "transfer" | "swap" | "buy_dec";
 
+/**
+ * `pool` is first by default: withdrawing liquidity that has matured past the
+ * 30-day vesting lock costs nothing, while transfer/swap/buy all pay the 10%
+ * trade-hub fee.
+ */
 export const DEFAULT_MAKE_HARVESTABLE_STRATEGIES: MakeHarvestableStrategy[] = [
+  "pool",
+  "transfer",
+  "swap",
+  "buy_dec",
+];
+
+export const ALL_MAKE_HARVESTABLE_STRATEGIES: MakeHarvestableStrategy[] = [
+  "pool",
   "transfer",
   "swap",
   "buy_dec",
@@ -64,10 +82,63 @@ export const MAKE_HARVESTABLE_STRATEGY_LABELS: Record<
   MakeHarvestableStrategy,
   string
 > = {
+  pool: "Pool (withdraw unlocked liquidity — no 10% fee)",
   transfer: "Transfer (move resource from another region)",
   swap: "Swap (trade surplus resource for needed one)",
   buy_dec: "Buy with DEC",
 };
+
+// === Top Up Pools strategy ===
+// Mirrors the make-harvestable model: an ordered list of enabled strategies.
+// The first entry is the preferred strategy; later entries are used only as
+// fallbacks. A strategy missing from the list is disabled and never used.
+
+export type TopUpPoolStrategy =
+  | "use_owned_dec"
+  | "swap_resource"
+  | "sell_resource"
+  | "buy_resources";
+
+/**
+ * Safest-first ordering: spend nothing extra when the player already holds both
+ * sides of the deposit, then generate the DEC side by selling, then buy the
+ * missing resource as a last resort. Any order (or subset) is valid.
+ */
+export const DEFAULT_TOP_UP_POOL_STRATEGIES: TopUpPoolStrategy[] = [
+  "use_owned_dec",
+  "swap_resource",
+  "sell_resource",
+  "buy_resources",
+];
+
+export const ALL_TOP_UP_POOL_STRATEGIES: TopUpPoolStrategy[] = [
+  "use_owned_dec",
+  "swap_resource",
+  "sell_resource",
+  "buy_resources",
+];
+
+export const TOP_UP_POOL_STRATEGY_LABELS: Record<TopUpPoolStrategy, string> = {
+  use_owned_dec: "Use owned resource + wallet DEC",
+  swap_resource: "Swap surplus of another resource into this one",
+  sell_resource: "Sell resource to generate the DEC side",
+  buy_resources: "Buy the missing resource with DEC",
+};
+
+/** Safety margin added on top of the weekly consumption target. */
+export const TOP_UP_POOL_SAFETY_MARGIN = 1.1;
+
+/**
+ * Weeks of a donor resource's own consumption held back from `swap_resource`.
+ *
+ * A swap must never turn one resource's skip into another's, so the donor keeps
+ * its own top-up target ({@link TOP_UP_POOL_SAFETY_MARGIN} weeks, which this
+ * action is about to deposit) plus the one week it burns before the next run.
+ */
+export const SWAP_DONOR_RESERVE_WEEKS = TOP_UP_POOL_SAFETY_MARGIN + 1;
+
+/** Recommended pool buffer, expressed in weeks of consumption. */
+export const POOL_BUFFER_WEEKS = 5;
 
 // === Post-Harvest strategy ===
 
@@ -83,11 +154,20 @@ export const POST_HARVEST_STRATEGY_LABELS: Record<PostHarvestStrategy, string> =
   };
 
 export interface PostHarvestActionSummary {
-  type: "sell_for_dec" | "add_to_pool";
+  type: "sell_for_dec" | "add_to_pool" | "buy_resource" | "swap_resource";
   region_uid: string;
+  /**
+   * Resource the row is about. For `swap_resource` this is the resource that
+   * was SPENT, so `resource_in` and the symbol stay consistent with every other
+   * row; the swap's output is the deposit that follows it.
+   */
   symbol: string;
   resource_in: number;
   dec_amount: number;
+  /** `swap_resource` only: the resource received. */
+  to_symbol?: string;
+  /** `swap_resource` only: how much of `to_symbol` the swap delivered. */
+  resource_out?: number;
 }
 
 // === Rental strategy ===
@@ -273,6 +353,7 @@ export interface LandManagerConfig {
   post_harvest_excluded_resources: string[];
   post_harvest_sell_pct: number;
   post_harvest_pool_pct: number;
+  top_up_pool_strategies: TopUpPoolStrategy[];
   rental: RentalConfig;
   buy: BuyConfig;
 }
@@ -289,6 +370,7 @@ export function createDefaultLandManagerConfig(
     post_harvest_excluded_resources: [],
     post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
     post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
+    top_up_pool_strategies: DEFAULT_TOP_UP_POOL_STRATEGIES,
     rental: DEFAULT_RENTAL_CONFIG,
     buy: DEFAULT_BUY_CONFIG,
   };
@@ -356,10 +438,101 @@ export interface RenewRentalPlan {
   next_season_end: string | null;
 }
 
+// === Top Up Pools plan (dry run + execution share this shape) ===
+
+/** One add_liquidity leg — a single region contributing to a resource target. */
+export interface TopUpPoolAddition {
+  region_uid: string;
+  region_name: string;
+  resource_amount: number;
+  dec_amount: number;
+}
+
+/**
+ * How much of the remaining target one strategy managed to cover, and why it
+ * stopped there. Strategies run in configured order and each takes on as much of
+ * what is left as it can, so several can contribute to one resource.
+ */
+export interface TopUpPoolStrategyAttempt {
+  strategy: TopUpPoolStrategy;
+  ok: boolean;
+  /** Resource units this strategy contributed to the deposit (0 when it failed). */
+  covered: number;
+  reason: string;
+}
+
+/**
+ * A trade that funds a deposit, broadcast in phase 1 before any add_liquidity.
+ *
+ * An ordered list rather than one field per kind: `swap_resource` alone emits
+ * both a swap (the resource side) and, when wallet DEC falls short, a sale of
+ * the same donor resource (the DEC side). `from_symbol` is carried explicitly
+ * because that donor is not the resource being topped up.
+ */
+export type TopUpPoolFundingStep =
+  | {
+      kind: "sell";
+      region_uid: string;
+      region_name: string;
+      /** Resource sold — the donor's symbol, not necessarily the plan's. */
+      from_symbol: string;
+      amount: number;
+      dec_out: number;
+    }
+  | {
+      kind: "buy";
+      region_uid: string;
+      region_name: string;
+      dec_in: number;
+      resource_out: number;
+    }
+  | {
+      kind: "swap";
+      region_uid: string;
+      region_name: string;
+      /** Surplus resource spent to obtain the plan's resource. */
+      from_symbol: string;
+      in_amount: number;
+      /** DEC after hop 1 — the op's `out_amount_1`. */
+      dec_out: number;
+      /** Resource after hop 2 — the op's `out_amount_2`. */
+      resource_out: number;
+    };
+
+export interface TopUpPoolResourcePlan {
+  symbol: string;
+  weekly_consumption: number;
+  /** weekly_consumption × TOP_UP_POOL_SAFETY_MARGIN. */
+  target: number;
+  available_resource: number;
+  dec_available: number;
+  /** DEC required for the equal-value side of the full target. */
+  dec_required: number;
+  attempts: TopUpPoolStrategyAttempt[];
+  /** Every strategy that contributed resource to this deposit, in run order. */
+  contributing_strategies: TopUpPoolStrategy[];
+  /** Trades that fund the deposit, in the order they must be broadcast. */
+  funding: TopUpPoolFundingStep[];
+  additions: TopUpPoolAddition[];
+  total_resource: number;
+  total_dec: number;
+  status: "READY" | "SKIPPED";
+  skip_reason: string | null;
+}
+
+export interface TopUpPoolPlan {
+  resources: TopUpPoolResourcePlan[];
+  /** Wallet DEC at planning time. */
+  dec_balance: number;
+  /** Regions with no reliable last-claim timestamp, so consumption is unknown. */
+  consumption_warnings: string[];
+  log: string[];
+}
+
 // === Action summary for make-harvestable log ===
 
 export interface ActionSummary {
-  type: "transfer" | "swap" | "buy_dec";
+  type: "transfer" | "swap" | "buy_dec" | "pool";
   from_region: string;
   to_region: string;
   from_symbol: string;

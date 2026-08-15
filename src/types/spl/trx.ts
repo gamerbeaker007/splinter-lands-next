@@ -104,6 +104,23 @@ export interface AddLiquidityTrxData {
   region_name: string;
 }
 
+// ── remove_liquidity ──────────────────────────────────────────────────────────
+
+/**
+ * Result of withdrawing from a resource pool. `resource_amount`/`dec_amount`
+ * are what the engine actually paid out for the requested share fraction — the
+ * input op carries neither, so these are the only source of truth.
+ */
+export interface RemoveLiquidityTrxData {
+  resource: string;
+  resource_amount: number;
+  dec_amount: number;
+  region_uid: string;
+  region_name: string;
+  dec_fee: number;
+  resource_fee: number;
+}
+
 // ── market_rent ───────────────────────────────────────────────────────────────
 
 export interface MarketRentSellerResult {
@@ -265,6 +282,7 @@ export type SplTrxResult =
   | { op: "swap_tokens"; result: SwapTokensTrxData }
   | { op: "tax_collection"; result: TaxCollectionTrxData }
   | { op: "add_liquidity"; result: AddLiquidityTrxData }
+  | { op: "remove_liquidity"; result: RemoveLiquidityTrxData }
   | { op: "market_rent"; result: MarketRentTrxData }
   | { op: "market_renew_rental"; result: MarketRentTrxData }
   | { op: "market_cancel_rental"; result: MarketCancelRentalTrxData }

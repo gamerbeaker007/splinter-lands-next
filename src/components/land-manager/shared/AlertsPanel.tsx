@@ -1,6 +1,9 @@
 "use client";
 
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
+import { usePoolBufferAlerts } from "@/hooks/usePoolBufferAlerts";
+import { POOL_BUFFER_WEEKS } from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
   CheckCircleOutline,
   FlashOffOutlined,
@@ -23,6 +26,10 @@ import {
 
 interface Props {
   enabledRegions: number[];
+  /** All of the player's regions — needed to measure consumption per region. */
+  allRegions: SplProductionOverviewRegion[];
+  /** True when either pool strategy is configured (pool withdraw or top-up). */
+  poolStrategyEnabled: boolean;
   refreshKey?: number;
 }
 
@@ -30,7 +37,18 @@ function fmtNum(value: number): string {
   return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
-export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
+export default function AlertsPanel({
+  enabledRegions,
+  allRegions,
+  poolStrategyEnabled,
+  refreshKey = 0,
+}: Props) {
+  const { rows: poolBufferRows } = usePoolBufferAlerts(
+    allRegions,
+    enabledRegions,
+    poolStrategyEnabled,
+    refreshKey
+  );
   const {
     eligibility,
     stakedDEC,
@@ -87,12 +105,16 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
   const hasPoweredEmpty = totalEmptyEligible > 0;
   const unpoweredPlots = eligibility?.unpoweredSkipped ?? [];
 
+  // Only resources actually below the recommended buffer are worth surfacing.
+  const lowPoolBuffers = poolBufferRows.filter((r) => r.belowBuffer);
+
   if (
     !hasPoweredEmpty &&
     unpoweredPlots.length === 0 &&
     shortfall === 0 &&
     excess === 0 &&
-    !hasRegionalImbalance
+    !hasRegionalImbalance &&
+    lowPoolBuffers.length === 0
   )
     return null;
 
@@ -104,6 +126,62 @@ export default function AlertsPanel({ enabledRegions, refreshKey = 0 }: Props) {
         </Typography>
 
         <Stack gap={0.5}>
+          {lowPoolBuffers.length > 0 && (
+            <Alert severity="warning">
+              <Typography variant="caption" display="block">
+                {lowPoolBuffers.map((r) => r.symbol).join(", ")} pool reserves
+                are below the recommended {POOL_BUFFER_WEEKS}-week consumption
+                buffer. Top up the pools to keep harvesting tax free.
+              </Typography>
+              <Box sx={{ overflowX: "auto", mt: 0.5 }}>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Resource</TableCell>
+                      <TableCell align="right">In pool</TableCell>
+                      <TableCell align="right">Unlocked</TableCell>
+                      <TableCell align="right">Weekly use</TableCell>
+                      <TableCell align="right">Weeks covered</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {lowPoolBuffers.map((r) => (
+                      <TableRow key={r.symbol}>
+                        <TableCell>
+                          <Typography variant="caption">{r.symbol}</Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {fmtNum(r.poolResource)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {fmtNum(r.unlockedResource)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="caption">
+                            {fmtNum(r.weeklyConsumption)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography
+                            variant="caption"
+                            color="warning.main"
+                            fontWeight="bold"
+                          >
+                            {r.weeksCovered.toFixed(1)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
+            </Alert>
+          )}
+
           {hasPoweredEmpty && (
             <Box>
               <Stack direction="row" gap={1} alignItems="center">

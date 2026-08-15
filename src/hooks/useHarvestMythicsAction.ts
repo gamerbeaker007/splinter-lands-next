@@ -4,6 +4,7 @@ import {
   getBulkRegionData,
   getLandPools,
   getPlayerMythicDeeds,
+  invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   applyDailyCaps,
@@ -20,7 +21,7 @@ import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
   DEFAULT_DONATION_RECIPIENT,
   DonationConfig,
-  DryRunResult,
+  ActionPlan,
   MythicHarvestResult,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
@@ -41,7 +42,7 @@ interface UseHarvestMythicsAction {
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
-  execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
+  execute: (planOnly: boolean) => Promise<ActionPlan | null>;
 }
 
 type InternalBusy = "running" | "verifying" | null;
@@ -63,7 +64,7 @@ export function useHarvestMythicsAction({
     username.toLowerCase() !== DEFAULT_DONATION_RECIPIENT.toLowerCase();
 
   const doExecute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> => {
+    async (planOnly: boolean): Promise<ActionPlan | null> => {
       setInternalBusy("running");
       setResult(null);
       setError(null);
@@ -77,12 +78,12 @@ export function useHarvestMythicsAction({
           visibleRegions.map((r) => [r.region_uid, r.name])
         );
 
-        if (isDryRun) {
+        if (planOnly) {
           const [{ pools }, { balances }] = await Promise.all([
             getLandPools(),
             getBulkRegionData(
               visibleRegions.map((r) => r.region_uid),
-              !isDryRun
+              !planOnly
             ),
           ]);
           const log = mythicDeeds.map((d) => {
@@ -116,7 +117,7 @@ export function useHarvestMythicsAction({
             capped
           );
           log.push(...donationLog);
-          return { title: "Dry Run — Harvest Mythics", log };
+          return { title: "Review plan — Harvest Mythics", log };
         }
 
         if (!mythicDeeds.some((d) => d.taxes.length > 0)) {
@@ -192,6 +193,9 @@ export function useHarvestMythicsAction({
           donationTxIds: donationOutcome.txIds,
         }).catch(() => {});
         setResult(res);
+        // Clear the cached pre-action snapshot so the refresh below reads
+        // post-action balances rather than winning a cache hit on stale data.
+        await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
@@ -211,8 +215,8 @@ export function useHarvestMythicsAction({
   );
 
   const execute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> =>
-      doExecute(isDryRun),
+    async (planOnly: boolean): Promise<ActionPlan | null> =>
+      doExecute(planOnly),
     [doExecute]
   );
 

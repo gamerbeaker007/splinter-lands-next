@@ -7,6 +7,7 @@ import type {
   MarketItem,
   MarketPurchaseTrxData,
   MarketRentTrxData,
+  RemoveLiquidityTrxData,
   SplTrxInfo,
   SplTrxResult,
   StakeChangeTrxData,
@@ -76,6 +77,18 @@ function parseAddLiquidity(d: Raw): AddLiquidityTrxData {
     dec_amount: (d.dec_amount as number) ?? 0,
     region_uid: (d.region_uid as string) ?? "",
     region_name: (d.region_name as string) ?? "",
+  };
+}
+
+function parseRemoveLiquidity(d: Raw): RemoveLiquidityTrxData {
+  return {
+    resource: (d.resource as string) ?? "",
+    resource_amount: (d.resource_amount as number) ?? 0,
+    dec_amount: (d.dec_amount as number) ?? 0,
+    region_uid: (d.region_uid as string) ?? "",
+    region_name: (d.region_name as string) ?? "",
+    dec_fee: (d.dec_fee as number) ?? 0,
+    resource_fee: (d.resource_fee as number) ?? 0,
   };
 }
 
@@ -267,6 +280,11 @@ const PARSERS: Record<string, (outer: Raw) => TrxLookupOutcome> = {
     "add_liquidity",
     parseAddLiquidity,
     "Add liquidity failed"
+  ),
+  remove_liquidity: nested(
+    "remove_liquidity",
+    parseRemoveLiquidity,
+    "Remove liquidity failed"
   ),
   dec_powerup_region: nested(
     "dec_powerup_region",

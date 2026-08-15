@@ -3,6 +3,7 @@ import {
   getBulkRegionData,
   getDecBalance,
   getLandPools,
+  invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { buildAddLiquidityOp } from "@/lib/shared/operations/opBuilders";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
@@ -12,7 +13,7 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import {
-  DryRunResult,
+  ActionPlan,
   PostHarvestActionSummary,
   PostHarvestStrategy,
 } from "@/types/landManager";
@@ -42,7 +43,7 @@ interface UseProcessResourcesAction {
   clearResult: () => void;
   clearError: () => void;
   clearWarning: () => void;
-  execute: (isDryRun: boolean) => Promise<DryRunResult | null>;
+  execute: (planOnly: boolean) => Promise<ActionPlan | null>;
 }
 
 interface LiquidityOp {
@@ -93,15 +94,15 @@ function sumDecFromLiqOps(liqOps: [string, object][]): number {
 async function appendDecBalanceInfo(
   log: string[],
   username: string,
-  dryRunLiqOps: [string, object][],
+  plannedLiqOps: [string, object][],
   actions: PostHarvestActionSummary[],
   sellPct: number,
   poolPct: number
 ): Promise<void> {
-  if (poolPct <= 0 || dryRunLiqOps.length === 0 || sellPct >= poolPct + 5)
+  if (poolPct <= 0 || plannedLiqOps.length === 0 || sellPct >= poolPct + 5)
     return;
 
-  const totalDecNeeded = sumDecFromLiqOps(dryRunLiqOps);
+  const totalDecNeeded = sumDecFromLiqOps(plannedLiqOps);
 
   let decFromSells = 0;
   for (const action of actions) {
@@ -152,7 +153,7 @@ async function broadcastSellPhase(
  * and only updates DEC amounts to reflect current pool ratios.
  */
 function buildFreshLiquidityOps(
-  dryRunLiqOps: [string, object][],
+  plannedLiqOps: [string, object][],
   freshPools: SplLandPool[]
 ): LiquidityOp[] {
   const poolMap = new Map(
@@ -166,7 +167,7 @@ function buildFreshLiquidityOps(
   );
 
   const ops: LiquidityOp[] = [];
-  for (const liqOp of dryRunLiqOps) {
+  for (const liqOp of plannedLiqOps) {
     const parsed = parseLiqOpEnvelope(liqOp);
     const pool = poolMap.get(parsed.resource_symbol);
     if (!pool || pool.resourceQty <= 0) continue;
@@ -199,7 +200,7 @@ function buildFreshLiquidityOps(
  */
 async function broadcastLiquidityPhase(
   username: string,
-  dryRunLiqOps: [string, object][],
+  plannedLiqOps: [string, object][],
   sellPct: number,
   poolPct: number
 ): Promise<{
@@ -215,7 +216,7 @@ async function broadcastLiquidityPhase(
     needsDecCheck ? getDecBalance(username) : Promise.resolve(Infinity),
   ]);
 
-  const rawOps = buildFreshLiquidityOps(dryRunLiqOps, freshPools);
+  const rawOps = buildFreshLiquidityOps(plannedLiqOps, freshPools);
   if (rawOps.length === 0) return { txIds: [], warning: null, error: null };
 
   // Scale down if insufficient DEC
@@ -283,7 +284,7 @@ export function useProcessResourcesAction({
   const [warning, setWarning] = useState<string | null>(null);
 
   const execute = useCallback(
-    async (isDryRun: boolean): Promise<DryRunResult | null> => {
+    async (planOnly: boolean): Promise<ActionPlan | null> => {
       setBusy(true);
       setResult(null);
       setError(null);
@@ -293,7 +294,7 @@ export function useProcessResourcesAction({
         const [{ balances }, { pools }] = await Promise.all([
           getBulkRegionData(
             visibleRegions.map((r) => r.region_uid),
-            !isDryRun
+            !planOnly
           ),
           getLandPools(),
         ]);
@@ -320,8 +321,8 @@ export function useProcessResourcesAction({
           );
         }
 
-        if (isDryRun) {
-          return { title: "Dry Run — Process Resources", log };
+        if (planOnly) {
+          return { title: "Review plan — Process Resources", log };
         }
 
         if (sellOps.length === 0 && liquidityOps.length === 0) {
@@ -363,6 +364,9 @@ export function useProcessResourcesAction({
         // Record results
         await recordPostHarvestLog(username, actions, allTxIds).catch(() => {});
         setResult({ success: true, txIds: allTxIds });
+        // Clear the cached pre-action snapshot so the refresh below reads
+        // post-action balances rather than winning a cache hit on stale data.
+        await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");

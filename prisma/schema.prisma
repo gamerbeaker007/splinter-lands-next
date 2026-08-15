@@ -386,7 +386,7 @@ model LandUnstakeDecLog {
 model LandManagerConfig {
   player                          String   @id
   enabled_regions                 Int[]
-  make_harvestable_strategies     String[] @default(["transfer", "swap", "buy_dec"])
+  make_harvestable_strategies     String[] @default(["pool", "transfer", "swap", "buy_dec"])
   donation_enabled                Boolean  @default(true)
   donation_pct                    Int      @default(2)
   donation_daily_caps_json        Json     @default("{\"GRAIN\":40000,\"WOOD\":10000,\"STONE\":4000,\"IRON\":1000}")
@@ -394,6 +394,7 @@ model LandManagerConfig {
   post_harvest_excluded_resources String[] @default([])
   post_harvest_sell_pct           Int      @default(0)
   post_harvest_pool_pct           Int      @default(100)
+  top_up_pool_strategies          String[] @default(["use_owned_dec", "swap_resource", "sell_resource", "buy_resources"])
   rental_strategy                   String  @default("highest_pp_per_dec")
   rental_max_total_dec              Int     @default(0)
   rental_max_dec_per_day_per_worker Int     @default(0)

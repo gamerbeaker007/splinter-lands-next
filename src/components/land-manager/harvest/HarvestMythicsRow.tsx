@@ -1,13 +1,12 @@
 "use client";
 
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
-import { DonationConfig, DryRunResult } from "@/types/landManager";
+import { DonationConfig, ActionPlan } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { AutoAwesome as MythicIcon } from "@mui/icons-material";
 import {
   Alert,
   Button,
-  ButtonGroup,
   Chip,
   CircularProgress,
   Stack,
@@ -22,7 +21,7 @@ interface Props {
   hasMythics: boolean;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
-  onDryRun: (result: DryRunResult) => void;
+  onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
   onSuccess: () => void;
 }
 
@@ -33,7 +32,7 @@ export default function HarvestMythicsRow({
   hasMythics,
   anyBusy,
   onBusyChange,
-  onDryRun,
+  onPlan,
   onSuccess,
 }: Props) {
   const action = useHarvestMythicsAction({
@@ -47,9 +46,15 @@ export default function HarvestMythicsRow({
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
 
-  async function run(isDryRun: boolean) {
-    const dr = await action.execute(isDryRun);
-    if (dr) onDryRun(dr);
+  // Build the plan first and hand it to the confirm dialog; only the
+  // dialog's Confirm actually broadcasts.
+  async function run() {
+    const plan = await action.execute(true);
+    if (plan) {
+      onPlan(plan, async () => {
+        await action.execute(false);
+      });
+    }
   }
 
   return (
@@ -61,31 +66,26 @@ export default function HarvestMythicsRow({
         alignItems="center"
         mb={1.5}
       >
-        <ButtonGroup size="small" disabled={anyBusy || !hasMythics}>
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={
-              action.busy ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <MythicIcon fontSize="small" />
-              )
-            }
-            onClick={() => run(false)}
-          >
-            Harvest Mythics
-          </Button>
-          <Tooltip title="Show planned operations without broadcasting">
+        <Tooltip title="Collect Keep & Castle taxes — shows the plan for confirmation first">
+          <span>
             <Button
-              variant="outlined"
+              size="small"
+              disabled={anyBusy || !hasMythics}
+              variant="contained"
               color="secondary"
-              onClick={() => run(true)}
+              startIcon={
+                action.busy ? (
+                  <CircularProgress size={14} color="inherit" />
+                ) : (
+                  <MythicIcon fontSize="small" />
+                )
+              }
+              onClick={run}
             >
-              Dry Run
+              Harvest Mythics…
             </Button>
-          </Tooltip>
-        </ButtonGroup>
+          </span>
+        </Tooltip>
 
         <Chip
           label="Keeps &amp; Castles"

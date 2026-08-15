@@ -28,8 +28,8 @@ interface Props {
   plan: DecPowerPlan;
   decBalance: number | null;
   busy: boolean;
-  mode: "dryrun" | "confirm";
-  onConfirm?: () => void;
+  /** Broadcast the plan shown here. */
+  onConfirm: () => void;
   onClose: () => void;
 }
 
@@ -46,7 +46,6 @@ export default function DecPowerDialog({
   plan,
   decBalance,
   busy,
-  mode,
   onConfirm,
   onClose,
 }: Props) {
@@ -56,11 +55,7 @@ export default function DecPowerDialog({
   const empty = plan.items.length === 0;
   return (
     <Dialog open onClose={busy ? undefined : onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {mode === "dryrun"
-          ? `${variant.verb} DEC — Dry Run`
-          : `Confirm ${variant.verb} DEC`}
-      </DialogTitle>
+      <DialogTitle>{`Review plan — ${variant.verb} DEC`}</DialogTitle>
       <DialogContent dividers>
         {empty ? (
           <Typography variant="body2" color="text.secondary">
@@ -90,20 +85,15 @@ export default function DecPowerDialog({
               </Alert>
             )}
 
-            {mode === "confirm" && (
-              <Alert severity="warning" sx={{ mb: 1 }}>
-                <>
-                  {variant.gerund} DEC triggers an automatic harvest on the
-                  region.
-                  <br />
-                  If a plot does not have enough resource to cover the harvest,
-                  resources will be lost.
-                  <br />
-                  <br />
-                  <strong>Recommend to harvest first.</strong>
-                </>
-              </Alert>
-            )}
+            <Alert severity="warning" sx={{ mb: 1 }}>
+              {variant.gerund} DEC triggers an automatic harvest on the region.
+              <br />
+              If a plot does not have enough resource to cover the harvest,
+              resources will be lost.
+              <br />
+              <br />
+              <strong>Recommend to harvest first.</strong>
+            </Alert>
 
             <Table size="small">
               <TableHead>
@@ -150,19 +140,19 @@ export default function DecPowerDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} disabled={busy}>
-          {mode === "dryrun" ? "Close" : "Cancel"}
+          Cancel
         </Button>
-        {mode === "confirm" && (
-          <Button
-            variant="contained"
-            color={variant.color}
-            onClick={onConfirm}
-            disabled={busy || empty || insufficient}
-            startIcon={busy ? <CircularProgress size={14} /> : undefined}
-          >
-            {variant.verb} {fmtInt(plan.total_dec)} DEC
-          </Button>
-        )}
+        <Button
+          variant="contained"
+          color={variant.color}
+          onClick={onConfirm}
+          disabled={busy || empty || insufficient}
+          startIcon={busy ? <CircularProgress size={14} /> : undefined}
+        >
+          {busy
+            ? "Executing…"
+            : `Confirm & ${variant.verb} ${fmtInt(plan.total_dec)} DEC`}
+        </Button>
       </DialogActions>
     </Dialog>
   );

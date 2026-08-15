@@ -12,9 +12,10 @@ import {
   SplPlayerResourceBalance,
   SplProductionOverview,
   SplProductionOverviewResponse,
+  SplRegionOverviewData,
   SplRegionOverviewResponse,
 } from "@/types/spl/landManager";
-import { SplLandPool } from "@/types/spl/landPools";
+import { SplLandPool, SplPlayerPoolPosition } from "@/types/spl/landPools";
 import { SplMarketAsset } from "@/types/splMarketAsset";
 import { SplTaxes } from "@/types/splTaxes";
 import axios from "axios";
@@ -371,6 +372,36 @@ export async function fetchPlayerPoolInfo(
     }));
 }
 
+/**
+ * The player's liquidity position in ONE resource pool.
+ *
+ * `/land/liquidity/pools/<player>/<RESOURCE>` returns two `single` entries:
+ *   - `DEC-<RESOURCE>`     — the player's total LP shares in that pool
+ *   - `VESTING-<RESOURCE>` — the portion of those shares still inside the
+ *                            30-day lock (withdrawing it costs a 10% penalty)
+ */
+export async function fetchPlayerResourcePoolPosition(
+  player: string,
+  symbol: string
+): Promise<SplPlayerPoolPosition> {
+  const url = `/land/liquidity/pools/${encodeURIComponent(player)}/${encodeURIComponent(symbol)}`;
+  const res = await splLandClient.get(url);
+
+  const single: { token: string; balance: number | string }[] =
+    res.data?.data?.single ?? [];
+
+  const balanceOf = (token: string): number => {
+    const entry = single.find((s) => s.token === token);
+    return Number(entry?.balance ?? 0) || 0;
+  };
+
+  return {
+    symbol,
+    shares: balanceOf(`DEC-${symbol}`),
+    vestingShares: balanceOf(`VESTING-${symbol}`),
+  };
+}
+
 export async function fetchDeedUid(plotId: number) {
   const url = `/land/deeds/${encodeURIComponent(plotId)}`;
   const res = await splLandClient.get(url);
@@ -684,37 +715,61 @@ export async function fetchSplPlayerResourceBalance(
   }
 }
 
-export async function fetchRegionResourceBalance(
+const EMPTY_REGION_BALANCE: Record<string, number> = {
+  GRAIN: 0,
+  WOOD: 0,
+  STONE: 0,
+  IRON: 0,
+  AURA: 0,
+  RESEARCH: 0,
+};
+
+/**
+ * The full region production overview: stored balances, the per-plot worksite
+ * rows (including `grain_req_per_hour`) and the region's `resource_recipes`.
+ *
+ * Callers that only want balances should use {@link fetchRegionResourceBalance};
+ * this exists so consumption RATES can be derived from the same response instead
+ * of costing a second request.
+ */
+export async function fetchRegionOverview(
   player: string,
   regionUid: string,
   jwtToken: string
-): Promise<Record<string, number>> {
+): Promise<SplRegionOverviewData | null> {
   const url = `/land/resources/production/region/overview`;
-  const empty: Record<string, number> = {
-    GRAIN: 0,
-    WOOD: 0,
-    STONE: 0,
-    IRON: 0,
-    AURA: 0,
-    RESEARCH: 0,
-  };
   try {
     const res = await splLandClient.get(url, {
       params: { player, region_uid: regionUid },
       headers: { Authorization: `Bearer ${jwtToken}` },
     });
-    const response = res.data as SplRegionOverviewResponse;
-    const data = response?.data;
-    if (!data) return empty;
-    return {
-      GRAIN: data.grain?.regional_grain ?? 0,
-      WOOD: data.wood ?? 0,
-      STONE: data.stone ?? 0,
-      IRON: data.iron ?? 0,
-      AURA: data.aura ?? 0,
-      RESEARCH: data.research?.current ?? 0,
-    };
+    return (res.data as SplRegionOverviewResponse)?.data ?? null;
   } catch {
-    return empty;
+    return null;
   }
+}
+
+/** Stored resource balances for a region, from its production overview. */
+export function regionBalanceFrom(
+  data: SplRegionOverviewData | null
+): Record<string, number> {
+  if (!data) return { ...EMPTY_REGION_BALANCE };
+  return {
+    GRAIN: data.grain?.regional_grain ?? 0,
+    WOOD: data.wood ?? 0,
+    STONE: data.stone ?? 0,
+    IRON: data.iron ?? 0,
+    AURA: data.aura ?? 0,
+    RESEARCH: data.research?.current ?? 0,
+  };
+}
+
+export async function fetchRegionResourceBalance(
+  player: string,
+  regionUid: string,
+  jwtToken: string
+): Promise<Record<string, number>> {
+  return regionBalanceFrom(
+    await fetchRegionOverview(player, regionUid, jwtToken)
+  );
 }
