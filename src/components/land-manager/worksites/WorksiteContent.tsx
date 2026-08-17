@@ -1,6 +1,7 @@
 "use client";
 
 import FilterDrawer from "@/components/filter/FilterDrawer";
+import WorksiteBulkActions from "@/components/land-manager/worksites/WorksiteBulkActions";
 import WorksitePlotCard from "@/components/land-manager/worksites/WorksitePlotCard";
 import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
 import { getPlayerWorksiteData } from "@/lib/backend/actions/land-manager/worksite-actions";
@@ -34,6 +35,7 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
+  useMediaQuery,
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -60,6 +62,7 @@ interface RegionGroupProps {
   /** Grain currently held in this region — gates the Feed workers button. */
   regionGrain?: number;
   strategies: MakeHarvestableStrategy[];
+  nowMs: number;
 }
 
 function RegionGroup({
@@ -70,6 +73,7 @@ function RegionGroup({
   pageSize,
   regionGrain,
   strategies,
+  nowMs,
 }: RegionGroupProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [page, setPage] = useState(1);
@@ -118,6 +122,7 @@ function RegionGroup({
               onSuccess={onSuccess}
               regionGrain={regionGrain}
               strategies={strategies}
+              nowMs={nowMs}
             />
           ))}
           {pageCount > 1 && (
@@ -153,6 +158,10 @@ function WorksiteContentBody({
   const [refreshKey, setRefreshKey] = useState(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [listPage, setListPage] = useState(1);
+  // One "now" for the whole page — construction/eligibility checks in the cards
+  // and in the bulk action counts must judge against the same instant. Re-stamped
+  // on every reload so a finished construction becomes actionable after Refresh.
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const { filters, setLocationOverride } = useFilters();
 
@@ -164,6 +173,7 @@ function WorksiteContentBody({
       if (cancelled) return;
       if (error) setFetchError(error);
       setAllDeeds(deeds);
+      setNowMs(Date.now());
       setLoading(false);
     });
 
@@ -334,6 +344,18 @@ function WorksiteContentBody({
         </Alert>
       )}
 
+      {/* Bulk actions on the current selection (= the filtered plots) */}
+      {!loading && allDeeds.length > 0 && (
+        <WorksiteBulkActions
+          deeds={filteredDeeds}
+          username={username}
+          regionGrain={regionGrain}
+          strategies={strategies}
+          nowMs={nowMs}
+          onSuccess={handleSuccess}
+        />
+      )}
+
       {/* Content */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
@@ -356,6 +378,7 @@ function WorksiteContentBody({
               onSuccess={handleSuccess}
               regionGrain={regionGrain[deed.region_uid] ?? 0}
               strategies={strategies}
+              nowMs={nowMs}
             />
           ))}
           {listPageCount > 1 && (
@@ -382,6 +405,7 @@ function WorksiteContentBody({
               pageSize={pageSize}
               regionGrain={regionGrain[regionUid] ?? 0}
               strategies={strategies}
+              nowMs={nowMs}
             />
           ))}
         </Box>
@@ -398,12 +422,19 @@ export default function WorksiteContent({
   strategies,
   onSuccess,
 }: Props) {
+  const [drawerOpen, setDrawerOpen] = useState(true);
+  // FilterDrawer auto-opens from 1024px up; match that threshold so the content
+  // reflows beside the persistent drawer instead of being covered by it. Below
+  // that breakpoint the drawer overlays as before and the content is untouched.
+  const isDrawerDesktop = useMediaQuery("(min-width:1024px)");
+
   return (
     <FilterProvider>
       {/* player=null → categorical filters show site-wide options;
           WorksiteContentBody narrows regions/tracts/plots via locationOverride. */}
       <FilterDrawer
         player={null}
+        onOpenChange={setDrawerOpen}
         filtersEnabled={{
           regions: true,
           tracts: true,
@@ -413,12 +444,19 @@ export default function WorksiteContent({
           sorting: false,
         }}
       />
-      <WorksiteContentBody
-        username={username}
-        enabledRegions={enabledRegions}
-        strategies={strategies}
-        onSuccess={onSuccess}
-      />
+      <Box
+        sx={{
+          transition: "margin-right 0.2s ease",
+          mr: isDrawerDesktop && drawerOpen ? "330px" : 0,
+        }}
+      >
+        <WorksiteContentBody
+          username={username}
+          enabledRegions={enabledRegions}
+          strategies={strategies}
+          onSuccess={onSuccess}
+        />
+      </Box>
     </FilterProvider>
   );
 }

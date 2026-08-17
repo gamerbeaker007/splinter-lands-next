@@ -14,6 +14,66 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.22.0] - 2026-08-17
+
+### Added
+
+- **Land Manager → Worksites: bulk actions.** A new bulk action bar sits above the plot
+  list and acts on the current selection (the plots left after the active filters). Every
+  button shows how many of the selected plots it can actually act on — e.g.
+  `Feed Workers (8)` — and the counts update immediately as filters or data change.
+
+  - **Feed Workers (n)** — activates every finished worksite in the selection that its
+    region can pay for. Grain is allocated per region (cheapest worksite first), because
+    several ready plots in one region draw from the same pot. Plots that cannot be fed are
+    simply left out; they never block the rest.
+  - **Fix Grain Deficit (n)** — covers the grain shortfall for the ready worksites that
+    their region cannot pay for. All affected regions are planned in **one** pass, so
+    donors, the DEC balance and the liquidity position are never handed out twice.
+  - **Cancel Construction (n)** — stops every running construction in the selection. Only
+    *actively* building projects count; a project past its completion time is finished and
+    needs feeding, not cancelling, so it is never included.
+  - **Change Worksite** — a button per target worksite showing how many selected plots are
+    compatible, e.g. `Logging Camp (12)`. Only compatible plots are ever included in the
+    operation.
+
+  All bulk operations are packed into the fewest possible transactions (the ops of a run
+  are broadcast together and batched per transaction), matching the existing bulk-action
+  pattern.
+
+- **Fix Grain Deficit — plan before execution, also in bulk.** The bulk action computes the
+  complete plan first and shows it for review (per-region breakdown plus the full operation
+  log). Nothing is broadcast until the plan is confirmed. Single-plot and bulk flows share
+  one planner and one dialog, so the plan always matches what is executed.
+
+### Changed
+
+- **Worksite actions stay visible when unavailable.** Feed workers, Fix grain deficit and
+  Cancel no longer appear and disappear as construction progresses — they remain on the
+  plot row, disabled, with a tooltip explaining exactly why (construction still running,
+  no workers waiting, not enough grain in the region, …). The same applies to the worksite
+  picker buttons. Options that are *statically* impossible for the plot type (wrong
+  terrain, mythic kingdom plots) stay hidden as before.
+
+- **Worksite eligibility rules are now shared.** Button counts, enabled/disabled states,
+  planning and the broadcast operations all read the same helpers, so they cannot disagree.
+
+- **In-button progress for every worksite action, single and bulk.** The pressed button
+  shows a spinner and reports what it is doing — `Signing…` while Keychain is open, then
+  `Validating…` while the transaction is confirmed on chain. Only the button you pressed
+  spins; the others are simply disabled for the duration. Bulk runs span several
+  transactions, so their buttons count them off (`Validating 2/4…`) instead of sitting on
+  a spinner that looks stuck. The worksite picker icons get the same treatment via an
+  overlay, and the Fix Grain Deficit dialog reports `Planning…` → `Signing…` →
+  `Validating…`.
+
+- **Filter drawer no longer covers the Worksites content on large screens.** From 1024px up
+  the content reflows into the remaining width while the drawer is open — the same
+  responsive behaviour the Production tab already uses — so buttons at the end of a plot
+  row stay reachable. Mobile/small-screen overlay behaviour is unchanged.
+
+---
+
 ## [v1.21.2] - 2026-08-14
 
 ### Changed
