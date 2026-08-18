@@ -9,11 +9,13 @@ import {
   getProductionOverview,
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { ActionPhase } from "@/lib/shared/actionPhase";
 import { computePoolHolding } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
-  buildCoverGrainOps,
+  buildCoverGrainOpsMulti,
   CoverGrainResult,
+  CoverGrainTarget,
 } from "@/lib/frontend/coverWorksiteGrainOps";
 import {
   broadcastOperations,
@@ -39,10 +41,17 @@ interface Params {
 
 interface UseCoverGrainAction {
   status: CoverGrainStatus;
+  /** Broadcast lifecycle while `status === "covering"` — signing vs. validating. */
+  phase: ActionPhase;
   plan: CoverGrainResult | null;
   error: string | null;
   /** Compute the grain-deficit proposal for a deed (fetches fresh region data). */
   buildPlan: (deed: DeedComplete) => Promise<void>;
+  /**
+   * Compute the proposal for several regions at once (bulk flow). Planning is
+   * side-effect free — nothing is broadcast until `confirm()`.
+   */
+  buildPlanForRegions: (targets: CoverGrainTarget[]) => Promise<void>;
   /** Broadcast the grain-deficit ops (transfer/swap/buy) and record the log. Does NOT feed. */
   confirm: () => Promise<void>;
   reset: () => void;
@@ -53,24 +62,25 @@ export function useCoverGrainAction({
   strategies,
 }: Params): UseCoverGrainAction {
   const [status, setStatus] = useState<CoverGrainStatus>("idle");
+  const [phase, setPhase] = useState<ActionPhase>("idle");
   const [plan, setPlan] = useState<CoverGrainResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const reset = useCallback(() => {
     setStatus("idle");
+    setPhase("idle");
     setPlan(null);
     setError(null);
   }, []);
 
-  const buildPlan = useCallback(
-    async (deed: DeedComplete) => {
+  const buildPlanForRegions = useCallback(
+    async (targets: CoverGrainTarget[]) => {
       setStatus("planning");
       setPlan(null);
       setError(null);
       try {
-        const grainNeeded = Math.ceil(deed.worksiteDetail?.grain_required ?? 0);
-        if (grainNeeded <= 0) {
-          setError("This worksite has no grain requirement.");
+        if (targets.length === 0 || targets.every((t) => t.grainNeeded <= 0)) {
+          setError("No worksite with a grain requirement was selected.");
           setStatus("error");
           return;
         }
@@ -81,11 +91,11 @@ export function useCoverGrainAction({
           setStatus("error");
           return;
         }
-        const targetRegion = regions.find(
-          (r) => r.region_uid === deed.region_uid
+        const missing = targets.filter(
+          (t) => !regions.some((r) => r.region_uid === t.regionUid)
         );
-        if (!targetRegion) {
-          setError("Could not load the region for this plot.");
+        if (missing.length > 0) {
+          setError("Could not load the region for one of the selected plots.");
           setStatus("error");
           return;
         }
@@ -108,10 +118,9 @@ export function useCoverGrainAction({
           ])
         );
 
-        const result = buildCoverGrainOps({
+        const result = buildCoverGrainOpsMulti({
           username,
-          targetRegion,
-          grainNeeded,
+          targets,
           regions,
           harvestableMap: harvestable,
           storedBalances: balances,
@@ -131,6 +140,20 @@ export function useCoverGrainAction({
     [username, strategies]
   );
 
+  const buildPlan = useCallback(
+    async (deed: DeedComplete) => {
+      const grainNeeded = Math.ceil(deed.worksiteDetail?.grain_required ?? 0);
+      if (grainNeeded <= 0) {
+        setPlan(null);
+        setError("This worksite has no grain requirement.");
+        setStatus("error");
+        return;
+      }
+      await buildPlanForRegions([{ regionUid: deed.region_uid, grainNeeded }]);
+    },
+    [buildPlanForRegions]
+  );
+
   const confirm = useCallback(async () => {
     if (!plan) return;
     if (plan.ops.length === 0) {
@@ -144,13 +167,17 @@ export function useCoverGrainAction({
       // the workers — the player uses the Feed workers button afterwards. We
       // wait for confirmation so a follow-up refresh shows the new balance.
       setStatus("covering");
+      setPhase("broadcasting");
       const res = await broadcastOperations(username, plan.ops);
       if (!res.success) {
         setError(res.error ?? "Broadcast failed");
         setStatus("error");
+        setPhase("idle");
         return;
       }
+      setPhase("confirming");
       await waitForTransactions(res.txIds);
+      setPhase("idle");
       // Record into the make-harvestable log (shows under "Make Harvestable" in
       // the Today panel). Don't fail the whole action if logging hiccups, but do
       // surface it — a silent miss is what makes "nothing in Today" hard to debug.
@@ -164,8 +191,18 @@ export function useCoverGrainAction({
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
       setStatus("error");
+      setPhase("idle");
     }
   }, [plan, username]);
 
-  return { status, plan, error, buildPlan, confirm, reset };
+  return {
+    status,
+    phase,
+    plan,
+    error,
+    buildPlan,
+    buildPlanForRegions,
+    confirm,
+    reset,
+  };
 }

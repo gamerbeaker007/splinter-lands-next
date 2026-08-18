@@ -2,13 +2,23 @@
 
 import {
   useWorksiteAction,
+  worksiteBusyKey,
   WorksiteActionResult,
 } from "@/hooks/useWorksiteAction";
+import { actionButtonLabel, actionPhaseLabel } from "@/lib/shared/actionPhase";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
+import {
+  canCancelConstruction,
+  canChangeWorksite,
+  canFeedWorkers,
+  canFixGrainDeficit,
+  getWorksitePlotState,
+  plotLabelOf,
+  staticallyAllowedWorksites,
+} from "@/lib/shared/worksiteEligibility";
 import { getWorksiteLink } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import {
-  allowedTerrainsByWorksite,
   deedResourceBoostRules,
   resourceWorksiteMap,
   worksiteConstructionOpName,
@@ -45,25 +55,6 @@ import { useCallback, useMemo, useState } from "react";
 import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
 import { MakeHarvestableStrategy } from "@/types/landManager";
 
-/** Worksite types selectable from the picker (excludes KEEP/CASTLE which are mythic). */
-const SELECTABLE_WORKSITES: WorksiteType[] = [
-  "Grain Farm",
-  "Logging Camp",
-  "Ore Mine",
-  "Quarry",
-  "Research Hut",
-  "Aura Lab",
-  "Shard Mine",
-];
-
-/** Reverse map: op name → WorksiteType, e.g. "worksite_wood_construction" → "Logging Camp" */
-const projectTypeToWorksite: Record<string, WorksiteType> = Object.fromEntries(
-  Object.entries(worksiteConstructionOpName).map(([ws, op]) => [
-    op,
-    ws as WorksiteType,
-  ])
-);
-
 interface Props {
   deed: DeedComplete;
   username: string;
@@ -72,6 +63,11 @@ interface Props {
   regionGrain?: number;
   /** Configured make-harvestable strategy order — used by the Fix grain deficit proposal. */
   strategies: MakeHarvestableStrategy[];
+  /**
+   * Shared "now" for construction/eligibility checks. Passed down from the page
+   * so the card and the bulk action counts judge against the same instant.
+   */
+  nowMs?: number;
 }
 
 function formatDuration(ms: number): string {
@@ -88,6 +84,12 @@ interface WorksiteButtonProps {
   isBeingBuilt: boolean;
   hasBonus: boolean;
   disabled: boolean;
+  /** Why the option is unavailable right now — shown instead of the plain name. */
+  disabledReason?: string;
+  /** This worksite's build is in flight — overlay a spinner on its icon. */
+  loading?: boolean;
+  /** Phase text for the running build ("Signing…", "Validating…"). */
+  loadingLabel?: string | null;
   onClick: () => void;
 }
 
@@ -96,13 +98,24 @@ function WorksiteButton({
   isBeingBuilt,
   hasBonus,
   disabled,
+  disabledReason,
+  loading,
+  loadingLabel,
   onClick,
 }: WorksiteButtonProps) {
   const selectIcon = worksiteSelectIconMap[worksite];
 
   return (
     <Tooltip
-      title={hasBonus ? `${worksite} — +100% bonus production` : worksite}
+      title={
+        loading
+          ? `${worksite} — ${loadingLabel ?? "Working…"}`
+          : disabled && disabledReason
+            ? `${worksite} — ${disabledReason}`
+            : hasBonus
+              ? `${worksite} — +100% bonus production`
+              : worksite
+      }
     >
       {/* span wrapper required so Tooltip works on disabled button */}
       <span>
@@ -116,10 +129,11 @@ function WorksiteButton({
             minWidth: 0,
             borderColor: hasBonus && !isBeingBuilt ? "success.main" : undefined,
             bgcolor: isBeingBuilt ? "warning.dark" : undefined,
-            // Make the disabled state unmistakably greyed out
+            // Make the disabled state unmistakably greyed out — except while
+            // this button's own action runs, where the spinner must stay legible.
             "&.Mui-disabled": {
-              opacity: 0.3,
-              filter: "grayscale(1)",
+              opacity: loading ? 1 : 0.3,
+              filter: loading ? "none" : "grayscale(1)",
             },
             "&:hover": { bgcolor: isBeingBuilt ? undefined : "action.hover" },
           }}
@@ -145,8 +159,24 @@ function WorksiteButton({
                   display: "block",
                 }}
               />
+              {/* Spinner overlaid on the icon while this build is in flight */}
+              {loading && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "rgba(0,0,0,0.55)",
+                    borderRadius: 0.5,
+                  }}
+                >
+                  <CircularProgress size={18} sx={{ color: "common.white" }} />
+                </Box>
+              )}
               {/* +100% bonus chip overlaid inside image, bottom-right */}
-              {hasBonus && (
+              {hasBonus && !loading && (
                 <Box
                   sx={{
                     position: "absolute",
@@ -184,10 +214,19 @@ export default function WorksitePlotCard({
   onSuccess,
   regionGrain,
   strategies,
+  nowMs,
 }: Props) {
   const action = useWorksiteAction();
-  // Capture mount time once to avoid impure renders
-  const [now] = useState(() => Date.now());
+  // Only the pressed button spins; the others are disabled while it runs.
+  const isRunning = (key: string) => key !== "" && action.busyKey === key;
+  const buttonStatus = (key: string) =>
+    isRunning(key) ? actionButtonLabel(action.phase) : null;
+  const runningLabel = (key: string) =>
+    isRunning(key) ? actionPhaseLabel(action.phase) : null;
+
+  // Capture mount time once to avoid impure renders (unless the page supplies one)
+  const [mountedNow] = useState(() => Date.now());
+  const now = nowMs ?? mountedNow;
   // Fix-grain-deficit proposal dialog (shown when the region lacks grain to feed)
   const [coverOpen, setCoverOpen] = useState(false);
   // Pending confirm: set when the user clicks a button, cleared on dismiss
@@ -198,60 +237,25 @@ export default function WorksitePlotCard({
     | null
   >(null);
 
-  const isUndeveloped = !deed.worksiteDetail;
+  // All state flags come from the shared eligibility helper, so this card, the
+  // bulk action bar and the executed ops can never disagree.
+  const state = useMemo(() => getWorksitePlotState(deed, now), [deed, now]);
+  const {
+    isUndeveloped,
+    isConstruction,
+    isActivelyBuilding,
+    isMythic,
+    currentWorksite,
+    buildingWorksite,
+    isReadyToFeed,
+    grainCost,
+  } = state;
 
-  // SPL keeps `is_construction === true` even AFTER the build completes — it only
-  // flips to false once the workers have been fed (update_worksite). So a project
-  // is "still building" only while its projected_end is in the future; once that
-  // moment passes the construction is finished and the plot is waiting to be fed.
-  const constructionEndMs = deed.worksiteDetail?.projected_end
-    ? new Date(deed.worksiteDetail.projected_end).getTime()
-    : null;
-  const constructionFinished =
-    deed.worksiteDetail?.is_construction === true &&
-    constructionEndMs != null &&
-    constructionEndMs <= now;
+  const feedCheck = canFeedWorkers(deed, regionGrain ?? 0, now, state);
+  const fixCheck = canFixGrainDeficit(deed, regionGrain ?? 0, now, state);
+  const cancelCheck = canCancelConstruction(deed, now, state);
 
-  // worksiteDetail == null → undeveloped (buttons enabled)
-  // is_construction == true && projected_end > now → actively building (buttons disabled)
-  // is_construction == true && projected_end <= now → finished, ready to feed
-  // is_construction == false → developed (buttons enabled)
-  const isActivelyBuilding =
-    deed.worksiteDetail?.is_construction === true && !constructionFinished;
-  // True whenever a construction project exists (still building OR finished but
-  // not yet fed). Switching the worksite is blocked the whole time.
-  const isConstruction = deed.worksiteDetail?.is_construction === true;
-  // Mythic deeds (KEEP / CASTLE) have a fixed worksite — no swap possible.
-  const isMythic = deed.plot_status === "kingdom";
-  const currentWorksite =
-    (deed.worksiteDetail?.worksite_type as WorksiteType | null | undefined) ??
-    null;
-  // While a construction project exists (building OR finished-but-unfed),
-  // worksiteDetail.worksite_type is empty — derive the target from project_type.
-  const buildingWorksite: WorksiteType | null = isConstruction
-    ? (projectTypeToWorksite[deed.worksiteDetail?.project_type ?? ""] ?? null)
-    : ((deed.worksiteDetail?.worksite_type as
-        | WorksiteType
-        | null
-        | undefined) ?? null);
-
-  // A worksite that finished construction must be activated by feeding its
-  // workers grain (the update_worksite op). Two ways a plot reaches this state:
-  //   • is_construction still true but projected_end has passed (constructionFinished)
-  //   • worksite_type surfaces as "Worksite Ready X"
-  // In both cases it needs a project_id and a grain requirement to feed.
-  const isReadyToFeed =
-    !!deed.worksiteDetail &&
-    (constructionFinished ||
-      (deed.worksiteDetail.worksite_type ?? "")
-        .toLowerCase()
-        .startsWith("worksite ready")) &&
-    deed.worksiteDetail.project_id != null &&
-    (deed.worksiteDetail.grain_required ?? 0) > 0;
-  const grainCost = Math.ceil(deed.worksiteDetail?.grain_required ?? 0);
-  const enoughGrain = (regionGrain ?? 0) >= grainCost;
-
-  const plotLabel = `P-${deed.region_number}-${deed.tract_number}-${deed.plot_number}`;
+  const plotLabel = plotLabelOf(deed);
 
   // Inline construction progress values. Shown for the whole construction —
   // when finished-but-unfed, elapsed >= total so the bar reads 100% and 0m left.
@@ -292,18 +296,16 @@ export default function WorksitePlotCard({
     return rules[deed.plot_status ?? ""] ?? [];
   }, [deed.plot_status]);
 
-  // Filter selectable worksites: remove current built worksite + terrain restriction
-  const allowedWorksites = useMemo(
+  // Only *statically* impossible worksites are hidden (wrong deed type). Options
+  // blocked by the current state stay visible but disabled, with a reason — so
+  // the button set doesn't shuffle as construction starts and finishes.
+  const worksiteOptions = useMemo(
     () =>
-      SELECTABLE_WORKSITES.filter((ws) => {
-        // Hide the currently built worksite — it's already there, not a switch target
-        if (!isActivelyBuilding && currentWorksite === ws) return false;
-        const allowed = allowedTerrainsByWorksite[ws];
-        if (!allowed) return true;
-        if (!deed.deed_type) return true;
-        return allowed.includes(deed.deed_type.toLowerCase());
-      }),
-    [deed.deed_type, currentWorksite, isActivelyBuilding]
+      staticallyAllowedWorksites(deed).map((ws) => ({
+        worksite: ws,
+        check: canChangeWorksite(deed, ws, now, state),
+      })),
+    [deed, now, state]
   );
 
   const handleBuildWorksite = useCallback((worksite: WorksiteType) => {
@@ -580,53 +582,77 @@ export default function WorksitePlotCard({
             </Typography>
           ) : (
             <Stack direction="row" gap={0.5} sx={{ flexWrap: "nowrap" }}>
-              {allowedWorksites.map((ws) => (
-                <WorksiteButton
-                  key={ws}
-                  worksite={ws}
-                  isBeingBuilt={isConstruction && buildingWorksite === ws}
-                  hasBonus={boostWorksites.includes(ws)}
-                  disabled={action.busy || isConstruction}
-                  onClick={() => handleBuildWorksite(ws)}
-                />
-              ))}
+              {worksiteOptions.map(({ worksite, check }) => {
+                const opName = worksiteConstructionOpName[worksite];
+                const key = opName ? worksiteBusyKey.build(opName) : "";
+                return (
+                  <WorksiteButton
+                    key={worksite}
+                    worksite={worksite}
+                    isBeingBuilt={
+                      isConstruction && buildingWorksite === worksite
+                    }
+                    hasBonus={boostWorksites.includes(worksite)}
+                    disabled={action.busy || !check.eligible}
+                    disabledReason={
+                      action.busy ? "An action is running…" : check.reason
+                    }
+                    loading={isRunning(key)}
+                    loadingLabel={runningLabel(key)}
+                    onClick={() => handleBuildWorksite(worksite)}
+                  />
+                );
+              })}
             </Stack>
           )}
         </Box>
 
-        {/* 6. Divider + Cancel button — only while actively building */}
-        {isActivelyBuilding && (
-          <>
-            <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={12} />
-                ) : (
-                  <CancelIcon sx={{ fontSize: "0.9rem !important" }} />
-                )
-              }
-              onClick={handleCancelClick}
-              disabled={action.busy || deed.worksiteDetail?.project_id == null}
-              sx={{ flexShrink: 0, whiteSpace: "nowrap", fontSize: "0.65rem" }}
-            >
-              Cancel
-            </Button>
-          </>
-        )}
-
-        {/* 7. Divider + Feed workers button — only when the worksite is ready */}
-        {isReadyToFeed && (
+        {/* 6-7. Dynamic actions. These stay mounted even when unavailable and
+            explain why in their tooltip, so buttons don't appear/disappear as
+            construction progresses. Mythic plots have no worksite at all, so
+            their actions are statically impossible and stay hidden. */}
+        {!isMythic && (
           <>
             <Divider orientation="vertical" flexItem sx={{ mx: 0.25 }} />
             <Tooltip
               title={
-                enoughGrain
-                  ? ""
-                  : `Not enough grain in region (have ${(regionGrain ?? 0).toLocaleString("en-US", { maximumFractionDigits: 0 })} / need ${grainCost.toLocaleString("en-US")})`
+                runningLabel(worksiteBusyKey.cancel) ??
+                (cancelCheck.eligible
+                  ? "Cancel the running construction"
+                  : (cancelCheck.reason ?? ""))
+              }
+            >
+              <span style={{ flexShrink: 0 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  startIcon={
+                    isRunning(worksiteBusyKey.cancel) ? (
+                      <CircularProgress size={12} color="inherit" />
+                    ) : (
+                      <CancelIcon sx={{ fontSize: "0.9rem !important" }} />
+                    )
+                  }
+                  onClick={handleCancelClick}
+                  disabled={action.busy || !cancelCheck.eligible}
+                  sx={{
+                    flexShrink: 0,
+                    whiteSpace: "nowrap",
+                    fontSize: "0.65rem",
+                  }}
+                >
+                  {buttonStatus(worksiteBusyKey.cancel) ?? "Cancel"}
+                </Button>
+              </span>
+            </Tooltip>
+
+            <Tooltip
+              title={
+                runningLabel(worksiteBusyKey.feed) ??
+                (feedCheck.eligible
+                  ? `Feed the workers — pays ${grainCost.toLocaleString("en-US")} GRAIN from the region`
+                  : (feedCheck.reason ?? ""))
               }
             >
               {/* span wrapper so the tooltip works on a disabled button */}
@@ -636,42 +662,47 @@ export default function WorksitePlotCard({
                   variant="contained"
                   color="success"
                   startIcon={
-                    action.busy ? (
-                      <CircularProgress size={12} />
+                    isRunning(worksiteBusyKey.feed) ? (
+                      <CircularProgress size={12} color="inherit" />
                     ) : (
                       <RestaurantIcon sx={{ fontSize: "0.9rem !important" }} />
                     )
                   }
                   onClick={handleFeedClick}
-                  disabled={action.busy || !enoughGrain}
+                  disabled={action.busy || !feedCheck.eligible}
                   sx={{ whiteSpace: "nowrap", fontSize: "0.65rem" }}
                 >
-                  Feed workers
+                  {buttonStatus(worksiteBusyKey.feed) ?? "Feed workers"}
                 </Button>
               </span>
             </Tooltip>
+
             {/* Not enough grain in the region → propose moving grain in from
-                other regions (transfer → swap → buy with DEC). Only fixes the
-                deficit; feeding is the separate Feed workers button above. */}
-            {!enoughGrain && (
-              <Tooltip title="Move grain from your other regions to cover the worker food (transfer → swap → buy with DEC). Then use Feed workers.">
-                <span style={{ flexShrink: 0 }}>
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="warning"
-                    startIcon={
-                      <AutoFixHighIcon sx={{ fontSize: "0.9rem !important" }} />
-                    }
-                    onClick={() => setCoverOpen(true)}
-                    disabled={action.busy}
-                    sx={{ whiteSpace: "nowrap", fontSize: "0.65rem" }}
-                  >
-                    Fix grain deficit
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
+                other regions (pool → transfer → swap → buy with DEC). Only fixes
+                the deficit; feeding is the separate Feed workers button above. */}
+            <Tooltip
+              title={
+                fixCheck.eligible
+                  ? "Move grain from your other regions to cover the worker food (pool → transfer → swap → buy with DEC). Then use Feed workers."
+                  : (fixCheck.reason ?? "")
+              }
+            >
+              <span style={{ flexShrink: 0 }}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="warning"
+                  startIcon={
+                    <AutoFixHighIcon sx={{ fontSize: "0.9rem !important" }} />
+                  }
+                  onClick={() => setCoverOpen(true)}
+                  disabled={action.busy || !fixCheck.eligible}
+                  sx={{ whiteSpace: "nowrap", fontSize: "0.65rem" }}
+                >
+                  Fix grain deficit
+                </Button>
+              </span>
+            </Tooltip>
           </>
         )}
       </Stack>
@@ -756,13 +787,13 @@ export default function WorksitePlotCard({
       </Dialog>
 
       {/* Fix-grain-deficit proposal dialog (moves grain in; does not feed) */}
-      {isReadyToFeed && (
+      {isReadyToFeed && coverOpen && (
         <FixGrainDeficitDialog
           open={coverOpen}
-          deed={deed}
           username={username}
           strategies={strategies}
-          plotLabel={plotLabel}
+          targets={[{ regionUid: deed.region_uid, grainNeeded: grainCost }]}
+          subject={plotLabel}
           onClose={() => setCoverOpen(false)}
           onSuccess={() => {
             setCoverOpen(false);

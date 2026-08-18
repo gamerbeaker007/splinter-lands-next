@@ -8,6 +8,24 @@ import {
 import { SplLandPool } from "@/types/spl/landPools";
 import { buildMakeHarvestableOps, RegionBalances } from "./makeHarvestableOps";
 
+/** One region that must end up holding `grainNeeded` GRAIN. */
+export interface CoverGrainTarget {
+  regionUid: string;
+  /** Total grain the region must hold (not the delta — the full requirement). */
+  grainNeeded: number;
+}
+
+/** Per-region outcome of a cover plan — the bulk dialog renders one row each. */
+export interface CoverGrainRegionResult {
+  regionUid: string;
+  regionName: string;
+  grainNeeded: number;
+  currentGrain: number;
+  delivered: number;
+  shortfall: number;
+  resolved: boolean;
+}
+
 export interface CoverGrainResult {
   /** Cover ops to broadcast (transfer/swap/buy) — does NOT include the feed op. */
   ops: [string, object][];
@@ -15,38 +33,43 @@ export interface CoverGrainResult {
   log: string[];
   /** Structured per-action summary for the make-harvestable log. */
   actions: ActionSummary[];
-  /** Grain the region must hold to feed the workers. */
+  /** Grain all target regions must hold to feed their workers. */
   grainNeeded: number;
-  /** Grain the region currently holds (stored — ready grain can't feed workers). */
+  /** Grain the target regions currently hold (stored — ready grain can't feed workers). */
   currentGrain: number;
-  /** Grain the plan delivers into the region. */
+  /** Grain the plan delivers into the target regions. */
   delivered: number;
   /** Grain still missing after the plan runs (0 when fully covered). */
   shortfall: number;
-  /** True when the plan brings the region up to the full grain requirement. */
+  /** True when the plan brings every target region up to its full requirement. */
   resolved: boolean;
+  /** Breakdown per target region (single entry for the single-plot flow). */
+  regions: CoverGrainRegionResult[];
 }
 
 /**
- * Plan the resource moves needed to put `grainNeeded` GRAIN into a single region
- * so its ready worksite can be fed (the `update_worksite` op pays grain from the
- * region's *stored* balance).
+ * Plan the resource moves needed to put the required GRAIN into one or more
+ * regions so their ready worksites can be fed (the `update_worksite` op pays
+ * grain from the region's *stored* balance).
  *
- * Reuses the Make-All-Harvestable engine: the target region is given a synthetic
+ * Reuses the Make-All-Harvestable engine: each target region is given a synthetic
  * GRAIN "cost", every other region keeps its real harvest costs as a donor
- * reserve, and only the target is resolved. Strategy order (transfer → swap →
- * buy_dec) follows the player's configured Make-Harvestable strategies.
+ * reserve, and only the targets are resolved. Strategy order (pool → transfer →
+ * swap → buy_dec) follows the player's configured Make-Harvestable strategies.
+ *
+ * Planning all targets in one pass matters for the bulk flow: donors, the DEC
+ * balance and the pool position are shared budgets, so resolving region by
+ * region would hand out the same grain twice.
  *
  * Note on balances: feeding workers spends *stored* grain only — ready (un-
- * harvested) grain can't pay worker food — so the target's effective grain is
+ * harvested) grain can't pay worker food — so each target's effective grain is
  * pinned to its stored amount. Donor regions keep stored+ready as their effective
  * balance (ready covers their own harvest, freeing stored grain to ship).
  */
-export function buildCoverGrainOps(params: {
+export function buildCoverGrainOpsMulti(params: {
   username: string;
-  targetRegion: SplProductionOverviewRegion;
-  grainNeeded: number;
-  /** All of the player's regions (target included) — donor pool. */
+  targets: CoverGrainTarget[];
+  /** All of the player's regions (targets included) — donor pool. */
   regions: SplProductionOverviewRegion[];
   /** Real harvestable rows per region_uid (donor harvest-cost reserve). */
   harvestableMap: Record<string, SplHarvestableResource[]>;
@@ -60,8 +83,7 @@ export function buildCoverGrainOps(params: {
 }): CoverGrainResult {
   const {
     username,
-    targetRegion,
-    grainNeeded,
+    targets,
     regions,
     harvestableMap,
     storedBalances,
@@ -71,24 +93,25 @@ export function buildCoverGrainOps(params: {
     poolHoldings,
   } = params;
 
-  const targetUid = targetRegion.region_uid;
-  const currentGrain = storedBalances[targetUid]?.GRAIN ?? 0;
+  const targetUids = targets.map((t) => t.regionUid);
 
-  // Synthetic harvestable: the target "needs" grainNeeded GRAIN. Donors keep
+  // Synthetic harvestable: each target "needs" its grainNeeded GRAIN. Donors keep
   // their real rows so their own grain stays reserved.
   const syntheticHarvestable: Record<string, SplHarvestableResource[]> = {
     ...harvestableMap,
-    [targetUid]: [
+  };
+  for (const target of targets) {
+    syntheticHarvestable[target.regionUid] = [
       {
         amount_claimable: 0,
-        grain_required_for_food: grainNeeded,
+        grain_required_for_food: target.grainNeeded,
         wood_required: 0,
         stone_required: 0,
         iron_required: 0,
         token_symbol: "GRAIN",
       },
-    ],
-  };
+    ];
+  }
 
   const stored: Record<string, Record<string, number>> = Object.fromEntries(
     regions.map((r) => [
@@ -103,8 +126,13 @@ export function buildCoverGrainOps(params: {
       effectiveBalance(storedBalances[r.region_uid] ?? EMPTY_BALANCE, r),
     ])
   );
-  // Target feeds from stored grain only — exclude its ready grain from effective.
-  effective[targetUid] = { ...effective[targetUid], GRAIN: currentGrain };
+  // Targets feed from stored grain only — exclude their ready grain from effective.
+  for (const uid of targetUids) {
+    effective[uid] = {
+      ...effective[uid],
+      GRAIN: storedBalances[uid]?.GRAIN ?? 0,
+    };
+  }
 
   const balances: RegionBalances = { effective, stored, poolHoldings };
 
@@ -116,28 +144,49 @@ export function buildCoverGrainOps(params: {
     strategies,
     decBalance,
     pools,
-    [targetUid]
+    targetUids
   );
 
-  // Grain delivered into the target = sum of grain received by every action that
-  // lands in this region.
-  const delivered = actions.reduce(
-    (sum, a) =>
-      a.to_region === targetRegion.name && a.to_symbol === "GRAIN"
-        ? sum + a.out_amount
-        : sum,
-    0
-  );
-  const shortfall = Math.max(0, grainNeeded - (currentGrain + delivered));
+  const regionResults: CoverGrainRegionResult[] = targets.map((target) => {
+    const region = regions.find((r) => r.region_uid === target.regionUid);
+    const regionName = region?.name ?? target.regionUid;
+    const currentGrain = storedBalances[target.regionUid]?.GRAIN ?? 0;
+    // Grain delivered into this region = sum of grain received by every action
+    // that lands there.
+    const delivered = actions.reduce(
+      (sum, a) =>
+        a.to_region === regionName && a.to_symbol === "GRAIN"
+          ? sum + a.out_amount
+          : sum,
+      0
+    );
+    const shortfall = Math.max(
+      0,
+      target.grainNeeded - (currentGrain + delivered)
+    );
+    return {
+      regionUid: target.regionUid,
+      regionName,
+      grainNeeded: target.grainNeeded,
+      currentGrain,
+      delivered,
+      shortfall,
+      resolved: shortfall === 0,
+    };
+  });
+
+  const sum = (pick: (r: CoverGrainRegionResult) => number) =>
+    regionResults.reduce((total, r) => total + pick(r), 0);
 
   return {
     ops,
     log,
     actions,
-    grainNeeded,
-    currentGrain,
-    delivered,
-    shortfall,
-    resolved: shortfall === 0,
+    grainNeeded: sum((r) => r.grainNeeded),
+    currentGrain: sum((r) => r.currentGrain),
+    delivered: sum((r) => r.delivered),
+    shortfall: sum((r) => r.shortfall),
+    resolved: regionResults.every((r) => r.resolved),
+    regions: regionResults,
   };
 }

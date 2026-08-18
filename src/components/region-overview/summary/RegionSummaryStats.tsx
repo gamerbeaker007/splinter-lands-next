@@ -2,14 +2,15 @@ import React from "react";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { formatNumberWithSuffix } from "@/lib/formatters";
 import DecInfoTooltip from "@/components/region-overview/summary/DecIInfoToolTip";
-import DecGaugeIndicator from "@/components/region-overview/summary/DecGaugeIndicator";
 import Paper from "@mui/material/Paper";
+import DecStakeIndicator from "@/components/region-overview/summary/DECStakeIndicator";
 
 type Props = {
   deedsCount: number;
   totalDecNeeded: number;
   totalDecInUse: number;
   totalDecStaked: number;
+  totalDecSaved: number;
   runiCount: number;
 };
 
@@ -18,6 +19,7 @@ const RegionSummaryStats: React.FC<Props> = ({
   totalDecNeeded,
   totalDecInUse,
   totalDecStaked,
+  totalDecSaved,
   runiCount,
 }) => {
   const theme = useTheme();
@@ -34,6 +36,7 @@ const RegionSummaryStats: React.FC<Props> = ({
           totalDecStaked={totalDecStaked}
           totalDecNeeded={totalDecNeeded}
           totalDecInUse={totalDecInUse}
+          totalDecSaved={totalDecSaved}
           maxDecPossible={maxDecPossible}
           runiStakedDEC={runiStakedDEC}
         />
@@ -51,20 +54,23 @@ const RegionSummaryStats: React.FC<Props> = ({
         gap={1}
         mb={2}
       >
-        <DecGaugeIndicator
+        <DecStakeIndicator
           title="DEC Staked (all land)"
           maxPossibleStakedDec={maxDecPossible}
           totalDecStaked={totalDecStaked}
           totalDecNeeded={totalDecNeeded}
+          totalDecSaved={totalDecSaved}
           runiStakedDEC={runiStakedDEC}
         />
-        <DecGaugeIndicator
+        <DecStakeIndicator
           title="DEC Staked (selected)"
-          maxPossibleStakedDec={
-            Math.max(totalDecNeeded, totalDecStaked) + runiStakedDEC
-          }
+          maxPossibleStakedDec={Math.max(
+            totalDecNeeded + totalDecSaved + runiStakedDEC,
+            totalDecStaked
+          )}
           totalDecStaked={totalDecStaked}
           totalDecNeeded={totalDecNeeded}
+          totalDecSaved={totalDecSaved}
           runiStakedDEC={runiStakedDEC}
         />
       </Box>

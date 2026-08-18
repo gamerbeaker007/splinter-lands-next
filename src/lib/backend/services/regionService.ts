@@ -41,6 +41,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalDecNeeded = 0;
   let totalDecInUse = 0;
   let totalDecStaked = 0;
+  let totalDecSaved = 0;
   let totalDeeds = 0;
   let totalRawPP = 0;
   let totalBoostedPP = 0;
@@ -94,6 +95,13 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
 
       totalDecNeeded += staking.total_dec_stake_needed ?? 0;
       totalDecInUse += staking.total_dec_stake_in_use ?? 0;
+      // discounts are negative (e.g. -0.2 = 20% off); -1 would divide by zero
+      const discountDEC = staking.dec_stake_needed_discount ?? 0;
+      if (discountDEC < 0 && discountDEC > -1) {
+        const discountedDECNeeded = staking.total_dec_stake_needed ?? 0;
+        const originalDECNeeded = discountedDECNeeded / (1 + discountDEC);
+        totalDecSaved += originalDECNeeded - discountedDECNeeded;
+      }
 
       totalRawPP += staking.total_base_pp_after_cap ?? 0;
       totalBoostedPP += staking.total_harvest_pp ?? 0;
@@ -164,6 +172,7 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     totalDecNeeded: totalDecNeeded,
     totalDecInUse: totalDecInUse,
     totalDecStaked: totalDecStaked,
+    totalDecSaved: totalDecSaved,
     deedsCount: totalDeeds,
     totalBasePP: totalRawPP,
     totalBoostedPP: totalBoostedPP,

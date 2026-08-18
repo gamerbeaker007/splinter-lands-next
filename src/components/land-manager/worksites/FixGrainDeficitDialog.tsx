@@ -2,28 +2,42 @@
 
 import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
 import { useCoverGrainAction } from "@/hooks/useCoverGrainAction";
-import { DeedComplete } from "@/types/deed";
+import { CoverGrainTarget } from "@/lib/frontend/coverWorksiteGrainOps";
+import { actionButtonLabel, actionPhaseLabel } from "@/lib/shared/actionPhase";
 import { MakeHarvestableStrategy } from "@/types/landManager";
 import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   Stack,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
   Typography,
 } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 
 interface Props {
   open: boolean;
-  deed: DeedComplete;
   username: string;
   strategies: MakeHarvestableStrategy[];
-  plotLabel: string;
+  /**
+   * Regions to top up and how much grain each must end up holding. One entry for
+   * the single-plot flow, one per affected region for the bulk flow.
+   */
+  targets: CoverGrainTarget[];
+  /** Shown after the dialog title — e.g. a plot label or "12 plots". */
+  subject: string;
+  /** Plot labels covered by this plan — listed so bulk runs stay understandable. */
+  plotLabels?: string[];
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -31,27 +45,46 @@ interface Props {
 const fmt = (n: number) =>
   n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
+/**
+ * Plan-then-confirm dialog for the "Fix grain deficit" flow.
+ *
+ * The plan is computed on open and nothing is broadcast until the user presses
+ * Fix deficit — the same contract for a single plot and for a bulk selection.
+ */
 export default function FixGrainDeficitDialog({
   open,
-  deed,
   username,
   strategies,
-  plotLabel,
+  targets,
+  subject,
+  plotLabels,
   onClose,
   onSuccess,
 }: Props) {
-  const { status, plan, error, buildPlan, confirm, reset } =
+  const { status, phase, plan, error, buildPlanForRegions, confirm, reset } =
     useCoverGrainAction({ username, strategies });
+
+  // Stable identity so the planning effect doesn't re-run on every render of the
+  // parent (targets is typically rebuilt inline from the current selection).
+  const targetKey = useMemo(
+    () =>
+      targets
+        .map((t) => `${t.regionUid}:${t.grainNeeded}`)
+        .sort()
+        .join("|"),
+    [targets]
+  );
 
   // Compute the proposal when the dialog opens; reset when it closes.
   useEffect(() => {
     if (open) {
-      buildPlan(deed);
+      buildPlanForRegions(targets);
     } else {
       reset();
     }
-    // buildPlan/reset are stable (useCallback); deed identity drives recompute.
-  }, [open, deed, buildPlan, reset]);
+    // buildPlanForRegions/reset are stable (useCallback); targetKey drives recompute.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, targetKey, buildPlanForRegions, reset]);
 
   // Notify parent once the grain has been moved (so it refreshes balances and
   // enables the Feed workers button).
@@ -60,6 +93,7 @@ export default function FixGrainDeficitDialog({
   }, [status, onSuccess]);
 
   const busy = status === "planning" || status === "covering";
+  const multiRegion = (plan?.regions.length ?? 0) > 1;
 
   const handleClose = () => {
     if (busy) return; // don't allow closing mid-broadcast
@@ -68,7 +102,7 @@ export default function FixGrainDeficitDialog({
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Fix grain deficit — {plotLabel}</DialogTitle>
+      <DialogTitle>Fix grain deficit — {subject}</DialogTitle>
       <DialogContent dividers>
         {status === "planning" && (
           <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
@@ -87,17 +121,44 @@ export default function FixGrainDeficitDialog({
           <>
             <Typography variant="body2" gutterBottom>
               Feeding the workers needs{" "}
-              <strong>{fmt(plan.grainNeeded)} GRAIN</strong>. This region holds{" "}
-              <strong>{fmt(plan.currentGrain)}</strong> — short{" "}
-              <strong>{fmt(plan.grainNeeded - plan.currentGrain)}</strong>.
+              <strong>{fmt(plan.grainNeeded)} GRAIN</strong>
+              {multiRegion
+                ? ` across ${plan.regions.length} regions`
+                : " in this region"}
+              . Currently held: <strong>{fmt(plan.currentGrain)}</strong> —
+              short{" "}
+              <strong>
+                {fmt(Math.max(0, plan.grainNeeded - plan.currentGrain))}
+              </strong>
+              .
             </Typography>
+
+            {plotLabels && plotLabels.length > 0 && (
+              <Stack
+                direction="row"
+                gap={0.5}
+                flexWrap="wrap"
+                sx={{ mb: 1.5, mt: 0.5 }}
+              >
+                {plotLabels.map((label) => (
+                  <Chip
+                    key={label}
+                    label={label}
+                    size="small"
+                    variant="outlined"
+                    sx={{ height: 18, fontSize: "0.62rem" }}
+                  />
+                ))}
+              </Stack>
+            )}
 
             {plan.resolved ? (
               <Alert severity="success" sx={{ mb: 1.5 }}>
-                The plan below brings in {fmt(plan.delivered)} GRAIN (transfer →
-                swap → buy with DEC), enough to cover the requirement. This only
-                moves grain — once it lands, use the Feed workers button to
-                activate the worksite.
+                The plan below brings in {fmt(plan.delivered)} GRAIN (pool →
+                transfer → swap → buy with DEC), enough to cover the
+                requirement. This only moves grain — once it lands, use Feed
+                workers to activate the worksite
+                {multiRegion ? "s" : ""}.
               </Alert>
             ) : (
               <Alert severity="warning" sx={{ mb: 1.5 }}>
@@ -106,6 +167,47 @@ export default function FixGrainDeficitDialog({
                 Free up surplus grain in another region, add DEC, or top up
                 manually.
               </Alert>
+            )}
+
+            {multiRegion && (
+              <Box sx={{ mb: 1.5 }}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Per region
+                </Typography>
+                <Table size="small">
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Region</TableCell>
+                      <TableCell align="right">Needed</TableCell>
+                      <TableCell align="right">Held</TableCell>
+                      <TableCell align="right">Delivered</TableCell>
+                      <TableCell align="right">Short</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {plan.regions.map((r) => (
+                      <TableRow key={r.regionUid}>
+                        <TableCell>{r.regionName}</TableCell>
+                        <TableCell align="right">
+                          {fmt(r.grainNeeded)}
+                        </TableCell>
+                        <TableCell align="right">
+                          {fmt(r.currentGrain)}
+                        </TableCell>
+                        <TableCell align="right">{fmt(r.delivered)}</TableCell>
+                        <TableCell
+                          align="right"
+                          sx={{
+                            color: r.resolved ? "success.main" : "warning.main",
+                          }}
+                        >
+                          {fmt(r.shortfall)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Box>
             )}
 
             <Typography variant="subtitle2" gutterBottom>
@@ -126,7 +228,10 @@ export default function FixGrainDeficitDialog({
               >
                 <CircularProgress size={18} />
                 <Typography variant="body2" color="text.secondary">
-                  Transferring / swapping / buying grain…
+                  {phase === "confirming"
+                    ? (actionPhaseLabel(phase) ??
+                      "Transferring / swapping / buying grain…")
+                    : "Transferring / swapping / buying grain…"}
                 </Typography>
               </Stack>
             )}
@@ -140,7 +245,7 @@ export default function FixGrainDeficitDialog({
             {status === "done" && (
               <Alert severity="success" sx={{ mt: 1.5 }}>
                 Grain deficit fixed! Reload, then use Feed workers to activate
-                the worksite.
+                the worksite{multiRegion ? "s" : ""}.
               </Alert>
             )}
           </>
@@ -157,9 +262,15 @@ export default function FixGrainDeficitDialog({
           variant="contained"
           color="warning"
           disabled={!plan || !plan.resolved || busy || status === "done"}
-          startIcon={busy ? <CircularProgress size={14} /> : undefined}
+          startIcon={
+            busy ? <CircularProgress size={14} color="inherit" /> : undefined
+          }
         >
-          Fix deficit
+          {status === "covering"
+            ? (actionButtonLabel(phase) ?? "Fix deficit")
+            : status === "planning"
+              ? "Planning…"
+              : "Fix deficit"}
         </Button>
       </DialogActions>
     </Dialog>
