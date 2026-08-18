@@ -6,6 +6,7 @@ type Props = {
   totalDecStaked: number;
   totalDecNeeded: number;
   totalDecInUse: number;
+  totalDecSaved: number;
   maxDecPossible: number;
   runiStakedDEC: number;
 };
@@ -14,6 +15,7 @@ const DecInfoTooltip = ({
   totalDecStaked,
   totalDecNeeded,
   totalDecInUse,
+  totalDecSaved,
   maxDecPossible,
   runiStakedDEC,
 }: Props) => {
@@ -32,6 +34,9 @@ const DecInfoTooltip = ({
           </Typography>
           <Typography variant="body2">
             • Total In Use: {formatNumberWithSuffix(totalDecInUse)}
+          </Typography>
+          <Typography variant="body2">
+            • Total Saved (Discount): {formatNumberWithSuffix(totalDecSaved)}
           </Typography>
           <Typography variant="body2">
             • Max Possible: {formatNumberWithSuffix(maxDecPossible)}

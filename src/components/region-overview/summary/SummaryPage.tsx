@@ -55,6 +55,7 @@ export default function SummaryPage() {
               totalDecNeeded={summary.totalDecNeeded}
               totalDecInUse={summary.totalDecInUse}
               totalDecStaked={summary.totalDecStaked}
+              totalDecSaved={summary.totalDecSaved}
               runiCount={summary.runiCount}
             />
           </Box>

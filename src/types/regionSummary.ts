@@ -15,6 +15,7 @@ export type RegionSummary = {
   totalDecNeeded: number;
   totalDecInUse: number;
   totalDecStaked: number;
+  totalDecSaved: number;
   deedsCount: number;
   rewardsPerHour: Record<Resource, number>;
   productionPoints: Record<Resource, ProductionPoints>;

@@ -4,7 +4,7 @@ import { InfoCreatableItem } from "@/components/player-overview/player-dashboard
 import { PlayerCraftingOverview } from "@/components/player-overview/player-dashboard/PlayerCraftingOverview";
 import { ResourceOverviewCard } from "@/components/player-overview/player-dashboard/ResourceOverviewCard";
 import BoostTile from "@/components/region-overview/summary/BoostTile";
-import DecGaugeIndicator from "@/components/region-overview/summary/DecGaugeIndicator";
+import DecStakeIndicator from "@/components/region-overview/summary/DECStakeIndicator";
 import DeedRarityTile from "@/components/region-overview/summary/DeedRarityTile";
 import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile";
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
@@ -109,7 +109,7 @@ export default function PlayerDashboardPage() {
                   <Typography variant={"h5"} ml={2} mb={2}>
                     Staked DEC Information
                   </Typography>
-                  <DecGaugeIndicator
+                  <DecStakeIndicator
                     title={`STAKED DEC MAX: ${formatNumberWithSuffix(playerOverview.summarizedRegionInfo.deedsCount * 50_000)}`}
                     maxPossibleStakedDec={
                       playerOverview.summarizedRegionInfo.deedsCount * 50_000
@@ -119,6 +119,9 @@ export default function PlayerDashboardPage() {
                     }
                     totalDecNeeded={
                       playerOverview.summarizedRegionInfo.totalDecNeeded
+                    }
+                    totalDecSaved={
+                      playerOverview.summarizedRegionInfo.totalDecSaved
                     }
                     runiStakedDEC={
                       playerOverview.summarizedRegionInfo.runiCount * 50_000
