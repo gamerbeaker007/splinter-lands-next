@@ -125,7 +125,7 @@ export const TOP_UP_POOL_STRATEGY_LABELS: Record<TopUpPoolStrategy, string> = {
   buy_resources: "Buy the missing resource with DEC",
 };
 
-/** Safety margin added on top of the weekly consumption target. */
+/** Safety margin added on top of the weekly external-need target. */
 export const TOP_UP_POOL_SAFETY_MARGIN = 1.1;
 
 /**
@@ -134,6 +134,8 @@ export const TOP_UP_POOL_SAFETY_MARGIN = 1.1;
  * A swap must never turn one resource's skip into another's, so the donor keeps
  * its own top-up target ({@link TOP_UP_POOL_SAFETY_MARGIN} weeks, which this
  * action is about to deposit) plus the one week it burns before the next run.
+ * Measured against GROSS consumption: what the donor burns is what it must keep,
+ * regardless of how much of it the region grows back.
  */
 export const SWAP_DONOR_RESERVE_WEEKS = TOP_UP_POOL_SAFETY_MARGIN + 1;
 
@@ -501,8 +503,17 @@ export type TopUpPoolFundingStep =
 
 export interface TopUpPoolResourcePlan {
   symbol: string;
+  /** Gross units burned per 7 days across the planned regions. */
   weekly_consumption: number;
-  /** weekly_consumption × TOP_UP_POOL_SAFETY_MARGIN. */
+  /** Units that must come from outside the regions per 7 days (net of production). */
+  weekly_external_need: number;
+  /** Gross burn per hour, summed across regions. */
+  consumed_per_hour: number;
+  /** Natural production per hour, summed across regions. */
+  produced_per_hour: number;
+  /** Per-region max(0, consumed - produced) per hour, summed across regions. */
+  external_need_per_hour: number;
+  /** weekly_external_need × TOP_UP_POOL_SAFETY_MARGIN. */
   target: number;
   available_resource: number;
   dec_available: number;

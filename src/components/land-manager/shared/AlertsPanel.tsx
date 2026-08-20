@@ -130,7 +130,7 @@ export default function AlertsPanel({
             <Alert severity="warning">
               <Typography variant="caption" display="block">
                 {lowPoolBuffers.map((r) => r.symbol).join(", ")} pool reserves
-                are below the recommended {POOL_BUFFER_WEEKS}-week consumption
+                are below the recommended {POOL_BUFFER_WEEKS}-week external-need
                 buffer. Top up the pools to keep harvesting tax free.
               </Typography>
               <Box sx={{ overflowX: "auto", mt: 0.5 }}>
@@ -140,7 +140,7 @@ export default function AlertsPanel({
                       <TableCell>Resource</TableCell>
                       <TableCell align="right">In pool</TableCell>
                       <TableCell align="right">Unlocked</TableCell>
-                      <TableCell align="right">Weekly use</TableCell>
+                      <TableCell align="right">Weekly need</TableCell>
                       <TableCell align="right">Weeks covered</TableCell>
                     </TableRow>
                   </TableHead>
@@ -162,7 +162,7 @@ export default function AlertsPanel({
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="caption">
-                            {fmtNum(r.weeklyConsumption)}
+                            {fmtNum(r.weeklyExternalNeed)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">

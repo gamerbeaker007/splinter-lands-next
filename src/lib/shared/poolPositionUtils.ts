@@ -107,7 +107,7 @@ export function sharesFractionForResource(
   return Math.min(resourceWanted / holding.resource, remainingFraction);
 }
 
-// ── Weekly consumption ───────────────────────────────────────────────────────
+// ── Consumption, production and external need ────────────────────────────────
 //
 // Consumption is read as a RATE, never inferred from how much has piled up since
 // the last harvest. The intended flow is
@@ -118,15 +118,31 @@ export function sharesFractionForResource(
 // cost is ~0. Dividing that by ~0 elapsed hours yields nothing usable, which
 // would make the action skip every resource in exactly the situation it exists
 // for. The rates below are independent of harvest timing.
+//
+// Three distinct quantities are kept apart on purpose:
+//
+//   consumedPerHour     what the region burns (gross)
+//   producedPerHour     what the region makes of that itself
+//   externalNeedPerHour max(0, consumed - produced) — what must come from outside
+//
+// Only the last one drives pool top-ups: a region that grows most of its own
+// grain does not need the whole burn deposited on its behalf.
 
-const HOURS_PER_WEEK = 7 * 24;
+/** Production hours assumed in one week when no measured figure is supplied. */
+export const HOURS_PER_WEEK = 7 * 24;
 /** Cap on the accrual window: production stops accruing after 7 days. */
 const MAX_ACCRUAL_HOURS = HOURS_PER_WEEK;
 /** Below this, accrued totals are too small to cross-check a rate against. */
 const MIN_ACCRUAL_HOURS = 6;
 
+const zeroedNaturals = (): Record<string, number> =>
+  Object.fromEntries(NATURAL_RESOURCES.map((s) => [s, 0]));
+
 /**
- * What one region burns per hour, split by resource.
+ * GROSS consumption: what one region burns per hour, split by resource.
+ *
+ * Production is deliberately NOT subtracted here — see
+ * {@link computeRegionResourceBalance} for the net external need.
  *
  * Two independent costs make up the total:
  *
@@ -142,18 +158,25 @@ const MIN_ACCRUAL_HOURS = 6;
 export function regionConsumptionPerHour(
   overview: SplRegionOverviewData | null
 ): Record<string, number> {
-  const perHour: Record<string, number> = Object.fromEntries(
-    NATURAL_RESOURCES.map((s) => [s, 0])
-  );
+  const perHour: Record<string, number> = zeroedNaturals();
   if (!overview) return perHour;
 
-  const basePP = Object.fromEntries(PRODUCING_RESOURCES.map((s) => [s, 0]));
+  const basePP: Record<string, number> = Object.fromEntries(
+    PRODUCING_RESOURCES.map((s) => [s, 0])
+  );
 
-  // always calculated the grain cost for every plot
   for (const plot of overview.plots ?? []) {
     if (!plot.is_powered || !plot.resource_symbol) continue;
+
+    // Every powered worksite feeds its workers, whatever it produces — grain
+    // farms included.
     perHour.GRAIN += plot.grain_req_per_hour ?? 0;
-    basePP[plot.resource_symbol] += plot.total_base_pp_after_cap;
+
+    // Base PP is what the recipe cost below is priced off. Symbols outside
+    // PRODUCING_RESOURCES (TAX plots) have no recipe, so they are not tracked.
+    if (PRODUCING_RESOURCES.includes(plot.resource_symbol)) {
+      basePP[plot.resource_symbol] += plot.total_base_pp_after_cap ?? 0;
+    }
   }
 
   // calculate the resource consumption for each recipe
@@ -171,6 +194,68 @@ export function regionConsumptionPerHour(
   return perHour;
 }
 
+/**
+ * What one region naturally produces per hour, split by resource.
+ *
+ * Read straight off the production-overview row: `<resource>_per_hr` is the
+ * region's live production RATE for that resource, already reflecting which
+ * worksites are actually powered and running. Only the natural resources are
+ * returned — SPS/RESEARCH/AURA cannot be deposited into a natural-resource pool
+ * and never offset a natural-resource burn.
+ */
+export function regionProductionPerHour(
+  region: SplProductionOverviewRegion | null
+): Record<string, number> {
+  const perHour = zeroedNaturals();
+  if (!region) return perHour;
+
+  perHour.GRAIN = region.grain_per_hr ?? 0;
+  perHour.WOOD = region.wood_per_hr ?? 0;
+  perHour.STONE = region.stone_per_hr ?? 0;
+  perHour.IRON = region.iron_per_hr ?? 0;
+  return perHour;
+}
+
+/** One region's gross burn, its own production, and the gap between them. */
+export interface RegionResourceBalance {
+  /** symbol → units burned per hour (workers + recipes). */
+  consumedPerHour: Record<string, number>;
+  /** symbol → units the region produces itself per hour. */
+  producedPerHour: Record<string, number>;
+  /** symbol → max(0, consumed - produced): what must be supplied from outside. */
+  externalNeedPerHour: Record<string, number>;
+}
+
+/**
+ * Consumption, production and external need for ONE region.
+ *
+ * The subtraction happens per region on purpose. Resources are held per region
+ * and moving them costs a transfer fee (and pool liquidity has a vesting lock),
+ * so a surplus in one region must not silently cancel a deficit in another —
+ * that would plan a top-up that no region can actually source.
+ */
+export function computeRegionResourceBalance(
+  region: SplProductionOverviewRegion | null,
+  overview: SplRegionOverviewData | null
+): RegionResourceBalance {
+  const consumedPerHour = regionConsumptionPerHour(overview);
+  const producedPerHour = regionProductionPerHour(region);
+
+  const symbols = new Set([
+    ...NATURAL_RESOURCES,
+    ...Object.keys(consumedPerHour),
+  ]);
+  const externalNeedPerHour: Record<string, number> = {};
+  for (const symbol of symbols) {
+    externalNeedPerHour[symbol] = Math.max(
+      0,
+      (consumedPerHour[symbol] ?? 0) - (producedPerHour[symbol] ?? 0)
+    );
+  }
+
+  return { consumedPerHour, producedPerHour, externalNeedPerHour };
+}
+
 export interface WeeklyConsumption {
   /** symbol → resource units consumed per 7 days, summed across regions. */
   perResource: Record<string, number>;
@@ -179,7 +264,11 @@ export interface WeeklyConsumption {
 }
 
 /**
- * Each resource's consumption over 7 days, summed across `regions`.
+ * Each resource's GROSS consumption over 7 days, summed across `regions` — how
+ * much is actually burned, regardless of where it comes from.
+ *
+ * For sizing pool top-ups use {@link computeWeeklyPoolNeed} instead: what has to
+ * be deposited is only the part the regions cannot produce themselves.
  *
  * Derived purely from live rates, so it is valid immediately after a harvest.
  * When a region has been accruing long enough to be a meaningful sample, the
@@ -216,6 +305,86 @@ export function computeWeeklyConsumption(
   }
 
   return { perResource, warnings };
+}
+
+export interface WeeklyPoolNeed {
+  /**
+   * symbol → resource units that must come from outside the regions over
+   * `productionHours`, summed across regions AFTER each region's own production
+   * was netted off. This is what a pool top-up has to cover.
+   */
+  perResource: Record<string, number>;
+  /** symbol → gross units burned per hour, summed across regions. */
+  consumedPerHour: Record<string, number>;
+  /** symbol → units produced per hour, summed across regions. */
+  producedPerHour: Record<string, number>;
+  /** symbol → per-region external need per hour, summed across regions. */
+  externalNeedPerHour: Record<string, number>;
+  /** Hours the `perResource` totals were projected over. */
+  productionHours: number;
+  /** Notes worth surfacing in the plan (missing data, rate/accrual drift). */
+  warnings: string[];
+}
+
+/**
+ * How much of each resource has to be supplied from OUTSIDE the regions over
+ * `productionHours` — the figure pool top-ups are sized against.
+ *
+ * Netting is per region and clamped at 0 before anything is added up, so a
+ * region growing more grain than it eats contributes 0, never a credit against
+ * another region's deficit.
+ *
+ * `productionHours` is separate from the rate on purpose: the hourly external
+ * need is the physical quantity, and how many hours a week actually produce is a
+ * caller-supplied assumption (168 = every hour of the week).
+ */
+export function computeWeeklyPoolNeed(
+  regions: SplProductionOverviewRegion[],
+  balances: Record<string, RegionResourceBalance>,
+  productionHours: number = HOURS_PER_WEEK,
+  harvestableMap: Record<string, SplHarvestableResource[]> = {},
+  now: Date = new Date()
+): WeeklyPoolNeed {
+  const consumedPerHour = zeroedNaturals();
+  const producedPerHour = zeroedNaturals();
+  const externalNeedPerHour = zeroedNaturals();
+  const perResource = zeroedNaturals();
+  const warnings: string[] = [];
+
+  for (const region of regions) {
+    const balance = balances[region.region_uid];
+    if (!balance) {
+      warnings.push(
+        `${region.name}: no production data — its consumption is not counted`
+      );
+      continue;
+    }
+
+    for (const symbol of NATURAL_RESOURCES) {
+      consumedPerHour[symbol] += balance.consumedPerHour[symbol] ?? 0;
+      producedPerHour[symbol] += balance.producedPerHour[symbol] ?? 0;
+      const need = balance.externalNeedPerHour[symbol] ?? 0;
+      externalNeedPerHour[symbol] += need;
+      perResource[symbol] += need * productionHours;
+    }
+
+    const drift = accrualDrift(
+      region,
+      balance.consumedPerHour,
+      harvestableMap,
+      now
+    );
+    if (drift) warnings.push(`${region.name}: ${drift}`);
+  }
+
+  return {
+    perResource,
+    consumedPerHour,
+    producedPerHour,
+    externalNeedPerHour,
+    productionHours,
+    warnings,
+  };
 }
 
 /**

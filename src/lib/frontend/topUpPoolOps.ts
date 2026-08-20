@@ -23,11 +23,16 @@ import { SplLandPool } from "@/types/spl/landPools";
 // ─────────────────────────────────────────────────────────────────────────────
 // Top Up Pools planner
 //
-// One execution adds ~110% of a week's consumption of each resource back into
+// One execution adds ~110% of a week's EXTERNAL need of each resource back into
 // the liquidity pools, so that deposit matures past the 30-day lock and later
-// becomes tax-free withdrawal fuel for Make Harvestable's `pool` strategy. It
-// is an INCREMENTAL top-up: an existing multi-week pool balance does not reduce
-// this week's target.
+// becomes tax-free withdrawal fuel for Make Harvestable's `pool` strategy. The
+// external need is what the regions cannot produce themselves — a region growing
+// most of its own grain does not need its whole burn deposited for it.
+//
+// It is an INCREMENTAL top-up: an existing multi-week pool balance does not
+// reduce this week's target, and the 30-day vesting lock is NOT multiplied into
+// it — once the pipeline rolls, one week's demand goes in as an older week's
+// deposit unlocks.
 //
 // Two invariants drive the shape of this file:
 //
@@ -110,8 +115,24 @@ export interface TopUpPoolParams {
   /** Wallet DEC — account-wide, shared by every resource in this plan. */
   decBalance: number;
   strategies: TopUpPoolStrategy[];
-  /** symbol → resource units consumed per 7 days. */
+  /**
+   * symbol → resource units that must come from OUTSIDE the regions per 7 days,
+   * i.e. each region's max(0, consumption - own production) summed up. This is
+   * what the deposit targets are sized against.
+   */
+  weeklyExternalNeed: Record<string, number>;
+  /**
+   * symbol → GROSS resource units consumed per 7 days. Only used for donor
+   * reserves (a donor must keep what it burns, not just what it imports) and for
+   * explaining the numbers in the plan.
+   */
   weeklyConsumption: Record<string, number>;
+  /** Per-hour rates behind the weekly figures, for the plan explanation. */
+  hourlyRates?: {
+    consumed: Record<string, number>;
+    produced: Record<string, number>;
+    externalNeed: Record<string, number>;
+  };
   /** Regions whose consumption could not be measured (surfaced in the plan). */
   consumptionWarnings?: string[];
 }
@@ -816,9 +837,42 @@ function applyOutcome(
   return { dec: projection.dec + outcome.decDelta, resource };
 }
 
+/**
+ * The demand side of one resource's plan row: what it burns, what the regions
+ * produce, and what therefore has to be imported. Independent of strategies.
+ */
+interface ResourceDemand {
+  weeklyConsumption: number;
+  weeklyExternalNeed: number;
+  consumedPerHour: number;
+  producedPerHour: number;
+  externalNeedPerHour: number;
+}
+
+function resourceDemand(
+  params: TopUpPoolParams,
+  symbol: string
+): ResourceDemand {
+  return {
+    weeklyConsumption: params.weeklyConsumption[symbol] ?? 0,
+    weeklyExternalNeed: params.weeklyExternalNeed[symbol] ?? 0,
+    consumedPerHour: params.hourlyRates?.consumed[symbol] ?? 0,
+    producedPerHour: params.hourlyRates?.produced[symbol] ?? 0,
+    externalNeedPerHour: params.hourlyRates?.externalNeed[symbol] ?? 0,
+  };
+}
+
+const demandFields = (demand: ResourceDemand) => ({
+  weekly_consumption: round3(demand.weeklyConsumption),
+  weekly_external_need: round3(demand.weeklyExternalNeed),
+  consumed_per_hour: round3(demand.consumedPerHour),
+  produced_per_hour: round3(demand.producedPerHour),
+  external_need_per_hour: round3(demand.externalNeedPerHour),
+});
+
 function skipped(
   symbol: string,
-  weekly: number,
+  demand: ResourceDemand,
   target: number,
   available: number,
   decAvailable: number,
@@ -828,7 +882,7 @@ function skipped(
 ): TopUpPoolResourcePlan {
   return {
     symbol,
-    weekly_consumption: round3(weekly),
+    ...demandFields(demand),
     target: round3(target),
     available_resource: round3(available),
     dec_available: round3(decAvailable),
@@ -857,7 +911,7 @@ function planResource(
   params: TopUpPoolParams,
   projection: Projection,
   symbol: string,
-  weekly: number,
+  demand: ResourceDemand,
   target: number,
   ratio: number,
   decRequired: number
@@ -908,7 +962,7 @@ function planResource(
       projection,
       plan: skipped(
         symbol,
-        weekly,
+        demand,
         target,
         available,
         startingDec,
@@ -927,7 +981,7 @@ function planResource(
     projection: local,
     plan: {
       symbol,
-      weekly_consumption: round3(weekly),
+      ...demandFields(demand),
       target: round3(target),
       available_resource: round3(available),
       dec_available: round3(startingDec),
@@ -963,8 +1017,10 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
   const resources: TopUpPoolResourcePlan[] = [];
 
   for (const symbol of NATURAL_RESOURCES) {
-    const weekly = params.weeklyConsumption[symbol] ?? 0;
-    const target = weekly * TOP_UP_POOL_SAFETY_MARGIN;
+    const demand = resourceDemand(params, symbol);
+    // The safety margin applies to the NET external need — buying a margin on
+    // top of resource the regions grow themselves would over-deposit.
+    const target = demand.weeklyExternalNeed * TOP_UP_POOL_SAFETY_MARGIN;
     const ratio = decPerResource(params.pools, symbol);
     const decRequired = target * ratio * DEC_SAFETY;
     const available = availableResource(params.regions, projection, symbol);
@@ -973,14 +1029,16 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
       resources.push(
         skipped(
           symbol,
-          weekly,
+          demand,
           target,
           available,
           projection.dec,
           decRequired,
           [],
-          weekly <= 0
-            ? "no measurable weekly consumption"
+          demand.weeklyExternalNeed <= 0
+            ? demand.weeklyConsumption > 0
+              ? "the regions produce everything they consume — nothing to import"
+              : "no measurable weekly consumption"
             : `weekly target ${round3(target)} is below the ${MIN_TARGET} minimum`
         )
       );
@@ -990,7 +1048,7 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
       resources.push(
         skipped(
           symbol,
-          weekly,
+          demand,
           target,
           available,
           projection.dec,
@@ -1008,7 +1066,7 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
       params,
       projection,
       symbol,
-      weekly,
+      demand,
       target,
       ratio,
       decRequired
@@ -1030,7 +1088,7 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
 // ── plan rendering ───────────────────────────────────────────────────────────
 
 const fmt = (n: number): string =>
-  n.toLocaleString(undefined, { maximumFractionDigits: 3 });
+  n.toLocaleString("en-GB", { maximumFractionDigits: 3 });
 
 /**
  * Render the plan grouped by resource, showing the regions involved. The dry
@@ -1054,8 +1112,12 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   for (const r of plan.resources) {
     log.push(
       `\n── ${r.symbol} ────────────────────────────────`,
-      `Weekly consumption: ${fmt(r.weekly_consumption)} ${r.symbol}`,
-      `Target this execution: ${fmt(r.target)} ${r.symbol} (+10% margin)`,
+      `Consumed: ${fmt(r.consumed_per_hour)}/hr`,
+      `Produced: ${fmt(r.produced_per_hour)}/hr`,
+      `External need: ${fmt(r.external_need_per_hour)}/hr`,
+      `Weekly consumption: ${fmt(r.weekly_consumption)} ${r.symbol} (gross)`,
+      `Weekly external need: ${fmt(r.weekly_external_need)} ${r.symbol}`,
+      `Target this execution: ${fmt(r.target)} ${r.symbol} (external need +10% margin)`,
       `Available ${r.symbol}: ${fmt(r.available_resource)}`,
       `DEC required for pool addition: ${fmt(r.dec_required)}`,
       // Every strategy that ran is listed with what it covered, so the split

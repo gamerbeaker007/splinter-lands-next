@@ -14,8 +14,9 @@ import {
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import {
-  computeWeeklyConsumption,
-  regionConsumptionPerHour,
+  HOURS_PER_WEEK,
+  computeRegionResourceBalance,
+  computeWeeklyPoolNeed,
 } from "@/lib/shared/poolPositionUtils";
 import {
   buildAddLiquidityOp,
@@ -91,16 +92,18 @@ async function planTopUp(
     ]);
 
   // Rate-based, so it stays valid immediately after a harvest — which is exactly
-  // when this action runs (Make Harvestable → Harvest → Top Up Pools).
-  const consumptionPerHour = Object.fromEntries(
+  // when this action runs (Make Harvestable → Harvest → Top Up Pools). Netted per
+  // region: only what a region cannot produce itself has to be deposited for it.
+  const regionBalances = Object.fromEntries(
     visibleRegions.map((r) => [
       r.region_uid,
-      regionConsumptionPerHour(overviews[r.region_uid] ?? null),
+      computeRegionResourceBalance(r, overviews[r.region_uid] ?? null),
     ])
   );
-  const { perResource, warnings } = computeWeeklyConsumption(
+  const need = computeWeeklyPoolNeed(
     visibleRegions,
-    consumptionPerHour,
+    regionBalances,
+    HOURS_PER_WEEK,
     harvestable
   );
 
@@ -110,8 +113,19 @@ async function planTopUp(
     pools,
     decBalance,
     strategies,
-    weeklyConsumption: perResource,
-    consumptionWarnings: warnings,
+    weeklyExternalNeed: need.perResource,
+    weeklyConsumption: Object.fromEntries(
+      Object.entries(need.consumedPerHour).map(([symbol, rate]) => [
+        symbol,
+        rate * HOURS_PER_WEEK,
+      ])
+    ),
+    hourlyRates: {
+      consumed: need.consumedPerHour,
+      produced: need.producedPerHour,
+      externalNeed: need.externalNeedPerHour,
+    },
+    consumptionWarnings: need.warnings,
   });
 }
 

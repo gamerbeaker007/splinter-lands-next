@@ -2,6 +2,7 @@ import {
   buildTopUpPoolPlan,
   TopUpPoolParams,
 } from "@/lib/frontend/topUpPoolOps";
+import { TOP_UP_POOL_SAFETY_MARGIN } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
 import { describe, expect, it } from "vitest";
@@ -45,7 +46,10 @@ function params(overrides: Partial<TopUpPoolParams> = {}): TopUpPoolParams {
     pools: POOLS,
     decBalance: 0,
     strategies: ["swap_resource"],
+    // These regions produce none of what they burn, so the external need equals
+    // the gross consumption — the targets are unchanged by the netting.
     weeklyConsumption: { GRAIN: 100_000, WOOD: 50_000, STONE: 0, IRON: 0 },
+    weeklyExternalNeed: { GRAIN: 100_000, WOOD: 50_000, STONE: 0, IRON: 0 },
     ...overrides,
   };
 }
@@ -101,6 +105,7 @@ describe("Top Up Pools — swap_resource", () => {
         strategies: ["use_owned_dec", "swap_resource"],
         decBalance: 100_000,
         weeklyConsumption: { GRAIN: 10_000_000, WOOD: 50_000 },
+        weeklyExternalNeed: { GRAIN: 10_000_000, WOOD: 50_000 },
       })
     );
     const grain = forSymbol(plan, "GRAIN");
@@ -122,5 +127,65 @@ describe("Top Up Pools — swap_resource", () => {
 
     expect(grain.status).toBe("SKIPPED");
     expect(grain.funding).toEqual([]);
+  });
+});
+
+describe("Top Up Pools — targets are sized on the external need", () => {
+  it("applies the safety margin to the net need, not the gross burn", () => {
+    const plan = buildTopUpPoolPlan(
+      params({
+        strategies: ["buy_resources"],
+        decBalance: 10_000_000,
+        weeklyConsumption: { GRAIN: 100_000, WOOD: 50_000 },
+        weeklyExternalNeed: { GRAIN: 25_000, WOOD: 50_000 },
+      })
+    );
+    const grain = forSymbol(plan, "GRAIN");
+
+    expect(grain.weekly_consumption).toBe(100_000);
+    expect(grain.weekly_external_need).toBe(25_000);
+    expect(grain.target).toBeCloseTo(25_000 * TOP_UP_POOL_SAFETY_MARGIN, 3);
+    expect(grain.status).toBe("READY");
+  });
+
+  it("skips a resource the regions fully produce themselves", () => {
+    const plan = buildTopUpPoolPlan(
+      params({
+        strategies: ["buy_resources"],
+        decBalance: 10_000_000,
+        weeklyConsumption: { GRAIN: 100_000, WOOD: 50_000 },
+        weeklyExternalNeed: { GRAIN: 0, WOOD: 50_000 },
+      })
+    );
+    const grain = forSymbol(plan, "GRAIN");
+
+    expect(grain.status).toBe("SKIPPED");
+    expect(grain.skip_reason).toContain("produce everything they consume");
+    expect(grain.additions).toEqual([]);
+    // WOOD, which still has a deficit, is planned as usual.
+    expect(forSymbol(plan, "WOOD").status).toBe("READY");
+  });
+
+  it("reports the per-hour breakdown behind the target", () => {
+    const plan = buildTopUpPoolPlan(
+      params({
+        strategies: ["buy_resources"],
+        decBalance: 10_000_000,
+        weeklyConsumption: { GRAIN: 481.875 * 168 },
+        weeklyExternalNeed: { GRAIN: 122.505 * 168 },
+        hourlyRates: {
+          consumed: { GRAIN: 481.875 },
+          produced: { GRAIN: 359.37 },
+          externalNeed: { GRAIN: 122.505 },
+        },
+      })
+    );
+    const grain = forSymbol(plan, "GRAIN");
+
+    expect(grain.consumed_per_hour).toBe(481.875);
+    expect(grain.produced_per_hour).toBe(359.37);
+    expect(grain.external_need_per_hour).toBe(122.505);
+    expect(grain.weekly_external_need).toBeCloseTo(20_580.84, 2);
+    expect(plan.log.join("\n")).toContain("External need: 122.505/hr");
   });
 });

@@ -7,8 +7,8 @@ import {
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import {
   computePoolHolding,
-  computeWeeklyConsumption,
-  regionConsumptionPerHour,
+  computeRegionResourceBalance,
+  computeWeeklyPoolNeed,
 } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { POOL_BUFFER_WEEKS } from "@/types/landManager";
@@ -17,23 +17,28 @@ import { useEffect, useState } from "react";
 
 export interface PoolBufferRow {
   symbol: string;
-  /** Resource consumed per 7 days across the enabled regions. */
-  weeklyConsumption: number;
+  /**
+   * Resource that must be imported per 7 days across the enabled regions —
+   * consumption net of what those regions produce themselves. This, not the
+   * gross burn, is what the pool has to supply.
+   */
+  weeklyExternalNeed: number;
   /** Resource represented by the player's whole pool position. */
   poolResource: number;
   /** Of that, the part already past the 30-day lock (withdrawable tax-free). */
   unlockedResource: number;
-  /** Weeks of consumption the full position covers. */
+  /** Weeks of external need the full position covers. */
   weeksCovered: number;
   /** True when the position is below the recommended buffer. */
   belowBuffer: boolean;
 }
 
 /**
- * Pool reserves versus weekly consumption, for the rolling-buffer warning.
+ * Pool reserves versus the weekly EXTERNAL need, for the rolling-buffer warning.
  *
  * The buffer exists so Make Harvestable's `pool` strategy always has matured
- * (tax-free) liquidity to draw on. `POOL_BUFFER_WEEKS` weeks of consumption is
+ * (tax-free) liquidity to draw on, and what it has to cover is the part the
+ * regions cannot produce themselves. `POOL_BUFFER_WEEKS` weeks of that need is
  * the recommended floor: with a weekly top-up, deposits need 30 days to unlock,
  * so a smaller pile risks having nothing unlocked when it's needed.
  *
@@ -77,15 +82,16 @@ export function usePoolBufferAlerts(
         if (!mounted) return;
 
         const visible = regions.filter((r) => uids.includes(r.region_uid));
-        const consumptionPerHour = Object.fromEntries(
+        const regionBalances = Object.fromEntries(
           visible.map((r) => [
             r.region_uid,
-            regionConsumptionPerHour(overviews[r.region_uid] ?? null),
+            computeRegionResourceBalance(r, overviews[r.region_uid] ?? null),
           ])
         );
-        const { perResource } = computeWeeklyConsumption(
+        const { perResource } = computeWeeklyPoolNeed(
           visible,
-          consumptionPerHour,
+          regionBalances,
+          undefined,
           harvestable
         );
 
@@ -97,7 +103,7 @@ export function usePoolBufferAlerts(
               weekly > 0 ? holding.resource / weekly : Infinity;
             return {
               symbol,
-              weeklyConsumption: weekly,
+              weeklyExternalNeed: weekly,
               poolResource: holding.resource,
               unlockedResource: holding.unlockedResource,
               weeksCovered,

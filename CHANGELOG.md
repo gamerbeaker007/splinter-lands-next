@@ -14,6 +14,26 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.23.0] - 2026-08-20
+
+### Changed
+
+- **Top Up Pools sizes deposits on the NET external need.** Targets were based on a
+  region's gross consumption, which ignored the resources the region produces itself and
+  heavily over-deposited. Each region's need is now
+  `max(0, consumed/hr - produced/hr) × hours`, netted **per region** (a surplus in one
+  region never cancels a deficit in another) and only then summed. Region 81 as an example:
+  481.875 GRAIN/hr consumed, 359.370/hr produced, so 122.505/hr external — a weekly target
+  of ~20.6k instead of ~81k. The +10% safety margin now applies to that net figure; the
+  30-day vesting lock and the withdrawal math are unchanged and stay separate.
+
+- **The plan explains the numbers.** Each resource shows Consumed/hr, Produced/hr, External
+  need/hr, gross weekly consumption and the weekly target. A resource the regions fully
+  produce themselves is skipped with that reason. The low-pool-buffer alert now measures
+  reserves against the weekly external need too.
+
+---
+
 ## [v1.22.0] - 2026-08-17
 
 ### Added
