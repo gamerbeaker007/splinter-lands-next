@@ -177,7 +177,7 @@ export default function AlertSection({
       dialogTitle: "Deeds Missing Bloodline Boost",
       dialogContent: (
         <MissingBloodLineBoostAlerts
-          missingBloodLineBoost={cardAlerts?.missingBloodLineBoost}
+          missingBloodLineBoostAlerts={cardAlerts?.missingBloodLineBoost}
         />
       ),
     },

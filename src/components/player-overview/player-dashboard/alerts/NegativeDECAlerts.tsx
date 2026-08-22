@@ -12,7 +12,7 @@ interface Props {
   negativeDECAlerts: NegativeDecAlert[];
 }
 
-const fontSize = 12;
+const fontSize = "1rem";
 
 export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
   return (
@@ -36,7 +36,7 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
               sx={{
                 position: "relative",
                 width: "100%",
-                maxWidth: "300px",
+                maxWidth: "320px",
                 aspectRatio: "800 / 422",
                 overflow: "hidden",
                 backgroundSize: "cover",
@@ -78,7 +78,7 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                 >
                   <Box
                     borderRadius={1}
-                    minHeight={100}
+                    minHeight={95}
                     display={"flex"}
                     flexDirection={"row"}
                     alignItems={"center"}
@@ -93,12 +93,11 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                         backgroundPosition: "center center",
                       }}
                     />
-                    <Box display={"flex"} flexDirection={"column"}>
+                    <Box display={"flex"} flexDirection={"column"} ml={1}>
                       <Typography
                         variant="body1"
                         fontWeight={600}
                         color="primary.secondary"
-                        sx={{ mt: 1, ml: 1 }}
                       >
                         Worksite:
                       </Typography>{" "}
@@ -106,13 +105,12 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                         variant="body1"
                         fontWeight={600}
                         color="primary.main"
-                        sx={{ mt: 1, ml: 1 }}
                       >
                         {`${alert.deedInfo.worksiteType}`}
                       </Typography>
                     </Box>
                   </Box>
-                  <Box display={"flex"} flexDirection={"row"} mt={1}>
+                  <Box display={"flex"} flexDirection={"row"}>
                     <LocationInfo
                       regionNumber={alert.deedInfo.regionNumber}
                       tractNumber={alert.deedInfo.tractNumber}
@@ -127,8 +125,8 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                   borderRadius={2}
                   sx={{
                     position: "absolute",
-                    top: 95,
-                    left: 220,
+                    top: 85,
+                    left: 215,
                     width: "auto",
                     textAlign: "left",
                     px: 2,

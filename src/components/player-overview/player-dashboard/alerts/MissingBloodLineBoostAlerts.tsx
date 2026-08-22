@@ -7,16 +7,16 @@ import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotI
 import { ManageLink } from "../../deed-overview/land-deed-card/link-components/ManageLink";
 
 interface Props {
-  missingBloodLineBoost: DeedInfo[];
+  missingBloodLineBoostAlerts: DeedInfo[];
 }
 
 export const MissingBloodLineBoostAlerts: React.FC<Props> = ({
-  missingBloodLineBoost,
+  missingBloodLineBoostAlerts,
 }) => {
   return (
     <Box mt={2}>
       <Box display={"flex"} flexWrap={"wrap"} gap={1} mb={1}>
-        {missingBloodLineBoost.map((alert, idx) => {
+        {missingBloodLineBoostAlerts.map((alert, idx) => {
           const DeedImg = getDeedImg(
             alert.magicType,
             alert.deedType,
@@ -38,7 +38,7 @@ export const MissingBloodLineBoostAlerts: React.FC<Props> = ({
               sx={{
                 position: "relative",
                 width: "100%",
-                maxWidth: "300px",
+                maxWidth: "320px",
                 aspectRatio: "800 / 422",
                 mb: 3,
                 overflow: "hidden",
@@ -83,7 +83,7 @@ export const MissingBloodLineBoostAlerts: React.FC<Props> = ({
                   sx={{
                     position: "absolute",
                     left: "20px",
-                    top: "115px",
+                    top: "130px",
                     width: "auto",
                     textAlign: "left",
                   }}

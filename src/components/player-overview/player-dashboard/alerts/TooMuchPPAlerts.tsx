@@ -37,7 +37,7 @@ export const TooMuchPPAlerts: React.FC<Props> = ({ tooMuchBasePP }) => {
               sx={{
                 position: "relative",
                 width: "100%",
-                maxWidth: "300px",
+                maxWidth: "320px",
                 aspectRatio: "800 / 422",
                 mb: 3,
                 overflow: "hidden",
@@ -82,16 +82,16 @@ export const TooMuchPPAlerts: React.FC<Props> = ({ tooMuchBasePP }) => {
                   sx={{
                     position: "absolute",
                     left: "20px",
-                    top: "120px",
+                    top: "140px",
                     width: "auto",
                     textAlign: "left",
                   }}
                 >
                   <Typography
-                    variant="caption"
+                    variant="body2"
+                    fontSize={16}
                     fontWeight={600}
                     color="warning"
-                    sx={{ mt: 1, ml: 1 }}
                   >
                     Base PP: {formatLargeNumber(alert.basePP)} | Boost PP:{" "}
                     {formatLargeNumber(alert.boostPP)}

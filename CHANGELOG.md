@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.23.1] - 2026-08-22
+
+### Fixxed
+
+- Update layout of alerts fix bigger fonts
+
+---
+
 ## [v1.23.0] - 2026-08-20
 
 ### Changed

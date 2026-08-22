@@ -38,7 +38,7 @@ export const AssignedWorkersAlerts: React.FC<Props> = ({
               sx={{
                 position: "relative",
                 width: "100%",
-                maxWidth: "300px",
+                maxWidth: "320px",
                 aspectRatio: "800 / 422",
                 mb: 3,
                 overflow: "hidden",
@@ -83,7 +83,7 @@ export const AssignedWorkersAlerts: React.FC<Props> = ({
                   sx={{
                     position: "absolute",
                     left: "20px",
-                    top: "115px",
+                    top: "130px",
                     width: "auto",
                     textAlign: "left",
                   }}

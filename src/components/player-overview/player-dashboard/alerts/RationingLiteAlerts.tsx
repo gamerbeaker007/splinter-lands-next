@@ -2,19 +2,19 @@ import { getDeedImg } from "@/lib/utils/deedUtil";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 
 import { formatLargeNumber } from "@/lib/formatters";
+import { rationing_icon_url } from "@/lib/shared/statics_icon_urls";
 import { DeedInfo } from "@/types/cardAlerts";
+import Image from "next/image";
 import React from "react";
 import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotInfo";
 import { ManageLink } from "../../deed-overview/land-deed-card/link-components/ManageLink";
-import { rationing_icon_url } from "@/lib/shared/statics_icon_urls";
-import Image from "next/image";
 
 interface Props {
   rationingLiteAlerts: DeedInfo[];
 }
 
-const iconSize = 25;
-const fontSize = "0.7rem";
+const iconSize = 20;
+const fontSize = "1rem";
 const fontColor = "common.white";
 
 export const RationingLiteAlerts: React.FC<Props> = ({
@@ -45,7 +45,7 @@ export const RationingLiteAlerts: React.FC<Props> = ({
               sx={{
                 position: "relative",
                 width: "100%",
-                maxWidth: "300px",
+                maxWidth: "320px",
                 aspectRatio: "800 / 422",
                 mb: 3,
                 overflow: "hidden",
@@ -90,17 +90,17 @@ export const RationingLiteAlerts: React.FC<Props> = ({
                   sx={{
                     position: "absolute",
                     left: "20px",
-                    top: "120px",
+                    top: "135px",
                     width: "auto",
                     textAlign: "left",
                   }}
                 >
                   <Stack direction="row" spacing={2} alignItems="center">
                     <Typography
-                      variant="caption"
+                      variant="body2"
+                      fontSize={fontSize}
                       fontWeight={600}
                       color="warning"
-                      sx={{ mt: 1, ml: 1 }}
                     >
                       Base PP: {formatLargeNumber(alert.basePP)}
                     </Typography>

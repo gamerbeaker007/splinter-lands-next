@@ -96,6 +96,7 @@ export async function broadcastOperations(
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
   for (let i = 0; i < batches.length; i++) {
+    keychain.requestCustomJson;
     const result = await keychain.broadcast({
       username,
       operations: batches[i] as Parameters<
