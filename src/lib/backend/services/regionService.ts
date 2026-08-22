@@ -47,6 +47,8 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
   let totalBoostedPP = 0;
   let countEnergized = 0;
   let countLaborsLuck = 0;
+  let totalBuildingInBox = 0;
+  let totalUnstableTotems = 0;
   const laborsLuckOwners = new Set<string>();
   const countAbilityBoost: Partial<Record<Resource, number>> = {};
   let countBloodlinesBoost = 0;
@@ -60,6 +62,10 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     const player = deed.player!;
     const regionUid = deed.region_uid!;
     const key = `${regionUid}-${player}`;
+    const stats = JSON.parse(deed.stats?.toString() ?? "{}");
+
+    totalBuildingInBox += stats.building_in_box ? 1 : 0;
+    totalUnstableTotems += stats.unstable_totem ? 1 : 0;
 
     totalDeeds += 1;
 
@@ -169,6 +175,8 @@ export function summarizeDeedsData(deeds: DeedComplete[]): RegionSummary {
     deedRarityBoosts: deedRarityBoostCounts,
     rewardsPerHour: rewardsPerHour as Record<Resource, number>,
     productionPoints: productionPoints as Record<Resource, ProductionPoints>,
+    totalBuildingInBox,
+    totalUnstableTotems,
     totalDecNeeded: totalDecNeeded,
     totalDecInUse: totalDecInUse,
     totalDecStaked: totalDecStaked,

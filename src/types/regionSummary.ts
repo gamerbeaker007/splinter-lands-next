@@ -16,6 +16,8 @@ export type RegionSummary = {
   totalDecInUse: number;
   totalDecStaked: number;
   totalDecSaved: number;
+  totalBuildingInBox: number;
+  totalUnstableTotems: number;
   deedsCount: number;
   rewardsPerHour: Record<Resource, number>;
   productionPoints: Record<Resource, ProductionPoints>;

@@ -6,6 +6,7 @@ import { ResourceOverviewCard } from "@/components/player-overview/player-dashbo
 import BoostTile from "@/components/region-overview/summary/BoostTile";
 import DecStakeIndicator from "@/components/region-overview/summary/DECStakeIndicator";
 import DeedRarityTile from "@/components/region-overview/summary/DeedRarityTile";
+import DeedStats from "@/components/region-overview/summary/DeedStats";
 import DeedStatusTile from "@/components/region-overview/summary/DeedStatusTile";
 import DeedTypeTile from "@/components/region-overview/summary/DeedTypeTile";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
@@ -178,6 +179,14 @@ export default function PlayerDashboardPage() {
                     }
                     rarityBoosts={
                       playerOverview.summarizedRegionInfo.deedRarityBoosts ?? {}
+                    }
+                  />
+                  <DeedStats
+                    totalBuildingInBox={
+                      playerOverview.summarizedRegionInfo.totalBuildingInBox
+                    }
+                    totalUnstableTotems={
+                      playerOverview.summarizedRegionInfo.totalUnstableTotems
                     }
                   />
                 </Stack>{" "}

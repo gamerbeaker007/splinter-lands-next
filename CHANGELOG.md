@@ -14,12 +14,19 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.23.3] - 2026-08-22
+
+### Added
+
+- Add Buidling In the Box and the Unstable Totems
+
+---
+
 ## [v1.23.2] - 2026-08-22
 
 ### Fixed
 
 - Fix land manager link for all usages
-
 
 ---
 

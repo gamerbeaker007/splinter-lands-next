@@ -157,3 +157,6 @@ export const bountiful_iron_icon_url = `${WEB_URL}website/abilities/ability_boun
 export const bountiful_stone_icon_url = `${WEB_URL}website/abilities/ability_bountiful-stone.png`;
 export const bountiful_wood_icon_url = `${WEB_URL}website/abilities/ability_bountiful-wood.png`;
 export const bountiful_aura_icon_url = `${WEB_URL}website/abilities/ability_bountiful-aura.png`;
+
+export const unstable_totem_icon_url = `${SPL_WEB_URL}assets/lands/deedAssets/Icon_totem@2x.png`;
+export const building_in_box_icon_url = `${SPL_WEB_URL}assets/lands/deedAssets/Icon_hut@2x.png`;
