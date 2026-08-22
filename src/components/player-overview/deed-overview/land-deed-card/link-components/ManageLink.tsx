@@ -4,19 +4,19 @@ import {
   getLandManagerProductionLink,
   getManageLinkPlot,
 } from "@/lib/utils/deedUtil";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Tooltip from "@mui/material/Tooltip";
 import Link from "next/link";
-import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import { useMemo, useState } from "react";
 
 export type Props = {
   regionNumber: number;
   plotId: number;
-  tractNumber?: number;
-  plotNumber?: number;
+  tractNumber: number;
+  plotNumber: number;
 };
 
 export const ManageLink: React.FC<Props> = ({
@@ -30,7 +30,6 @@ export const ManageLink: React.FC<Props> = ({
 
   const managePlotUrl = getManageLinkPlot(regionNumber, plotId);
   const landManagerUrl = useMemo(() => {
-    if (tractNumber == null || plotNumber == null) return null;
     return getLandManagerProductionLink(regionNumber, tractNumber, plotNumber);
   }, [regionNumber, tractNumber, plotNumber]);
 

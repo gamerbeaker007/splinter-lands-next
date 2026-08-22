@@ -214,7 +214,12 @@ export default function DeedGridRow({
       />
 
       {/* Link */}
-      <LinkColumn regionNumber={deed.region_number} plotId={deed.plot_id} />
+      <LinkColumn
+        regionNumber={deed.region_number}
+        plotId={deed.plot_id}
+        tractNumber={deed.tract_number}
+        plotNumber={deed.plot_number}
+      />
 
       {/* Rarity */}
       <RarityColumn rarity={deed.rarity} />

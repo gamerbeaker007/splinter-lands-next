@@ -57,6 +57,8 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                 <ManageLink
                   regionNumber={alert.deedInfo.regionNumber}
                   plotId={alert.deedInfo.plotId}
+                  tractNumber={alert.deedInfo.tractNumber}
+                  plotNumber={alert.deedInfo.plotNumber}
                 />
               </Box>
               <Box

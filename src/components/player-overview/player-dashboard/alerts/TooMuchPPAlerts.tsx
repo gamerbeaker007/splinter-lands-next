@@ -59,6 +59,8 @@ export const TooMuchPPAlerts: React.FC<Props> = ({ tooMuchBasePP }) => {
                 <ManageLink
                   regionNumber={alert.regionNumber}
                   plotId={alert.plotId}
+                  tractNumber={alert.tractNumber}
+                  plotNumber={alert.plotNumber}
                 />
               </Box>
               <Box

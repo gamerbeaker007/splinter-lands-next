@@ -70,6 +70,8 @@ export const TerrainBoostsCard: React.FC<Props> = ({ terrainBoosts }) => {
                 <ManageLink
                   regionNumber={firstAlert.deedInfo.regionNumber}
                   plotId={firstAlert.deedInfo.plotId}
+                  tractNumber={firstAlert.deedInfo.tractNumber}
+                  plotNumber={firstAlert.deedInfo.plotNumber}
                 />
               </Box>
               <Box

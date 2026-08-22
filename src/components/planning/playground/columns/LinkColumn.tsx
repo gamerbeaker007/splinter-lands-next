@@ -7,12 +7,24 @@ import { COLUMN_WIDTHS } from "../util/gridConstants";
 type LinkColumnProps = {
   regionNumber: number;
   plotId: number;
+  tractNumber: number;
+  plotNumber: number;
 };
 
-export default function LinkColumn({ regionNumber, plotId }: LinkColumnProps) {
+export default function LinkColumn({
+  regionNumber,
+  plotId,
+  tractNumber,
+  plotNumber,
+}: LinkColumnProps) {
   return (
     <Box width={COLUMN_WIDTHS.SMALL} flexShrink={0}>
-      <ManageLink regionNumber={regionNumber} plotId={plotId} />
+      <ManageLink
+        regionNumber={regionNumber}
+        plotId={plotId}
+        tractNumber={tractNumber}
+        plotNumber={plotNumber}
+      />
     </Box>
   );
 }

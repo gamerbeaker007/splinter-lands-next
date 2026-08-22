@@ -14,9 +14,18 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.23.2] - 2026-08-22
+
+### Fixed
+
+- Fix land manager link for all usages
+
+
+---
+
 ## [v1.23.1] - 2026-08-22
 
-### Fixxed
+### Fixed
 
 - Update layout of alerts fix bigger fonts
 
