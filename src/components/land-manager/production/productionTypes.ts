@@ -1,3 +1,7 @@
+import {
+  BiomeModifiers,
+  getBiomeModifiersFromStakingDetail,
+} from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 
 /** A flat, render-ready view of one plot for the Production table. */
@@ -19,6 +23,11 @@ export interface ProductionRow {
   tokenSymbol: string;
   rewardsPerHour: number;
   netDEC: number;
+  /**
+   * True when netDEC is an estimate rather than a derived rate: castle/keep tax
+   * income depends on the plots in the region/tract actually being harvested.
+   */
+  netDecEstimated: boolean;
   powered: boolean;
   workerCount: number;
   maxWorkers: number;
@@ -30,6 +39,8 @@ export interface ProductionRow {
   hasStakedItems: boolean;
   /** True when the deed is listed on the market (can't be reconfigured). */
   listed: boolean;
+  /** Positive Terrain Boosts **/
+  biomeModifiers: BiomeModifiers;
 }
 
 export type ProductionSortKey =
@@ -77,10 +88,12 @@ export function toProductionRow(deed: DeedComplete): ProductionRow {
     tractNumber: deed.tract_number,
     plotNumber: deed.plot_number,
     label: `P-${deed.region_number}-${deed.tract_number}-${deed.plot_number}`,
+    biomeModifiers: getBiomeModifiersFromStakingDetail(deed.stakingDetail),
     worksiteType: deed.worksite_type ?? "",
     tokenSymbol: ws?.token_symbol ?? "",
     rewardsPerHour: ws?.rewards_per_hour ?? 0,
     netDEC: deed.productionInfo?.netDEC ?? 0,
+    netDecEstimated: ws?.token_symbol === "TAX",
     basePP: st?.total_base_pp_after_cap ?? 0,
     boostedPP: st?.total_harvest_pp ?? 0,
     powered,
@@ -127,7 +140,7 @@ export function sortRows(
   dir: SortDirection
 ): ProductionRow[] {
   const mul = dir === "asc" ? 1 : -1;
-  const sorted = [...rows].sort((a, b) => {
+  return [...rows].sort((a, b) => {
     let cmp = 0;
     switch (key) {
       case "label":
@@ -171,5 +184,4 @@ export function sortRows(
     }
     return cmp * mul;
   });
-  return sorted;
 }

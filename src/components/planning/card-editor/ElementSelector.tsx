@@ -1,5 +1,5 @@
 "use client";
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import {
   CardElement,
   cardElementOptions,
@@ -63,13 +63,9 @@ export function CardElementSelector({ value, deedType, onChange }: Props) {
   };
 
   const renderIcon = (tier: CardElement, size = 24) => {
-    const icon = land_default_element_icon_url_placeholder.replace(
-      "__NAME__",
-      tier.toLowerCase()
-    );
     return (
       <Image
-        src={icon}
+        src={getElementIconUrl(tier)}
         alt={`${tier} element`}
         width={size}
         height={size}

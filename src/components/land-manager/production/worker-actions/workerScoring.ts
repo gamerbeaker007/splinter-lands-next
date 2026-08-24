@@ -66,6 +66,7 @@ export function scoreLandCard(
     foil: fid,
     bcx: card.bcx,
     maxBcx: determineCardMaxBCX(card.set, card.rarity, fid),
+    lastUsedDate: card.lastUsedDate,
     bloodline: card.bloodline,
     landBoosts: card.landBoost,
     basePP,

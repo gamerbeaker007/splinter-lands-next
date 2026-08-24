@@ -2,6 +2,8 @@
 
 import HarvestButton from "@/components/land-manager/harvest/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
+import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
+import { Resource } from "@/constants/resource/resource";
 import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import {
   getRegionResourceBalance,
@@ -11,7 +13,8 @@ import {
   aggregateCosts,
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { RESOURCE_COLOR_MAP, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { getHarvestRegion } from "@/lib/utils/deedUtil";
 import { DonationConfig } from "@/types/landManager";
 import {
@@ -24,6 +27,7 @@ import {
 } from "@mui/icons-material";
 import {
   Box,
+  capitalize,
   Chip,
   CircularProgress,
   IconButton,
@@ -38,9 +42,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import RegionAnalysisCell from "./RegionAnalysisCell";
-import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 
 interface Props {
   username: string;
@@ -51,6 +55,18 @@ interface Props {
 }
 
 // ── Harvestable chips ──────────────────────────────────────────────────────
+
+function getResourceIcon(resource: Resource) {
+  const img = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
+  return (
+    <Image
+      src={img}
+      alt={capitalize(resource.toLowerCase())}
+      width={16}
+      height={16}
+    />
+  );
+}
 
 function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   if (resources.length === 0) {
@@ -63,16 +79,25 @@ function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   return (
     <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
       {resources.map((r) => (
-        <Chip
+        <Tooltip
           key={r.token_symbol}
-          label={`${r.token_symbol}: ${r.amount_claimable.toLocaleString(undefined, { maximumFractionDigits: 1 })}`}
-          size="small"
-          sx={{
-            bgcolor: RESOURCE_COLOR_MAP[r.token_symbol] ?? "primary.main",
-            color: "#fff",
-            fontWeight: "bold",
-          }}
-        />
+          title={capitalize(r.token_symbol.toLowerCase())}
+          placement={"top"}
+          followCursor={true}
+        >
+          <Chip
+            variant={"outlined"}
+            icon={getResourceIcon(r.token_symbol as Resource)}
+            label={r.amount_claimable.toLocaleString(undefined, {
+              maximumFractionDigits: 1,
+            })}
+            size="small"
+            sx={{
+              borderColor: RESOURCE_COLOR_MAP[r.token_symbol],
+              fontWeight: "bold",
+            }}
+          />
+        </Tooltip>
       ))}
     </Box>
   );
@@ -99,22 +124,38 @@ function HarvestCostsCell({
         const need = amount - balance;
         return (
           <Stack key={symbol} direction="row" alignItems="center" spacing={0.5}>
+            <Tooltip
+              title={capitalize(symbol.toLowerCase())}
+              placement={"top"}
+              followCursor={true}
+            >
+              <Stack
+                key={symbol}
+                direction={"row"}
+                alignItems={"center"}
+                spacing={0.5}
+              >
+                {getResourceIcon(symbol as Resource)}
+                <Typography
+                  variant="caption"
+                  sx={{ color: enough ? "text.primary" : "warning.main" }}
+                >
+                  {amount.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}{" "}
+                </Typography>
+              </Stack>
+            </Tooltip>
+
             {!enough && (
               <Tooltip
                 title={`Need ${need.toLocaleString(undefined, { maximumFractionDigits: 0 })} more ${symbol}`}
+                placement={"top"}
+                followCursor={true}
               >
-                <WarnIcon sx={{ fontSize: 14, color: "warning.main" }} />
+                <WarnIcon sx={{ fontSize: 16, color: "warning.main" }} />
               </Tooltip>
             )}
-            <Typography
-              variant="caption"
-              sx={{ color: enough ? "text.primary" : "warning.main" }}
-            >
-              {amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}{" "}
-              <span style={{ color: RESOURCE_COLOR_MAP[symbol] ?? "inherit" }}>
-                {symbol}
-              </span>
-            </Typography>
           </Stack>
         );
       })}

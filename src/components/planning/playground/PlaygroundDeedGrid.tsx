@@ -1,11 +1,11 @@
 "use client";
 
 import { filterPlaygroundDeeds } from "@/components/planning/playground/util/deedFilters";
+import { usePersistedCardFilters } from "@/hooks/usePersistedCardFilters";
 import { usePrices } from "@/hooks/usePrices";
 import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 
 import LandCardFilter from "@/components/cards/LandCardFilter";
-import { CardFilterOptions } from "@/types/cardFilter";
 import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
@@ -28,6 +28,9 @@ import { calculateSummary } from "./util/calculatedSummary";
 import { downloadCSV } from "./util/dowload";
 
 const ITEMS_PER_PAGE = 50;
+
+/** Persistence scope: the playground's own saved card-filter settings. */
+const CARD_FILTER_SCOPE_PLAYGROUND = "planning-playground";
 
 type PlaygroundDeedGridProps = {
   deeds: PlaygroundDeed[];
@@ -60,26 +63,28 @@ export default function PlaygroundDeedGrid({
     developed: false,
     maxWorkers: null,
   });
-  const [cardFilterOptions, setCardFilterOptions] = useState<CardFilterOptions>(
-    {
-      cardName: "",
-      onWagon: undefined,
-      inSet: undefined,
-      isListed: undefined,
-      rarities: [],
-      sets: [],
-      editions: [],
-      promoSets: [],
-      rewardSets: [],
-      extraSets: [],
-      elements: [],
-      foils: [],
-      minPP: 0,
-      maxPP: 0,
-      bloodlines: [],
-      maxLevelOnly: false,
-    }
-  );
+  const {
+    filters: cardFilterOptions,
+    setFilters: setCardFilterOptions,
+    resetFilters: resetCardFilterOptions,
+  } = usePersistedCardFilters(CARD_FILTER_SCOPE_PLAYGROUND, {
+    cardName: "",
+    onWagon: undefined,
+    inSet: undefined,
+    isListed: undefined,
+    rarities: [],
+    sets: [],
+    editions: [],
+    promoSets: [],
+    rewardSets: [],
+    extraSets: [],
+    elements: [],
+    foils: [],
+    minPP: 0,
+    maxPP: 0,
+    bloodlines: [],
+    maxLevelOnly: false,
+  });
   const { prices } = usePrices();
 
   // Reset updatedDeeds when deeds prop changes
@@ -270,6 +275,7 @@ export default function PlaygroundDeedGrid({
           assignedCardCount={assignedCardCount}
           filterOptions={cardFilterOptions}
           onFilterChange={setCardFilterOptions}
+          onResetFilters={resetCardFilterOptions}
         />
       </Box>
 

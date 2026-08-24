@@ -1,5 +1,6 @@
 "use server";
 
+import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
 import { mapRegionDataToDeedComplete } from "@/lib/backend/api/internal/player-data";
 import {
   fetchAvailableStakeCards,
@@ -10,7 +11,10 @@ import {
 } from "@/lib/backend/api/spl/spl-land-api";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
 import { getCachedStakedAssets } from "@/lib/backend/services/playerService";
-import { enrichWithProductionInfo } from "@/lib/backend/services/regionService";
+import {
+  calculateRegionTax,
+  enrichWithProductionInfo,
+} from "@/lib/backend/services/regionService";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import {
   STAKE_TYPE_UID_LAND_POWER_CORE,
@@ -18,6 +22,7 @@ import {
   STAKE_TYPE_UID_LAND_TITLE,
   STAKE_TYPE_UID_LAND_TOTEM,
 } from "@/lib/shared/operations/opBuilders";
+import { calcTaxProductionInfo } from "@/lib/shared/taxProduction";
 import {
   bcxForLevel,
   determineCardInfo,
@@ -34,6 +39,7 @@ import {
   CardRarity,
   LandBoost,
 } from "@/types/planner";
+import { Prices } from "@/types/price";
 import { Card } from "@/types/stakedAssets";
 import pLimit from "p-limit";
 import { getAuthStatus } from "../auth-actions";
@@ -42,11 +48,58 @@ import { getAuthStatus } from "../auth-actions";
 const RUNI_CARD_DETAIL_ID = 505;
 
 /**
+ * Recompute `productionInfo` for the player's castle/keep plots as a per-hour
+ * value, using the same planner formula as the Planning page.
+ *
+ * The generic enrichment values a castle/keep by the *current balance* of its
+ * tax vaults (what the Deed Overview shows: collected so far, not a rate). The
+ * Production page reports everything per hour, so tax plots are recomputed as
+ * captured tax per hour, with the grain upkeep treated as a flat fee.
+ *
+ * Needs region-wide data (all plots in the region/tract are taxed), so it reads
+ * the cached region dataset rather than the player's own deeds.
+ */
+async function withPerHourTaxProduction(
+  deeds: DeedComplete[],
+  prices: Prices
+): Promise<DeedComplete[]> {
+  const taxDeeds = deeds.filter(
+    (deed) => deed.worksiteDetail?.token_symbol === "TAX"
+  );
+  if (taxDeeds.length === 0) return deeds;
+
+  const regionData = await getCachedRegionDataSSR();
+  const regionTax = calculateRegionTax(regionData, prices);
+  const byRegionNumber = new Map(
+    regionTax.map((region) => [region.castleOwner.regionNumber, region])
+  );
+
+  const taxDeedUids = new Set(taxDeeds.map((deed) => deed.deed_uid));
+  return deeds.map((deed) => {
+    if (!taxDeedUids.has(deed.deed_uid)) return deed;
+    const ws = deed.worksiteDetail!;
+    return {
+      ...deed,
+      productionInfo: calcTaxProductionInfo(
+        ws.worksite_type ?? "",
+        byRegionNumber.get(deed.region_number),
+        deed.tract_number,
+        ws.captured_tax_rate ?? 0,
+        prices
+      ),
+    };
+  });
+}
+
+/**
  * Fetches the authenticated player's full deed data and enriches each deed with
  * `productionInfo` (rewards/hour produce value, consume cost, and netDEC). The
  * Production page renders rewards-per-hour and net DEC straight from this — no
  * per-deed staked-asset calls are needed for the table (those are only fetched
  * at action time when unpowering / removing workers / emptying a plot).
+ *
+ * Castle/keep plots are then recomputed per hour; see
+ * {@link withPerHourTaxProduction}.
  *
  * No caching — always fresh so the page reflects the current on-chain state.
  */
@@ -65,7 +118,8 @@ export async function getProductionPageData(): Promise<{
     const deeds = mapRegionDataToDeedComplete(raw);
     const prices = await getCachedResourcePrices();
     const enriched = await enrichWithProductionInfo(deeds, prices);
-    return { deeds: enriched, username: auth.username };
+    const withTax = await withPerHourTaxProduction(enriched, prices);
+    return { deeds: withTax, username: auth.username };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     return { deeds: [], username: auth.username, error: msg };

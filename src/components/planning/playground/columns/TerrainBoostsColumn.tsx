@@ -1,6 +1,6 @@
 "use client";
 
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import { TERRAIN_BONUS } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
@@ -31,10 +31,6 @@ export default function TerrainBoostsColumn({
         {Object.entries(boosts).map(([element, boost]) => {
           if (boost === undefined || boost <= 0) return null;
 
-          const icon = land_default_element_icon_url_placeholder.replace(
-            "__NAME__",
-            element.toLowerCase()
-          );
           const percentage = `+${(boost * 100).toFixed(0)}%`;
 
           return (
@@ -48,7 +44,7 @@ export default function TerrainBoostsColumn({
                 }}
               >
                 <Image
-                  src={icon}
+                  src={getElementIconUrl(element)}
                   alt={element}
                   width={16}
                   height={16}

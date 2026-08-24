@@ -1,6 +1,6 @@
-import { CardElement, cardElementOptions } from "@/types/planner";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
+import { CardElement, cardElementOptions } from "@/types/planner";
 import IconFilterGroup from "../shared/IconFilterGroup";
 
 type Props = {
@@ -55,9 +55,7 @@ export default function FilterTerrainBoostGroup({ options }: Props) {
       options={sortedOptions}
       selected={selected}
       onToggle={onToggle}
-      getImage={(name) =>
-        land_default_element_icon_url_placeholder.replace("__NAME__", name)
-      }
+      getImage={(name) => getElementIconUrl(name)}
     />
   );
 }
