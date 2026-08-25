@@ -42,6 +42,8 @@ export interface SpotCardVM {
   foil: number;
   bcx: number;
   maxBcx: number;
+  /** ISO date the card was last played (Splinterlands battle), if known. */
+  lastUsedDate?: string | null;
   bloodline?: string;
   landBoosts?: LandBoost | null;
   basePP: number;

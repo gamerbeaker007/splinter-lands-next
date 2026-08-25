@@ -1,7 +1,8 @@
 "use client";
 
 import FoilIcon from "@/components/ui/FoilIcon";
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
+import { cardSetIconMap } from "@/types/editions";
 import { SlotInput } from "@/types/planner";
 import {
   DeedChange,
@@ -30,7 +31,6 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { downloadTextFile } from "./util/dowload";
 import { generateTodoListText } from "./util/todolist";
-import { cardSetIconMap } from "@/types/editions";
 
 type ChangesDialogProps = {
   open: boolean;
@@ -51,13 +51,6 @@ export default function ChangesDialog({
 }: ChangesDialogProps) {
   const [checkedItems, setCheckedItems] = useState<Set<number>>(new Set());
   const [currentPage, setCurrentPage] = useState(0);
-
-  const getElementIcon = (element: string) => {
-    return land_default_element_icon_url_placeholder.replace(
-      "__NAME__",
-      element.toLowerCase()
-    );
-  };
 
   const getCardByUid = (uid: string): PlayerLandCard | undefined => {
     return allCards.find((c) => c.uid === uid);
@@ -193,7 +186,7 @@ export default function ChangesDialog({
       return `Card ${slotInput.uid || "Unknown"}`;
     }
 
-    const elementIcon = getElementIcon(card.element);
+    const elementIcon = getElementIconUrl(card.element);
     const setIcon = cardSetIconMap[card.set] || cardSetIconMap["chaos"];
 
     return (

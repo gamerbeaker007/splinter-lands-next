@@ -14,6 +14,41 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.25.0] - 2026-08-24
+
+---
+
+## [v1.24.0] - 2026-08-24
+
+### Fixed
+
+- Production tab: net DEC for castle/keep plots is now a real per-hour value,
+  using the same formula as the planner (captured tax per hour = production per
+  hour in the region/tract x tax rate x capture rate, grain upkeep as a flat fee).
+  It previously showed the current tax-vault balance minus one hour of grain,
+  which is a collected total, not a rate
+- Production tab: a warning icon behind the net DEC value marks it as an estimate
+  that depends on the plots in that region/tract being harvested by their owners
+
+
+### Added
+
+- Card filter settings are now remembered (localStorage), scoped per usage of the
+  card filter drawer, with a Reset button to restore the usage's defaults
+- Add a sortable "Last Played" column to the worker select table (Production tab)
+- Added Terrain Boost to Production Table
+
+### Changed
+
+- Shorten the worker select table columns: Rarity -> R, Set -> S, Edition -> E,
+  Foil -> F, BCX -> CC (full name in a tooltip); the Foil column now uses the same
+  foil icons as the filter section
+- The per-hour captured-tax calculation lives in one shared place, used by both
+  the planner and the Production tab
+- Refactor Resource Chips in Harvest Tab and Production Tab 
+
+---
+
 ## [v1.23.3] - 2026-08-22
 
 ### Added

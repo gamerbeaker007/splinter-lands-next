@@ -4,8 +4,8 @@ import LandEditionSetFilter from "@/components/cards/LandEditionSetFilter";
 import FilterIcon from "@/components/filter/FilterIcon";
 import FoilIcon from "@/components/ui/FoilIcon";
 import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
 import { CardFilterOptions } from "@/types/cardFilter";
 import {
   CardBloodline,
@@ -38,6 +38,8 @@ type LandCardFilterProps = {
   assignedCardCount?: number;
   filterOptions: CardFilterOptions;
   onFilterChange: (newFilters: CardFilterOptions) => void;
+  /** Restore this usage's initial filters; hides the reset button when absent. */
+  onResetFilters?: () => void;
 };
 
 const fontSizeSmall = "0.8rem";
@@ -92,6 +94,7 @@ export default function LandCardFilter({
   assignedCardCount,
   filterOptions,
   onFilterChange,
+  onResetFilters,
 }: Readonly<LandCardFilterProps>) {
   const bloodlineOptions = useCardBloodlineOptions();
 
@@ -150,20 +153,25 @@ export default function LandCardFilter({
     onFilterChange({ ...filterOptions, maxPP: Math.max(0, value) });
   };
 
-  const getElementIcon = (element: string) => {
-    return land_default_element_icon_url_placeholder.replace(
-      "__NAME__",
-      element.toLowerCase()
-    );
-  };
-
   const runiCount = cards.filter((card) => card.cardDetailId === 505).length;
 
   return (
     <Paper sx={{ p: 2, mb: 2 }}>
-      <Typography variant="h6" gutterBottom>
-        Card Filters
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1,
+        }}
+      >
+        <Typography variant="h6">Card Filters</Typography>
+        {onResetFilters && (
+          <Button size="small" color="error" onClick={onResetFilters}>
+            Reset
+          </Button>
+        )}
+      </Box>
       <Stack>
         <Typography variant="caption" gutterBottom>
           Total Worker Cards: {cards.length}
@@ -488,7 +496,7 @@ export default function LandCardFilter({
                 key={element}
                 name={element}
                 isActive={filterOptions.elements.includes(element)}
-                image={getElementIcon(element)}
+                image={getElementIconUrl(element)}
                 onChange={() => handleElementToggle(element)}
               />
             ))}

@@ -1,13 +1,13 @@
 "use client";
 
 import FoilIcon from "@/components/ui/FoilIcon";
-import { land_default_element_icon_url_placeholder } from "@/lib/shared/statics_icon_urls";
+import { getElementIconUrl } from "@/lib/frontend/utils/icons";
+import { cardSetIconMap } from "@/types/editions";
 import { cardIconMap } from "@/types/planner/primitives";
 import { PlayerLandCard } from "@/types/playground";
 import { Box, MenuItem, Select, Typography } from "@mui/material";
 import Image from "next/image";
 import { COLUMN_WIDTHS } from "./util/gridConstants";
-import { cardSetIconMap } from "@/types/editions";
 
 type Props = {
   slotIndex: number;
@@ -30,13 +30,6 @@ export default function WorkerSelector({
 }: Props) {
   const fmt = (n: number) =>
     new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
-
-  const getElementIcon = (card: PlayerLandCard) => {
-    return land_default_element_icon_url_placeholder.replace(
-      "__NAME__",
-      card.element.toLowerCase()
-    );
-  };
 
   // Find current card in ALL cards (including staked)
   const currentCard = workerUid
@@ -76,7 +69,7 @@ export default function WorkerSelector({
           if (!card) return <em>Empty</em>;
 
           // Show same format as dropdown: element icon, rarity icon, name, PP
-          const elementIcon = getElementIcon(card);
+          const elementIcon = getElementIconUrl(card.element);
           const rarityIcon = cardIconMap[card.rarity] || cardIconMap["common"];
           const setIcon = cardSetIconMap[card.set] || cardIconMap["chaos"];
 
@@ -125,7 +118,7 @@ export default function WorkerSelector({
           <em>Empty</em>
         </MenuItem>
         {options.map((card) => {
-          const elementIcon = getElementIcon(card);
+          const elementIcon = getElementIconUrl(card.element);
           const rarityIcon = cardIconMap[card.rarity] || cardIconMap["common"];
           const setIcon = cardSetIconMap[card.set] || cardIconMap["chaos"];
 

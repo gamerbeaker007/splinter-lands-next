@@ -2,15 +2,18 @@
 
 import LandCardFilter from "@/components/cards/LandCardFilter";
 import CardTableIcon from "@/components/player-overview/collection-overview/CardTableIcon";
+import FoilIcon from "@/components/ui/FoilIcon";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
+import { usePersistedCardFilters } from "@/hooks/usePersistedCardFilters";
 import { getPlayerLandCards } from "@/lib/backend/actions/player/landCards-actions";
 import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { foilLabel } from "@/lib/utils/cardUtil";
+import { formatDate, formatRelativeDate } from "@/lib/utils/dateColumnUtils";
 import { CardFilterOptions } from "@/types/cardFilter";
 import { DeedComplete } from "@/types/deed";
 import { cardSetIconMap, editionMap } from "@/types/editions";
-import { cardIconMap } from "@/types/planner/primitives";
+import { cardFoilOptions, cardIconMap } from "@/types/planner/primitives";
 import { PlayerLandCard } from "@/types/playerLandCard";
 import {
   Alert,
@@ -47,23 +50,43 @@ type WorkerSortKey =
   | "set"
   | "edition"
   | "foil"
+  | "lastUsed"
   | "bcx"
   | "basePP"
   | "boostedPP";
 type SortDir = "asc" | "desc";
 const CARD_TABLE_ROWS_PER_PAGE_OPTIONS = [50, 100, 200];
 
-const HEAD_CELLS: { key: WorkerSortKey; label: string; numeric: boolean }[] = [
+// Short labels keep the table narrow; the full name lives in the tooltip.
+const HEAD_CELLS: {
+  key: WorkerSortKey;
+  label: string;
+  numeric: boolean;
+  tooltip?: string;
+}[] = [
   { key: "img", label: "_", numeric: false },
   { key: "name", label: "Card", numeric: false },
-  { key: "rarity", label: "Rarity", numeric: false },
-  { key: "set", label: "Set", numeric: false },
-  { key: "edition", label: "Edition", numeric: false },
-  { key: "foil", label: "Foil", numeric: false },
-  { key: "bcx", label: "BCX", numeric: true },
+  { key: "rarity", label: "R", numeric: false, tooltip: "Rarity" },
+  { key: "set", label: "S", numeric: false, tooltip: "Set" },
+  { key: "edition", label: "E", numeric: false, tooltip: "Edition" },
+  { key: "foil", label: "F", numeric: false, tooltip: "Foil" },
+  {
+    key: "bcx",
+    label: "CC",
+    numeric: true,
+    tooltip: "Cards Combined (formerly known as BCX)",
+  },
   { key: "basePP", label: "Base PP", numeric: true },
   { key: "boostedPP", label: "Boosted PP", numeric: true },
+  { key: "lastUsed", label: "Last Played", numeric: false },
 ];
+
+/** Epoch ms of a card's last play, 0 when never played or unknown. */
+function lastUsedTime(card: SpotCardVM): number {
+  if (!card.lastUsedDate) return 0;
+  const t = new Date(card.lastUsedDate).getTime();
+  return Number.isFinite(t) ? t : 0;
+}
 
 function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
   switch (key) {
@@ -78,6 +101,9 @@ function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
       return a.set.localeCompare(b.set);
     case "foil":
       return a.foil - b.foil;
+    case "lastUsed":
+      // Never played sorts as oldest, so it lands last when sorting descending.
+      return lastUsedTime(a) - lastUsedTime(b);
     case "bcx":
       return a.bcx - b.bcx;
     case "basePP":
@@ -86,6 +112,9 @@ function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
       return a.boostedPP - b.boostedPP;
   }
 }
+
+/** Persistence scope: the worker picker's own saved filter settings. */
+const CARD_FILTER_SCOPE_WORKER_SELECT = "production-worker-select";
 
 const DEFAULT_CARD_FILTER: CardFilterOptions = {
   cardName: "",
@@ -102,6 +131,25 @@ const DEFAULT_CARD_FILTER: CardFilterOptions = {
   bloodlines: [],
   maxLevelOnly: false,
 };
+
+/** Relative "last played" age, with the absolute date in the tooltip. */
+function LastPlayedCell({ date }: Readonly<{ date?: string | null }>) {
+  const parsed = date ? new Date(date) : null;
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    return (
+      <Typography variant="body2" color="text.secondary">
+        -
+      </Typography>
+    );
+  }
+  return (
+    <Tooltip title={formatDate(parsed)} placement="top">
+      <Typography variant="body2" noWrap>
+        {formatRelativeDate(parsed)}
+      </Typography>
+    </Tooltip>
+  );
+}
 
 function fmt(n: number): string {
   return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
@@ -155,7 +203,14 @@ export default function WorkerSelectDialog({
   // Mounted on demand, so it always opens in a loading state.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<CardFilterOptions>(DEFAULT_CARD_FILTER);
+  const {
+    filters: filter,
+    setFilters: setFilter,
+    resetFilters: resetFilter,
+  } = usePersistedCardFilters(
+    CARD_FILTER_SCOPE_WORKER_SELECT,
+    DEFAULT_CARD_FILTER
+  );
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [sortKey, setSortKey] = useState<WorkerSortKey>("boostedPP");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
@@ -308,6 +363,7 @@ export default function WorkerSelectDialog({
                 filteredCardCount={rows.length}
                 filterOptions={filter}
                 onFilterChange={setFilter}
+                onResetFilters={resetFilter}
               />
             </Box>
 
@@ -358,13 +414,17 @@ export default function WorkerSelectDialog({
                               sortKey === cell.key ? sortDir : false
                             }
                           >
-                            <TableSortLabel
-                              active={sortKey === cell.key}
-                              direction={sortKey === cell.key ? sortDir : "asc"}
-                              onClick={() => handleSort(cell.key)}
-                            >
-                              {cell.label}
-                            </TableSortLabel>
+                            <Tooltip title={cell.tooltip ?? ""} placement="top">
+                              <TableSortLabel
+                                active={sortKey === cell.key}
+                                direction={
+                                  sortKey === cell.key ? sortDir : "asc"
+                                }
+                                onClick={() => handleSort(cell.key)}
+                              >
+                                {cell.label}
+                              </TableSortLabel>
+                            </Tooltip>
                           </TableCell>
                         ))}
                       </TableRow>
@@ -444,7 +504,22 @@ export default function WorkerSelectDialog({
                               />
                             </TableCell>
                             <TableCell align="left">
-                              {foilLabel(r.foil)}
+                              <Tooltip
+                                title={foilLabel(r.foil)}
+                                placement="top"
+                              >
+                                <Box
+                                  sx={{ display: "inline-flex" }}
+                                  aria-label={foilLabel(r.foil)}
+                                >
+                                  <FoilIcon
+                                    foil={cardFoilOptions[r.foil] ?? "regular"}
+                                    size={20}
+                                    fontSizeRatio={0.6}
+                                    fontWeight={900}
+                                  />
+                                </Box>
+                              </Tooltip>
                             </TableCell>
                             <TableCell align="right">
                               {r.bcx}/{r.maxBcx}
@@ -465,12 +540,18 @@ export default function WorkerSelectDialog({
                                 {fmt(r.boostedPP)}
                               </Typography>
                             </TableCell>
+                            <TableCell align="left">
+                              <LastPlayedCell date={r.lastUsedDate} />
+                            </TableCell>
                           </TableRow>
                         );
                       })}
                       {rows.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={7} align="center">
+                          <TableCell
+                            colSpan={HEAD_CELLS.length + 1}
+                            align="center"
+                          >
                             <Typography color="text.secondary" sx={{ py: 3 }}>
                               No available cards match the filters.
                             </Typography>

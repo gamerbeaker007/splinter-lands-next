@@ -1,11 +1,10 @@
 import { Resource } from "@/constants/resource/resource";
 import {
   calcCostsWithDEC,
-  calcDECPrice,
   calcProduction,
   determineRecipe,
 } from "@/lib/shared/costCalc";
-import { TAX_RATE } from "@/lib/shared/statics";
+import { calcTaxProductionInfo } from "@/lib/shared/taxProduction";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import { CardSetNameLandValid } from "@/types/editions";
 import {
@@ -32,7 +31,7 @@ import {
   WorksiteType,
 } from "@/types/planner";
 import { Prices } from "@/types/price";
-import { ProductionInfo, ResourceWithDEC } from "@/types/productionInfo";
+import { ProductionInfo } from "@/types/productionInfo";
 import { RegionTax } from "@/types/regionTax";
 
 export function determineDeedResourceBoost(
@@ -233,61 +232,17 @@ export function calcProductionInfo(
 
   if (resource === "TAX" && captureRate && regionTax) {
     const regionNumber = plotPlannerData.regionNumber;
-    const tractNumber = plotPlannerData.tractNumber;
-
-    const consume = worksiteType === "KEEP" ? 1000 : 10_000;
-
-    const region = regionTax?.find(
+    const region = regionTax.find(
       (r) => r.castleOwner?.regionNumber === regionNumber
     );
 
-    const rewardsPerHour =
-      worksiteType === "KEEP"
-        ? region?.perTract?.[String(tractNumber ?? "")]?.resourceRewardsPerHour
-        : region?.resourceRewardsPerHour;
-
-    const capturedTaxInResource: Record<string, number> = {};
-    for (const resource of Object.keys(rewardsPerHour ?? [])) {
-      if (rewardsPerHour) {
-        capturedTaxInResource[resource] =
-          rewardsPerHour[resource] * TAX_RATE * captureRate;
-      }
-    }
-
-    const produces: ResourceWithDEC[] = Object.entries(
-      capturedTaxInResource
-    ).map(([resource, amount]) => ({
-      resource: resource as Resource,
-      amount,
-      sellPriceDEC: calcDECPrice(
-        "sell",
-        resource as ResourceWithDEC["resource"],
-        amount,
-        prices
-      ),
-      buyPriceDEC: calcDECPrice(
-        "buy",
-        resource as ResourceWithDEC["resource"],
-        amount,
-        prices
-      ),
-    }));
-
-    const produceDEC = produces.reduce((acc, row) => acc + row.sellPriceDEC, 0);
-
-    return {
-      resource,
-      consume: [
-        {
-          resource: "GRAIN",
-          amount: consume,
-          sellPriceDEC: 0, // because of the flat fee remove cost of grain
-          buyPriceDEC: 0,
-        },
-      ],
-      produce: produces,
-      netDEC: produceDEC,
-    };
+    return calcTaxProductionInfo(
+      worksiteType ?? "",
+      region,
+      plotPlannerData.tractNumber,
+      captureRate,
+      prices
+    );
   }
 
   const consumeGrainDiscount = determineGrainConsumeReduction(
