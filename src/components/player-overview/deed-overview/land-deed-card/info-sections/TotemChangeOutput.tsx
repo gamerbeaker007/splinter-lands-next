@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/formatters";
 import { totem_fragment_common_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
 import { Box, Tooltip, Typography } from "@mui/material";
@@ -54,9 +55,7 @@ export const TotemChanceOutput: React.FC<Props> = ({
           </Box>
           <Box display="flex">
             <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
-              {(estimateChange * 100).toLocaleString(undefined, {
-                maximumFractionDigits: 2,
-              })}
+              {formatNumber(estimateChange * 100, { maximumFractionDigits: 2 })}
               % {suffix}
             </Typography>
           </Box>

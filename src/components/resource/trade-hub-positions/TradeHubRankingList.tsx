@@ -1,7 +1,7 @@
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { PoolIcon } from "@/components/resource/trade-hub-positions/PoolIcon";
 import { PlayerTradeHubPosition } from "@/generated/prisma/client";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { Box, Card, Typography } from "@mui/material";
 
 type Props = {
@@ -40,8 +40,13 @@ export function TradeHubRankingList({
               {currentPlayerData.player} rank:{currentPlayerRank}
             </Typography>
             <Typography variant="body2" fontSize={12}>
-              {formatNumberWithSuffix(currentPlayerData.dec_quantity)}-
-              {formatNumberWithSuffix(currentPlayerData.resource_quantity)}{" "}
+              {formatCompactNumber(currentPlayerData.dec_quantity, {
+                maximumFractionDigits: 2,
+              })}
+              -
+              {formatCompactNumber(currentPlayerData.resource_quantity, {
+                maximumFractionDigits: 2,
+              })}{" "}
               Share: {currentPlayerData.share_percentage.toFixed(2)}%
             </Typography>
           </Box>
@@ -56,8 +61,10 @@ export function TradeHubRankingList({
           value={`${p.share_percentage.toFixed(2)}%`}
           subValue={p.player}
           otherSubValues={[
-            formatNumberWithSuffix(p.dec_quantity),
-            formatNumberWithSuffix(p.resource_quantity),
+            formatCompactNumber(p.dec_quantity, { maximumFractionDigits: 2 }),
+            formatCompactNumber(p.resource_quantity, {
+              maximumFractionDigits: 2,
+            }),
           ]}
           highlight={p.player === currentPlayerData?.player}
         />

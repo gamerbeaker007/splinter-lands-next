@@ -1,5 +1,6 @@
 "use client";
 
+import { formatInt, formatNumber } from "@/lib/formatters";
 import {
   computeInputForDesiredOutput,
   computeSwapAmounts,
@@ -170,12 +171,6 @@ interface HopDetail {
   feePct: number;
 }
 
-const fmt = (n: number, d = 3) =>
-  n.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: d,
-  });
-
 const impactColor = (pct: number) =>
   pct > 5 ? "error.main" : pct > 1 ? "warning.main" : "success.main";
 
@@ -205,7 +200,7 @@ function PoolInfo({ pool, label }: { pool: SplLandPool; label: string }) {
             DEC reserve
           </Typography>
           <Typography variant="body2" fontFamily="monospace">
-            {fmt(dR, 0)}
+            {formatInt(dR)}
           </Typography>
         </Box>
         <Box>
@@ -213,7 +208,7 @@ function PoolInfo({ pool, label }: { pool: SplLandPool; label: string }) {
             {pool.token_symbol} reserve
           </Typography>
           <Typography variant="body2" fontFamily="monospace">
-            {fmt(rR, 0)}
+            {formatInt(rR)}
           </Typography>
         </Box>
         <Box>
@@ -250,10 +245,10 @@ function HopTable({ hops }: { hops: HopDetail[] }) {
                 <Typography variant="caption">{h.label}</Typography>
               </TableCell>
               <TableCell align="right" sx={{ fontFamily: "monospace" }}>
-                {fmt(h.inputAmount)} {h.inputSymbol}
+                {formatNumber(h.inputAmount)} {h.inputSymbol}
               </TableCell>
               <TableCell align="right" sx={{ fontFamily: "monospace" }}>
-                {fmt(h.outputAmount)} {h.outputSymbol}
+                {formatNumber(h.outputAmount)} {h.outputSymbol}
               </TableCell>
               <TableCell align="right">
                 <Typography

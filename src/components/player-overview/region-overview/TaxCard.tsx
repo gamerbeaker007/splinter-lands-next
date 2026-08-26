@@ -1,4 +1,5 @@
-import React from "react";
+import { formatCompactNumber } from "@/lib/formatters";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   Avatar,
   Box,
@@ -7,8 +8,7 @@ import {
   Divider,
   Typography,
 } from "@mui/material";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import React from "react";
 
 export type TaxData = {
   region_uid: string;
@@ -67,7 +67,9 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             <Typography>Produce /hr</Typography>
             {data.resources.map((res, idx) => (
               <Typography key={idx} align="center">
-                {formatNumberWithSuffix(res.total_rewards_per_hour)}
+                {formatCompactNumber(res.total_rewards_per_hour, {
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
             ))}
             <Divider sx={{ gridColumn: `1 / span ${columns}`, my: 1 }} />
@@ -76,7 +78,9 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             <Typography>Tax (10%)</Typography>
             {data.resources.map((res, idx) => (
               <Typography key={idx} align="center">
-                {formatNumberWithSuffix(res.total_tax ?? 0)}
+                {formatCompactNumber(res.total_tax ?? 0, {
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
             ))}
             <Divider sx={{ gridColumn: `1 / span ${columns}`, my: 1 }} />
@@ -87,7 +91,9 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             </Typography>
             {data.resources.map((res, idx) => (
               <Typography key={idx} align="center">
-                {formatNumberWithSuffix(res.captured ?? 0)}
+                {formatCompactNumber(res.captured ?? 0, {
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
             ))}
             <Divider sx={{ gridColumn: `1 / span ${columns}`, my: 1 }} />
@@ -96,7 +102,9 @@ export const TaxCard: React.FC<Props> = ({ data }) => {
             <Typography>Captured Tax (DEC)</Typography>
             {data.resources.map((res, idx) => (
               <Typography key={idx} align="center">
-                {formatNumberWithSuffix(res.dec ?? 0)}
+                {formatCompactNumber(res.dec ?? 0, {
+                  maximumFractionDigits: 2,
+                })}
               </Typography>
             ))}
             <Divider sx={{ gridColumn: `1 / span ${columns}`, my: 1 }} />

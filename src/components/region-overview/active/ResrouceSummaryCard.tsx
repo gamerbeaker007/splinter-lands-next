@@ -1,9 +1,9 @@
 "use client";
 
-import { Avatar, Box, Card, CardContent, Typography } from "@mui/material";
-import { RegionActiveSummary } from "@/types/regionActiveSummary";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { RegionActiveSummary } from "@/types/regionActiveSummary";
+import { Avatar, Box, Card, CardContent, Typography } from "@mui/material";
 
 type Props = {
   resource: string;
@@ -91,11 +91,16 @@ export function ResourceActiveSummaryCard({ resource, summary }: Props) {
                 color: "success.main",
               }}
             >
-              {formatNumberWithSuffix(summary.productionPoints.boostedPP)}
+              {formatCompactNumber(summary.productionPoints.boostedPP, {
+                maximumFractionDigits: 2,
+              })}
             </Typography>
           </Box>
           <Typography variant="caption" color="text.secondary">
-            Base PP: {formatNumberWithSuffix(summary.productionPoints.basePP)}
+            Base PP:{" "}
+            {formatCompactNumber(summary.productionPoints.basePP, {
+              maximumFractionDigits: 2,
+            })}
           </Typography>
         </Box>
       </CardContent>

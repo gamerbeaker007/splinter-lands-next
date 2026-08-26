@@ -2,7 +2,7 @@
 
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
 import { ResourceLeaderboard } from "@/lib/backend/actions/production-leaderboard-actions";
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { Box, Card, Divider, Typography } from "@mui/material";
 import Image from "next/image";
@@ -214,7 +214,7 @@ export default function ProductionLeaderboardColumn({
               fontWeight="bold"
               fontSize={20}
             >
-              Total: {formatLargeNumber(leaderboard.total)}
+              Total: {formatCompactNumber(leaderboard.total)}
             </Typography>
             <Typography
               variant="body1"
@@ -222,11 +222,11 @@ export default function ProductionLeaderboardColumn({
               fontWeight="bold"
               fontSize={20}
             >
-              Total Net: {formatLargeNumber(leaderboard.totalNet ?? 0)}
+              Total Net: {formatCompactNumber(leaderboard.totalNet ?? 0)}
             </Typography>
             {leaderboard.totalConsumed !== undefined && (
               <Typography variant="body2" color="text.secondary">
-                Total Consumed: {formatLargeNumber(leaderboard.totalConsumed)}
+                Total Consumed: {formatCompactNumber(leaderboard.totalConsumed)}
               </Typography>
             )}
           </Box>
@@ -235,7 +235,7 @@ export default function ProductionLeaderboardColumn({
             <RankedItemBox
               key={`ranked-box-${resource}-${p.player}-${index}`}
               rank={showNet ? p.netRank : p.rank}
-              value={formatLargeNumber(
+              value={formatCompactNumber(
                 showNet ? p.netProduction : p.production
               )}
               subValue={p.player}

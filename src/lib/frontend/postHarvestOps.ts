@@ -1,8 +1,8 @@
+import { computeResourceToDec } from "@/lib/shared/landManagerUtils";
 import {
   buildAddLiquidityOp,
   buildSellResourceForDecOp,
 } from "@/lib/shared/operations/opBuilders";
-import { computeResourceToDec } from "@/lib/shared/landManagerUtils";
 import {
   PostHarvestActionSummary,
   PostHarvestStrategy,
@@ -90,7 +90,7 @@ export function buildPostHarvestOps(
               type: "sell_for_dec",
               region_uid: region.region_uid,
               symbol,
-              resource_in: sellAmount,
+              resource_amount: sellAmount,
               dec_amount: decOut,
             });
           }
@@ -126,7 +126,7 @@ export function buildPostHarvestOps(
                   type: "add_to_pool",
                   region_uid: region.region_uid,
                   symbol,
-                  resource_in: poolAmount,
+                  resource_amount: poolAmount,
                   dec_amount: decNeeded,
                 });
               }

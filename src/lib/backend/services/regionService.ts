@@ -1,6 +1,6 @@
 import { Resource } from "@/constants/resource/resource";
 import { getProgressInfo } from "@/lib/backend/helpers/productionUtils";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { calcCostsWithDEC, calcDECPrice } from "@/lib/shared/costCalc";
 import { ResourceRecipeItem, TAX_RATE } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
@@ -359,7 +359,7 @@ async function getTaxInfo(deedUid: string) {
     const infoStr = `${percentageDone.toFixed(2)}% Capacity`;
     const progressTooltip = `The current balance of your tax vaults.
      Once the total balance reaches the total capacity,
-     no more taxes will be collected until you withdraw some DEC. total balance: ${formatNumberWithSuffix(totalCapacity)}`;
+     no more taxes will be collected until you withdraw some DEC. total balance: ${formatCompactNumber(totalCapacity, { maximumFractionDigits: 2 })}`;
     return {
       percentageDone,
       infoStr,

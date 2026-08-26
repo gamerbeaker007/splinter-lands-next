@@ -1,4 +1,5 @@
 import { getDonationsPaidByDay } from "@/lib/backend/actions/land-manager/log-actions";
+import { formatNumber } from "@/lib/formatters";
 import {
   Card,
   CardContent,
@@ -16,12 +17,6 @@ import {
 
 /** Splinterlands charges 10 % on every resource transfer — the recipient receives 90 %. */
 const TRANSPORT_FEE = 0.1;
-
-const fmt = (n: number) =>
-  n.toLocaleString(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 3,
-  });
 
 export default async function DonationsMadeSection() {
   const rows = await getDonationsPaidByDay(30);
@@ -91,7 +86,7 @@ export default async function DonationsMadeSection() {
                                 received > 0 ? "text.primary" : "text.disabled",
                             }}
                           >
-                            {received > 0 ? fmt(received) : "—"}
+                            {received > 0 ? formatNumber(received) : "—"}
                           </TableCell>
                         );
                       })}

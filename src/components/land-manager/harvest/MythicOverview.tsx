@@ -1,15 +1,13 @@
 "use client";
 
 import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
+import { renderResourceChip } from "@/components/ui/resource/Resource";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { Resource } from "@/constants/resource/resource";
-import { RESOURCE_COLOR_MAP, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import type { MythicDeed } from "@/types/landManager";
 import { OpenInNew as OpenInNewIcon } from "@mui/icons-material";
 import {
   Box,
-  capitalize,
   Card,
   CardContent,
   Chip,
@@ -25,22 +23,9 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import Image from "next/image";
 
 interface Props {
   deeds: MythicDeed[] | null;
-}
-
-function getResourceIcon(resource: Resource) {
-  const img = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
-  return (
-    <Image
-      src={img}
-      alt={capitalize(resource.toLowerCase())}
-      width={16}
-      height={16}
-    />
-  );
 }
 
 export default function MythicOverview({ deeds }: Props) {
@@ -112,27 +97,13 @@ export default function MythicOverview({ deeds }: Props) {
                         </Typography>
                       ) : (
                         <Stack direction="row" gap={1} flexWrap="wrap">
-                          {deed.taxes.map((t) => (
-                            <Tooltip
-                              key={t.token}
-                              title={capitalize(t.token.toLowerCase())}
-                              placement={"top"}
-                              followCursor={true}
-                            >
-                              <Chip
-                                variant={"outlined"}
-                                icon={getResourceIcon(t.token as Resource)}
-                                label={t.balance.toLocaleString(undefined, {
-                                  maximumFractionDigits: 1,
-                                })}
-                                size="small"
-                                sx={{
-                                  borderColor: RESOURCE_COLOR_MAP[t.token],
-                                  fontWeight: "bold",
-                                }}
-                              />
-                            </Tooltip>
-                          ))}
+                          {deed.taxes.map((t) =>
+                            renderResourceChip(
+                              t.token as Resource,
+                              t.balance,
+                              true
+                            )
+                          )}
                         </Stack>
                       )}
                     </TableCell>

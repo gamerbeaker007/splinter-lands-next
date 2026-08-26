@@ -1,4 +1,4 @@
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { getCardImgV2 } from "@/lib/utils/cardUtil";
 import { cardFoilOptions, LandBoost, RarityColor } from "@/types/planner";
 import { Box, Tooltip, Typography } from "@mui/material";
@@ -180,11 +180,11 @@ export default function CardTile({
             <>
               <strong>Production Power (PP):</strong>
               <br />
-              Base: {formatLargeNumber(Number(base_pp))}
+              Base: {formatCompactNumber(Number(base_pp))}
               {boosted_pp !== undefined && (
                 <>
                   <br />
-                  Boosted: {formatLargeNumber(Number(boosted_pp))}
+                  Boosted: {formatCompactNumber(Number(boosted_pp))}
                 </>
               )}
             </>
@@ -205,7 +205,7 @@ export default function CardTile({
               fontSize={isRuni ? "1.3rem" : "1.1rem"}
               fontWeight="bold"
             >
-              {formatLargeNumber(Number(displayPP.toFixed(0)))}
+              {formatCompactNumber(Number(displayPP.toFixed(0)))}
             </Typography>
           </Box>
         </Tooltip>

@@ -1,12 +1,12 @@
 "use client";
 
+import { renderResourceChip } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
 import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
+import { formatInt, formatNumber } from "@/lib/formatters";
 import { getElementIconUrl } from "@/lib/frontend/utils/icons";
-import { RESOURCE_COLOR_MAP, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import {
   land_default_off_icon_url_placeholder,
-  land_hammer_icon_url,
   land_mythic_icon_url,
   WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
@@ -25,7 +25,6 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   Avatar,
   capitalize,
-  Chip,
   Collapse,
   IconButton,
   Stack,
@@ -47,10 +46,6 @@ import {
   SortDirection,
   worksiteLabel,
 } from "./productionTypes";
-
-function fmt(n: number, max = 2): string {
-  return n.toLocaleString("en-US", { maximumFractionDigits: max });
-}
 
 interface HeadCell {
   key?: ProductionSortKey;
@@ -113,10 +108,6 @@ export interface ProductionTableProps {
 
 const COLUMN_COUNT = 11; // 10 data columns + actions
 
-function fmtPP(n: number): string {
-  return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
 function rarityIcon(rarity: string): string {
   return rarity === "mythic"
     ? land_mythic_icon_url
@@ -152,18 +143,6 @@ function showPositiveTerrainBoosts(biomeModifiers: BiomeModifiers) {
           );
         })}
     </Stack>
-  );
-}
-
-function getResourceIcon(resource: Resource) {
-  const img = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
-  return (
-    <Image
-      src={img}
-      alt={capitalize(resource.toLowerCase())}
-      width={16}
-      height={16}
-    />
   );
 }
 
@@ -262,27 +241,12 @@ export default function ProductionTable({
                   {capitalize(worksiteLabel(r.worksiteType).toLowerCase())}
                 </TableCell>
                 <TableCell align="right">
-                  {r.rewardsPerHour > 0 ? (
-                    <Tooltip
-                      key={r.tokenSymbol}
-                      title={capitalize(r.tokenSymbol.toLowerCase())}
-                      placement={"top"}
-                      followCursor={true}
-                    >
-                      <Chip
-                        variant={"outlined"}
-                        icon={getResourceIcon(r.tokenSymbol as Resource)}
-                        label={fmt(r.rewardsPerHour)}
-                        size="small"
-                        sx={{
-                          borderColor: RESOURCE_COLOR_MAP[r.tokenSymbol],
-                          fontWeight: "bold",
-                        }}
-                      />
-                    </Tooltip>
-                  ) : (
-                    "—"
-                  )}
+                  {r.rewardsPerHour > 0
+                    ? renderResourceChip(
+                        r.tokenSymbol as Resource,
+                        r.rewardsPerHour
+                      )
+                    : "—"}
                 </TableCell>
                 <TableCell align="right">
                   <Stack
@@ -302,7 +266,7 @@ export default function ProductionTable({
                       }
                       noWrap
                     >
-                      {fmt(r.netDEC)}
+                      {formatNumber(r.netDEC, { maximumFractionDigits: 2 })}
                     </Typography>
                     {r.netDecEstimated && (
                       <Tooltip title={TAX_ESTIMATE_NOTE}>
@@ -315,8 +279,8 @@ export default function ProductionTable({
                     )}
                   </Stack>
                 </TableCell>
-                <TableCell align="right">{fmtPP(r.basePP)}</TableCell>
-                <TableCell align="right">{fmtPP(r.boostedPP)}</TableCell>
+                <TableCell align="right">{formatInt(r.basePP)}</TableCell>
+                <TableCell align="right">{formatInt(r.boostedPP)}</TableCell>
                 <TableCell align="left">
                   {r.powered ? (
                     <CheckCircleIcon

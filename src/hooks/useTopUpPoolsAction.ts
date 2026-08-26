@@ -7,23 +7,21 @@ import {
   getLandPools,
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
-import { buildTopUpPoolPlan } from "@/lib/frontend/topUpPoolOps";
 import {
   BroadcastResult,
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import {
+  buildDepositOps,
+  buildFundingOps,
+  buildTopUpPoolPlan,
+} from "@/lib/frontend/topUpPoolOps";
+import {
   HOURS_PER_WEEK,
   computeRegionResourceBalance,
   computeWeeklyPoolNeed,
 } from "@/lib/shared/poolPositionUtils";
-import {
-  buildAddLiquidityOp,
-  buildBuyWithDecOp,
-  buildSellResourceForDecOp,
-  buildSwapTokensOp,
-} from "@/lib/shared/operations/opBuilders";
 import {
   ActionPlan,
   PostHarvestActionSummary,
@@ -31,7 +29,6 @@ import {
   TopUpPoolStrategy,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import { SplLandPool } from "@/types/spl/landPools";
 import { useCallback, useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -43,18 +40,14 @@ import { useCallback, useState } from "react";
 //
 //   SELL / BUY / SWAP  →  wait + validate  →  ADD RESOURCE + DEC TO POOL
 //
-// Phase 2 re-reads pool prices and the DEC balance, so the deposit is priced
-// against reality rather than the pre-sale projection. If refreshed balances
+// Phase 2 re-reads pool prices, the DEC balance AND the per-region resource
+// balances, so the deposit is sized against reality rather than the pre-sale
+// projection. The resource re-read matters because the funding swap is
+// broadcast with SWAP_MAX_SLIPPAGE tolerance: it can settle successfully while
+// delivering less than the quote the plan was built on. If refreshed balances
 // invalidate part of the plan, that part is dropped and reported rather than
 // broadcast against stale numbers.
 // ─────────────────────────────────────────────────────────────────────────────
-
-const round3 = (n: number): number => Number.parseFloat(n.toFixed(3));
-const fmt = (n: number): string =>
-  n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-
-/** Relaxed slippage: same tolerance the post-harvest sell flow uses. */
-const SWAP_MAX_SLIPPAGE = 50;
 
 interface Params {
   username: string;
@@ -129,166 +122,6 @@ async function planTopUp(
   });
 }
 
-/** Phase 1 ops: the sales and purchases that fund the deposits. */
-function buildFundingOps(
-  username: string,
-  plan: TopUpPoolPlan
-): { ops: [string, object][]; actions: PostHarvestActionSummary[] } {
-  const ops: [string, object][] = [];
-  const actions: PostHarvestActionSummary[] = [];
-
-  for (const r of plan.resources) {
-    if (r.status !== "READY") continue;
-
-    for (const step of r.funding) {
-      if (step.kind === "sell") {
-        // `from_symbol`, not `r.symbol`: the swap strategy funds its DEC side by
-        // selling the DONOR resource.
-        ops.push(
-          buildSellResourceForDecOp(
-            username,
-            step.region_uid,
-            step.amount,
-            step.dec_out,
-            step.from_symbol,
-            SWAP_MAX_SLIPPAGE
-          )
-        );
-        actions.push({
-          type: "sell_for_dec",
-          region_uid: step.region_uid,
-          symbol: step.from_symbol,
-          resource_in: step.amount,
-          dec_amount: step.dec_out,
-        });
-      } else if (step.kind === "buy") {
-        ops.push(
-          buildBuyWithDecOp(
-            username,
-            step.region_uid,
-            step.dec_in,
-            step.resource_out,
-            r.symbol,
-            SWAP_MAX_SLIPPAGE
-          )
-        );
-        actions.push({
-          type: "buy_resource",
-          region_uid: step.region_uid,
-          symbol: r.symbol,
-          resource_in: step.resource_out,
-          dec_amount: step.dec_in,
-        });
-      } else {
-        // Resource → DEC → resource in one op, so the swapped resource lands in
-        // the same region it left and the deposit can be made there.
-        ops.push(
-          buildSwapTokensOp({
-            username,
-            fromRegionUid: step.region_uid,
-            toRegionUid: step.region_uid,
-            fromSymbol: step.from_symbol,
-            toSymbol: r.symbol,
-            inAmount: step.in_amount,
-            outAmount1: step.dec_out,
-            outAmount2: step.resource_out,
-            maxSlippage: SWAP_MAX_SLIPPAGE,
-          })
-        );
-        actions.push({
-          type: "swap_resource",
-          region_uid: step.region_uid,
-          symbol: step.from_symbol,
-          resource_in: step.in_amount,
-          dec_amount: step.dec_out,
-          to_symbol: r.symbol,
-          resource_out: step.resource_out,
-        });
-      }
-    }
-  }
-
-  return { ops, actions };
-}
-
-/**
- * Phase 2 ops: re-price the planned deposits against fresh pool ratios and the
- * DEC actually in the wallet now. Deposits that no longer fit are dropped whole
- * (never half-funded) and reported back as a warning.
- */
-function buildDepositOps(
-  username: string,
-  plan: TopUpPoolPlan,
-  freshPools: SplLandPool[],
-  freshDec: number
-): {
-  ops: [string, object][];
-  actions: PostHarvestActionSummary[];
-  dropped: string[];
-} {
-  const poolMap = new Map(
-    freshPools.map((p) => [
-      p.token_symbol,
-      {
-        decQty: Number.parseFloat(p.dec_quantity),
-        resourceQty: Number.parseFloat(p.resource_quantity),
-      },
-    ])
-  );
-
-  const ops: [string, object][] = [];
-  const actions: PostHarvestActionSummary[] = [];
-  const dropped: string[] = [];
-  let decLeft = freshDec;
-
-  for (const r of plan.resources) {
-    if (r.status !== "READY") continue;
-
-    const pool = poolMap.get(r.symbol);
-    if (!pool || pool.resourceQty <= 0) {
-      dropped.push(`${r.symbol}: pool data unavailable at broadcast time`);
-      continue;
-    }
-    const ratio = pool.decQty / pool.resourceQty;
-
-    const legs = r.additions.map((a) => ({
-      ...a,
-      dec_amount: round3(a.resource_amount * ratio),
-    }));
-    const decNeeded = legs.reduce((s, a) => s + a.dec_amount, 0);
-
-    if (decNeeded > decLeft) {
-      dropped.push(
-        `${r.symbol}: needs ${fmt(decNeeded)} DEC at current prices but only ${fmt(decLeft)} DEC is left — skipped rather than partially deposited`
-      );
-      continue;
-    }
-
-    for (const leg of legs) {
-      if (leg.resource_amount <= 0 || leg.dec_amount <= 0) continue;
-      ops.push(
-        buildAddLiquidityOp(
-          username,
-          leg.region_uid,
-          r.symbol,
-          leg.resource_amount,
-          leg.dec_amount
-        )
-      );
-      actions.push({
-        type: "add_to_pool",
-        region_uid: leg.region_uid,
-        symbol: r.symbol,
-        resource_in: leg.resource_amount,
-        dec_amount: leg.dec_amount,
-      });
-    }
-    decLeft -= decNeeded;
-  }
-
-  return { ops, actions, dropped };
-}
-
 export function useTopUpPoolsAction({
   username,
   visibleRegions,
@@ -331,6 +164,7 @@ export function useTopUpPoolsAction({
 
         // Phase 1 — sell / buy, then wait for settlement.
         const funding = buildFundingOps(username, plan);
+        let fundingSettled = false;
         if (funding.ops.length > 0) {
           const res = await broadcastOperations(username, funding.ops);
           if (!res.success) {
@@ -338,16 +172,44 @@ export function useTopUpPoolsAction({
             return null;
           }
           await waitForTransactions(res.txIds);
+          fundingSettled = true;
           allTxIds = res.txIds;
           allActions.push(...funding.actions);
         }
 
-        // Phase 2 — deposit, priced against post-settlement reality.
-        const [{ pools: freshPools }, freshDec] = await Promise.all([
-          getLandPools(),
-          getDecBalance(username),
-        ]);
-        const deposits = buildDepositOps(username, plan, freshPools, freshDec);
+        // Phase 2 — deposit, sized against post-settlement reality.
+        //
+        // The region read is forced ONLY when phase 1 actually broadcast:
+        // invalidatePlayerRegionCaches() runs at the very end of this function,
+        // so a cached read here would still hold pre-swap balances. When no
+        // funding ran, nothing has moved since the plan was built and the
+        // cached read is both correct and one fewer SPL call. Reviewing a plan
+        // (`planOnly`) returns before this point, so it never refreshes at all.
+        const depositRegionUids = [
+          ...new Set(
+            plan.resources
+              .filter((r) => r.status === "READY")
+              .flatMap((r) => r.additions.map((a) => a.region_uid))
+          ),
+        ];
+        const [{ pools: freshPools }, freshDec, regionData] = await Promise.all(
+          [
+            getLandPools(),
+            getDecBalance(username),
+            depositRegionUids.length > 0
+              ? getBulkRegionData(depositRegionUids, fundingSettled)
+              : Promise.resolve(null),
+          ]
+        );
+        const freshBalances =
+          regionData && !regionData.error ? regionData.balances : null;
+        const deposits = buildDepositOps(
+          username,
+          plan,
+          freshPools,
+          freshDec,
+          freshBalances
+        );
         if (deposits.dropped.length > 0) {
           setWarning(
             `Some pool additions were skipped: ${deposits.dropped.join(" · ")}`

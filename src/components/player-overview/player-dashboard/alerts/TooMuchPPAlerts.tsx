@@ -1,7 +1,7 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { Box, Typography } from "@mui/material";
 
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { DeedInfo } from "@/types/cardAlerts";
 import React from "react";
 import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotInfo";
@@ -95,8 +95,8 @@ export const TooMuchPPAlerts: React.FC<Props> = ({ tooMuchBasePP }) => {
                     fontWeight={600}
                     color="warning"
                   >
-                    Base PP: {formatLargeNumber(alert.basePP)} | Boost PP:{" "}
-                    {formatLargeNumber(alert.boostPP)}
+                    Base PP: {formatCompactNumber(alert.basePP)} | Boost PP:{" "}
+                    {formatCompactNumber(alert.boostPP)}
                   </Typography>
                 </Box>
               </Box>

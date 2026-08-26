@@ -67,6 +67,8 @@ function parseTaxCollection(d: Raw): TaxCollectionTrxData {
       []) as TaxCollectionTrxData["tokens"],
     fragment_found: (d.fragment_found as boolean) ?? false,
     fragment_chance: (d.fragment_chance as number) ?? 0,
+    fragment_roll: (d.fragment_roll as number) ?? 0,
+    fragment_type: (d.fragment_type as string) ?? null,
   };
 }
 

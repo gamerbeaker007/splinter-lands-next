@@ -1,4 +1,4 @@
-import { formatLargeNumber, formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 import React from "react";
 
@@ -103,7 +103,7 @@ const DecStakeIndicator: React.FC<Props> = ({
           </Typography>
 
           <Typography variant="h5" fontWeight={700}>
-            {formatNumberWithSuffix(totalDecStaked)}
+            {formatCompactNumber(totalDecStaked, { maximumFractionDigits: 2 })}
 
             <Typography
               component="span"
@@ -119,8 +119,8 @@ const DecStakeIndicator: React.FC<Props> = ({
         <Tooltip
           title={
             delta >= 0
-              ? `${formatLargeNumber(delta)} DEC staked above the requirement`
-              : `${formatLargeNumber(
+              ? `${formatCompactNumber(delta)} DEC staked above the requirement`
+              : `${formatCompactNumber(
                   Math.abs(delta)
                 )} DEC short of the requirement`
           }
@@ -131,7 +131,8 @@ const DecStakeIndicator: React.FC<Props> = ({
             color={delta >= 0 ? "success.main" : "error.main"}
             sx={{ whiteSpace: "nowrap" }}
           >
-            {delta >= 0 ? "▲" : "▼"} {formatNumberWithSuffix(Math.abs(delta))}{" "}
+            {delta >= 0 ? "▲" : "▼"}{" "}
+            {formatCompactNumber(Math.abs(delta), { maximumFractionDigits: 2 })}{" "}
             DEC
           </Typography>
         </Tooltip>
@@ -152,7 +153,8 @@ const DecStakeIndicator: React.FC<Props> = ({
         </Typography>
 
         <Typography variant="caption" color="text.secondary">
-          {formatNumberWithSuffix(totalDecNeeded)} DEC needed
+          {formatCompactNumber(totalDecNeeded, { maximumFractionDigits: 2 })}{" "}
+          DEC needed
         </Typography>
       </Stack>
 
@@ -168,7 +170,7 @@ const DecStakeIndicator: React.FC<Props> = ({
         {/* Required */}
         {requiredEnd > 0 && (
           <Tooltip
-            title={`${formatLargeNumber(totalDecNeeded)} DEC actually required`}
+            title={`${formatCompactNumber(totalDecNeeded)} DEC actually required`}
           >
             <Box
               sx={{
@@ -184,7 +186,7 @@ const DecStakeIndicator: React.FC<Props> = ({
         {/* Discount */}
         {savedEnd > requiredEnd && (
           <Tooltip
-            title={`${formatLargeNumber(
+            title={`${formatCompactNumber(
               totalDecSaved
             )} DEC saved by discount abilities`}
           >
@@ -204,7 +206,7 @@ const DecStakeIndicator: React.FC<Props> = ({
         {/* Runi */}
         {runiEnd > savedEnd && (
           <Tooltip
-            title={`${formatLargeNumber(
+            title={`${formatCompactNumber(
               runiStakedDEC
             )} DEC requirement removed by Runi`}
           >
@@ -238,27 +240,27 @@ const DecStakeIndicator: React.FC<Props> = ({
       >
         <LegendItem
           color={REQUIRED_COLOR}
-          label={`Needed ${formatNumberWithSuffix(totalDecNeeded)}`}
+          label={`Needed ${formatCompactNumber(totalDecNeeded, { maximumFractionDigits: 2 })}`}
         />
 
         {totalDecSaved > 0 && (
           <LegendItem
             color={SAVED_COLOR}
-            label={`Discount ${formatNumberWithSuffix(totalDecSaved)}`}
+            label={`Discount ${formatCompactNumber(totalDecSaved, { maximumFractionDigits: 2 })}`}
           />
         )}
 
         {runiStakedDEC > 0 && (
           <LegendItem
             color={RUNI_COLOR}
-            label={`Runi ${formatNumberWithSuffix(runiStakedDEC)}`}
+            label={`Runi ${formatCompactNumber(runiStakedDEC, { maximumFractionDigits: 2 })}`}
           />
         )}
 
         {unfilledCapacity > 0 && (
           <LegendItem
             color={UNUSED_COLOR}
-            label={`Unfilled Capacity ${formatNumberWithSuffix(unfilledCapacity)}`}
+            label={`Unfilled Capacity ${formatCompactNumber(unfilledCapacity, { maximumFractionDigits: 2 })}`}
           />
         )}
       </Stack>
@@ -279,7 +281,8 @@ const DecStakeIndicator: React.FC<Props> = ({
         </Typography>
 
         <Typography variant="caption" color="text.secondary">
-          {formatNumberWithSuffix(totalDecStaked)} DEC
+          {formatCompactNumber(totalDecStaked, { maximumFractionDigits: 2 })}{" "}
+          DEC
         </Typography>
       </Stack>
 
@@ -289,9 +292,9 @@ const DecStakeIndicator: React.FC<Props> = ({
         aria-valuemin={0}
         aria-valuemax={maxPossibleStakedDec}
         aria-valuenow={Math.min(totalDecStaked, maxPossibleStakedDec)}
-        aria-valuetext={`${formatLargeNumber(
+        aria-valuetext={`${formatCompactNumber(
           totalDecStaked
-        )} DEC staked; ${formatLargeNumber(totalDecNeeded)} DEC required`}
+        )} DEC staked; ${formatCompactNumber(totalDecNeeded)} DEC required`}
         sx={{
           position: "relative",
           height: TRACK_HEIGHT,
@@ -301,7 +304,7 @@ const DecStakeIndicator: React.FC<Props> = ({
         }}
       >
         {/* Actual stake */}
-        <Tooltip title={`${formatLargeNumber(totalDecStaked)} DEC staked`}>
+        <Tooltip title={`${formatCompactNumber(totalDecStaked)} DEC staked`}>
           <Box
             sx={{
               position: "absolute",
@@ -317,7 +320,7 @@ const DecStakeIndicator: React.FC<Props> = ({
         </Tooltip>
 
         {/* Required target */}
-        <Tooltip title={`${formatLargeNumber(totalDecNeeded)} DEC required`}>
+        <Tooltip title={`${formatCompactNumber(totalDecNeeded)} DEC required`}>
           <Box
             sx={{
               position: "absolute",
@@ -340,7 +343,10 @@ const DecStakeIndicator: React.FC<Props> = ({
         </Typography>
 
         <Typography variant="caption" color="text.secondary">
-          Max {formatNumberWithSuffix(maxPossibleStakedDec)}
+          Max{" "}
+          {formatCompactNumber(maxPossibleStakedDec, {
+            maximumFractionDigits: 2,
+          })}
         </Typography>
       </Stack>
 
@@ -352,7 +358,8 @@ const DecStakeIndicator: React.FC<Props> = ({
         mt={0.75}
       >
         <Typography variant="caption" color="text.secondary">
-          Target {formatNumberWithSuffix(totalDecNeeded)}
+          Target{" "}
+          {formatCompactNumber(totalDecNeeded, { maximumFractionDigits: 2 })}
         </Typography>
 
         <Typography
@@ -361,8 +368,8 @@ const DecStakeIndicator: React.FC<Props> = ({
           color={delta >= 0 ? "success.main" : "error.main"}
         >
           {delta >= 0
-            ? `${formatNumberWithSuffix(delta)} above target`
-            : `${formatNumberWithSuffix(Math.abs(delta))} short`}
+            ? `${formatCompactNumber(delta, { maximumFractionDigits: 2 })} above target`
+            : `${formatCompactNumber(Math.abs(delta), { maximumFractionDigits: 2 })} short`}
         </Typography>
       </Stack>
 
@@ -374,8 +381,8 @@ const DecStakeIndicator: React.FC<Props> = ({
           display="block"
           mt={0.5}
         >
-          +{formatNumberWithSuffix(stakedOverMax)} DEC staked above theoretical
-          max
+          +{formatCompactNumber(stakedOverMax, { maximumFractionDigits: 2 })}{" "}
+          DEC staked above theoretical max
         </Typography>
       )}
 
@@ -387,7 +394,10 @@ const DecStakeIndicator: React.FC<Props> = ({
           mt={0.5}
         >
           Requirement composition exceeds theoretical maximum by{" "}
-          {formatNumberWithSuffix(compositionOverMax)} DEC
+          {formatCompactNumber(compositionOverMax, {
+            maximumFractionDigits: 2,
+          })}{" "}
+          DEC
         </Typography>
       )}
     </Box>

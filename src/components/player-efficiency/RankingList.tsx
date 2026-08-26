@@ -1,7 +1,7 @@
 "use client";
 
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import Card from "@mui/material/Card";
 import Typography from "@mui/material/Typography";
@@ -112,7 +112,9 @@ export default function RankingList({
           <RankedItemBox
             key={`ranked-box-${p.player}`}
             rank={p[rankingField] as number}
-            value={formatNumberWithSuffix((p[valueField] as number) ?? 0)}
+            value={formatCompactNumber((p[valueField] as number) ?? 0, {
+              maximumFractionDigits: 2,
+            })}
             subValue={p.player}
             otherSubValues={
               subValueField

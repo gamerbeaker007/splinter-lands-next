@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/formatters";
 import { DeedComplete } from "@/types/deed";
 import {
   allowedTerrainsByWorksite,
@@ -45,9 +46,6 @@ export interface Eligibility {
 }
 
 const OK: Eligibility = { eligible: true };
-
-const fmtInt = (n: number) =>
-  n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 export interface WorksitePlotState {
   /** No worksite at all yet. */
@@ -202,7 +200,7 @@ export function canFeedWorkers(
   if (regionGrainAvailable < state.grainCost)
     return {
       eligible: false,
-      reason: `Not enough grain in region (have ${fmtInt(regionGrainAvailable)} / need ${fmtInt(state.grainCost)}) — use Fix grain deficit first.`,
+      reason: `Not enough grain in region (have ${formatInt(regionGrainAvailable)} / need ${formatInt(state.grainCost)}) — use Fix grain deficit first.`,
     };
   return OK;
 }

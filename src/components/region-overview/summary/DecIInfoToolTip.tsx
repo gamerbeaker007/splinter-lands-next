@@ -1,6 +1,6 @@
-import { Tooltip, IconButton, Typography } from "@mui/material";
+import { formatCompactNumber } from "@/lib/formatters";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { IconButton, Tooltip, Typography } from "@mui/material";
 
 type Props = {
   totalDecStaked: number;
@@ -27,22 +27,28 @@ const DecInfoTooltip = ({
             <strong>DEC Stats</strong>
           </Typography>
           <Typography variant="body2">
-            • Total Staked: {formatNumberWithSuffix(totalDecStaked)}
+            • Total Staked:{" "}
+            {formatCompactNumber(totalDecStaked, { maximumFractionDigits: 2 })}
           </Typography>
           <Typography variant="body2">
-            • Total Needed: {formatNumberWithSuffix(totalDecNeeded)}
+            • Total Needed:{" "}
+            {formatCompactNumber(totalDecNeeded, { maximumFractionDigits: 2 })}
           </Typography>
           <Typography variant="body2">
-            • Total In Use: {formatNumberWithSuffix(totalDecInUse)}
+            • Total In Use:{" "}
+            {formatCompactNumber(totalDecInUse, { maximumFractionDigits: 2 })}
           </Typography>
           <Typography variant="body2">
-            • Total Saved (Discount): {formatNumberWithSuffix(totalDecSaved)}
+            • Total Saved (Discount):{" "}
+            {formatCompactNumber(totalDecSaved, { maximumFractionDigits: 2 })}
           </Typography>
           <Typography variant="body2">
-            • Max Possible: {formatNumberWithSuffix(maxDecPossible)}
+            • Max Possible:{" "}
+            {formatCompactNumber(maxDecPossible, { maximumFractionDigits: 2 })}
           </Typography>
           <Typography variant="body2">
-            • Reduced DEC by Runi: {formatNumberWithSuffix(runiStakedDEC)}
+            • Reduced DEC by Runi:{" "}
+            {formatCompactNumber(runiStakedDEC, { maximumFractionDigits: 2 })}
           </Typography>
         </div>
       }

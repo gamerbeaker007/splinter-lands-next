@@ -1,31 +1,26 @@
 "use client";
 
+import CardUidImage from "@/components/ui/CardUidImage";
+import TotemFragmentImage from "@/components/ui/TotemFragmentImage";
 import { useCardDetailsAction } from "@/hooks/useCardDetails";
-import {
-  determineMaxLevelFromRarityFoil,
-  getCardImgV2,
-  parseCardUid,
-  rarityName,
-} from "@/lib/utils/cardUtil";
 import { formatDate } from "@/lib/utils/dateColumnUtils";
+import { totemFragmentLabel } from "@/lib/utils/totemFragmentUtil";
 import { SplDeedHarvestAction } from "@/types/deedHarvest";
-import { SplCardDetails } from "@/types/splCardDetails";
 import CancelIcon from "@mui/icons-material/Cancel";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   Box,
   Chip,
   Paper,
+  Stack,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Tooltip,
   Typography,
 } from "@mui/material";
-import Image from "next/image";
 import { Fragment } from "react";
 
 interface FragmentRollsSectionProps {
@@ -68,67 +63,6 @@ export default function FragmentRollsSection({
     laborsLuckAttempts > 0
       ? (laborsLuckSuccesses / laborsLuckAttempts) * 100
       : 0;
-
-  const renderLaborsLuckReward = (
-    uid: string | null,
-    details: SplCardDetails[] | null
-  ) => {
-    if (!uid) return "-";
-    const parsed = parseCardUid(uid);
-    if (!parsed || !details) return uid;
-
-    const card = details.find((cd) => cd.id === parsed.cardDetailId);
-    if (!card) return uid;
-    const level =
-      parsed.foil === "gold"
-        ? 1
-        : determineMaxLevelFromRarityFoil(rarityName(card.rarity), parsed.foil);
-    const img = getCardImgV2(card.name, parsed.edition, parsed.foil, level);
-
-    return (
-      <Tooltip
-        title={
-          <Box width={220} height={300} position="relative">
-            <Image
-              src={img}
-              alt={card.name}
-              fill
-              sizes="220px"
-              style={{
-                objectFit: "contain",
-                objectPosition: "center",
-                borderRadius: 8,
-              }}
-            />
-          </Box>
-        }
-        placement="right"
-        arrow
-      >
-        <Box
-          width={40}
-          height={56}
-          position="relative"
-          sx={{
-            overflow: "hidden",
-            borderRadius: 0.5,
-            background: "#222",
-          }}
-        >
-          <Image
-            src={img}
-            alt={card.name}
-            fill
-            sizes="40px"
-            style={{
-              objectFit: "cover",
-              objectPosition: "top center",
-            }}
-          />
-        </Box>
-      </Tooltip>
-    );
-  };
 
   return (
     <Paper sx={{ padding: 2 }}>
@@ -200,9 +134,18 @@ export default function FragmentRollsSection({
                         )}
                       </TableCell>
                       <TableCell>
-                        {roll.fragment_found
-                          ? roll.fragment_type || "Fragment"
-                          : "-"}
+                        {roll.fragment_found ? (
+                          <Stack direction="row" alignItems="center" gap={0.5}>
+                            <TotemFragmentImage
+                              fragmentType={roll.fragment_type}
+                            />
+                            <Typography variant="caption">
+                              {totemFragmentLabel(roll.fragment_type)}
+                            </Typography>
+                          </Stack>
+                        ) : (
+                          "-"
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -233,9 +176,13 @@ export default function FragmentRollsSection({
                         )}
                       </TableCell>
                       <TableCell>
-                        {renderLaborsLuckReward(
-                          roll.labors_luck_uid,
-                          cardDetails
+                        {roll.labors_luck_uid ? (
+                          <CardUidImage
+                            uid={roll.labors_luck_uid}
+                            cardDetails={cardDetails}
+                          />
+                        ) : (
+                          "-"
                         )}
                       </TableCell>
                     </TableRow>

@@ -3,6 +3,7 @@
 import AuthorityControl from "@/components/land-manager/production/rental-actions/AuthorityControl";
 import { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
 import { UseWorkerAction } from "@/hooks/useWorkerAction";
+import { formatFixed } from "@/lib/formatters";
 import { foilLabel } from "@/lib/utils/cardUtil";
 import {
   BUY_STRATEGY_LABELS,
@@ -28,13 +29,6 @@ import {
   Typography,
 } from "@mui/material";
 
-function fmtDec(v: number) {
-  return v.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
-
 function RentalConfigChips({ rental }: { rental: RentalConfig }) {
   const chips: { key: string; label: string }[] = [
     { key: "strategy", label: RENTAL_STRATEGY_LABELS[rental.strategy] },
@@ -49,12 +43,12 @@ function RentalConfigChips({ rental }: { rental: RentalConfig }) {
   if (rental.max_total_dec > 0)
     chips.push({
       key: "total",
-      label: `<= ${fmtDec(rental.max_total_dec)} DEC total per plot`,
+      label: `<= ${formatFixed(rental.max_total_dec)} DEC total per plot`,
     });
   if (rental.max_dec_per_day_per_worker > 0)
     chips.push({
       key: "rate",
-      label: `<= ${fmtDec(rental.max_dec_per_day_per_worker)} DEC/day per worker`,
+      label: `<= ${formatFixed(rental.max_dec_per_day_per_worker)} DEC/day per worker`,
     });
   if (rental.min_land_base_pp > 0)
     chips.push({ key: "pp", label: `>= ${rental.min_land_base_pp} PP` });
@@ -81,12 +75,12 @@ function BuyConfigChips({ buy }: { buy: BuyConfig }) {
   if (buy.max_total_dec > 0)
     chips.push({
       key: "total",
-      label: `<= ${fmtDec(buy.max_total_dec)} DEC total`,
+      label: `<= ${formatFixed(buy.max_total_dec)} DEC total`,
     });
   if (buy.max_dec_per_worker > 0)
     chips.push({
       key: "rate",
-      label: `<= ${fmtDec(buy.max_dec_per_worker)} DEC per worker`,
+      label: `<= ${formatFixed(buy.max_dec_per_worker)} DEC per worker`,
     });
   if (buy.min_land_base_pp > 0)
     chips.push({ key: "pp", label: `>= ${buy.min_land_base_pp} PP` });
@@ -209,7 +203,7 @@ export default function WorkerActionsAccordions({
               Rented {rentAction.result.count} card
               {rentAction.result.count === 1 ? "" : "s"} · staked{" "}
               {rentAction.result.stakedCount} · spent{" "}
-              {fmtDec(rentAction.result.totalDec)} DEC
+              {formatFixed(rentAction.result.totalDec)} DEC
             </Alert>
           )}
           {rentAction.result && !rentAction.result.success && (
@@ -288,7 +282,7 @@ export default function WorkerActionsAccordions({
               Bought {buyAction.result.count} card
               {buyAction.result.count === 1 ? "" : "s"} · staked{" "}
               {buyAction.result.stakedCount} · spent{" "}
-              {fmtDec(buyAction.result.totalDec)} DEC
+              {formatFixed(buyAction.result.totalDec)} DEC
             </Alert>
           )}
           {buyAction.result && !buyAction.result.success && (

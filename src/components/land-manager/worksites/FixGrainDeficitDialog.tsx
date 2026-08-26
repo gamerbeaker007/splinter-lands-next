@@ -2,6 +2,7 @@
 
 import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
 import { useCoverGrainAction } from "@/hooks/useCoverGrainAction";
+import { formatInt } from "@/lib/formatters";
 import { CoverGrainTarget } from "@/lib/frontend/coverWorksiteGrainOps";
 import { actionButtonLabel, actionPhaseLabel } from "@/lib/shared/actionPhase";
 import { MakeHarvestableStrategy } from "@/types/landManager";
@@ -41,9 +42,6 @@ interface Props {
   onClose: () => void;
   onSuccess: () => void;
 }
-
-const fmt = (n: number) =>
-  n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 /**
  * Plan-then-confirm dialog for the "Fix grain deficit" flow.
@@ -121,14 +119,14 @@ export default function FixGrainDeficitDialog({
           <>
             <Typography variant="body2" gutterBottom>
               Feeding the workers needs{" "}
-              <strong>{fmt(plan.grainNeeded)} GRAIN</strong>
+              <strong>{formatInt(plan.grainNeeded)} GRAIN</strong>
               {multiRegion
                 ? ` across ${plan.regions.length} regions`
                 : " in this region"}
-              . Currently held: <strong>{fmt(plan.currentGrain)}</strong> —
-              short{" "}
+              . Currently held: <strong>{formatInt(plan.currentGrain)}</strong>{" "}
+              — short{" "}
               <strong>
-                {fmt(Math.max(0, plan.grainNeeded - plan.currentGrain))}
+                {formatInt(Math.max(0, plan.grainNeeded - plan.currentGrain))}
               </strong>
               .
             </Typography>
@@ -154,8 +152,8 @@ export default function FixGrainDeficitDialog({
 
             {plan.resolved ? (
               <Alert severity="success" sx={{ mb: 1.5 }}>
-                The plan below brings in {fmt(plan.delivered)} GRAIN (pool →
-                transfer → swap → buy with DEC), enough to cover the
+                The plan below brings in {formatInt(plan.delivered)} GRAIN (pool
+                → transfer → swap → buy with DEC), enough to cover the
                 requirement. This only moves grain — once it lands, use Feed
                 workers to activate the worksite
                 {multiRegion ? "s" : ""}.
@@ -163,9 +161,9 @@ export default function FixGrainDeficitDialog({
             ) : (
               <Alert severity="warning" sx={{ mb: 1.5 }}>
                 Could not fully cover the requirement — the plan only brings in{" "}
-                {fmt(plan.delivered)} GRAIN, still short {fmt(plan.shortfall)}.
-                Free up surplus grain in another region, add DEC, or top up
-                manually.
+                {formatInt(plan.delivered)} GRAIN, still short{" "}
+                {formatInt(plan.shortfall)}. Free up surplus grain in another
+                region, add DEC, or top up manually.
               </Alert>
             )}
 
@@ -189,19 +187,21 @@ export default function FixGrainDeficitDialog({
                       <TableRow key={r.regionUid}>
                         <TableCell>{r.regionName}</TableCell>
                         <TableCell align="right">
-                          {fmt(r.grainNeeded)}
+                          {formatInt(r.grainNeeded)}
                         </TableCell>
                         <TableCell align="right">
-                          {fmt(r.currentGrain)}
+                          {formatInt(r.currentGrain)}
                         </TableCell>
-                        <TableCell align="right">{fmt(r.delivered)}</TableCell>
+                        <TableCell align="right">
+                          {formatInt(r.delivered)}
+                        </TableCell>
                         <TableCell
                           align="right"
                           sx={{
                             color: r.resolved ? "success.main" : "warning.main",
                           }}
                         >
-                          {fmt(r.shortfall)}
+                          {formatInt(r.shortfall)}
                         </TableCell>
                       </TableRow>
                     ))}

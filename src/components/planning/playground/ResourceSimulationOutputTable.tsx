@@ -1,5 +1,5 @@
 import { Resource } from "@/constants/resource/resource";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { Box, Paper, Typography } from "@mui/material";
@@ -23,7 +23,7 @@ const getDifferenceColor = (diff: number) => {
 const formatDifference = (diff: number) => {
   if (diff === 0) return "0";
   const sign = diff > 0 ? "+" : "";
-  return `${sign}${formatNumberWithSuffix(diff)}`;
+  return `${sign}${formatCompactNumber(diff, { maximumFractionDigits: 2 })}`;
 };
 
 export default function ResourceSimulationOutputTable({
@@ -170,7 +170,7 @@ export default function ResourceSimulationOutputTable({
                       color: key === "net" ? netColor(value) : "inherit",
                     }}
                   >
-                    {formatNumberWithSuffix(value)}
+                    {formatCompactNumber(value, { maximumFractionDigits: 2 })}
                   </Typography>
                   {diff !== null && (
                     <Typography
@@ -192,7 +192,10 @@ export default function ResourceSimulationOutputTable({
 
       <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1 }}>
         <Typography variant="body2">
-          Total Base PP: {formatNumberWithSuffix(outputs.totalBasePP)}
+          Total Base PP:{" "}
+          {formatCompactNumber(outputs.totalBasePP, {
+            maximumFractionDigits: 2,
+          })}
           {comparisonOutputs && (
             <Typography
               component="span"
@@ -214,7 +217,10 @@ export default function ResourceSimulationOutputTable({
           )}
         </Typography>
         <Typography variant="body2">
-          | Total Boosted PP: {formatNumberWithSuffix(outputs.totalBoostedPP)}
+          | Total Boosted PP:{" "}
+          {formatCompactNumber(outputs.totalBoostedPP, {
+            maximumFractionDigits: 2,
+          })}
           {comparisonOutputs && (
             <Typography
               component="span"

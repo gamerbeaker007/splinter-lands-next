@@ -1,6 +1,7 @@
 "use client";
 
 import { useRenewRentalsAction } from "@/hooks/useRenewRentalsAction";
+import { formatFixed } from "@/lib/formatters";
 import { Autorenew } from "@mui/icons-material";
 import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useEffect } from "react";
@@ -10,13 +11,6 @@ interface Props {
   username: string;
   onSuccess?: () => void;
   onBusyChange?: (busy: boolean) => void;
-}
-
-function formatDec(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 export default function RenewRentalsActionControl({
@@ -74,7 +68,7 @@ export default function RenewRentalsActionControl({
         >
           Renewed {renewAction.result.renewedCount} rental
           {renewAction.result.renewedCount === 1 ? "" : "s"} for{" "}
-          {formatDec(renewAction.result.totalDec)} DEC.
+          {formatFixed(renewAction.result.totalDec)} DEC.
         </Alert>
       )}
       {renewAction.error && (

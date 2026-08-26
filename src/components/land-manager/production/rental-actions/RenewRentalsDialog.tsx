@@ -1,5 +1,6 @@
 "use client";
 
+import { formatFixed } from "@/lib/formatters";
 import { RenewRentalPlan } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
@@ -27,13 +28,6 @@ interface Props {
   busy: boolean;
   onConfirm: () => void;
   onCancel: () => void;
-}
-
-function fmtDec(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 function fmtDate(iso: string | null): string {
@@ -143,12 +137,12 @@ export default function RenewRentalsDialog({
                 variant="outlined"
               />
               <Chip
-                label={`${fmtDec(plan.total_dec)} DEC total`}
+                label={`${formatFixed(plan.total_dec)} DEC total`}
                 size="small"
                 color="primary"
               />
               <Chip
-                label={`Balance: ${fmtDec(plan.dec_balance)} DEC`}
+                label={`Balance: ${formatFixed(plan.dec_balance)} DEC`}
                 size="small"
                 color={plan.sufficient_balance ? "success" : "error"}
                 variant="outlined"
@@ -158,15 +152,15 @@ export default function RenewRentalsDialog({
             {!plan.sufficient_balance && (
               <Alert severity="error" icon={<WarningAmber />} sx={{ mb: 2 }}>
                 Insufficient DEC balance. You need{" "}
-                <strong>{fmtDec(plan.total_dec)} DEC</strong> but only have{" "}
-                <strong>{fmtDec(plan.dec_balance)} DEC</strong>. Top up before
-                proceeding.
+                <strong>{formatFixed(plan.total_dec)} DEC</strong> but only have{" "}
+                <strong>{formatFixed(plan.dec_balance)} DEC</strong>. Top up
+                before proceeding.
               </Alert>
             )}
 
             <Alert severity="warning" icon={<WarningAmber />} sx={{ mb: 2 }}>
               You are about to spend{" "}
-              <strong>{fmtDec(plan.total_dec)} DEC</strong> renewing{" "}
+              <strong>{formatFixed(plan.total_dec)} DEC</strong> renewing{" "}
               {plan.items.length} rental
               {plan.items.length !== 1 ? "s" : ""}.
             </Alert>
@@ -198,7 +192,7 @@ export default function RenewRentalsDialog({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="caption">
-                          {fmtDec(item.dec_per_day)}
+                          {formatFixed(item.dec_per_day)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
@@ -208,7 +202,7 @@ export default function RenewRentalsDialog({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="caption" fontWeight="bold">
-                          {fmtDec(item.total_dec)}
+                          {formatFixed(item.total_dec)}
                         </Typography>
                       </TableCell>
                       <TableCell>

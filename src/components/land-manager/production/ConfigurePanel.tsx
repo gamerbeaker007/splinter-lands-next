@@ -10,6 +10,7 @@ import {
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
+import { formatFixed, formatInt, formatNumber } from "@/lib/formatters";
 import { deedToPlotPlannerData } from "@/lib/frontend/utils/deedToPlotPlanner";
 import {
   calcStakedDecNeeded,
@@ -62,7 +63,7 @@ import WorkerSelectDialog from "./worker-actions/WorkerSelectDialog";
 
 /** Format a signed delta like "+1,234" / "-1,234" / "0". */
 function fmtDelta(n: number): string {
-  const s = Math.abs(n).toLocaleString("en-US");
+  const s = formatNumber(Math.abs(n));
   return n > 0 ? `+${s}` : n < 0 ? `-${s}` : "0";
 }
 
@@ -72,22 +73,8 @@ function deltaColor(n: number, higherIsBetter = true): string {
   return good ? "success.main" : "error.main";
 }
 
-function fmtInt(n: number): string {
-  return Math.round(n).toLocaleString("en-US");
-}
-
 function fmtPct(n: number): string {
-  return `${n.toLocaleString("en-US", {
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 1,
-  })}%`;
-}
-
-function fmtFraction(n: number, fraction = 3): string {
-  return n.toLocaleString("en-US", {
-    minimumFractionDigits: fraction,
-    maximumFractionDigits: fraction,
-  });
+  return `${formatFixed(n, 1)}%`;
 }
 
 function toFiniteNumber(value: unknown, fallback = 0): number {
@@ -495,10 +482,10 @@ export default function ConfigurePanel({
   const shortfallWarningMessage =
     dirty && regionImpact && regionImpact.projectedShortfall > 0
       ? regionImpact.shortfallIncrease > 0
-        ? `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+        ? `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${formatInt(
             regionImpact.projectedShortfall
-          )} DEC (increase ${fmtInt(regionImpact.shortfallIncrease)} DEC).`
-        : `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${fmtInt(
+          )} DEC (increase ${formatInt(regionImpact.shortfallIncrease)} DEC).`
+        : `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${formatInt(
             regionImpact.projectedShortfall
           )} DEC.`
       : null;
@@ -751,21 +738,21 @@ export default function ConfigurePanel({
             sx={{ mt: 0.5 }}
           >
             <Typography variant="caption" color="text.secondary">
-              Current PP: {fmtInt(projection.current.boostedPP)}
+              Current PP: {formatInt(projection.current.boostedPP)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Current DEC needed: {fmtInt(currentDecStakeNeeded)}
+              Current DEC needed: {formatInt(currentDecStakeNeeded)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Current total boost: {fmtPct(currentTotalBoost * 100)}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Current rewards/hr:{" "}
-              {fmtFraction(projection.current.produce[0]?.amount ?? 0)}{" "}
+              {formatFixed(projection.current.produce[0]?.amount ?? 0, 3)}{" "}
               {produceResource}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Current net: {fmtFraction(projection.current.netDEC)} DEC
+              Current net: {formatFixed(projection.current.netDEC, 3)} DEC
             </Typography>
           </Stack>
 
@@ -783,14 +770,14 @@ export default function ConfigurePanel({
               }}
             >
               <Typography variant="caption" color="text.secondary">
-                New PP: {fmtInt(projection.next.boostedPP)} (
+                New PP: {formatInt(projection.next.boostedPP)} (
                 <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
                   {fmtDelta(ppDelta)}
                 </Box>
                 )
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                New DEC needed: {fmtInt(nextDecStakeNeeded)} (
+                New DEC needed: {formatInt(nextDecStakeNeeded)} (
                 <Box
                   component="span"
                   sx={{ color: deltaColor(decStakeNeededDelta, false) }}
@@ -808,7 +795,7 @@ export default function ConfigurePanel({
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 New rewards/hr:{" "}
-                {fmtFraction(projection.next.produce[0]?.amount ?? 0)}{" "}
+                {formatFixed(projection.next.produce[0]?.amount ?? 0, 3)}{" "}
                 {produceResource} (
                 <Box component="span" sx={{ color: deltaColor(produceDelta) }}>
                   {fmtDelta(produceDelta)}
@@ -816,7 +803,7 @@ export default function ConfigurePanel({
                 )
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                New net: {fmtFraction(projection.next.netDEC)} DEC (
+                New net: {formatFixed(projection.next.netDEC, 3)} DEC (
                 <Box component="span" sx={{ color: deltaColor(netDelta) }}>
                   {fmtDelta(netDelta)}
                 </Box>

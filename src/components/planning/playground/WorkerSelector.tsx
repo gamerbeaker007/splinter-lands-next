@@ -1,6 +1,7 @@
 "use client";
 
 import FoilIcon from "@/components/ui/FoilIcon";
+import { formatNumber } from "@/lib/formatters";
 import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import { cardSetIconMap } from "@/types/editions";
 import { cardIconMap } from "@/types/planner/primitives";
@@ -28,9 +29,6 @@ export default function WorkerSelector({
   selectedWorkerUids,
   onChange,
 }: Props) {
-  const fmt = (n: number) =>
-    new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n);
-
   // Find current card in ALL cards (including staked)
   const currentCard = workerUid
     ? allCards.find((c) => c.uid === workerUid)
@@ -107,7 +105,7 @@ export default function WorkerSelector({
                 {card.name}
               </Typography>
               <Typography variant="caption" color="text.secondary">
-                ({fmt(card.landBasePP)})
+                ({formatNumber(card.landBasePP, { maximumFractionDigits: 2 })})
               </Typography>
             </Box>
           );
@@ -181,7 +179,10 @@ export default function WorkerSelector({
                     {card.name}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {fmt(card.landBasePP)} PP
+                    {formatNumber(card.landBasePP, {
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    PP
                   </Typography>
                 </Box>
               </Box>

@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import WarningIcon from "@mui/icons-material/Warning";
 import { Box, Tooltip, Typography } from "@mui/material";
@@ -45,7 +46,7 @@ export const CardPPInfo: React.FC<Props> = ({
               fontWeight="bold"
               color={isCapped ? "warning.main" : fontColor}
             >
-              {basePP.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+              {formatInt(basePP)}
             </Typography>
             {isCapped && (
               <Tooltip title="This slot's base PP is capped due to the 100K total limit">
@@ -70,7 +71,7 @@ export const CardPPInfo: React.FC<Props> = ({
             Boosted PP:
           </Typography>
           <Typography fontSize={fontSize} fontWeight="bold" color="success">
-            {boostedPP.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+            {formatInt(boostedPP)}
           </Typography>
         </Box>
       </Box>

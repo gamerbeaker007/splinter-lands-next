@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/formatters";
 import { computeResourceToResource } from "@/lib/shared/landManagerUtils";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { SplHarvestableResource } from "@/types/spl/landManager";
@@ -38,8 +39,6 @@ function ResourceTooltipContent({ r }: { r: AnalyzedResource }) {
   const indicator = r.notProfitable
     ? "(swap is better) ✗"
     : "(harvest is better) ✓";
-  const fmt = (n: number) =>
-    n.toLocaleString(undefined, { maximumFractionDigits: 0 });
   return (
     <Box>
       {/* Header */}
@@ -53,16 +52,18 @@ function ResourceTooltipContent({ r }: { r: AnalyzedResource }) {
       <Stack direction="row" alignItems="center" spacing={0.5}>
         <Typography variant="caption">Harvest: </Typography>
         <Typography variant="caption">
-          {fmt(r.harvestable)} (consumes {fmt(r.grainCost)}
+          {formatInt(r.harvestable)} (consumes {formatInt(r.grainCost)}
         </Typography>
         <ResIcon token="GRAIN" />
         <Typography variant="caption">)</Typography>
       </Stack>
       {/* Swap line */}
       <Stack direction="row" alignItems="center" spacing={0.5}>
-        <Typography variant="caption">Swap: {fmt(r.grainCost)}</Typography>
+        <Typography variant="caption">
+          Swap: {formatInt(r.grainCost)}
+        </Typography>
         <ResIcon token="GRAIN" />
-        <Typography variant="caption">→ {fmt(r.swapOut)}</Typography>
+        <Typography variant="caption">→ {formatInt(r.swapOut)}</Typography>
         <Typography component="span" variant="caption" color={indicatorColor}>
           {indicator}
         </Typography>

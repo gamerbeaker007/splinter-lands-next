@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/formatters";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
 import { SplBalance } from "@/types/spl/balance";
@@ -75,7 +76,7 @@ export function PlayerCraftingOverview({ liquidityInfo, balances }: Props) {
         const remaining = remainingAfterCraft[resource] ?? 0;
         const shortfall = needed - remaining;
         return shortfall > 0
-          ? `- ${resource}: ${shortfall.toLocaleString()}`
+          ? `- ${resource}: ${formatNumber(shortfall)}`
           : null;
       })
       .filter(Boolean);

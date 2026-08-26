@@ -1,18 +1,18 @@
 "use client";
 
+import { InfoItem } from "@/components/resource/trade-hub-positions/InfoItem";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
+import { formatCompactNumber } from "@/lib/formatters";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
 import {
   Avatar,
   Box,
   Card,
   CardContent,
-  Typography,
   Divider,
+  Typography,
 } from "@mui/material";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import { RegionLiquidityInfo } from "@/types/regionLiquidityInfo";
-import { PlayerTradeHubPosition } from "@/generated/prisma/client";
-import { InfoItem } from "@/components/resource/trade-hub-positions/InfoItem";
-import { formatNumberWithSuffix } from "@/lib/formatters";
 
 type Props = {
   resource: string;
@@ -92,13 +92,19 @@ export function ResourceOverviewCard({
 
         <InfoItem
           title="Total"
-          text={formatNumberWithSuffix(totalFromLiquidityInfo)}
+          text={formatCompactNumber(totalFromLiquidityInfo, {
+            maximumFractionDigits: 2,
+          })}
           fontSize={16}
         />
 
         <Typography variant="caption" color="text.secondary">
-          (Liquid: {formatNumberWithSuffix(totalFromLiquidityInfo)}, Pool:{" "}
-          {formatNumberWithSuffix(totalFromPool)})
+          (Liquid:{" "}
+          {formatCompactNumber(totalFromLiquidityInfo, {
+            maximumFractionDigits: 2,
+          })}
+          , Pool:{" "}
+          {formatCompactNumber(totalFromPool, { maximumFractionDigits: 2 })})
         </Typography>
 
         <Divider sx={{ my: 1 }} />
@@ -107,7 +113,7 @@ export function ResourceOverviewCard({
           <InfoItem
             key={info.uid}
             title={info.name}
-            text={`${formatNumberWithSuffix((info[resourceKey] as number) ?? 0)}`}
+            text={`${formatCompactNumber((info[resourceKey] as number) ?? 0, { maximumFractionDigits: 2 })}`}
             fontSize={14}
           />
         ))}
@@ -118,7 +124,9 @@ export function ResourceOverviewCard({
 
             <InfoItem
               title="LP Total"
-              text={formatNumberWithSuffix(totalFromPool)}
+              text={formatCompactNumber(totalFromPool, {
+                maximumFractionDigits: 2,
+              })}
               fontSize={16}
             />
             <InfoItem
@@ -128,7 +136,9 @@ export function ResourceOverviewCard({
             />
             <InfoItem
               title="DEC"
-              text={formatNumberWithSuffix(totalDECFromPool)}
+              text={formatCompactNumber(totalDECFromPool, {
+                maximumFractionDigits: 2,
+              })}
               fontSize={14}
             />
           </>

@@ -1,4 +1,4 @@
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { CSSSize } from "@/types/cssSize";
 import React from "react";
 import { FaAngleDoubleUp } from "react-icons/fa";
@@ -21,7 +21,7 @@ export const TotalBoostInfo: React.FC<{
         />
       }
       title="Total Boost"
-      text={`${formatLargeNumber(Number((totalBoost * 100).toFixed(0)))}%`}
+      text={`${formatCompactNumber(Number((totalBoost * 100).toFixed(0)))}%`}
       pos={pos}
     />
   );

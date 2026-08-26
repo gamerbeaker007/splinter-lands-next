@@ -1,6 +1,6 @@
 import PriceCardItem from "@/components/planning/output/PriceCardItem";
 import PriceItem from "@/components/planning/output/PriceItem";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 import { calcStakedDecNeeded } from "@/lib/frontend/utils/plannerCalcs";
 import {
   findLowestCardPrice,
@@ -156,7 +156,7 @@ export default function PriceOutput({
             Total USD Price:
           </Typography>
           <Typography variant="body1" color="success.main">
-            {totalUSD.toLocaleString("en-US")} USD{" "}
+            {formatNumber(totalUSD)} USD{" "}
             {/* TODO investigate SSR and locale formatting */}
           </Typography>
           {hasWarning && (
@@ -214,12 +214,14 @@ Therefor the exact card you want may not always be available for that price.`}
           )}
           <PriceItem
             title={"Total USD Price"}
-            price={totalUSD.toLocaleString()}
+            price={formatNumber(totalUSD)}
             currency={"USD"}
           />
           <PriceItem
             title={"Deed Price"}
-            price={deedResult.price?.toLocaleString() ?? "N/A"}
+            price={
+              deedResult.price != null ? formatNumber(deedResult.price) : "N/A"
+            }
             currency={"USD"}
             warning={deedResult.warning}
           />
@@ -233,7 +235,9 @@ Therefor the exact card you want may not always be available for that price.`}
                 <PriceCardItem
                   key={idx}
                   cardDetails={cardDetails}
-                  price={result.price?.toLocaleString() ?? "N/A"}
+                  price={
+                    result.price != null ? formatNumber(result.price) : "N/A"
+                  }
                   currency={"USD"}
                   warning={result.warning}
                   cardInfo={result.cardInfo}
@@ -247,7 +251,7 @@ Therefor the exact card you want may not always be available for that price.`}
             <PriceItem
               title={"Totem Price"}
               subTitle={capitalize(totemResult.title)}
-              price={totemResult.price.toLocaleString()}
+              price={formatNumber(totemResult.price)}
               currency={"USD"}
               warning={totemResult.warning}
             />
@@ -256,7 +260,7 @@ Therefor the exact card you want may not always be available for that price.`}
             <PriceItem
               title={"Title Price"}
               subTitle={capitalize(titleResult.title)}
-              price={titleResult.price.toLocaleString()}
+              price={formatNumber(titleResult.price)}
               currency={"USD"}
               warning={titleResult.warning}
             />
@@ -271,20 +275,25 @@ Therefor the exact card you want may not always be available for that price.`}
                   ? ` (reduced DEC by ${totalDecDiscount * 100}%) `
                   : "")
             }
-            price={formatNumberWithSuffix(stakedDECNeeded)}
+            price={formatCompactNumber(stakedDECNeeded, {
+              maximumFractionDigits: 2,
+            })}
             currency={"DEC"}
           />
 
           <PriceItem
             title={`DEC For Purchases ${hasRuni ? "" : hasReplacePowerCore ? "(power core reduction applied)" : "(incl. 5K Power Core)"}`}
-            price={formatNumberWithSuffix(totalDECForPurchases ?? 0)}
+            price={formatCompactNumber(totalDECForPurchases ?? 0, {
+              maximumFractionDigits: 2,
+            })}
             currency={"DEC"}
           />
 
           <PriceItem
             title={"Total DEC"}
-            price={formatNumberWithSuffix(
-              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0)
+            price={formatCompactNumber(
+              (totalDECForPurchases ?? 0) + (stakedDECNeeded ?? 0),
+              { maximumFractionDigits: 2 }
             )}
             currency={"DEC"}
           />

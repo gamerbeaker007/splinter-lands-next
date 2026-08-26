@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/formatters";
 import {
   computeDecNeededForResource,
   computeInputForDesiredOutput,
@@ -6,9 +7,17 @@ import {
   computeSwapAmounts,
   poolFor,
 } from "@/lib/shared/landManagerUtils";
+import {
+  buildAddLiquidityOp,
+  buildBuyWithDecOp,
+  buildSellResourceForDecOp,
+  buildSwapTokensOp,
+} from "@/lib/shared/operations/opBuilders";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
+  PostHarvestActionSummary,
   SWAP_DONOR_RESERVE_WEEKS,
+  SWAP_OUTPUT_HEADROOM,
   TOP_UP_POOL_SAFETY_MARGIN,
   TopUpPoolAddition,
   TopUpPoolFundingStep,
@@ -623,8 +632,16 @@ function sizeSwap(
   for (let attempt = 0; attempt < 5; attempt++) {
     if (cover < DUST) return null;
 
+    // Aim past `cover` by SWAP_OUTPUT_HEADROOM: the quote is taken against pool
+    // state that will have moved by the time the op lands, and a swap sized to
+    // deliver `cover` exactly leaves the deposit short.
     const swapIn = clearingInput(
-      computeInputForDesiredOutput(params.pools, donorSymbol, symbol, cover)
+      computeInputForDesiredOutput(
+        params.pools,
+        donorSymbol,
+        symbol,
+        cover * (1 + SWAP_OUTPUT_HEADROOM)
+      )
     );
     if (!Number.isFinite(swapIn) || swapIn <= 0) return null;
 
@@ -1087,9 +1104,6 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
 
 // ── plan rendering ───────────────────────────────────────────────────────────
 
-const fmt = (n: number): string =>
-  n.toLocaleString("en-GB", { maximumFractionDigits: 3 });
-
 /**
  * Render the plan grouped by resource, showing the regions involved. The dry
  * run and the executed operations come from the same plan object, so what is
@@ -1102,7 +1116,7 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
     "This action is intended to run ONCE PER WEEK, preferably on about the same day.",
     "Running it more often adds extra resource to the pools; running it less often may",
     "shrink the tax-free buffer available to Make Harvestable.",
-    `\nAccount DEC available: ${fmt(plan.dec_balance)} DEC`
+    `\nAccount DEC available: ${formatNumber(plan.dec_balance)} DEC`
   );
 
   for (const warning of plan.consumption_warnings) {
@@ -1112,14 +1126,14 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   for (const r of plan.resources) {
     log.push(
       `\n── ${r.symbol} ────────────────────────────────`,
-      `Consumed: ${fmt(r.consumed_per_hour)}/hr`,
-      `Produced: ${fmt(r.produced_per_hour)}/hr`,
-      `External need: ${fmt(r.external_need_per_hour)}/hr`,
-      `Weekly consumption: ${fmt(r.weekly_consumption)} ${r.symbol} (gross)`,
-      `Weekly external need: ${fmt(r.weekly_external_need)} ${r.symbol}`,
-      `Target this execution: ${fmt(r.target)} ${r.symbol} (external need +10% margin)`,
-      `Available ${r.symbol}: ${fmt(r.available_resource)}`,
-      `DEC required for pool addition: ${fmt(r.dec_required)}`,
+      `Consumed: ${formatNumber(r.consumed_per_hour)}/hr`,
+      `Produced: ${formatNumber(r.produced_per_hour)}/hr`,
+      `External need: ${formatNumber(r.external_need_per_hour)}/hr`,
+      `Weekly consumption: ${formatNumber(r.weekly_consumption)} ${r.symbol} (gross)`,
+      `Weekly external need: ${formatNumber(r.weekly_external_need)} ${r.symbol}`,
+      `Target this execution: ${formatNumber(r.target)} ${r.symbol} (external need +10% margin)`,
+      `Available ${r.symbol}: ${formatNumber(r.available_resource)}`,
+      `DEC required for pool addition: ${formatNumber(r.dec_required)}`,
       // Every strategy that ran is listed with what it covered, so the split
       // between them is visible rather than implied.
       "-- Strategy analyses ---------------------"
@@ -1127,7 +1141,7 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
     for (const a of r.attempts) {
       log.push(
         a.ok
-          ? `  ${a.strategy} → covered ${fmt(a.covered)} ${r.symbol}: ${a.reason}`
+          ? `  ${a.strategy} → covered ${formatNumber(a.covered)} ${r.symbol}: ${a.reason}`
           : `  ${a.strategy} → FAILED: ${a.reason}`
       );
     }
@@ -1141,15 +1155,15 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
     for (const step of r.funding) {
       if (step.kind === "sell") {
         log.push(
-          `  Sell: ${fmt(step.amount)} ${step.from_symbol} in ${step.region_name} → ~${fmt(step.dec_out)} DEC (after 10% trade-hub fee)`
+          `  Sell: ${formatNumber(step.amount)} ${step.from_symbol} in ${step.region_name} → ~${formatNumber(step.dec_out)} DEC (after 10% trade-hub fee)`
         );
       } else if (step.kind === "buy") {
         log.push(
-          `  Buy: ${fmt(step.dec_in)} DEC → ~${fmt(step.resource_out)} ${r.symbol} in ${step.region_name}`
+          `  Buy: ${formatNumber(step.dec_in)} DEC → ~${formatNumber(step.resource_out)} ${r.symbol} in ${step.region_name}`
         );
       } else {
         log.push(
-          `  Swap: ${fmt(step.in_amount)} ${step.from_symbol} in ${step.region_name} → ~${fmt(step.resource_out)} ${r.symbol} (two hops, 10% fee)`
+          `  Swap: ${formatNumber(step.in_amount)} ${step.from_symbol} in ${step.region_name} → ~${formatNumber(step.resource_out)} ${r.symbol} (two hops, 10% fee)`
         );
       }
     }
@@ -1160,11 +1174,11 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
     log.push("  Add to Pool:");
     for (const a of r.additions) {
       log.push(
-        `    ${a.region_name}: ${fmt(a.resource_amount)} ${r.symbol} + ${fmt(a.dec_amount)} DEC`
+        `    ${a.region_name}: ${formatNumber(a.resource_amount)} ${r.symbol} + ${formatNumber(a.dec_amount)} DEC`
       );
     }
     log.push(
-      `  Total pool addition: ${fmt(r.total_resource)} ${r.symbol} + ${fmt(r.total_dec)} DEC`,
+      `  Total pool addition: ${formatNumber(r.total_resource)} ${r.symbol} + ${formatNumber(r.total_dec)} DEC`,
       "Result: READY",
       "──────────────────────────────────────────"
     );
@@ -1176,4 +1190,236 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   }
 
   return log;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Plan → operations
+//
+// Pure translation of a TopUpPoolPlan into broadcastable ops. Kept here rather
+// than in the hook so it stays testable without pulling in React or the server
+// actions.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Relaxed slippage: same tolerance the post-harvest sell flow uses. */
+export const SWAP_MAX_SLIPPAGE = 50;
+
+/** Phase 1 ops: the sales and purchases that fund the deposits. */
+export function buildFundingOps(
+  username: string,
+  plan: TopUpPoolPlan
+): { ops: [string, object][]; actions: PostHarvestActionSummary[] } {
+  const ops: [string, object][] = [];
+  const actions: PostHarvestActionSummary[] = [];
+
+  for (const r of plan.resources) {
+    if (r.status !== "READY") continue;
+
+    for (const step of r.funding) {
+      if (step.kind === "sell") {
+        // `from_symbol`, not `r.symbol`: the swap strategy funds its DEC side by
+        // selling the DONOR resource.
+        ops.push(
+          buildSellResourceForDecOp(
+            username,
+            step.region_uid,
+            step.amount,
+            step.dec_out,
+            step.from_symbol,
+            SWAP_MAX_SLIPPAGE
+          )
+        );
+        actions.push({
+          type: "sell_for_dec",
+          region_uid: step.region_uid,
+          symbol: step.from_symbol,
+          resource_amount: step.amount,
+          dec_amount: step.dec_out,
+        });
+      } else if (step.kind === "buy") {
+        ops.push(
+          buildBuyWithDecOp(
+            username,
+            step.region_uid,
+            step.dec_in,
+            step.resource_out,
+            r.symbol,
+            SWAP_MAX_SLIPPAGE
+          )
+        );
+        actions.push({
+          type: "buy_resource",
+          region_uid: step.region_uid,
+          symbol: r.symbol,
+          resource_amount: step.resource_out,
+          dec_amount: step.dec_in,
+        });
+      } else {
+        // Resource → DEC → resource in one op, so the swapped resource lands in
+        // the same region it left and the deposit can be made there.
+        ops.push(
+          buildSwapTokensOp({
+            username,
+            fromRegionUid: step.region_uid,
+            toRegionUid: step.region_uid,
+            fromSymbol: step.from_symbol,
+            toSymbol: r.symbol,
+            inAmount: step.in_amount,
+            outAmount1: step.dec_out,
+            outAmount2: step.resource_out,
+            maxSlippage: SWAP_MAX_SLIPPAGE,
+          })
+        );
+        actions.push({
+          type: "swap_resource",
+          region_uid: step.region_uid,
+          symbol: step.from_symbol,
+          resource_amount: step.in_amount,
+          dec_amount: step.dec_out,
+          to_symbol: r.symbol,
+          to_resource_amount: step.resource_out,
+        });
+      }
+    }
+  }
+
+  return { ops, actions };
+}
+
+/**
+ * Phase 2 ops: re-price the planned deposits against fresh pool ratios and the
+ * DEC actually in the wallet now. Deposits that no longer fit are dropped whole
+ * (never half-funded) and reported back as a warning.
+ */
+export function buildDepositOps(
+  username: string,
+  plan: TopUpPoolPlan,
+  freshPools: SplLandPool[],
+  freshDec: number,
+  /**
+   * region_uid → symbol → amount held, read after the funding phase settled.
+   * Null when the read failed or was skipped — the resource check is then
+   * bypassed rather than dropping a top-up whose funding already went through.
+   */
+  freshBalances: Record<string, Record<string, number>> | null
+): {
+  ops: [string, object][];
+  actions: PostHarvestActionSummary[];
+  dropped: string[];
+} {
+  const poolMap = new Map(
+    freshPools.map((p) => [
+      p.token_symbol,
+      {
+        decQty: Number.parseFloat(p.dec_quantity),
+        resourceQty: Number.parseFloat(p.resource_quantity),
+      },
+    ])
+  );
+
+  const ops: [string, object][] = [];
+  const actions: PostHarvestActionSummary[] = [];
+  const dropped: string[] = [];
+  let decLeft = freshDec;
+  // Resource left per region, decremented as legs claim it, so two legs on the
+  // same region+symbol cannot each spend the whole balance.
+  const resourceLeft = new Map<string, number>();
+  const resourceKey = (regionUid: string, symbol: string) =>
+    `${regionUid}|${symbol}`;
+
+  for (const r of plan.resources) {
+    if (r.status !== "READY") continue;
+
+    const pool = poolMap.get(r.symbol);
+    if (!pool || pool.resourceQty <= 0) {
+      dropped.push(`${r.symbol}: pool data unavailable at broadcast time`);
+      continue;
+    }
+    const ratio = pool.decQty / pool.resourceQty;
+
+    let legs = r.additions.map((a) => ({
+      ...a,
+      dec_amount: round3(a.resource_amount * ratio),
+    }));
+
+    if (legs.reduce((s, a) => s + a.dec_amount, 0) > decLeft) {
+      dropped.push(
+        `${r.symbol}: needs ${formatNumber(
+          legs.reduce((s, a) => s + a.dec_amount, 0),
+          { maximumFractionDigits: 2 }
+        )} DEC at current prices but only ${formatNumber(decLeft, { maximumFractionDigits: 2 })} DEC is left — skipped rather than partially deposited`
+      );
+      continue;
+    }
+
+    // What actually landed can fall short of the plan: the funding swap is
+    // quoted against pool state read at PLAN time, so another trade landing in
+    // between moves the rate, and the op itself is broadcast with
+    // SWAP_MAX_SLIPPAGE tolerance. Depositing the planned amount anyway is what
+    // the engine rejects with "not enough resource to pool".
+    //
+    // Drift inside SWAP_OUTPUT_HEADROOM is absorbed by depositing what is held
+    // instead of the planned amount — the swap is over-sized by that same
+    // margin, so this is the surplus failing to appear, not a half-funded
+    // top-up. A larger gap means something genuinely went wrong and the
+    // resource is skipped whole, as before.
+    if (freshBalances) {
+      // Walk the legs against a WORKING copy, drawing each one down as it is
+      // checked: two legs on the same region must not each claim the full
+      // balance. Only commit the draw-down once every leg fits.
+      const draft = new Map(resourceLeft);
+      let short: { leg: (typeof legs)[number]; held: number } | null = null;
+      const settled: typeof legs = [];
+
+      for (const leg of legs) {
+        const key = resourceKey(leg.region_uid, r.symbol);
+        const held =
+          draft.get(key) ?? freshBalances[leg.region_uid]?.[r.symbol] ?? 0;
+
+        if (held < leg.resource_amount * (1 - SWAP_OUTPUT_HEADROOM)) {
+          short = { leg, held };
+          break;
+        }
+
+        const amount = Math.min(leg.resource_amount, round3(held));
+        settled.push({
+          ...leg,
+          resource_amount: amount,
+          dec_amount: round3(amount * ratio),
+        });
+        draft.set(key, held - amount);
+      }
+
+      if (short) {
+        dropped.push(
+          `${r.symbol}: needs ${formatNumber(short.leg.resource_amount, { maximumFractionDigits: 2 })} in ${short.leg.region_name} but only ${formatNumber(short.held, { maximumFractionDigits: 2 })} settled — skipped rather than partially deposited`
+        );
+        continue;
+      }
+      legs = settled;
+      for (const [key, left] of draft) resourceLeft.set(key, left);
+    }
+
+    for (const leg of legs) {
+      if (leg.resource_amount <= 0 || leg.dec_amount <= 0) continue;
+      ops.push(
+        buildAddLiquidityOp(
+          username,
+          leg.region_uid,
+          r.symbol,
+          leg.resource_amount,
+          leg.dec_amount
+        )
+      );
+      actions.push({
+        type: "add_to_pool",
+        region_uid: leg.region_uid,
+        symbol: r.symbol,
+        resource_amount: leg.resource_amount,
+        dec_amount: leg.dec_amount,
+      });
+    }
+    decLeft -= legs.reduce((sum, leg) => sum + leg.dec_amount, 0);
+  }
+
+  return { ops, actions, dropped };
 }

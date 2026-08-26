@@ -1,3 +1,4 @@
+import { formatInt, formatNumber } from "@/lib/formatters";
 import {
   land_hammer_icon_url,
   totem_fragment_common_icon_url,
@@ -6,8 +7,8 @@ import { CSSSize } from "@/types/cssSize";
 import { Box, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
-import PPWarning from "./PPWarning";
 import { FaPercent } from "react-icons/fa";
+import PPWarning from "./PPWarning";
 
 type Props = {
   totalBasePP: number;
@@ -69,9 +70,7 @@ export const ProductionOutput: React.FC<Props> = ({
               Base PP:
             </Typography>
             <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
-              {totalBasePP.toLocaleString(undefined, {
-                maximumFractionDigits: 0,
-              })}
+              {formatInt(totalBasePP)}
             </Typography>
           </Box>
         </Box>
@@ -94,9 +93,7 @@ export const ProductionOutput: React.FC<Props> = ({
               fontWeight="bold"
               color="success.main"
             >
-              {totalBoostPP.toLocaleString(undefined, {
-                maximumFractionDigits: 0,
-              })}
+              {formatInt(totalBoostPP)}
             </Typography>
           </Box>
         </Box>
@@ -114,10 +111,7 @@ export const ProductionOutput: React.FC<Props> = ({
                 fontWeight="bold"
                 color="success.main"
               >
-                {(captureRate * 100).toLocaleString(undefined, {
-                  maximumFractionDigits: 2,
-                })}
-                %
+                {formatNumber(captureRate * 100, { maximumFractionDigits: 2 })}%
               </Typography>
             </Box>
           </Box>
@@ -142,10 +136,7 @@ export const ProductionOutput: React.FC<Props> = ({
                 fontWeight="bold"
                 color="success.main"
               >
-                {totemChance.toLocaleString(undefined, {
-                  maximumFractionDigits: 3,
-                })}
-                %
+                {formatNumber(totemChance, { maximumFractionDigits: 3 })}%
               </Typography>
             </Box>
           </Box>
