@@ -9,6 +9,7 @@ import {
   getLandCardCollectionData,
   LandCardCollectionResult,
 } from "@/lib/backend/actions/region/land-card-collection-actions";
+import { formatNumber } from "@/lib/formatters";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { Alert, Box, Paper, Skeleton, Typography } from "@mui/material";
 import { useEffect, useState, useTransition } from "react";
@@ -70,7 +71,7 @@ export function CardCollectionPage() {
             Total Cards on Land
           </Typography>
           <Typography variant="h6" fontWeight="bold">
-            {totalCards.toLocaleString()}
+            {formatNumber(totalCards)}
           </Typography>
         </Paper>
         <Paper sx={{ p: 2, borderRadius: 2, minWidth: 140 }}>

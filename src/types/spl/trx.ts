@@ -26,6 +26,22 @@ export interface SplTrxLookupResponse {
 
 // ── harvest_all ───────────────────────────────────────────────────────────────
 
+/**
+ * Card awarded by the Labor's Luck ability during a harvest. Only present on
+ * deeds that have Labor's Luck AND won the roll — absent otherwise.
+ */
+export interface LaborsLuckTreasure {
+  /** Card uid, e.g. "G19-866-2632A608C0" — encodes foil + edition + card id. */
+  uid: string;
+  card_detail_id: number;
+  xp: number;
+  gold: boolean;
+  tier: number;
+  /** Numeric foil id (0=regular, 1=gold, 2=gold arcane, 3=black, 4=black arcane). */
+  foil: number;
+  mint: number | null;
+}
+
 export interface HarvestAllDeedResult {
   id: number;
   project_number: number;
@@ -49,6 +65,8 @@ export interface HarvestAllDeedResult {
   fragment_chance: number;
   fragment_roll: number;
   elapsed_hours: number;
+  /** Only set when the deed has Labor's Luck and the roll succeeded. */
+  labors_luck_treasure?: LaborsLuckTreasure | null;
 }
 
 export interface HarvestAllDeedInfo {
@@ -92,6 +110,9 @@ export interface TaxCollectionTrxData {
   tokens: TaxCollectionTokenResult[];
   fragment_found: boolean;
   fragment_chance: number;
+  fragment_roll: number;
+  /** Fragment code, e.g. "TOTEMFC" (common). Null when nothing was found. */
+  fragment_type: string | null;
 }
 
 // ── add_liquidity ─────────────────────────────────────────────────────────────

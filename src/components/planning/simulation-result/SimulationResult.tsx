@@ -2,7 +2,7 @@
 
 import TaxSimulationWarning from "@/components/planning/output/TaxSimulationWarning";
 import { Resource, RESOURCES } from "@/constants/resource/resource";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { ProductionInfo } from "@/types/productionInfo";
 import { Box, Paper, Typography } from "@mui/material";
@@ -142,7 +142,7 @@ export function SimulationResult({ items }: ResultProps) {
                       : { textAlign: "left" }
                   }
                 >
-                  {formatNumberWithSuffix(value)}
+                  {formatCompactNumber(value, { maximumFractionDigits: 2 })}
                 </Box>
               );
             })}
@@ -154,7 +154,7 @@ export function SimulationResult({ items }: ResultProps) {
         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
           Total Net DEC:&nbsp;
           <Box component="span" sx={{ color: netColor(totalNetDEC) }}>
-            {formatNumberWithSuffix(totalNetDEC)}
+            {formatCompactNumber(totalNetDEC, { maximumFractionDigits: 2 })}
           </Box>
         </Typography>
         <Image

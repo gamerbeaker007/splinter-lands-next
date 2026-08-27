@@ -1,6 +1,6 @@
 "use client";
 
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import {
   calcCaptureRate,
   calcProductionInfo,
@@ -146,7 +146,8 @@ export default function DeedOutputDisplay({
           </Typography>
         )}
         <Typography variant="body2" fontSize="0.7rem">
-          PP: {formatNumberWithSuffix(output.boostedPP)}
+          PP:{" "}
+          {formatCompactNumber(output.boostedPP, { maximumFractionDigits: 2 })}
         </Typography>
         <Typography variant="body2" fontSize="0.65rem" color="success.main">
           ▲ {output.produce}

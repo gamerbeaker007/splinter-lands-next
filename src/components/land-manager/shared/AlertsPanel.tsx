@@ -2,6 +2,7 @@
 
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { usePoolBufferAlerts } from "@/hooks/usePoolBufferAlerts";
+import { formatInt } from "@/lib/formatters";
 import { POOL_BUFFER_WEEKS } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
@@ -31,10 +32,6 @@ interface Props {
   /** True when either pool strategy is configured (pool withdraw or top-up). */
   poolStrategyEnabled: boolean;
   refreshKey?: number;
-}
-
-function fmtNum(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 export default function AlertsPanel({
@@ -152,17 +149,17 @@ export default function AlertsPanel({
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="caption">
-                            {fmtNum(r.poolResource)}
+                            {formatInt(r.poolResource)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="caption">
-                            {fmtNum(r.unlockedResource)}
+                            {formatInt(r.unlockedResource)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
                           <Typography variant="caption">
-                            {fmtNum(r.weeklyExternalNeed)}
+                            {formatInt(r.weeklyExternalNeed)}
                           </Typography>
                         </TableCell>
                         <TableCell align="right">
@@ -212,8 +209,8 @@ export default function AlertsPanel({
             <Stack gap={1}>
               <Alert severity="warning">
                 <Typography variant="caption" display="block">
-                  DEC stake shortfall of {fmtNum(shortfall)} —{" "}
-                  {fmtNum(totalStaked)} staked vs {fmtNum(totalRequired)}{" "}
+                  DEC stake shortfall of {formatInt(shortfall)} —{" "}
+                  {formatInt(totalStaked)} staked vs {formatInt(totalRequired)}{" "}
                   required. Stake more DEC before full PP can be earned
                   {regionsWithShortfall.length > 0
                     ? ` (regions currently showing a gap below):`
@@ -241,12 +238,12 @@ export default function AlertsPanel({
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="caption">
-                              {fmtNum(region.dec_stake_in_use)}
+                              {formatInt(region.dec_stake_in_use)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="caption">
-                              {fmtNum(region.dec_stake_needed)}
+                              {formatInt(region.dec_stake_needed)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
@@ -255,7 +252,7 @@ export default function AlertsPanel({
                               color="warning.main"
                               fontWeight="bold"
                             >
-                              {fmtNum(shortfall)}
+                              {formatInt(shortfall)}
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -269,9 +266,10 @@ export default function AlertsPanel({
             <Stack gap={1}>
               <Alert severity="info">
                 <Typography variant="caption" display="block">
-                  DEC over-staked by {fmtNum(excess)} — {fmtNum(totalStaked)}{" "}
-                  staked vs {fmtNum(totalRequired)} required. You could unstake
-                  up to {fmtNum(excess)} DEC and still fully power your regions
+                  DEC over-staked by {formatInt(excess)} —{" "}
+                  {formatInt(totalStaked)} staked vs {formatInt(totalRequired)}{" "}
+                  required. You could unstake up to {formatInt(excess)} DEC and
+                  still fully power your regions
                   {regionsOverStaked.length > 0
                     ? ` (regions currently over-staked below):`
                     : `.`}
@@ -298,12 +296,12 @@ export default function AlertsPanel({
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="caption">
-                              {fmtNum(region.dec_stake_in_use)}
+                              {formatInt(region.dec_stake_in_use)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
                             <Typography variant="caption">
-                              {fmtNum(region.dec_stake_needed)}
+                              {formatInt(region.dec_stake_needed)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
@@ -312,7 +310,7 @@ export default function AlertsPanel({
                               color="info.main"
                               fontWeight="bold"
                             >
-                              {fmtNum(over)}
+                              {formatInt(over)}
                             </Typography>
                           </TableCell>
                         </TableRow>
@@ -327,9 +325,9 @@ export default function AlertsPanel({
               <Alert severity="warning">
                 <Typography variant="caption" display="block">
                   Regional DEC imbalance detected:{" "}
-                  {fmtNum(regionalShortfallTotal)}
+                  {formatInt(regionalShortfallTotal)}
                   DEC short across some regions while{" "}
-                  {fmtNum(regionalOverTotal)}
+                  {formatInt(regionalOverTotal)}
                   DEC is over-staked in others. Global DEC is balanced, but DEC
                   needs to be moved between regions.
                 </Typography>
@@ -359,12 +357,12 @@ export default function AlertsPanel({
                             </TableCell>
                             <TableCell align="right">
                               <Typography variant="caption">
-                                {fmtNum(row.region.dec_stake_in_use)}
+                                {formatInt(row.region.dec_stake_in_use)}
                               </Typography>
                             </TableCell>
                             <TableCell align="right">
                               <Typography variant="caption">
-                                {fmtNum(row.region.dec_stake_needed)}
+                                {formatInt(row.region.dec_stake_needed)}
                               </Typography>
                             </TableCell>
                             <TableCell align="right">
@@ -376,7 +374,7 @@ export default function AlertsPanel({
                                 fontWeight="bold"
                               >
                                 {isShortfall ? "-" : "+"}
-                                {fmtNum(gap)}
+                                {formatInt(gap)}
                               </Typography>
                             </TableCell>
                           </TableRow>
@@ -393,8 +391,8 @@ export default function AlertsPanel({
                 sx={{ fontSize: 14, color: "success.main" }}
               />
               <Typography variant="caption" color="text.secondary">
-                DEC stake sufficient — {fmtNum(totalStaked)} staked matches{" "}
-                {fmtNum(totalRequired)} required.
+                DEC stake sufficient — {formatInt(totalStaked)} staked matches{" "}
+                {formatInt(totalRequired)} required.
               </Typography>
             </Stack>
           )}

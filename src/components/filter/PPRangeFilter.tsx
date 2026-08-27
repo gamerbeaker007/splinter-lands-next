@@ -1,3 +1,4 @@
+import { formatInt } from "@/lib/formatters";
 import { Stack, TextField } from "@mui/material";
 import { useState } from "react";
 
@@ -9,9 +10,7 @@ type Props = {
 
 export function PPRangeFilter({ min, max, onChange }: Props) {
   const format = (val: number | null | undefined) =>
-    val != null && !Number.isNaN(val)
-      ? val.toLocaleString(undefined, { maximumFractionDigits: 0 })
-      : "";
+    val != null && !Number.isNaN(val) ? formatInt(val) : "";
 
   const [minStr, setMinStr] = useState(format(min));
   const [maxStr, setMaxStr] = useState(format(max));

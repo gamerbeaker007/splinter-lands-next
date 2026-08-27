@@ -1,6 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { formatLargeNumber } from "@/lib/formatters";
+import DateColumn from "@/components/ui/DateColumn";
+import { formatCompactNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
+import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
+import { DateSortType, getDateSortValue } from "@/lib/utils/dateColumnUtils";
+import { cardSetIconMap } from "@/types/editions";
+import { GroupedCardRow } from "@/types/groupedCardRow";
+import {
+  cardFoilOptions,
+  cardSetModifiers,
+  RarityColor,
+} from "@/types/planner";
+import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
+import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import {
   Box,
   capitalize,
@@ -15,19 +26,8 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
-import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import {
-  cardFoilOptions,
-  cardSetModifiers,
-  RarityColor,
-} from "@/types/planner";
-import { GroupedCardRow } from "@/types/groupedCardRow";
+import { useEffect, useMemo, useRef, useState } from "react";
 import CardTableIcon from "./CardTableIcon";
-import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
-import DateColumn from "@/components/ui/DateColumn";
-import { DateSortType, getDateSortValue } from "@/lib/utils/dateColumnUtils";
-import { cardSetIconMap } from "@/types/editions";
 
 type Props = {
   data: GroupedCardRow[];
@@ -251,7 +251,7 @@ export default function CardTable({
                       height={15}
                     />
                     <Typography fontSize="0.9rem">
-                      {formatLargeNumber(Number(card.basePP.toFixed(0)))}
+                      {formatCompactNumber(Number(card.basePP.toFixed(0)))}
                     </Typography>
                   </Box>
                 </TableCell>

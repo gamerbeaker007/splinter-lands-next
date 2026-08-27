@@ -2,6 +2,7 @@
 
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
 import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { formatInt } from "@/lib/formatters";
 import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import DecPowerDialog from "./DecPowerDialog";
@@ -15,10 +16,6 @@ interface Props {
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onSuccess: () => void;
-}
-
-function fmtInt(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 export default function DecPowerRow({
@@ -101,8 +98,8 @@ export default function DecPowerRow({
 
       {action.result?.success && (
         <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
-          {variant.pastVerb} {fmtInt(action.result.totalSucceeded)} DEC across{" "}
-          {succeededRegionCount} region
+          {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC
+          across {succeededRegionCount} region
           {succeededRegionCount === 1 ? "" : "s"}.
         </Alert>
       )}
@@ -110,8 +107,8 @@ export default function DecPowerRow({
       {action.result && !action.result.success && (
         <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
           Partial run — {variant.pastVerb.toLowerCase()}{" "}
-          {fmtInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
-          {fmtInt(action.result.totalFailed)} DEC.
+          {formatInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
+          {formatInt(action.result.totalFailed)} DEC.
         </Alert>
       )}
 

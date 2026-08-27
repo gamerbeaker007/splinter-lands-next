@@ -1,10 +1,12 @@
 "use client";
 
+import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
 import {
   useWorksiteAction,
-  worksiteBusyKey,
   WorksiteActionResult,
+  worksiteBusyKey,
 } from "@/hooks/useWorksiteAction";
+import { formatInt, formatNumber } from "@/lib/formatters";
 import { actionButtonLabel, actionPhaseLabel } from "@/lib/shared/actionPhase";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import {
@@ -18,6 +20,7 @@ import {
 } from "@/lib/shared/worksiteEligibility";
 import { getWorksiteLink } from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
+import { MakeHarvestableStrategy } from "@/types/landManager";
 import {
   deedResourceBoostRules,
   resourceWorksiteMap,
@@ -52,8 +55,6 @@ import {
   Typography,
 } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
-import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
-import { MakeHarvestableStrategy } from "@/types/landManager";
 
 interface Props {
   deed: DeedComplete;
@@ -651,7 +652,7 @@ export default function WorksitePlotCard({
               title={
                 runningLabel(worksiteBusyKey.feed) ??
                 (feedCheck.eligible
-                  ? `Feed the workers — pays ${grainCost.toLocaleString("en-US")} GRAIN from the region`
+                  ? `Feed the workers — pays ${formatNumber(grainCost)} GRAIN from the region`
                   : (feedCheck.reason ?? ""))
               }
             >
@@ -728,12 +729,8 @@ export default function WorksitePlotCard({
                 Feed the workers on <strong>{plotLabel}</strong> to activate
                 this worksite?
                 <br />
-                This pays{" "}
-                <strong>{grainCost.toLocaleString("en-US")} GRAIN</strong> from
-                the region (held:{" "}
-                {(regionGrain ?? 0).toLocaleString("en-US", {
-                  maximumFractionDigits: 0,
-                })}
+                This pays <strong>{formatNumber(grainCost)} GRAIN</strong> from
+                the region (held: {formatInt(regionGrain ?? 0)}
                 ).
               </>
             ) : pendingAction?.type === "cancel" ? (

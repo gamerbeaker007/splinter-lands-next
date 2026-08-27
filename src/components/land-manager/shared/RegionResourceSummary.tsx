@@ -2,6 +2,7 @@
 
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
+import { formatCompactNumber } from "@/lib/formatters";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
@@ -24,28 +25,6 @@ interface Props {
   regions: SplProductionOverviewRegion[];
   enabledRegions: number[];
   refreshKey?: number;
-}
-
-export function fmt(number: number) {
-  const parts = new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    compactDisplay: "short",
-    maximumFractionDigits: 3,
-  }).formatToParts(number);
-
-  return (
-    <>
-      {parts.map((part, index) =>
-        part.type === "compact" ? (
-          <strong key={index} style={{ marginLeft: "2px" }}>
-            {part.value}
-          </strong>
-        ) : (
-          part.value
-        )
-      )}
-    </>
-  );
 }
 
 export default function RegionResourceSummary({
@@ -140,7 +119,7 @@ export default function RegionResourceSummary({
                     {NATURAL_RESOURCES.map((sym) => (
                       <TableCell key={sym} align="right">
                         <Typography variant="caption">
-                          {b ? fmt(b[sym] ?? 0) : "—"}
+                          {b ? formatCompactNumber(b[sym] ?? 0) : "—"}
                         </Typography>
                       </TableCell>
                     ))}

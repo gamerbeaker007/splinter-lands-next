@@ -5,6 +5,7 @@ import { useCancelRentalAction } from "@/hooks/useCancelRentalAction";
 import { useRentedCardsList } from "@/hooks/useRentedCardsList";
 import { useUnstakeWorkerAction } from "@/hooks/useUnstakeWorkerAction";
 import { type RentedCardEntry } from "@/lib/backend/actions/land-manager/rental-actions";
+import { formatInt, formatNumber } from "@/lib/formatters";
 import { Cancel, LinkOff, RemoveCircleOutline } from "@mui/icons-material";
 import {
   Alert,
@@ -40,14 +41,6 @@ interface Props {
 }
 
 type RentedSortField = "daysLeft" | "decPerDay" | "totalDec" | "base_pp";
-
-function fmtDec(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 3 });
-}
-
-function fmtInt(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
 
 function calcDaysRemaining(
   rentalDate: string | null,
@@ -420,13 +413,13 @@ export default function RentalOverview({
               color="info"
             />
             <Chip
-              label={`${fmtDec(data.total_dec_per_day)} DEC/day`}
+              label={`${formatNumber(data.total_dec_per_day)} DEC/day`}
               size="small"
               variant="outlined"
               color="info"
             />
             <Chip
-              label={`${fmtInt(data.total_dec_for_duration)} DEC total spend`}
+              label={`${formatInt(data.total_dec_for_duration)} DEC total spend`}
               size="small"
               variant="outlined"
               color="info"
@@ -571,17 +564,17 @@ export default function RentalOverview({
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="caption">
-                          {fmtInt(c.base_pp)}
+                          {formatInt(c.base_pp)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="caption">
-                          {fmtDec(c.dec_per_day)}
+                          {formatNumber(c.dec_per_day)}
                         </Typography>
                       </TableCell>
                       <TableCell align="right">
                         <Typography variant="caption">
-                          {fmtDec(c.total_dec)}
+                          {formatNumber(c.total_dec)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">

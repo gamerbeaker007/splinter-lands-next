@@ -2,6 +2,7 @@
 
 import HarvestButton from "@/components/land-manager/harvest/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
+import { renderResourceChip } from "@/components/ui/resource/Resource";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { Resource } from "@/constants/resource/resource";
 import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
@@ -9,11 +10,12 @@ import {
   getRegionResourceBalance,
   getSplHarvestableResources,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { formatInt } from "@/lib/formatters";
 import {
   aggregateCosts,
   effectiveBalance,
 } from "@/lib/shared/landManagerUtils";
-import { RESOURCE_COLOR_MAP, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { getHarvestRegion } from "@/lib/utils/deedUtil";
 import { DonationConfig } from "@/types/landManager";
@@ -28,7 +30,6 @@ import {
 import {
   Box,
   capitalize,
-  Chip,
   CircularProgress,
   IconButton,
   Paper,
@@ -56,18 +57,6 @@ interface Props {
 
 // ── Harvestable chips ──────────────────────────────────────────────────────
 
-function getResourceIcon(resource: Resource) {
-  const img = RESOURCE_ICON_MAP[resource] ?? land_hammer_icon_url;
-  return (
-    <Image
-      src={img}
-      alt={capitalize(resource.toLowerCase())}
-      width={16}
-      height={16}
-    />
-  );
-}
-
 function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   if (resources.length === 0) {
     return (
@@ -78,27 +67,9 @@ function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   }
   return (
     <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-      {resources.map((r) => (
-        <Tooltip
-          key={r.token_symbol}
-          title={capitalize(r.token_symbol.toLowerCase())}
-          placement={"top"}
-          followCursor={true}
-        >
-          <Chip
-            variant={"outlined"}
-            icon={getResourceIcon(r.token_symbol as Resource)}
-            label={r.amount_claimable.toLocaleString(undefined, {
-              maximumFractionDigits: 1,
-            })}
-            size="small"
-            sx={{
-              borderColor: RESOURCE_COLOR_MAP[r.token_symbol],
-              fontWeight: "bold",
-            }}
-          />
-        </Tooltip>
-      ))}
+      {resources.map((r) =>
+        renderResourceChip(r.token_symbol as Resource, r.amount_claimable, true)
+      )}
     </Box>
   );
 }
@@ -135,21 +106,24 @@ function HarvestCostsCell({
                 alignItems={"center"}
                 spacing={0.5}
               >
-                {getResourceIcon(symbol as Resource)}
+                <Image
+                  src={RESOURCE_ICON_MAP[symbol] ?? land_hammer_icon_url}
+                  alt={capitalize(symbol.toLowerCase())}
+                  width={16}
+                  height={16}
+                />
                 <Typography
                   variant="caption"
                   sx={{ color: enough ? "text.primary" : "warning.main" }}
                 >
-                  {amount.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
-                  })}{" "}
+                  {formatInt(amount)}{" "}
                 </Typography>
               </Stack>
             </Tooltip>
 
             {!enough && (
               <Tooltip
-                title={`Need ${need.toLocaleString(undefined, { maximumFractionDigits: 0 })} more ${symbol}`}
+                title={`Need ${formatInt(need)} more ${symbol}`}
                 placement={"top"}
                 followCursor={true}
               >

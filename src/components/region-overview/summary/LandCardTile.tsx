@@ -1,7 +1,7 @@
 "use client";
 
 import SummaryTile from "@/components/ui/region/SummaryTile";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import {
   bloodline_icon_url,
   dec_stake_discount_icon_url,
@@ -145,7 +145,9 @@ export default function LandCardTile({ summary }: Props) {
               fontSize={12}
               sx={{ minHeight: 20 }}
             >
-              {formatNumberWithSuffix(summary.totalBloodlinesBoostPP ?? 0)}
+              {formatCompactNumber(summary.totalBloodlinesBoostPP ?? 0, {
+                maximumFractionDigits: 2,
+              })}
             </Typography>
             <Typography
               variant="body2"

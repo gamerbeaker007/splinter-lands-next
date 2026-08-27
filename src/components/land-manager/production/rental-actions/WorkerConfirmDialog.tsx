@@ -4,6 +4,7 @@ import WorkerCardPicksCell from "@/components/land-manager/production/rental-act
 import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
 import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
 import { parseLandStatsResources } from "@/lib/filters";
+import { formatFixed } from "@/lib/formatters";
 import { WorkerPlanItem } from "@/types/landManager";
 import { WarningAmber } from "@mui/icons-material";
 import {
@@ -26,13 +27,6 @@ interface Props {
   decBalance: number | null;
   onConfirm: () => void;
   onCancel: () => void;
-}
-
-function fmtDec(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
 }
 
 export function buildConfirmColumns(mode: "buy" | "rent"): WorkerPlotColumn[] {
@@ -68,7 +62,9 @@ export function buildConfirmColumns(mode: "buy" | "rent"): WorkerPlotColumn[] {
       header: "DEC",
       align: "right",
       render: (item) => (
-        <Typography variant="caption">{fmtDec(item.plot_total_dec)}</Typography>
+        <Typography variant="caption">
+          {formatFixed(item.plot_total_dec)}
+        </Typography>
       ),
     },
     {
@@ -121,13 +117,13 @@ export default function WorkerConfirmDialog({
             variant="outlined"
           />
           <Chip
-            label={`${fmtDec(totals.total_dec)} DEC total`}
+            label={`${formatFixed(totals.total_dec)} DEC total`}
             size="small"
             color="primary"
           />
           {decBalance != null && (
             <Chip
-              label={`${fmtDec(decBalance)} DEC available`}
+              label={`${formatFixed(decBalance)} DEC available`}
               size="small"
               color={insufficientDec ? "error" : "default"}
               variant="outlined"
@@ -145,16 +141,19 @@ export default function WorkerConfirmDialog({
             {insufficientDec && (
               <Alert severity="error" sx={{ mb: 2 }}>
                 Insufficient DEC — this {isRental ? "rental" : "purchase"} needs{" "}
-                <strong>{fmtDec(totals.total_dec)} DEC</strong> but your balance
-                is <strong>{fmtDec(decBalance!)} DEC</strong>. Top up{" "}
-                <strong>{fmtDec(totals.total_dec - decBalance!)} DEC</strong>{" "}
+                <strong>{formatFixed(totals.total_dec)} DEC</strong> but your
+                balance is <strong>{formatFixed(decBalance!)} DEC</strong>. Top
+                up{" "}
+                <strong>
+                  {formatFixed(totals.total_dec - decBalance!)} DEC
+                </strong>{" "}
                 before confirming.
               </Alert>
             )}
 
             <Alert severity="warning" icon={<WarningAmber />} sx={{ mb: 2 }}>
               You are about to spend{" "}
-              <strong>{fmtDec(totals.total_dec)} DEC</strong> to{" "}
+              <strong>{formatFixed(totals.total_dec)} DEC</strong> to{" "}
               {isRental ? "rent" : "buy"} <strong>{totals.slots_filled}</strong>{" "}
               card
               {totals.slots_filled === 1 ? "" : "s"}

@@ -1,4 +1,4 @@
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import {
   cinder_icon_url,
   dec_icon_url,
@@ -66,7 +66,9 @@ export default function BurnOverview({ latestData }: Props) {
                   <Typography variant="caption">{token.label}</Typography>
                 </Box>
                 <Typography variant="h6">
-                  {formatNumberWithSuffix(Number(token.value))}
+                  {formatCompactNumber(Number(token.value), {
+                    maximumFractionDigits: 2,
+                  })}
                 </Typography>
               </CardContent>
             </Card>

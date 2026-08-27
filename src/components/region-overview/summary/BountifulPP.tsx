@@ -1,7 +1,7 @@
 "use client";
 
 import { Resource } from "@/constants/resource/resource";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { bountifulResourceIconMap } from "@/types/planner/primitives";
 import { Box, capitalize, Paper, Typography } from "@mui/material";
 import Image from "next/image";
@@ -61,8 +61,9 @@ export default function BountifulPP({ totalAbilityBoosts }: Props) {
               fontSize={12}
               sx={{ minHeight: 20 }}
             >
-              {formatNumberWithSuffix(
-                totalAbilityBoosts[resource as Resource] ?? 0
+              {formatCompactNumber(
+                totalAbilityBoosts[resource as Resource] ?? 0,
+                { maximumFractionDigits: 2 }
               )}
             </Typography>
             <Typography

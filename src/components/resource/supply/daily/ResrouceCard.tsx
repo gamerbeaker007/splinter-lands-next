@@ -1,6 +1,8 @@
 "use client";
 
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
+import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
   Avatar,
   Box,
@@ -10,8 +12,6 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 
 type ResourceCardRow = {
   supply: number;
@@ -47,15 +47,21 @@ export function ResourceCard({ resourceName, row }: Props) {
   const totalSupplyText =
     supply === 0
       ? "N/A"
-      : formatNumberWithSuffix(Number(supply) + Number(trade_hub_supply));
+      : formatCompactNumber(Number(supply) + Number(trade_hub_supply), {
+          maximumFractionDigits: 2,
+        });
 
   const supplyText =
-    supply === 0 ? "N/A" : formatNumberWithSuffix(Number(supply));
+    supply === 0
+      ? "N/A"
+      : formatCompactNumber(Number(supply), { maximumFractionDigits: 2 });
 
   const hubSupplyText =
     trade_hub_supply === 0
       ? "N/A"
-      : formatNumberWithSuffix(Number(trade_hub_supply));
+      : formatCompactNumber(Number(trade_hub_supply), {
+          maximumFractionDigits: 2,
+        });
 
   return (
     <Card variant="outlined" sx={{ minWidth: 250 }}>
@@ -121,7 +127,11 @@ export function ResourceCard({ resourceName, row }: Props) {
                 color: "success.main",
               }}
             >
-              {value === 0 ? "N/A" : formatNumberWithSuffix(Number(value))}
+              {value === 0
+                ? "N/A"
+                : formatCompactNumber(Number(value), {
+                    maximumFractionDigits: 2,
+                  })}
             </Typography>
           </Box>
         ))}
@@ -157,7 +167,9 @@ export function ResourceCard({ resourceName, row }: Props) {
                     color: "success.main",
                   }}
                 >
-                  {formatNumberWithSuffix(Number(val))}
+                  {formatCompactNumber(Number(val), {
+                    maximumFractionDigits: 2,
+                  })}
                 </Typography>
               </Box>
             ) : null

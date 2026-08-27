@@ -139,6 +139,28 @@ export const TOP_UP_POOL_SAFETY_MARGIN = 1.1;
  */
 export const SWAP_DONOR_RESERVE_WEEKS = TOP_UP_POOL_SAFETY_MARGIN + 1;
 
+/**
+ * Extra output the Top Up Pools funding swap aims for, above what the deposit
+ * actually needs.
+ *
+ * The swap is quoted against pool reserves read at PLAN time, but only lands a
+ * block or more later. Any trade in between moves the rate, so a swap sized to
+ * deliver the target EXACTLY arrives a hair short and the deposit is rejected
+ * by the engine ("not enough resource to pool"). The quote already compensates
+ * for engine-tick rounding (see `clearingInput`); this covers rate movement.
+ *
+ * The payoff is asymmetric: too small and the whole resource is skipped for the
+ * run, too large and the only cost is the two-hop fee.
+ * Which stays in the region as resource and reduces next week's need anyway.
+ *
+ * So it is biased upward: 0.5%
+ *
+ * The same margin is the tolerance `buildDepositOps` allows before skipping a
+ * resource, so the two stay in step: raise this and the swap buys more slack
+ * AND the deposit tolerates more drift.
+ */
+export const SWAP_OUTPUT_HEADROOM = 0.005;
+
 /** Recommended pool buffer, expressed in weeks of consumption. */
 export const POOL_BUFFER_WEEKS = 5;
 
@@ -160,16 +182,21 @@ export interface PostHarvestActionSummary {
   region_uid: string;
   /**
    * Resource the row is about. For `swap_resource` this is the resource that
-   * was SPENT, so `resource_in` and the symbol stay consistent with every other
-   * row; the swap's output is the deposit that follows it.
+   * was SPENT; the swap's output lives in `to_symbol`/`to_resource_amount`.
    */
   symbol: string;
-  resource_in: number;
+  /**
+   * How much of `symbol` moved. The DIRECTION is implied by `type` — spent for
+   * `sell_for_dec` and `swap_resource`, received for `buy_resource`, deposited
+   * for `add_to_pool`.
+   */
+  resource_amount: number;
+  /** DEC that moved. For `swap_resource` this is the intermediate hop. */
   dec_amount: number;
   /** `swap_resource` only: the resource received. */
   to_symbol?: string;
   /** `swap_resource` only: how much of `to_symbol` the swap delivered. */
-  resource_out?: number;
+  to_resource_amount?: number;
 }
 
 // === Rental strategy ===
@@ -398,9 +425,76 @@ export interface MythicHarvestResult {
   region_number?: number;
   tract_number?: number;
   kingdom_type: "keep" | "castle";
-  tokens: { token: string; received: string }[];
+  tokens: { token: string; received: number }[];
   fragment_found: boolean;
   fragment_chance: number;
+}
+
+// === Today panel logs ===
+
+/**
+ * Everything the Today panel shows for the authenticated player, one entry per
+ * land-manager flow. Null means "that flow did not run today".
+ *
+ * NOTE: `mythicHarvest.results_json` is written optimistically right after the
+ * broadcast, so its `fragment_found` is always false and its token amounts are
+ * the planned ones. The confirmed outcome (fragment type included) comes from
+ * the transaction lookup, not from here.
+ */
+export interface TodayLogs {
+  harvest: {
+    runs: number;
+    resources_json: Record<string, number>;
+    donations_json: Record<string, number>;
+    unpaid_donations_json: Record<string, number>;
+    donation_error: string | null;
+    harvest_transactions: string[];
+    donation_transactions: string[];
+  } | null;
+  makeHarvestable: {
+    runs: number;
+    actions_json: ActionSummary[];
+    transactions: string[];
+  } | null;
+  postHarvest: {
+    runs: number;
+    actions_json: PostHarvestActionSummary[];
+    transactions: string[];
+  } | null;
+  mythicHarvest: {
+    runs: number;
+    results_json: MythicHarvestResult[];
+    donations_json: Record<string, number>;
+    unpaid_donations_json: Record<string, number>;
+    donation_error: string | null;
+    transactions: string[];
+    donation_transactions: string[];
+  } | null;
+  worker: {
+    runs: number;
+    rented_count: number;
+    bought_count: number;
+    staked_count: number;
+    rent_total_dec: number;
+    buy_total_dec: number;
+    buy_total_usd: number;
+    rent_transactions: string[];
+    purchase_transactions: string[];
+    stake_transactions: string[];
+  } | null;
+  stakeDec: TodayDecStakeLog | null;
+  unstakeDec: TodayDecStakeLog | null;
+}
+
+/** Shared shape of the stake- and unstake-DEC day logs. */
+export interface TodayDecStakeLog {
+  runs: number;
+  succeeded_json: Record<string, number>;
+  failed_json: Record<string, number>;
+  total_succeeded: number;
+  total_failed: number;
+  error: string | null;
+  transactions: string[];
 }
 
 // === Renew rentals ===

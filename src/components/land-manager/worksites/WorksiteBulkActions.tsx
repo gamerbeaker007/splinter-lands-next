@@ -5,6 +5,7 @@ import {
   bulkBusyKey,
   useBulkWorksiteAction,
 } from "@/hooks/useBulkWorksiteAction";
+import { formatInt } from "@/lib/formatters";
 import { CoverGrainTarget } from "@/lib/frontend/coverWorksiteGrainOps";
 import { actionButtonLabel, actionPhaseLabel } from "@/lib/shared/actionPhase";
 import {
@@ -57,9 +58,6 @@ interface Props {
   nowMs: number;
   onSuccess: () => void;
 }
-
-const fmt = (n: number) =>
-  n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
 type PendingDialog =
   | { type: "feed" }
@@ -224,7 +222,7 @@ export default function WorksiteBulkActions({
               title={
                 runningLabel(bulkBusyKey.feed) ??
                 feedDisabledReason ??
-                `Feeds ${feedCount} ready worksite${feedCount === 1 ? "" : "s"} for ${fmt(totalFeedGrain)} GRAIN`
+                `Feeds ${feedCount} ready worksite${feedCount === 1 ? "" : "s"} for ${formatInt(totalFeedGrain)} GRAIN`
               }
             >
               <span>
@@ -403,7 +401,8 @@ export default function WorksiteBulkActions({
           <Typography variant="body2" color="text.secondary" gutterBottom>
             This activates {feedCount} finished worksite
             {feedCount === 1 ? "" : "s"} and pays{" "}
-            <strong>{fmt(totalFeedGrain)} GRAIN</strong> from the regions below.
+            <strong>{formatInt(totalFeedGrain)} GRAIN</strong> from the regions
+            below.
           </Typography>
           <Stack gap={0.25} sx={{ mb: 1 }}>
             {Object.entries(feedPlan.grainSpentByRegion).map(
@@ -415,7 +414,8 @@ export default function WorksiteBulkActions({
                 >
                   {feedPlan.feedable.find((c) => c.regionUid === regionUid)
                     ?.regionName ?? regionUid}
-                  : {fmt(spent)} GRAIN (held {fmt(regionGrain[regionUid] ?? 0)})
+                  : {formatInt(spent)} GRAIN (held{" "}
+                  {formatInt(regionGrain[regionUid] ?? 0)})
                 </Typography>
               )
             )}

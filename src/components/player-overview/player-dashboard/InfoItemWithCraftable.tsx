@@ -1,4 +1,5 @@
-import { Box, Typography, Tooltip } from "@mui/material";
+import { formatNumber } from "@/lib/formatters";
+import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
 import React from "react";
 
@@ -23,7 +24,7 @@ const renderRequirements = (requirements?: Record<string, number>) => {
         {Object.entries(requirements).map(([key, value]) => (
           <li key={key}>
             <div key={key}>
-              <strong>{key}:</strong> {value.toLocaleString()}
+              <strong>{key}:</strong> {formatNumber(value)}
             </div>
           </li>
         ))}
@@ -87,7 +88,7 @@ export function InfoCreatableItem({
               color: number >= 0 ? "success.main" : "error.main",
             }}
           >
-            {precision ? number.toFixed(precision) : number.toLocaleString()}
+            {precision ? number.toFixed(precision) : formatNumber(number)}
           </Typography>
 
           {creatable && (

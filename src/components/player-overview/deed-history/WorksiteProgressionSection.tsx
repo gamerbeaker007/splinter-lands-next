@@ -1,5 +1,6 @@
 "use client";
 
+import { formatNumber } from "@/lib/formatters";
 import { formatDate } from "@/lib/utils/dateColumnUtils";
 import { SplDeedProject } from "@/types/deedProjects";
 import {
@@ -99,12 +100,8 @@ export default function WorksiteProgressionSection({
                       ? formatDate(project.destroyed_date)
                       : "-"}
                 </TableCell>
-                <TableCell>
-                  {project.pp_staked.toLocaleString("en-US")}
-                </TableCell>
-                <TableCell>
-                  {project.pp_spent.toLocaleString("en-US")}
-                </TableCell>
+                <TableCell>{formatNumber(project.pp_staked)}</TableCell>
+                <TableCell>{formatNumber(project.pp_spent)}</TableCell>
                 <TableCell>{project.elapsed_hours.toFixed(2)}</TableCell>
               </TableRow>
             ))}

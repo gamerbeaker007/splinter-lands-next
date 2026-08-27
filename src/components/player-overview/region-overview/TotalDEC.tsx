@@ -1,9 +1,9 @@
+import { formatCompactNumber } from "@/lib/formatters";
 import { dec_icon_url } from "@/lib/shared/statics_icon_urls";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { Avatar, IconButton, Tooltip, Typography } from "@mui/material";
 import Box from "@mui/material/Box";
 import React from "react";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { formatLargeNumber } from "@/lib/formatters";
 
 type Props = {
   title: string;
@@ -23,7 +23,7 @@ const TotalsDEC: React.FC<Props> = ({ title, dec, explanation }) => {
         >
           <Avatar src={dec_icon_url} sx={{ width: 75, height: 75 }} />
           <Box>{title}:</Box>
-          <Box>{formatLargeNumber(dec)} /hr</Box>
+          <Box>{formatCompactNumber(dec)} /hr</Box>
           <Box>
             <Tooltip
               arrow

@@ -2,6 +2,7 @@ import { getDeedImg } from "@/lib/utils/deedUtil";
 import { NegativeDecAlert } from "@/types/cardAlerts";
 import { Box, Stack, Typography } from "@mui/material";
 
+import { formatFixed } from "@/lib/formatters";
 import { worksiteTypeMapping } from "@/lib/shared/statics";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
 import React from "react";
@@ -141,7 +142,7 @@ export const NegativeDECAlerts: React.FC<Props> = ({ negativeDECAlerts }) => {
                       fontSize={fontSize}
                       color="error"
                     >
-                      {`${alert.negativeDecPerHour.toLocaleString(undefined, { minimumFractionDigits: 3, maximumFractionDigits: 3 })}`}
+                      {`${formatFixed(alert.negativeDecPerHour, 3)}`}
                     </Typography>
                     <Typography
                       variant="body1"

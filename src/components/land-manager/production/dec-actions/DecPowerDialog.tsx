@@ -4,7 +4,7 @@ import {
   DecPowerDirection,
   DecPowerPlan,
 } from "@/lib/backend/actions/land-manager/dec-power-actions";
-import { DEC_POWER_VARIANTS } from "./decPowerVariant";
+import { formatInt, formatNumber } from "@/lib/formatters";
 import { WarningAmber } from "@mui/icons-material";
 import {
   Alert,
@@ -22,6 +22,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
+import { DEC_POWER_VARIANTS } from "./decPowerVariant";
 
 interface Props {
   direction: DecPowerDirection;
@@ -31,14 +32,6 @@ interface Props {
   /** Broadcast the plan shown here. */
   onConfirm: () => void;
   onClose: () => void;
-}
-
-function fmtInt(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 0 });
-}
-
-function fmtDec(value: number): string {
-  return value.toLocaleString("en-US", { maximumFractionDigits: 3 });
 }
 
 export default function DecPowerDialog({
@@ -66,22 +59,22 @@ export default function DecPowerDialog({
             <Stack direction="row" gap={2} flexWrap="wrap" mb={1}>
               <Typography variant="body2">
                 <strong>Total to {variant.verb.toLowerCase()}:</strong>{" "}
-                {fmtInt(plan.total_dec)} DEC
+                {formatInt(plan.total_dec)} DEC
               </Typography>
               {variant.showBalance && decBalance !== null && (
                 <Typography
                   variant="body2"
                   color={insufficient ? "error.main" : "text.secondary"}
                 >
-                  <strong>Your DEC balance:</strong> {fmtDec(decBalance)}
+                  <strong>Your DEC balance:</strong> {formatNumber(decBalance)}
                 </Typography>
               )}
             </Stack>
 
             {insufficient && (
               <Alert severity="error" icon={<WarningAmber />} sx={{ mb: 1 }}>
-                Not enough DEC. Need {fmtInt(plan.total_dec)} but you have{" "}
-                {fmtDec(decBalance ?? 0)}. Top up before staking.
+                Not enough DEC. Need {formatInt(plan.total_dec)} but you have{" "}
+                {formatNumber(decBalance ?? 0)}. Top up before staking.
               </Alert>
             )}
 
@@ -114,12 +107,12 @@ export default function DecPowerDialog({
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="caption">
-                        {fmtInt(it.dec_stake_in_use)}
+                        {formatInt(it.dec_stake_in_use)}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="caption">
-                        {fmtInt(it.dec_stake_needed)}
+                        {formatInt(it.dec_stake_needed)}
                       </Typography>
                     </TableCell>
                     <TableCell align="right">
@@ -128,7 +121,7 @@ export default function DecPowerDialog({
                         fontWeight="bold"
                         color={`${variant.color}.main`}
                       >
-                        {fmtInt(it.amount)}
+                        {formatInt(it.amount)}
                       </Typography>
                     </TableCell>
                   </TableRow>
@@ -151,7 +144,7 @@ export default function DecPowerDialog({
         >
           {busy
             ? "Executing…"
-            : `Confirm & ${variant.verb} ${fmtInt(plan.total_dec)} DEC`}
+            : `Confirm & ${variant.verb} ${formatInt(plan.total_dec)} DEC`}
         </Button>
       </DialogActions>
     </Dialog>

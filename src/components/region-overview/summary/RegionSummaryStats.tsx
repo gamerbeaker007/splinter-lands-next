@@ -1,9 +1,9 @@
-import React from "react";
-import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { formatNumberWithSuffix } from "@/lib/formatters";
 import DecInfoTooltip from "@/components/region-overview/summary/DecIInfoToolTip";
-import Paper from "@mui/material/Paper";
 import DecStakeIndicator from "@/components/region-overview/summary/DECStakeIndicator";
+import { formatCompactNumber } from "@/lib/formatters";
+import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
+import Paper from "@mui/material/Paper";
+import React from "react";
 
 type Props = {
   deedsCount: number;
@@ -44,7 +44,7 @@ const RegionSummaryStats: React.FC<Props> = ({
       <Box p={2}>
         <Typography variant="h6">Total Deeds:</Typography>
         <Typography variant="body2">
-          {formatNumberWithSuffix(deedsCount)} / 150K
+          {formatCompactNumber(deedsCount, { maximumFractionDigits: 2 })} / 150K
         </Typography>
       </Box>
       <Box

@@ -1,4 +1,4 @@
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { CSSSize } from "@/types/cssSize";
 import Image from "next/image";
@@ -16,15 +16,15 @@ export const PPInfo: React.FC<{
         <Image src={land_hammer_icon_url} alt="hammer" width={25} height={25} />
       }
       title="Total PP"
-      text={formatLargeNumber(Number(boostedPP.toFixed(0)))}
+      text={formatCompactNumber(Number(boostedPP.toFixed(0)))}
       pos={pos}
       tooltip={
         <>
           <strong>Total Production Power (PP):</strong>
           <br />
-          Base: {formatLargeNumber(Number(basePP))}
+          Base: {formatCompactNumber(Number(basePP))}
           <br />
-          Boosted: {formatLargeNumber(Number(boostedPP))}
+          Boosted: {formatCompactNumber(Number(boostedPP))}
         </>
       }
     />

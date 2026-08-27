@@ -4,6 +4,7 @@ import { buildConfirmColumns } from "@/components/land-manager/production/rental
 import WorkerPlotTable, {
   WorkerPlotColumn,
 } from "@/components/land-manager/production/rental-actions/WorkerPlotTable";
+import { formatFixed } from "@/lib/formatters";
 import { BuyPlan, RentalPlan } from "@/types/landManager";
 import {
   Alert,
@@ -16,13 +17,6 @@ import {
 } from "@mui/material";
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-function fmtDec(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
 
 interface Props {
   plan: RentalPlan | BuyPlan;
@@ -73,7 +67,7 @@ export default function WorkerPlanDevView({ plan }: Props) {
               "Slots filled",
               `${plan.totals.slots_filled} / ${plan.totals.slots_total}`,
             ],
-            ["Total DEC", fmtDec(plan.totals.total_dec)],
+            ["Total DEC", formatFixed(plan.totals.total_dec)],
           ] as [string, string][]
         ).map(([label, value]) => (
           <Paper key={label} variant="outlined" sx={{ p: 2, minWidth: 140 }}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { RankedItemBox } from "@/components/region-overview/RankedItemBox";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import Paper from "@mui/material/Paper";
 import Typography from "@mui/material/Typography";
@@ -35,7 +35,7 @@ export default function PlayerTopTenTile({ players }: Props) {
             <RankedItemBox
               key={idx}
               rank={idx + 1}
-              value={formatNumberWithSuffix(value)}
+              value={formatCompactNumber(value, { maximumFractionDigits: 2 })}
               subValue={player}
             />
           ))}

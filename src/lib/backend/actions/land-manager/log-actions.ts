@@ -6,6 +6,7 @@ import {
   ActionSummary,
   MythicHarvestResult,
   PostHarvestActionSummary,
+  TodayLogs,
 } from "@/types/landManager";
 import { getAuthStatus } from "../auth-actions";
 
@@ -259,14 +260,22 @@ function mergePostHarvestActions(
   existing: PostHarvestActionSummary[],
   incoming: PostHarvestActionSummary[]
 ): PostHarvestActionSummary[] {
+  // `to_symbol` belongs in the key: without it WOOD→GRAIN and WOOD→IRON in the
+  // same region collapse into one meaningless row.
+  const key = (a: PostHarvestActionSummary) =>
+    `${a.type}|${a.region_uid}|${a.symbol}|${a.to_symbol ?? ""}`;
+
   const map: Record<string, PostHarvestActionSummary> = {};
-  for (const a of existing)
-    map[`${a.type}|${a.region_uid}|${a.symbol}`] = { ...a };
+  for (const a of existing) map[key(a)] = { ...a };
   for (const a of incoming) {
-    const k = `${a.type}|${a.region_uid}|${a.symbol}`;
+    const k = key(a);
     if (map[k]) {
-      map[k].resource_in += a.resource_in;
+      map[k].resource_amount += a.resource_amount;
       map[k].dec_amount += a.dec_amount;
+      if (a.to_resource_amount != null) {
+        map[k].to_resource_amount =
+          (map[k].to_resource_amount ?? 0) + a.to_resource_amount;
+      }
     } else map[k] = { ...a };
   }
   return Object.values(map);
@@ -365,66 +374,7 @@ export async function recordMythicHarvestLog(
 
 // ── Today logs ────────────────────────────────────────────────────────────────
 
-export async function getTodayLogs(): Promise<{
-  harvest: {
-    runs: number;
-    resources_json: unknown;
-    donations_json: unknown;
-    unpaid_donations_json: unknown;
-    donation_error: string | null;
-    harvest_transactions: string[];
-    donation_transactions: string[];
-  } | null;
-  makeHarvestable: {
-    runs: number;
-    actions_json: unknown;
-    transactions: string[];
-  } | null;
-  postHarvest: {
-    runs: number;
-    actions_json: unknown;
-    transactions: string[];
-  } | null;
-  mythicHarvest: {
-    runs: number;
-    results_json: unknown;
-    donations_json: unknown;
-    unpaid_donations_json: unknown;
-    donation_error: string | null;
-    transactions: string[];
-    donation_transactions: string[];
-  } | null;
-  worker: {
-    runs: number;
-    rented_count: number;
-    bought_count: number;
-    staked_count: number;
-    rent_total_dec: number;
-    buy_total_dec: number;
-    buy_total_usd: number;
-    rent_transactions: string[];
-    purchase_transactions: string[];
-    stake_transactions: string[];
-  } | null;
-  stakeDec: {
-    runs: number;
-    succeeded_json: unknown;
-    failed_json: unknown;
-    total_succeeded: number;
-    total_failed: number;
-    error: string | null;
-    transactions: string[];
-  } | null;
-  unstakeDec: {
-    runs: number;
-    succeeded_json: unknown;
-    failed_json: unknown;
-    total_succeeded: number;
-    total_failed: number;
-    error: string | null;
-    transactions: string[];
-  } | null;
-}> {
+export async function getTodayLogs(): Promise<TodayLogs> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
     return {
@@ -477,9 +427,12 @@ export async function getTodayLogs(): Promise<{
     harvest: harvest
       ? {
           runs: harvest.runs,
-          resources_json: harvest.resources_json,
-          donations_json: harvest.donations_json,
-          unpaid_donations_json: harvest.unpaid_donations_json,
+          resources_json: harvest.resources_json as Record<string, number>,
+          donations_json: harvest.donations_json as Record<string, number>,
+          unpaid_donations_json: harvest.unpaid_donations_json as Record<
+            string,
+            number
+          >,
           donation_error: harvest.donation_error,
           harvest_transactions: harvest.harvest_transactions,
           donation_transactions: harvest.donation_transactions,
@@ -488,23 +441,32 @@ export async function getTodayLogs(): Promise<{
     makeHarvestable: makeHarvestable
       ? {
           runs: makeHarvestable.runs,
-          actions_json: makeHarvestable.actions_json,
+          actions_json:
+            makeHarvestable.actions_json as unknown as ActionSummary[],
           transactions: makeHarvestable.transactions,
         }
       : null,
     postHarvest: postHarvest
       ? {
           runs: postHarvest.runs,
-          actions_json: postHarvest.actions_json,
+          actions_json:
+            postHarvest.actions_json as unknown as PostHarvestActionSummary[],
           transactions: postHarvest.transactions,
         }
       : null,
     mythicHarvest: mythicHarvest
       ? {
           runs: mythicHarvest.runs,
-          results_json: mythicHarvest.results_json,
-          donations_json: mythicHarvest.donations_json,
-          unpaid_donations_json: mythicHarvest.unpaid_donations_json,
+          results_json:
+            mythicHarvest.results_json as unknown as MythicHarvestResult[],
+          donations_json: mythicHarvest.donations_json as Record<
+            string,
+            number
+          >,
+          unpaid_donations_json: mythicHarvest.unpaid_donations_json as Record<
+            string,
+            number
+          >,
           donation_error: mythicHarvest.donation_error,
           transactions: mythicHarvest.transactions,
           donation_transactions: mythicHarvest.donation_transactions,
@@ -527,8 +489,8 @@ export async function getTodayLogs(): Promise<{
     stakeDec: stakeDec
       ? {
           runs: stakeDec.runs,
-          succeeded_json: stakeDec.succeeded_json,
-          failed_json: stakeDec.failed_json,
+          succeeded_json: stakeDec.succeeded_json as Record<string, number>,
+          failed_json: stakeDec.failed_json as Record<string, number>,
           total_succeeded: stakeDec.total_succeeded,
           total_failed: stakeDec.total_failed,
           error: stakeDec.error,
@@ -538,8 +500,8 @@ export async function getTodayLogs(): Promise<{
     unstakeDec: unstakeDec
       ? {
           runs: unstakeDec.runs,
-          succeeded_json: unstakeDec.succeeded_json,
-          failed_json: unstakeDec.failed_json,
+          succeeded_json: unstakeDec.succeeded_json as Record<string, number>,
+          failed_json: unstakeDec.failed_json as Record<string, number>,
           total_succeeded: unstakeDec.total_succeeded,
           total_failed: unstakeDec.total_failed,
           error: unstakeDec.error,

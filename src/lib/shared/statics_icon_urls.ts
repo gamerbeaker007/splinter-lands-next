@@ -138,7 +138,11 @@ export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rar
 export const card_rarity_epic_icon_url = `${WEB_URL}website/create_team/icon_rarity_epic_new.svg`;
 export const card_rarity_legendary_icon_url = `${WEB_URL}website/create_team/icon_rarity_legendary_new.svg`;
 
-export const totem_fragment_common_icon_url = `${WEB_URL}website/icons/fragment_common.png`;
+/** Totem fragment artwork per rarity, e.g. "common" → fragment_common.png. */
+export const totem_fragment_icon_url = (rarity: string): string =>
+  `${WEB_URL}website/icons/fragment_${rarity}.png`;
+
+export const totem_fragment_common_icon_url = totem_fragment_icon_url("common");
 
 export const bloodline_icon_url = `${WEB_URL}website/abilities/summoner/ability_bloodline-dominion.png`;
 

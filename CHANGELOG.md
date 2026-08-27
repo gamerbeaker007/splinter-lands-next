@@ -14,7 +14,74 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.25.0] - 2026-08-24
+## [v1.25.0] - 2026-08-26
+
+### Added
+
+- Today panel: totem fragment drops from a mythic harvest now show the fragment
+  artwork and its rarity name (e.g. "Common Totem Fragment") on the deed that
+  found it
+- Today panel: Labor's Luck cards awarded during a harvest (or the auto-harvest
+  triggered by staking/unstaking DEC) now show the card artwork at the right
+  foil and level, with a large preview on hover
+- Storybook coverage for the Today panel (`TodayPanelView`), covering loading,
+  no activity, a full day, pending confirmation, fragment and Labor's Luck
+  rewards, and failed transactions
+
+### Fixed
+
+- Top Up Pools: a deposit could be rejected on-chain with "not enough resource to
+  pool" right after a funding swap. Phase 2 re-priced against fresh pool ratios
+  and the DEC balance but never re-read RESOURCE balances, while the funding swap
+  is broadcast with a 50% slippage tolerance — so a swap that settled below its
+  quote left the deposit asking for resource that was never delivered. Phase 2 now
+  also re-reads per-region resource balances and drops the affected resource with a
+  warning instead of broadcasting. The refresh is forced only when the funding
+  phase actually broadcast, so reviewing a plan or a funding-free run costs no
+  extra API call
+- Top Up Pools: the funding swap was sized to deliver the deposit target exactly
+  (one engine tick of slack), quoted against pool reserves read at plan time. Any
+  trade landing in the block between planning and broadcast moved the rate and
+  left the deposit a hair short, skipping the whole resource. The swap now aims
+  `SWAP_OUTPUT_HEADROOM` (0.5%) past the target, and a shortfall inside that margin
+  deposits what actually settled instead of skipping — a larger gap still skips
+  the resource whole
+- Top Up Pools / Process Resources: two swaps out of the same resource in one
+  region (WOOD to GRAIN and WOOD to IRON) merged into a single meaningless log row,
+  because the day-log merge key omitted the destination symbol
+- Today panel: fragment results are now read from the confirmed transaction
+  instead of the day log, which is written before the outcome is known and so
+  always reported "not found"
+- Numbers no longer format against the visitor's own locale. ~57 call sites used
+  a locale-less `toLocaleString()`, which resolves to the server locale during
+  SSR and the browser locale on the client — a hydration mismatch, and on a
+  non-en-US browser it rendered `1.234,5` next to `1,234.5` on the same screen.
+  All number formatting is now pinned to en-US; dates are untouched
+
+### Changed
+
+- `PostHarvestActionSummary.resource_in` is now `resource_amount` and
+  `resource_out` is now `to_resource_amount`, pairing with `symbol`/`to_symbol`.
+  The old name read as "resource in" while holding the resource RECEIVED for
+  `buy_resource` and DEPOSITED for `add_to_pool`. Direction is implied by `type`
+  and documented on the field. Rows written before this change keep the old keys,
+  so clear `land_post_harvest_log` when deploying
+- The Top Up Pools op builders moved from `useTopUpPoolsAction` into
+  `topUpPoolOps.ts` next to the planner — they are pure, and the hook no longer
+  had to be imported to test them (399 to 263 lines)
+- Number formatting is centralized in `@/lib/formatters`. The deprecated
+  `formatNumberWithSuffix` is gone, and ~25 per-file `fmt`/`fmtDec`/`fmtInt`
+  helpers that each rebuilt the same `Intl.NumberFormat` now call the shared
+  `formatNumber` / `formatInt` / `formatFixed` / `formatCompactNumber`
+- Today panel split into a data container (`TodayPanel`), a presentational view
+  (`TodayPanelView`), and one component per data section under
+  `land-manager/shared/today`. `TodayPanelView` now only picks which sections
+  the day's logs call for; the repeated header/status/transaction-list frame
+  lives in a single `TodaySection` shell, and Stake DEC and Unstake DEC — which
+  rendered identically apart from one word — share one component
+- Fragment and card artwork moved into shared `TotemFragmentImage` /
+  `CardUidImage` components, now used by both the Today panel and the deed
+  history fragment rolls section
 
 ---
 
@@ -30,7 +97,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Production tab: a warning icon behind the net DEC value marks it as an estimate
   that depends on the plots in that region/tract being harvested by their owners
 
-
 ### Added
 
 - Card filter settings are now remembered (localStorage), scoped per usage of the
@@ -45,7 +111,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   foil icons as the filter section
 - The per-hour captured-tax calculation lives in one shared place, used by both
   the planner and the Production tab
-- Refactor Resource Chips in Harvest Tab and Production Tab 
+- Refactor Resource Chips in Harvest Tab and Production Tab
 
 ---
 
@@ -101,7 +167,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   list and acts on the current selection (the plots left after the active filters). Every
   button shows how many of the selected plots it can actually act on — e.g.
   `Feed Workers (8)` — and the counts update immediately as filters or data change.
-
   - **Feed Workers (n)** — activates every finished worksite in the selection that its
     region can pay for. Grain is allocated per region (cheapest worksite first), because
     several ready plots in one region draw from the same pot. Plots that cannot be fed are
@@ -110,7 +175,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
     their region cannot pay for. All affected regions are planned in **one** pass, so
     donors, the DEC balance and the liquidity position are never handed out twice.
   - **Cancel Construction (n)** — stops every running construction in the selection. Only
-    *actively* building projects count; a project past its completion time is finished and
+    _actively_ building projects count; a project past its completion time is finished and
     needs feeding, not cancelling, so it is never included.
   - **Change Worksite** — a button per target worksite showing how many selected plots are
     compatible, e.g. `Logging Camp (12)`. Only compatible plots are ever included in the
@@ -131,7 +196,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   Cancel no longer appear and disappear as construction progresses — they remain on the
   plot row, disabled, with a tooltip explaining exactly why (construction still running,
   no workers waiting, not enough grain in the region, …). The same applies to the worksite
-  picker buttons. Options that are *statically* impossible for the plot type (wrong
+  picker buttons. Options that are _statically_ impossible for the plot type (wrong
   terrain, mythic kingdom plots) stay hidden as before.
 
 - **Worksite eligibility rules are now shared.** Button counts, enabled/disabled states,
@@ -159,7 +224,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - Update layout Player (Region Overview)
 
-
 ---
 
 ## [v1.21.1] - 2026-08-14
@@ -169,6 +233,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Player overview (Region) Add Include Taxed and Include Transfer Fee
 
 ---
+
 ## [v1.21.0] - 2026-08-14
 
 ### Added
@@ -196,7 +261,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - **Top Up Pools strategies** use an ordered preferred/fallback model — `use_owned_dec`,
   `sell_resource`, `swap_resource` and `buy_resources` can each be enabled, disabled and
-  reordered. Each strategy covers as much of the resource's *outstanding* target as it can,
+  reordered. Each strategy covers as much of the resource's _outstanding_ target as it can,
   with the next enabled strategy picking up the remainder. For example,
   `["use_owned_dec", "buy_resources"]` deposits what you hold and then buys the shortfall,
   while `["buy_resources"]` alone buys the whole target and leaves region balances untouched.
@@ -204,8 +269,8 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   enabled strategies cannot fund in full is skipped rather than partially deposited. The
   plan shows how much each strategy covers.
 
-  The new `swap_resource` strategy funds a resource's weekly top-up from the *surplus of a
-  different* resource — useful for a lopsided account that is short on grain while sitting on
+  The new `swap_resource` strategy funds a resource's weekly top-up from the _surplus of a
+  different_ resource — useful for a lopsided account that is short on grain while sitting on
   wood it will never burn. The resource side uses one `swap_tokens` op (two AMM hops at 5%
   each, ~9.75% total — materially cheaper than selling for DEC and buying back at 10% + 10%).
   The DEC side comes from the wallet, falling back to selling a little more of the same donor
@@ -267,10 +332,10 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-
 ## [v1.20.1] - 2026-08-05
 
 ### Fixed
+
 - The fetch hooks using cancellation guard now (when selecting multiple filter quickly).
 
 ---
@@ -340,7 +405,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Updated
 
-- Update no_pp flag  SPL issue 82466 issue is solved.
+- Update no_pp flag SPL issue 82466 issue is solved.
 - **Land Manager: replaced tab navigation with page-based routing** — Harvest, Production, Worksite, and Rental Overview are now separate URL routes under `/land-manager/`.
 - **Land Manager Production page** now combines the production table, Rental Actions, Purchase Actions, and a Bulk Actions accordion in a single unified workflow.
 - **Rental and Purchase actions now operate on the currently filtered Production plots** — applying any active filter restricts which plots are considered for worker planning.
@@ -374,6 +439,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Add count for alteration/glin recovery/fortune seekers on a weekly basis
 
 ### Fixed
+
 - Selection of element when verico is select in the planner
 
 ---
@@ -394,6 +460,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Add Verico land bonus (2x)
 
 ---
+
 ## [v1.15.1] - 2026-06-30
 
 ### Fix
@@ -414,6 +481,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [v1.14.0] - 2026-06-27
 
 ### Added
+
 - Tests for determine trx. Because of the dhive code implementation is replicated we need notification when that changes / fails
   Added to CI and release pipeline
 - Add possibility to run against mavs-sl apis and transactions (future preparations for testing buildings)
@@ -421,22 +489,21 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   "Test Mode Mavs-SL Active" badge. Leave unset/false for production.
   Environment valriable NEXT_PUBLIC_SPL_DEV_API=
 
-
 ### Fixed
+
 - **Land Manager: Cancel Rental** - Cancel rental not parse therefor 30 seconds timeout
 - Refactor types structure for lookuptrx
 
-
 ### Removed
-- remove undead code tpye definition of SwapTokensOpInput
 
+- remove undead code tpye definition of SwapTokensOpInput
 
 ---
 
 ## [v1.13.2] - 2026-06-21
 
-
 ### Fixed
+
 - **Land Manager: Buy worker** - Protect buy and stake (buy was successful but stake was not)
 
 ---
@@ -444,9 +511,11 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [v1.13.1] - 2026-06-21
 
 ### Added
+
 - **Land Manager: UnStaked DEC** - added possibility to unstake DEC when you have more staked DEC then required
 
 ### Fixed
+
 - **Land Manager: Staked DEC** - now only for eneabled regions not total
 
 ---
@@ -454,6 +523,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [v1.13.0] - 2026-06-21
 
 ### Added
+
 - **Land Manager - Buy Workers** adds a purchase counterpart to Rent Empty
   Workers. Powered plots with empty worker slots can now be planned from live
   for-sale card listings, confirmed with DEC balance checks, bought through the
@@ -464,22 +534,24 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   panel for rented, bought, and staked workers.
 
 ### Changed
+
 - **Worker planning** now shares the candidate selection, listing scoring,
   budget caps, batching, and greedy assignment code between rentals and
   purchases. Rental-specific season-day pricing remains isolated in the rental
   strategy; purchase pricing is one-time DEC per listing.
 
 ### Fixed
+
 - **Rent on behalf** now reports missing rental authority as rental authority,
   not purchase authority.
 - **Player Dashboard** take into account runi(s) with the tooMuchBasePP alert (they can go over 100K)
-
 
 ---
 
 ## [v1.12.0] - 2026-06-15
 
 ### Added
+
 - ** Player Dashboard** Add alert for base PP larger than 100K
 - **Land Manager - Maintenance Gaurd ** When splinterlands is in maintenance mode disable land manager
 - **Land Manager — Production tab** A new tab listing every plot with its
@@ -514,6 +586,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [v1.11.0] - 2026-06-08
 
 ### Added
+
 - **Land Manager — Cancel rental** option to cancel active rental listings.
 - **Land Manager — Unstake workers** operation to remove worker cards from a deed.
 - **Land Manager — "Land renters only"** rental config option. When enabled, the
@@ -523,6 +596,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - Update theme to tri state (to include high-contrast)
 
 ### Changed
+
 - Restructure files in land manager
 - **Land Manager — Renew Rentals** now broadcasts as an on-behalf operation
   signed by the configured land-service account's active key (same authority
@@ -530,9 +604,9 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
   the client.
 
 ### Fixed
+
 - **Planner — Detailed Price Information** no longer prices cards that produce
   zero land base PP. The lowest-card-price market list now excludes 0 land base PP
-
 
 ### Improved
 
@@ -547,7 +621,6 @@ The algorithm that selects which cards to rent for empty worker slots has been r
 Biome modifiers are applied correctly throughout: a card placed on a plot with a 10% fire boost yields `land_base_pp × 1.10` effective PP, and that full effective PP drives the ranking. Cards whose element is penalised (`biome_modifier < 0`) on a plot are never paired with it.
 
 The effective PP for each rented card is now displayed directly under its card image in the confirm and dry-run dialogs (previously tooltip-only). The first above-the-fold card image loads eagerly to avoid the LCP warning.
-
 
 ---
 
@@ -599,7 +672,7 @@ Cards with a secondary color now receive the terrain boost from whichever of the
 
 #### Land Manager — Feed workers (activate a ready worksite)
 
-When a worksite finishes construction it shows as *"Worksite Ready …"* and must be activated by feeding its workers grain. The Worksites tab now has a per-plot **Feed workers** button for this.
+When a worksite finishes construction it shows as _"Worksite Ready …"_ and must be activated by feeding its workers grain. The Worksites tab now has a per-plot **Feed workers** button for this.
 
 - Shown only on ready worksites. A confirm dialog states the grain cost (the plot's `grain_required`) and the grain currently held in the region.
 - Disabled when the region doesn't hold enough grain to cover the cost (tooltip shows have / need); `auto_buy_grain` stays off so it never buys grain.
@@ -613,7 +686,7 @@ When more DEC is staked than required across your regions, the Alerts panel now 
 
 Rental workers can now be rented in configurable batches so the market is re-evaluated between runs, giving better matches when many plots need workers at once.
 
-- **Batch size picker** (10 / 20 / 50 / 100 / All) added to the Rental section of the Config dialog. Default is **10**. *All* means no limit. Smaller batches lower the chance of stale market data affecting later matches.
+- **Batch size picker** (10 / 20 / 50 / 100 / All) added to the Rental section of the Config dialog. Default is **10**. _All_ means no limit. Smaller batches lower the chance of stale market data affecting later matches.
 - An info note in the config explains that larger batches carry a higher risk of suboptimal matches because market conditions are not re-checked mid-batch.
 - The rent action button is now a single **Find Rental Workers / for empty slots on plot** button (dry-run button removed). A confirm dialog is shown before any rentals are broadcast, so a separate dry-run step is not needed.
 - Active rental config (batch size, DEC caps, PP floor, foil minimum) is shown as chips next to the action button so the current settings are always visible without opening the dialog.
@@ -639,7 +712,7 @@ A new **Worksites** tab in the Land Manager lets you browse and switch worksites
 - **Land filter** — the same filter drawer used in Region Overview (regions, tracts, plots, rarity, deed type, plot status, resource, worksite, PP ranges) is available on the right side. The player filter is omitted since the tab always shows the signed-in player's plots.
 - **Per-plot worksite card** — each card shows:
   - Plot reference (region/tract/plot), rarity, terrain type, plot status, and magic type.
-  - Current worksite icon + name, and a *Developed* badge when fully operational.
+  - Current worksite icon + name, and a _Developed_ badge when fully operational.
   - **Under construction** section: progress bar with time remaining and what is being built. A **Cancel construction** button triggers the `cancel_construction` Hive op via Keychain.
   - **Switch worksite** buttons — only terrains that are valid for the plot's deed type are shown (`allowedTerrainsByWorksite`). Worksites that receive a production bonus for the plot's status (`deedResourceBoostRules`) are highlighted with a ⭐ badge.
 - **Broadcast via Keychain** — both construction and cancel ops use the player's posting key through Hive Keychain, consistent with the harvest flow.
@@ -656,7 +729,7 @@ A new **Worksites** tab in the Land Manager lets you browse and switch worksites
 A new **Swap Analysis** column in the Region Overview table highlights when it would be more profitable to swap GRAIN via the AMM than to harvest a natural resource (WOOD, STONE, IRON) directly.
 
 - For each harvestable non-GRAIN resource, computes the two-hop AMM swap (GRAIN → DEC → resource) using live pool data and compares the output to the harvestable amount.
-- When swapping yields more, a warning icon labelled with the resource symbol is shown. Hovering reveals a tooltip, e.g. *"Harvest IRON: 600 (consumes 10 000 GRAIN) | Swap 10 000 GRAIN → 800 IRON (swap is better)"*.
+- When swapping yields more, a warning icon labelled with the resource symbol is shown. Hovering reveals a tooltip, e.g. _"Harvest IRON: 600 (consumes 10 000 GRAIN) | Swap 10 000 GRAIN → 800 IRON (swap is better)"_.
 - A ✓ indicator is shown when all resources are profitable to harvest.
 - A new **Open harvest page** icon button in the Action column links directly to the region's harvest page on Splinterlands (`/land/praetoria/{region}/production/claim`).
 
@@ -754,11 +827,11 @@ Hive Keychain active key (`sm_market_renew_rental`).
 Per-symbol daily maximum fee enforced account-wide (cumulative across regions, castles, keeps):
 
 | Resource | Daily max fee |
-|----------|---------------|
-| Grain | 40,000 |
-| Wood | 10,000 |
-| Stone | 4,000 |
-| Iron | 1,000 |
+| -------- | ------------- |
+| Grain    | 40,000        |
+| Wood     | 10,000        |
+| Stone    | 4,000         |
+| Iron     | 1,000         |
 
 Ratios follow in-game resource values (1 Iron = 40 Grain, 1 Stone = 10 Grain, 1 Wood = 4 Grain).
 Caps are applied before every run using today's already-paid fees from the DB. Dry runs reflect the cap.
@@ -775,16 +848,16 @@ SPS is no longer subject to the 2% service fee. Only natural resources (Grain, W
 are charged. This also removes the active-key Keychain prompt that SPS payment previously required —
 all fee ops now use the posting key only.
 
-
 ### Land Manager — Rent Workers dialogs
-- Paginated table (20 rows/page) for Dry-Run and Confirm dialogs; extracted shared `RentalPlotTable` component with per-dialog column definitions.
 
+- Paginated table (20 rows/page) for Dry-Run and Confirm dialogs; extracted shared `RentalPlotTable` component with per-dialog column definitions.
 
 ### Fixed
 
 - **Land Manager — Rent Workers**: `waitForTransactions` polling now uses `pLimit(5)` to avoid concurrent `lookupTransaction` floods on large transaction sets.
 - **Land Manager – Rent Workers**: DEC balance check
 - **Land Manager – Rent Overview**: Add pagination for PlotTable(s)
+
 ---
 
 ## [v1.5.0] - 2026-05-23
@@ -799,13 +872,13 @@ all fee ops now use the posting key only.
   - < 5 d → green (safe)
   - 5–7 d → yellow (approaching cap)
   - > 7 d → red (past safe window)
-  Hours are included in the label (e.g. `3d 14h`) so you can tell exactly how
-  close you are to the cap. Extracted into a shared `LastHarvestAgeChip`
-  component reused in both tables.
-- **Rental — real days remaining** — the *Days left* column in the Rented Cards
+    > Hours are included in the label (e.g. `3d 14h`) so you can tell exactly how
+    > close you are to the cap. Extracted into a shared `LastHarvestAgeChip`
+    > component reused in both tables.
+- **Rental — real days remaining** — the _Days left_ column in the Rented Cards
   table now shows the time remaining from today instead of the fixed duration
   at the moment of rental. Format follows the same `Xd Yh` pattern; expired
-  rentals show *Expired*.
+  rentals show _Expired_.
 - **Mythic Deeds — Deed UID column removed** — the partial UID column has been
   removed to reduce clutter.
 - **Mythic Deeds — History link** — each row now has an external link icon that
@@ -853,6 +926,7 @@ old client-side Keychain rent path has been removed.
 ### Changed
 
 #### docker-compose.yml — security hardening
+
 - **PostgreSQL port restricted to localhost** — `db` port binding changed from
   `5432:5432` (all interfaces) to `127.0.0.1:5432:5432`. Prevents external
   access to the database on internet-facing hosts.
@@ -878,6 +952,7 @@ old client-side Keychain rent path has been removed.
 ### Added
 
 #### Land Manager — Stake DEC logging
+
 - **`land_stake_dec_log` table** — records per-player, per-day DEC staking activity:
   succeeded and failed amounts (keyed by `region_uid`), totals, error message, and
   transaction IDs. Used to audit automated DEC-stake runs in the land manager.
@@ -885,6 +960,7 @@ old client-side Keychain rent path has been removed.
 ### Changed
 
 #### Land Manager config
+
 - **`rental_min_foil` field added to `land_manager_config`** — allows configuring a
   minimum foil level for worker rentals (default `0` = any foil). Stored as an integer
   where `0` = regular, `1` = gold, etc.
@@ -896,6 +972,7 @@ old client-side Keychain rent path has been removed.
 ### Changed
 
 #### Land Manager improvements
+
 - **30-second server-side cache for bulk region data** — `getBulkRegionData` now caches
   results per user for 30 seconds. Dry-run calls serve from cache; execute calls always
   bypass it to guarantee fresh data before broadcasting. Eliminates redundant VAPI hits
@@ -919,6 +996,7 @@ old client-side Keychain rent path has been removed.
 ### Added
 
 #### Land Cards page (Player Overview)
+
 - **New "Land Cards" tab** added to Player Overview (`/player-overview/land-card`).
   The Land Card Resources table — previously embedded at the bottom of the Player
   Dashboard tab — now lives on its own dedicated page for cleaner navigation.
@@ -974,17 +1052,20 @@ Authenticated via HTTP-only JWT cookie — no GitHub OAuth required for this flo
   Splinterlands resource-transfer fee.
 
 #### Resource page updates
+
 - **Lustrous Potion as AURA price source** — Lustrous Potion (`LUSTROUS`) added as a
   new AURA price source alongside Capacity Flux. Appears in the AURA Price Sources box,
   the resource preset buttons, and the per-AURA unit price calculation.
 
 ### Changed
+
 - **Wagon Repair Kit crafting costs updated** — costs revised to:
   AURA 1,250 · Wood 17,500 · Stone 7,000 · Iron 1,750.
   Updated in the resource conversion calculator preset, the player crafting overview, and
   the AURA-per-unit price derivation.
 
 ### Fixes
+
 - **GFA multiplier** — For the planner the GFA is reduced from 5 to 1.
 
 ---
@@ -1002,7 +1083,6 @@ Authenticated via HTTP-only JWT cookie — no GitHub OAuth required for this flo
     the worker can reach the app within the internal Docker network.
   - `CACHE_INVALIDATE_TOKEN: ${CACHE_INVALIDATE_TOKEN:-}` — passes the token through
     from the `.env` file (already required by the `app` service).
-
 
 ---
 

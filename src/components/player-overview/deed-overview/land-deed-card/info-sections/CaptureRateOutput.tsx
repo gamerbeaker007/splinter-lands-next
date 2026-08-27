@@ -1,3 +1,4 @@
+import { formatNumber } from "@/lib/formatters";
 import { CSSSize } from "@/types/cssSize";
 import { Box, Tooltip, Typography } from "@mui/material";
 import React from "react";
@@ -39,10 +40,7 @@ export const CaptureRateOutput: React.FC<Props> = ({ captureRate, pos }) => {
           </Box>
           <Box display="flex" justifyContent="space-between" flex={1}>
             <Typography fontSize={fontSize} fontWeight="bold" color={fontColor}>
-              {(captureRate * 100).toLocaleString(undefined, {
-                maximumFractionDigits: 3,
-              })}
-              %
+              {formatNumber(captureRate * 100, { maximumFractionDigits: 3 })}%
             </Typography>
           </Box>
         </Box>

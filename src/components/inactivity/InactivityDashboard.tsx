@@ -1,7 +1,7 @@
 "use client";
 
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { InactivityAnalysis } from "@/types/inactivity";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -50,7 +50,7 @@ export default function InactivityDashboard({
               Total Deeds
             </Typography>
             <Typography variant="h4">
-              {formatNumberWithSuffix(data.totalDeeds)}
+              {formatCompactNumber(data.totalDeeds)}
             </Typography>
           </CardContent>
         </Card>
@@ -60,7 +60,9 @@ export default function InactivityDashboard({
               With Rewards
             </Typography>
             <Typography variant="h4">
-              {formatNumberWithSuffix(data.totalWithRewards)}
+              {formatCompactNumber(data.totalWithRewards, {
+                maximumFractionDigits: 2,
+              })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {((data.totalWithRewards / data.totalDeeds) * 100).toFixed(1)}% of
@@ -75,7 +77,9 @@ export default function InactivityDashboard({
               (last operation &lt; 2 weeks)
             </Typography>
             <Typography variant="h4">
-              {formatNumberWithSuffix(data.activeDeeds)}
+              {formatCompactNumber(data.activeDeeds, {
+                maximumFractionDigits: 2,
+              })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {((data.activeDeeds / data.totalWithRewards) * 100).toFixed(1)}%
@@ -90,7 +94,9 @@ export default function InactivityDashboard({
               (last operation &gt; 2 weeks)
             </Typography>
             <Typography variant="h4">
-              {formatNumberWithSuffix(data.inactiveDeeds)}
+              {formatCompactNumber(data.inactiveDeeds, {
+                maximumFractionDigits: 2,
+              })}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               {((data.inactiveDeeds / data.totalWithRewards) * 100).toFixed(1)}%
@@ -124,7 +130,7 @@ export default function InactivityDashboard({
                 },
                 text: data.buckets.map(
                   (b) =>
-                    `${formatNumberWithSuffix(b.count)}<br>${((b.count / data.inactiveDeeds) * 100).toFixed(1)}%`
+                    `${formatCompactNumber(b.count, { maximumFractionDigits: 2 })}<br>${((b.count / data.inactiveDeeds) * 100).toFixed(1)}%`
                 ),
                 textposition: "auto",
                 hovertemplate: "<b>%{x}</b><br>" + "Count: %{y}<br>",
@@ -256,7 +262,9 @@ export default function InactivityDashboard({
                         </TableCell>
                         <TableCell align="right">
                           {deed.hours_since_last_op
-                            ? formatNumberWithSuffix(deed.hours_since_last_op)
+                            ? formatCompactNumber(deed.hours_since_last_op, {
+                                maximumFractionDigits: 2,
+                              })
                             : "N/A"}
                         </TableCell>
                       </TableRow>

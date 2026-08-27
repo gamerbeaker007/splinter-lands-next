@@ -1,7 +1,7 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { Box, Stack, Tooltip, Typography } from "@mui/material";
 
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { rationing_icon_url } from "@/lib/shared/statics_icon_urls";
 import { DeedInfo } from "@/types/cardAlerts";
 import Image from "next/image";
@@ -104,7 +104,7 @@ export const RationingLiteAlerts: React.FC<Props> = ({
                       fontWeight={600}
                       color="warning"
                     >
-                      Base PP: {formatLargeNumber(alert.basePP)}
+                      Base PP: {formatCompactNumber(alert.basePP)}
                     </Typography>
                     <Tooltip
                       title={`Lite Consumption Reduction by ${Math.round(alert.rationingLite * 100)}%`}

@@ -19,9 +19,9 @@ import {
 } from "@/lib/frontend/splBroadcast";
 import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
+  ActionPlan,
   DEFAULT_DONATION_RECIPIENT,
   DonationConfig,
-  ActionPlan,
   MythicHarvestResult,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
@@ -151,7 +151,7 @@ export function useHarvestMythicsAction({
           kingdom_type: d.kingdom_type,
           tokens: d.taxes.map((t) => ({
             token: t.token,
-            received: String(t.balance),
+            received: t.balance,
           })),
           fragment_found: false,
           fragment_chance: d.estimated_totem_chance ?? 0,

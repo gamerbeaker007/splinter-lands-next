@@ -1,7 +1,5 @@
-import {
-  formatNumber,
-  toPascalCaseLabel,
-} from "@/scripts/lib/utils/string_util";
+import { formatCompactNumber } from "@/lib/formatters";
+import { toPascalCaseLabel } from "@/scripts/lib/utils/string_util";
 import { Paper, Typography } from "@mui/material";
 import { Box } from "@mui/system";
 import Image from "next/image";
@@ -60,7 +58,7 @@ export default function SummaryTile({
         fontSize={12}
         sx={{ minHeight: 20 }}
       >
-        ({formatNumber(count)})
+        ({formatCompactNumber(count)})
       </Typography>
       <Typography
         variant="body2"

@@ -7,6 +7,7 @@ import {
   recordDecPowerLog,
 } from "@/lib/backend/actions/land-manager/dec-power-actions";
 import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
+import { formatNumber } from "@/lib/formatters";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -126,7 +127,7 @@ export function useDecPowerAction({
     }
     if (needsBalance && balance !== null && balance < plan.total_dec) {
       setError(
-        `Insufficient DEC: need ${plan.total_dec.toLocaleString("en-US")} but have ${balance.toLocaleString("en-US", { maximumFractionDigits: 3 })}. Top up and re-run.`
+        `Insufficient DEC: need ${formatNumber(plan.total_dec)} but have ${formatNumber(balance)}. Top up and re-run.`
       );
       setBusy(false);
       return;

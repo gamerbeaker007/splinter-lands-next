@@ -1,5 +1,5 @@
 import { Resource } from "@/constants/resource/resource";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 import { CardRarity } from "@/types/planner";
 import { PlayerOverview } from "@/types/playerOverview";
 import {
@@ -155,7 +155,7 @@ export function LandCardResources({ playerOverview }: Props) {
 
     if (resource === "CINDER") {
       const cpNeeded = data.totalNeeded / 1.5;
-      return `Eligible: ${data.eligible}\nPer Card: ${data.needed.toLocaleString()} Cinder (${(data.needed / 1.5).toLocaleString()} CP)\nTotal Needed: ${data.totalNeeded.toLocaleString()} Cinder (${cpNeeded.toLocaleString()} CP)`;
+      return `Eligible: ${data.eligible}\nPer Card: ${formatNumber(data.needed)} Cinder (${formatNumber(data.needed / 1.5)} CP)\nTotal Needed: ${formatNumber(data.totalNeeded)} Cinder (${formatNumber(cpNeeded)} CP)`;
     }
 
     const liquidityTotal = playerOverview.liquidityInfo.reduce((sum, info) => {
@@ -174,7 +174,7 @@ export function LandCardResources({ playerOverview }: Props) {
       0
     );
 
-    return `Eligible: ${data.eligible}\nPer Card: ${data.needed.toLocaleString()}\nTotal Needed: ${data.totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${data.available.toLocaleString()}\nPercentage: ${data.percentage.toFixed(1)}%`;
+    return `Eligible: ${data.eligible}\nPer Card: ${formatNumber(data.needed)}\nTotal Needed: ${formatNumber(data.totalNeeded)}\nLiquidity: ${formatNumber(liquidityTotal)}\nIn Pools: ${formatNumber(poolTotal)}\nTotal Available: ${formatNumber(data.available)}\nPercentage: ${data.percentage.toFixed(1)}%`;
   };
 
   return (
@@ -277,7 +277,9 @@ export function LandCardResources({ playerOverview }: Props) {
                               cursor: "pointer",
                             }}
                           >
-                            {formatNumberWithSuffix(data.totalNeeded)}
+                            {formatCompactNumber(data.totalNeeded, {
+                              maximumFractionDigits: 2,
+                            })}
                           </TableCell>
                         </Tooltip>
                       );
@@ -347,7 +349,7 @@ export function LandCardResources({ playerOverview }: Props) {
 
                 if (resource === "CINDER") {
                   const cpNeeded = totalNeeded / 1.5;
-                  const tooltipContent = `Total Needed: ${totalNeeded.toLocaleString()} Cinder (${cpNeeded.toLocaleString()} CP)`;
+                  const tooltipContent = `Total Needed: ${formatNumber(totalNeeded)} Cinder (${formatNumber(cpNeeded)} CP)`;
 
                   return (
                     <Tooltip
@@ -368,7 +370,9 @@ export function LandCardResources({ playerOverview }: Props) {
                           cursor: "pointer",
                         }}
                       >
-                        {formatNumberWithSuffix(totalNeeded)}
+                        {formatCompactNumber(totalNeeded, {
+                          maximumFractionDigits: 2,
+                        })}
                       </TableCell>
                     </Tooltip>
                   );
@@ -399,7 +403,7 @@ export function LandCardResources({ playerOverview }: Props) {
                   0
                 );
 
-                const tooltipContent = `Total Needed: ${totalNeeded.toLocaleString()}\nLiquidity: ${liquidityTotal.toLocaleString()}\nIn Pools: ${poolTotal.toLocaleString()}\nTotal Available: ${totalAvailable.toLocaleString()}\nPercentage: ${percentage.toFixed(1)}%`;
+                const tooltipContent = `Total Needed: ${formatNumber(totalNeeded)}\nLiquidity: ${formatNumber(liquidityTotal)}\nIn Pools: ${formatNumber(poolTotal)}\nTotal Available: ${formatNumber(totalAvailable)}\nPercentage: ${percentage.toFixed(1)}%`;
 
                 return (
                   <Tooltip

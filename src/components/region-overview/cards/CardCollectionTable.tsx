@@ -1,7 +1,7 @@
 "use client";
 
 import { LandCardSetSummary } from "@/lib/backend/actions/region/land-card-collection-actions";
-import { formatLargeNumber } from "@/lib/formatters";
+import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 import { RarityLevelCounts } from "@/types/LandcardCollection";
 import {
   cardFoilOptions,
@@ -86,7 +86,7 @@ function RarityLevelSubTable({
                             .filter((f) => (foils[f] ?? 0) > 0)
                             .map((f) => (
                               <Box key={f} sx={{ fontSize: 11 }}>
-                                {f}: {(foils[f] ?? 0).toLocaleString()}
+                                {f}: {formatNumber(foils[f] ?? 0)}
                               </Box>
                             ))}
                         </Box>
@@ -94,7 +94,7 @@ function RarityLevelSubTable({
                     >
                       <Chip
                         size="small"
-                        label={`Lv${level}: ${total.toLocaleString()}`}
+                        label={`Lv${level}: ${formatNumber(total)}`}
                         sx={{ fontSize: 11, cursor: "default" }}
                       />
                     </Tooltip>
@@ -130,9 +130,9 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             {row.player_count} player{row.player_count !== 1 ? "s" : ""}
           </Typography>
         </TableCell>
-        <TableCell align="right">{row.total_cards.toLocaleString()}</TableCell>
+        <TableCell align="right">{formatNumber(row.total_cards)}</TableCell>
         <TableCell align="right">
-          {formatLargeNumber(row.land_base_pp)}
+          {formatCompactNumber(row.land_base_pp)}
         </TableCell>
         <TableCell
           align="right"
@@ -141,7 +141,7 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             display: { xs: "none", md: "table-cell" },
           }}
         >
-          {row.foil_regular.toLocaleString()}
+          {formatNumber(row.foil_regular)}
         </TableCell>
         <TableCell
           align="right"
@@ -150,7 +150,7 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             display: { xs: "none", md: "table-cell" },
           }}
         >
-          {row.foil_gold.toLocaleString()}
+          {formatNumber(row.foil_gold)}
         </TableCell>
         <TableCell
           align="right"
@@ -159,7 +159,7 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             display: { xs: "none", md: "table-cell" },
           }}
         >
-          {row.foil_gold_arcane.toLocaleString()}
+          {formatNumber(row.foil_gold_arcane)}
         </TableCell>
         <TableCell
           align="right"
@@ -168,7 +168,7 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             display: { xs: "none", md: "table-cell" },
           }}
         >
-          {row.foil_black.toLocaleString()}
+          {formatNumber(row.foil_black)}
         </TableCell>
         <TableCell
           align="right"
@@ -177,25 +177,25 @@ function CardSetRow({ row }: Readonly<{ row: LandCardSetSummary }>) {
             display: { xs: "none", md: "table-cell" },
           }}
         >
-          {row.foil_black_arcane.toLocaleString()}
+          {formatNumber(row.foil_black_arcane)}
         </TableCell>
         <TableCell
           align="right"
           sx={{ display: { xs: "none", sm: "table-cell" } }}
         >
-          {row.owned.toLocaleString()}
+          {formatNumber(row.owned)}
         </TableCell>
         <TableCell
           align="right"
           sx={{ display: { xs: "none", sm: "table-cell" } }}
         >
-          {row.rented.toLocaleString()}
+          {formatNumber(row.rented)}
         </TableCell>
         <TableCell
           align="right"
           sx={{ display: { xs: "none", sm: "table-cell" } }}
         >
-          {row.delegated.toLocaleString()}
+          {formatNumber(row.delegated)}
         </TableCell>
       </TableRow>
       <TableRow>

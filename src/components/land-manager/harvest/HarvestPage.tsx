@@ -3,8 +3,9 @@
 import BulkActionPanel from "@/components/land-manager/harvest/BulkActionPanel";
 import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
 import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
-import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
+import { formatNumber } from "@/lib/formatters";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { MythicDeed } from "@/types/landManager";
 import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
@@ -61,7 +62,7 @@ export default function HarvestPage() {
                           sx={{ width: 16, height: 16 }}
                         />
                         <Typography variant="caption">
-                          {cap.toLocaleString()}
+                          {formatNumber(cap)}
                         </Typography>
                       </Stack>
                     );

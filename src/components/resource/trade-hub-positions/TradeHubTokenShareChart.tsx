@@ -4,7 +4,7 @@ import { InfoItem } from "@/components/resource/trade-hub-positions/InfoItem";
 import { PoolIcon } from "@/components/resource/trade-hub-positions/PoolIcon";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { PlayerTradeHubPosition } from "@/generated/prisma/client";
-import { formatNumberWithSuffix } from "@/lib/formatters";
+import { formatCompactNumber } from "@/lib/formatters";
 import { Box } from "@mui/system";
 
 type Props = {
@@ -101,11 +101,13 @@ export function TradeHubTokenShareChart({
         />
         <InfoItem
           title={`Total ${playerTradeHubPositions[0]?.token.split("-")[1]}:`}
-          text={formatNumberWithSuffix(totalResource)}
+          text={formatCompactNumber(totalResource, {
+            maximumFractionDigits: 2,
+          })}
         />
         <InfoItem
           title={"Total DEC:"}
-          text={formatNumberWithSuffix(totalDEC)}
+          text={formatCompactNumber(totalDEC, { maximumFractionDigits: 2 })}
         />
 
         {currentPlayerData && (
@@ -117,32 +119,41 @@ export function TradeHubTokenShareChart({
             />
             <InfoItem
               title={"DEC Qty:"}
-              text={formatNumberWithSuffix(currentPlayerData.dec_quantity)}
+              text={formatCompactNumber(currentPlayerData.dec_quantity, {
+                maximumFractionDigits: 2,
+              })}
             />
             <InfoItem
               title={"Resource Qty:"}
-              text={formatNumberWithSuffix(currentPlayerData.resource_quantity)}
+              text={formatCompactNumber(currentPlayerData.resource_quantity, {
+                maximumFractionDigits: 2,
+              })}
             />
             <InfoItem
               title={"DEC Earned 1d:"}
-              text={formatNumberWithSuffix(currentPlayerData.fees_earned_dec_1)}
+              text={formatCompactNumber(currentPlayerData.fees_earned_dec_1, {
+                maximumFractionDigits: 2,
+              })}
             />
             <InfoItem
               title={"DEC Earned Total:"}
-              text={formatNumberWithSuffix(
-                currentPlayerData.total_fees_earned_dec
+              text={formatCompactNumber(
+                currentPlayerData.total_fees_earned_dec,
+                { maximumFractionDigits: 2 }
               )}
             />
             <InfoItem
               title={"Resources Earned 1d:"}
-              text={formatNumberWithSuffix(
-                currentPlayerData.fees_earned_resource_1
+              text={formatCompactNumber(
+                currentPlayerData.fees_earned_resource_1,
+                { maximumFractionDigits: 2 }
               )}
             />
             <InfoItem
               title={"Resources Earned Total:"}
-              text={formatNumberWithSuffix(
-                currentPlayerData.total_fees_earned_resource
+              text={formatCompactNumber(
+                currentPlayerData.total_fees_earned_resource,
+                { maximumFractionDigits: 2 }
               )}
             />
           </Box>

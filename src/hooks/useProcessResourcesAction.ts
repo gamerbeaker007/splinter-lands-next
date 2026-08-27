@@ -5,13 +5,14 @@ import {
   getLandPools,
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
-import { buildAddLiquidityOp } from "@/lib/shared/operations/opBuilders";
+import { formatNumber } from "@/lib/formatters";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
 import {
   BroadcastResult,
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
+import { buildAddLiquidityOp } from "@/lib/shared/operations/opBuilders";
 import {
   ActionPlan,
   PostHarvestActionSummary,
@@ -56,10 +57,6 @@ interface LiquidityOp {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function fmt(n: number): string {
-  return n.toLocaleString(undefined, { maximumFractionDigits: 2 });
-}
 
 /**
  * Parse a liquidity op envelope to extract region_uid, resource_symbol,
@@ -115,9 +112,9 @@ async function appendDecBalanceInfo(
   const availableAfterSells = decBalance + decFromSells;
 
   log.push(
-    `DEC needed for pool: ~${fmt(totalDecNeeded)} DEC | Balance: ${fmt(decBalance)} DEC` +
+    `DEC needed for pool: ~${formatNumber(totalDecNeeded, { maximumFractionDigits: 2 })} DEC | Balance: ${formatNumber(decBalance, { maximumFractionDigits: 2 })} DEC` +
       (decFromSells > 0
-        ? ` + ~${fmt(decFromSells)} from sells = ~${fmt(availableAfterSells)} DEC`
+        ? ` + ~${formatNumber(decFromSells, { maximumFractionDigits: 2 })} from sells = ~${formatNumber(availableAfterSells, { maximumFractionDigits: 2 })} DEC`
         : "")
   );
 
@@ -228,7 +225,7 @@ async function broadcastLiquidityPhase(
     scale = freshDecBalance / totalDecNeeded;
     warning =
       `Not enough DEC for full pool portion. Scaled pool amounts to ${Math.floor(scale * 100)}% ` +
-      `(had ${fmt(freshDecBalance)} DEC, needed ~${fmt(totalDecNeeded)} DEC). ` +
+      `(had ${formatNumber(freshDecBalance, { maximumFractionDigits: 2 })} DEC, needed ~${formatNumber(totalDecNeeded, { maximumFractionDigits: 2 })} DEC). ` +
       `Tip: adjust your sell/pool split (e.g. sell ${sellPct + 2}% / pool ${poolPct - 2}%).`;
   }
 

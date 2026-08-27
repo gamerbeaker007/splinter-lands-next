@@ -6,6 +6,7 @@ import FoilIcon from "@/components/ui/FoilIcon";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { usePersistedCardFilters } from "@/hooks/usePersistedCardFilters";
 import { getPlayerLandCards } from "@/lib/backend/actions/player/landCards-actions";
+import { formatInt } from "@/lib/formatters";
 import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
 import { foilLabel } from "@/lib/utils/cardUtil";
@@ -149,10 +150,6 @@ function LastPlayedCell({ date }: Readonly<{ date?: string | null }>) {
       </Typography>
     </Tooltip>
   );
-}
-
-function fmt(n: number): string {
-  return n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 }
 
 interface Props {
@@ -524,7 +521,9 @@ export default function WorkerSelectDialog({
                             <TableCell align="right">
                               {r.bcx}/{r.maxBcx}
                             </TableCell>
-                            <TableCell align="right">{fmt(r.basePP)}</TableCell>
+                            <TableCell align="right">
+                              {formatInt(r.basePP)}
+                            </TableCell>
                             <TableCell align="right">
                               <Typography
                                 variant="body2"
@@ -537,7 +536,7 @@ export default function WorkerSelectDialog({
                                       : "text.primary"
                                 }
                               >
-                                {fmt(r.boostedPP)}
+                                {formatInt(r.boostedPP)}
                               </Typography>
                             </TableCell>
                             <TableCell align="left">

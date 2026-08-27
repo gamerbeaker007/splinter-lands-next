@@ -374,7 +374,7 @@ export function computeWeeklyPoolNeed(
       harvestableMap,
       now
     );
-    if (drift) warnings.push(`${region.name}: ${drift}`);
+    if (drift) warnings.push(`${region.region_uid} (${region.name}): ${drift}`);
   }
 
   return {
@@ -406,11 +406,13 @@ function accrualDrift(
     : null;
   if (!lastClaimed || Number.isNaN(lastClaimed.getTime())) return null;
 
-  const elapsedHours = Math.min(
-    MAX_ACCRUAL_HOURS,
-    (now.getTime() - lastClaimed.getTime()) / 3_600_000
-  );
+  const elapsedHours = (now.getTime() - lastClaimed.getTime()) / 3_600_000;
+
   if (elapsedHours < MIN_ACCRUAL_HOURS) return null;
+  const maxExceeded =
+    elapsedHours >= MAX_ACCRUAL_HOURS
+      ? `\n Possibly inaccurate, as it has not been harvested for more than 7 days.`
+      : "";
 
   for (const { symbol, amount } of costs) {
     const measured = amount / elapsedHours;
@@ -420,7 +422,8 @@ function accrualDrift(
     if (ratio > 1.2 || ratio < 0.8) {
       return (
         `${symbol} rate ${rate.toFixed(1)}/hr disagrees with the ${measured.toFixed(1)}/hr ` +
-        `accrued over the last ${elapsedHours.toFixed(0)}h — target may be off`
+        `accrued over the last ${elapsedHours.toFixed(0)}h — target may be off` +
+        maxExceeded
       );
     }
   }
