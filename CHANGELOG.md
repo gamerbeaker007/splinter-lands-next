@@ -14,7 +14,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.25.0] - 2026-08-26
+## [v1.25.2] - 2026-08-30
+
+### Fix
+
+- **Land Manager:**  Copnfigure Panel fix consume/hr.
+
+
+---
+
+## [v1.25.1] - 2026-08-30
 
 ### Updated
 

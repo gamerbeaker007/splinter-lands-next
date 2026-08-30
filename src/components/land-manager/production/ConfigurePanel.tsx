@@ -112,19 +112,35 @@ function renderConsume(rates: ResourceRate[], deltas: ResourceRate[] = []) {
     delta: deltaByResource.get(resource),
   }));
 
-  const renderRate = (row: (typeof rows)[number]) => (
+  const renderRate = (row: (typeof rows)[number], hideDelta = true) => (
     <>
-      {renderResourceIcon(row.resource as Resource)}
-      <Typography variant="caption">{row.amount.toFixed(1)}</Typography>
-      {row.delta !== undefined && (
-        <Typography variant="caption" color="text.secondary">
-          (
-          <Box component="span" sx={{ color: deltaColor(row.delta) }}>
-            {fmtDelta(row.delta)}
-          </Box>
-          )
+      <Stack
+        direction={hideDelta ? "column" : "row"}
+        spacing={hideDelta ? 0 : 0.5}
+        alignItems={hideDelta ? "flex-start" : "center"}
+      >
+        <Typography
+          variant="caption"
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 0.5,
+          }}
+        >
+          {renderResourceIcon(row.resource as Resource)}
+
+          {row.amount.toFixed(1)}
         </Typography>
-      )}
+        {row.delta !== undefined && !hideDelta && (
+          <Typography variant="caption" color="text.secondary">
+            (
+            <Box component="span" sx={{ color: deltaColor(row.delta) }}>
+              {fmtDelta(row.delta)}
+            </Box>
+            )
+          </Typography>
+        )}
+      </Stack>
     </>
   );
 
@@ -148,7 +164,7 @@ function renderConsume(rates: ResourceRate[], deltas: ResourceRate[] = []) {
                 gap={0.5}
                 mb={0.25}
               >
-                {renderRate(row)}
+                {renderRate(row, false)}
               </Box>
             ))
           )}
@@ -161,7 +177,7 @@ function renderConsume(rates: ResourceRate[], deltas: ResourceRate[] = []) {
             none
           </Typography>
         ) : rows.length === 1 ? (
-          renderRate(rows[0])
+          renderRate(rows[0], true)
         ) : (
           <>
             <MdInfo size={15} />
@@ -973,12 +989,29 @@ export default function ConfigurePanel({
                   </Typography>
                 </Stack>
 
-                <Box display="flex" gap={0.5}>
-                  <Typography variant="caption" color="text.secondary">
-                    Consume/hr:
-                  </Typography>
-                  {renderConsume(projection.next.consume, consumeDeltas)}
-                </Box>
+                <Stack direction="column">
+                  <Stack direction="row" spacing={0.5}>
+                    <Typography variant="caption" color="text.secondary">
+                      Consume/hr:{" "}
+                    </Typography>
+                    {renderConsume(projection.next.consume, consumeDeltas)}
+                  </Stack>
+
+                  {projection.next.consume.length === 1 && (
+                    <Typography variant="caption" color="text.secondary">
+                      (
+                      <Box
+                        component="span"
+                        sx={{
+                          color: deltaColor(consumeDeltas[0]?.amount ?? 0),
+                        }}
+                      >
+                        {fmtDelta(consumeDeltas[0]?.amount ?? 0)}
+                      </Box>
+                      )
+                    </Typography>
+                  )}
+                </Stack>
               </Box>
             </Collapse>
           </Box>{" "}
