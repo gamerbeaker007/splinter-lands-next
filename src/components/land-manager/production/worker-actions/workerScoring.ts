@@ -137,6 +137,7 @@ export function projectPlot(
   deed: DeedComplete,
   workers: SlotCardLike[],
   prices: Prices,
+  spsRatio: number,
   overrides?: PlotBoostOverrides
 ): PlotProjection {
   const slots = workers.map((w, i) => spotCardToSlotInput(w, i + 1));
@@ -147,7 +148,7 @@ export function projectPlot(
     totalBoostedPP,
     plot,
     prices,
-    0,
+    spsRatio,
     null,
     null
   );

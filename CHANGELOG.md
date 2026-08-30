@@ -16,6 +16,17 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [v1.25.0] - 2026-08-26
 
+### Updated
+
+- **Land Manager:**  Configure panel show current consume and update layout.
+- **Land Manager:**  Fetch SPS ratio and prices of the resource once at page load not for every configure panel (even if its cached)
+
+
+
+---
+
+## [v1.25.0] - 2026-08-26
+
 ### Added
 
 - Today panel: totem fragment drops from a mythic harvest now show the fragment

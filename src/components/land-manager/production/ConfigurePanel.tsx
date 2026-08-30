@@ -1,5 +1,7 @@
 "use client";
 
+import { renderResourceIcon } from "@/components/ui/resource/Resource";
+import { Resource } from "@/constants/resource/resource";
 import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
 import {
   getRegionStakedDEC,
@@ -9,7 +11,6 @@ import {
   getPlotConfigureData,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
-import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
 import { formatFixed, formatInt, formatNumber } from "@/lib/formatters";
 import { deedToPlotPlannerData } from "@/lib/frontend/utils/deedToPlotPlanner";
 import {
@@ -18,7 +19,6 @@ import {
   determineDeedResourceBoost,
   determineProductionBoost,
 } from "@/lib/frontend/utils/plannerCalcs";
-import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { DeedComplete } from "@/types/deed";
 import {
   cardFoilOptions,
@@ -41,7 +41,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MdInfo } from "react-icons/md";
 import AssetPickerDialog, {
@@ -89,7 +88,89 @@ function sameUid(
   return (a?.uid ?? null) === (b?.uid ?? null);
 }
 
-const IMPACT_ROW_TRANSITION_MS = 2000;
+const IMPACT_ROW_TRANSITION_MS = 1000;
+
+type ResourceRate = { resource: string; amount: number };
+
+/** Render one or more resource consumption rates, optionally with their change. */
+function renderConsume(rates: ResourceRate[], deltas: ResourceRate[] = []) {
+  const amountByResource = new Map(
+    rates.map((rate) => [rate.resource, rate.amount])
+  );
+  const deltaByResource = new Map(
+    deltas.map((delta) => [delta.resource, delta.amount])
+  );
+
+  // Include resources that were removed from the staged configuration as zero.
+  for (const { resource } of deltas) {
+    if (!amountByResource.has(resource)) amountByResource.set(resource, 0);
+  }
+
+  const rows = [...amountByResource.entries()].map(([resource, amount]) => ({
+    resource,
+    amount,
+    delta: deltaByResource.get(resource),
+  }));
+
+  const renderRate = (row: (typeof rows)[number]) => (
+    <>
+      {renderResourceIcon(row.resource as Resource)}
+      <Typography variant="caption">{row.amount.toFixed(1)}</Typography>
+      {row.delta !== undefined && (
+        <Typography variant="caption" color="text.secondary">
+          (
+          <Box component="span" sx={{ color: deltaColor(row.delta) }}>
+            {fmtDelta(row.delta)}
+          </Box>
+          )
+        </Typography>
+      )}
+    </>
+  );
+
+  return (
+    <Tooltip
+      arrow
+      placement="top"
+      title={
+        <Box>
+          <Typography fontSize={12} fontWeight="bold" mb={0.5}>
+            Consumes:
+          </Typography>
+          {rows.length === 0 ? (
+            <Typography fontSize={12}>None</Typography>
+          ) : (
+            rows.map((row) => (
+              <Box
+                key={row.resource}
+                display="flex"
+                alignItems="center"
+                gap={0.5}
+                mb={0.25}
+              >
+                {renderRate(row)}
+              </Box>
+            ))
+          )}
+        </Box>
+      }
+    >
+      <Box display="flex" gap={0.5} minWidth={0}>
+        {rows.length === 0 ? (
+          <Typography variant="caption" color="text.secondary">
+            none
+          </Typography>
+        ) : rows.length === 1 ? (
+          renderRate(rows[0])
+        ) : (
+          <>
+            <MdInfo size={15} />
+          </>
+        )}
+      </Box>
+    </Tooltip>
+  );
+}
 
 function toPlannerSlotInput(
   card: {
@@ -120,6 +201,8 @@ function toPlannerSlotInput(
 interface Props {
   deed: DeedComplete;
   username: string;
+  spsRatio: number;
+  prices: Prices | null;
   actions: UseProductionPlotActions;
   /** Called after a successful Save so the page can reload. */
   onSaved: () => void;
@@ -128,6 +211,8 @@ interface Props {
 export default function ConfigurePanel({
   deed,
   username,
+  spsRatio,
+  prices,
   actions,
   onSaved,
 }: Props) {
@@ -149,20 +234,6 @@ export default function ConfigurePanel({
   const [picker, setPicker] = useState<PickerKind | null>(null);
   // worker selection modal
   const [workerOpen, setWorkerOpen] = useState(false);
-  // resource prices for the production-impact line (cached server-side)
-  const [prices, setPrices] = useState<Prices | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    getActualResourcePrices()
-      .then((p) => {
-        if (!cancelled) setPrices(p);
-      })
-      .catch(() => {});
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Projected production impact of the staged config vs the current on-chain
   // state (current and staged scored the same way so the delta is meaningful).
@@ -173,12 +244,14 @@ export default function ConfigurePanel({
       deed,
       data.workers,
       prices,
+      spsRatio,
       boostOverrides({ title: data.title, totem: data.totem, runi: data.runi })
     );
     const next = projectPlot(
       deed,
       stagedWorkers,
       prices,
+      spsRatio,
       boostOverrides({
         title: staged.title,
         totem: staged.totem,
@@ -186,7 +259,7 @@ export default function ConfigurePanel({
       })
     );
     return { current, next };
-  }, [deed, data, staged, prices]);
+  }, [deed, data, staged, prices, spsRatio]);
 
   useEffect(() => {
     let cancelled = false;
@@ -490,7 +563,7 @@ export default function ConfigurePanel({
           )} DEC.`
       : null;
 
-  const consumeDeltas: { resource: string; amount: number }[] = projection
+  const consumeDeltas: ResourceRate[] = projection
     ? (() => {
         const m = new Map<string, number>();
         for (const c of projection.current.consume)
@@ -729,142 +802,186 @@ export default function ConfigurePanel({
           <Typography variant="caption" color="text.secondary">
             Configure summary
           </Typography>
-
-          <Stack
-            direction="row"
-            gap={1.5}
-            flexWrap="wrap"
-            alignItems="center"
-            sx={{ mt: 0.5 }}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "auto minmax(0, 1fr)",
+                md: "auto repeat(6, minmax(0, 1fr))",
+              },
+              columnGap: 1.5,
+              rowGap: 0.75,
+              alignItems: "center",
+            }}
           >
-            <Typography variant="caption" color="text.secondary">
-              Current PP: {formatInt(projection.current.boostedPP)}
+            {/* Current row */}
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              fontWeight={600}
+              minWidth="50px"
+            >
+              Current:
             </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Current DEC needed: {formatInt(currentDecStakeNeeded)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Current total boost: {fmtPct(currentTotalBoost * 100)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Current rewards/hr:{" "}
-              {formatFixed(projection.current.produce[0]?.amount ?? 0, 3)}{" "}
-              {produceResource}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Current net: {formatFixed(projection.current.netDEC, 3)} DEC
-            </Typography>
-          </Stack>
 
-          <Collapse in={dirty} timeout={IMPACT_ROW_TRANSITION_MS}>
-            <Stack
-              direction="row"
-              gap={1.5}
-              flexWrap="wrap"
-              alignItems="center"
+            <Typography variant="caption" color="text.secondary">
+              PP: {formatInt(projection.current.boostedPP)}
+            </Typography>
+
+            <Typography variant="caption" color="text.secondary">
+              DEC needed: {formatInt(currentDecStakeNeeded)}
+            </Typography>
+
+            <Typography variant="caption" color="text.secondary">
+              Total boost: {fmtPct(currentTotalBoost * 100)}
+            </Typography>
+
+            <Typography
+              variant="caption"
+              color="text.secondary"
               sx={{
-                mt: 0.75,
-                pt: 0.75,
-                borderTop: "1px solid",
-                borderColor: "divider",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.5,
               }}
             >
+              Rewards/hr:
+              {renderResourceIcon(produceResource as Resource)}
+              {formatFixed(projection.current.produce[0]?.amount ?? 0, 3)}
+            </Typography>
+
+            <Typography variant="caption" color="text.secondary">
+              Net: {formatFixed(projection.current.netDEC, 3)} DEC
+            </Typography>
+
+            <Box display="flex" alignItems="center" gap={0.5}>
               <Typography variant="caption" color="text.secondary">
-                New PP: {formatInt(projection.next.boostedPP)} (
-                <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
-                  {fmtDelta(ppDelta)}
-                </Box>
-                )
+                Consume/hr:
               </Typography>
-              <Typography variant="caption" color="text.secondary">
-                New DEC needed: {formatInt(nextDecStakeNeeded)} (
-                <Box
-                  component="span"
-                  sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+              {renderConsume(projection.current.consume)}
+            </Box>
+
+            {/* New row with transition */}
+            <Collapse
+              in={dirty}
+              timeout={IMPACT_ROW_TRANSITION_MS}
+              sx={{
+                gridColumn: "1 / -1",
+              }}
+            >
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "auto minmax(0, 1fr)",
+                    md: "auto repeat(6, minmax(0, 1fr))",
+                  },
+                  columnGap: 1.5,
+                  alignItems: "top",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  fontWeight={600}
+                  minWidth="50px"
                 >
-                  {fmtDelta(Math.round(decStakeNeededDelta))}
-                </Box>
-                )
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                New total boost: {fmtPct(nextTotalBoost * 100)} (
-                <Box component="span" sx={{ color: deltaColor(boostDelta) }}>
-                  {fmtDelta(Math.round(boostDelta * 100))}%
-                </Box>
-                )
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                New rewards/hr:{" "}
-                {formatFixed(projection.next.produce[0]?.amount ?? 0, 3)}{" "}
-                {produceResource} (
-                <Box component="span" sx={{ color: deltaColor(produceDelta) }}>
-                  {fmtDelta(produceDelta)}
-                </Box>
-                )
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                New net: {formatFixed(projection.next.netDEC, 3)} DEC (
-                <Box component="span" sx={{ color: deltaColor(netDelta) }}>
-                  {fmtDelta(netDelta)}
-                </Box>
-                )
-              </Typography>
-              <Box display="flex" alignItems="center" gap={0.5}>
-                <Tooltip
-                  arrow
-                  placement="top"
-                  title={
-                    <Box>
-                      <Typography fontSize={12} fontWeight="bold" mb={0.5}>
-                        Consumes:
-                      </Typography>
-                      {consumeDeltas.length > 0 &&
-                        consumeDeltas.map((row, idx) => {
-                          const icon = RESOURCE_ICON_MAP[row.resource];
-                          return (
-                            <Box
-                              key={idx}
-                              display="flex"
-                              alignItems="center"
-                              gap={0.5}
-                              mb={0.25}
-                            >
-                              {icon && (
-                                <Image
-                                  src={icon}
-                                  alt={row.resource}
-                                  width={15}
-                                  height={15}
-                                />
-                              )}
-                              <Typography fontSize={12}>
-                                {row.amount.toFixed(1)} /hr
-                              </Typography>
-                            </Box>
-                          );
-                        })}
+                  New:
+                </Typography>
+
+                <Stack direction="column">
+                  <Typography variant="caption" color="text.secondary">
+                    PP: {formatInt(projection.next.boostedPP)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
+                      {fmtDelta(ppDelta)}
                     </Box>
-                  }
-                >
-                  <Box display="flex" alignItems="center" gap={0.5}>
-                    <Typography variant="caption" color="text.secondary">
-                      Consume/hr:{" "}
-                    </Typography>
-                    {consumeDeltas.length === 0 && "no change"}
-                    {consumeDeltas.length === 1 && (
-                      <Typography
-                        variant="caption"
-                        color={deltaColor(consumeDeltas[0].amount)}
-                      >
-                        {consumeDeltas[0].amount.toFixed(1)} /hr
-                      </Typography>
-                    )}
-                    {consumeDeltas.length > 1 && <MdInfo size={15} />}
-                  </Box>
-                </Tooltip>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Stack direction="column">
+                  <Typography variant="caption" color="text.secondary">
+                    DEC needed: {formatInt(nextDecStakeNeeded)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box
+                      component="span"
+                      sx={{ color: deltaColor(decStakeNeededDelta, false) }}
+                    >
+                      {fmtDelta(Math.round(decStakeNeededDelta))}
+                    </Box>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Stack direction="column">
+                  <Typography variant="caption" color="text.secondary">
+                    Total boost: {fmtPct(nextTotalBoost * 100)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box
+                      component="span"
+                      sx={{ color: deltaColor(boostDelta) }}
+                    >
+                      {fmtDelta(Math.round(boostDelta * 100))}%
+                    </Box>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Stack direction="column">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    Rewards/hr:{" "}
+                    {renderResourceIcon(produceResource as Resource)}
+                    {formatFixed(projection.next.produce[0]?.amount ?? 0, 3)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box
+                      component="span"
+                      sx={{ color: deltaColor(produceDelta) }}
+                    >
+                      {fmtDelta(produceDelta)}
+                    </Box>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Stack direction="column">
+                  <Typography variant="caption" color="text.secondary">
+                    Net: {formatFixed(projection.next.netDEC, 3)} DEC
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box component="span" sx={{ color: deltaColor(netDelta) }}>
+                      {fmtDelta(netDelta)}
+                    </Box>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Box display="flex" gap={0.5}>
+                  <Typography variant="caption" color="text.secondary">
+                    Consume/hr:
+                  </Typography>
+                  {renderConsume(projection.next.consume, consumeDeltas)}
+                </Box>
               </Box>
-            </Stack>
-          </Collapse>
+            </Collapse>
+          </Box>{" "}
         </Paper>
       )}
 

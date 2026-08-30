@@ -26,6 +26,8 @@ import { usePurchaseAuthorityStatus } from "@/hooks/usePurchaseAuthorityStatus";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { useWorkerAction } from "@/hooks/useWorkerAction";
 import { getProductionPageData } from "@/lib/backend/actions/land-manager/production-actions";
+import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
+import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
 import { filterDeeds } from "@/lib/filters";
 import {
   FilterProvider,
@@ -34,6 +36,7 @@ import {
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
+import { Prices } from "@/types/price";
 import {
   Refresh as RefreshIcon,
   ViewList as ViewListIcon,
@@ -134,6 +137,10 @@ function ProductionPageContent() {
   const appliedLocationQueryRef = useRef<string | null>(null);
   const pendingAutoOpenDeedUidRef = useRef<string | null>(null);
 
+  // resource prices for the production-impact line (cached server-side)
+  const [prices, setPrices] = useState<Prices | null>(null);
+  const [spsRatio, setSpsRatio] = useState(0);
+
   const parsedLocationQuery = useMemo<ParsedLocationQuery>(() => {
     const regionRaw = searchParams.get("region");
     const tractRaw = searchParams.get("tract");
@@ -192,6 +199,23 @@ function ProductionPageContent() {
       cancelled = true;
     };
   }, [localRefreshKey]);
+
+  // Production-impact supporting data — load once
+  useEffect(() => {
+    let cancelled = false;
+
+    Promise.all([getActualResourcePrices(), getDailySPSRatio()]).then(
+      ([prices, ratio]) => {
+        if (cancelled) return;
+
+        setPrices(prices);
+        setSpsRatio(ratio);
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Feed this player's live region/tract/plot lists into FilterDrawer.
   useEffect(() => {
@@ -413,13 +437,15 @@ function ProductionPageContent() {
       return (
         <ConfigurePanel
           deed={deed}
+          spsRatio={spsRatio}
+          prices={prices}
           username={username}
           actions={actions}
           onSaved={handleRefresh}
         />
       );
     },
-    [deedByUid, username, actions, handleRefresh]
+    [deedByUid, username, actions, spsRatio, prices, handleRefresh]
   );
 
   const tableProps = {
