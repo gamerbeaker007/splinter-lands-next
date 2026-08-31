@@ -14,11 +14,21 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.25.3] - 2026-08-30
+
+### Added
+
+- **Land Manager:**  Configure panel add base PP + rationing lite warning + 100K limit warning.
+- **Land Manager:**  Configure panel add capture rate for castle / keep (remove consume and net DEC for castle and keeps)
+
+
+---
+
 ## [v1.25.2] - 2026-08-30
 
 ### Fix
 
-- **Land Manager:**  Copnfigure Panel fix consume/hr.
+- **Land Manager:**  Configure panel fix consume/hr.
 
 
 ---

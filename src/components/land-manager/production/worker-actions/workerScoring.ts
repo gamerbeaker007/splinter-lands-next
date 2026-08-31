@@ -4,6 +4,7 @@ import {
 } from "@/lib/frontend/utils/deedToPlotPlanner";
 import { isCooldownActive } from "@/lib/frontend/utils/landCardFilters";
 import {
+  calcCaptureRate,
   calcProductionInfo,
   calcTotalPP,
   computeSlot,
@@ -126,6 +127,8 @@ export interface PlotProjection {
   /** Consumed resource(s) per hour (amount in resource units, e.g. GRAIN/IRON). */
   consume: ResourceAmount[];
   netDEC: number;
+  rationingLite: boolean;
+  captureRate: number | null;
 }
 
 /**
@@ -143,6 +146,9 @@ export function projectPlot(
   const slots = workers.map((w, i) => spotCardToSlotInput(w, i + 1));
   const plot = deedToPlotPlannerData(deed, slots, overrides);
   const { totalBasePP, totalBoostedPP } = calcTotalPP(plot);
+
+  const captureRate = calcCaptureRate(plot.worksiteType, totalBoostedPP);
+
   const info = calcProductionInfo(
     totalBasePP,
     totalBoostedPP,
@@ -152,6 +158,11 @@ export function projectPlot(
     null,
     null
   );
+
+  const rationingLite = Boolean(
+    slots.find((s) => s.landBoosts?.liteConsumeGrainDiscount)
+  );
+
   return {
     basePP: totalBasePP,
     boostedPP: totalBoostedPP,
@@ -164,5 +175,7 @@ export function projectPlot(
       amount: c.amount,
     })),
     netDEC: info.netDEC,
+    rationingLite,
+    captureRate,
   };
 }

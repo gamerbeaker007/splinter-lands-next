@@ -398,7 +398,7 @@ export default function ConfigurePanel({
     ...(staged.runi ? [staged.runi.uid] : []),
   ];
   const changeInput = diffStagedConfig(data, staged);
-  const dirty = stagedHasChanges(changeInput);
+  const hasChanges = stagedHasChanges(changeInput);
   const busy = actions.busy;
 
   const powerCoreChanged = !sameUid(staged.powerCore, originalStaged.powerCore);
@@ -432,9 +432,13 @@ export default function ConfigurePanel({
     );
 
   // Projected deltas (staged − current). Consume is per-resource (GRAIN/IRON/…).
-  const ppDelta = projection
+  const boostPpDelta = projection
     ? projection.next.boostedPP - projection.current.boostedPP
     : 0;
+  const basePpDelta = projection
+    ? projection.next.basePP - projection.current.basePP
+    : 0;
+
   const produceResource =
     projection?.next.produce[0]?.resource ??
     projection?.current.produce[0]?.resource ??
@@ -445,6 +449,9 @@ export default function ConfigurePanel({
     : 0;
   const netDelta = projection
     ? projection.next.netDEC - projection.current.netDEC
+    : 0;
+  const captureRateDelta = projection
+    ? (projection.next.captureRate ?? 0) - (projection.current.captureRate ?? 0)
     : 0;
 
   // Estimate plot DEC needed using the same planner formula as PriceOutput,
@@ -569,7 +576,7 @@ export default function ConfigurePanel({
       : null;
 
   const shortfallWarningMessage =
-    dirty && regionImpact && regionImpact.projectedShortfall > 0
+    hasChanges && regionImpact && regionImpact.projectedShortfall > 0
       ? regionImpact.shortfallIncrease > 0
         ? `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${formatInt(
             regionImpact.projectedShortfall
@@ -577,6 +584,18 @@ export default function ConfigurePanel({
         : `Be aware: you will have a DEC shortage in region R${deed.region_number}. This will trigger an auto-harvest on that region. Projected shortfall: ${formatInt(
             regionImpact.projectedShortfall
           )} DEC.`
+      : null;
+
+  const showRationLitWarning =
+    projection?.next.rationingLite && (projection?.next.basePP ?? 0) > 20_000
+      ? `Warning: Your base PP will exceed 20,000 with Rationing Lite.
+       As a result, Rationing Lite will not be applied.`
+      : null;
+
+  const showBasePPWarning =
+    (projection?.next.basePP ?? 0) > 100_000
+      ? `Warning: Your base PP will exceed 100,000.
+       As a result, it will be capped to 100,000.`
       : null;
 
   const consumeDeltas: ResourceRate[] = projection
@@ -789,18 +808,18 @@ export default function ConfigurePanel({
           variant="contained"
           size="small"
           onClick={handleSave}
-          disabled={!dirty || busy}
+          disabled={!hasChanges || busy}
         >
           {busy ? "Saving…" : "Save"}
         </Button>
         <Button
           size="small"
           onClick={() => setStaged(initStagedConfig(data))}
-          disabled={!dirty || busy}
+          disabled={!hasChanges || busy}
         >
           Reset
         </Button>
-        {dirty && (
+        {hasChanges && (
           <Typography variant="caption" color="text.secondary">
             Unsaved changes
           </Typography>
@@ -813,8 +832,23 @@ export default function ConfigurePanel({
         </Alert>
       )}
 
+      {showRationLitWarning && (
+        <Alert severity="warning" sx={{ mt: 0.75 }}>
+          {showRationLitWarning}
+        </Alert>
+      )}
+
+      {showBasePPWarning && (
+        <Alert severity="warning" sx={{ mt: 0.75 }}>
+          {showBasePPWarning}
+        </Alert>
+      )}
+
       {projection && (
-        <Paper variant="outlined" sx={{ mt: 0.75, p: 1 }}>
+        <Paper
+          // variant="outlined"
+          sx={{ mt: 0.75, p: 1 }}
+        >
           <Typography variant="caption" color="text.secondary">
             Configure summary
           </Typography>
@@ -823,10 +857,10 @@ export default function ConfigurePanel({
               display: "grid",
               gridTemplateColumns: {
                 xs: "auto minmax(0, 1fr)",
-                md: "auto repeat(6, minmax(0, 1fr))",
+                md: "auto repeat(7, minmax(0, 1fr))",
               },
-              columnGap: 1.5,
-              rowGap: 0.75,
+              columnGap: 1,
+              rowGap: 0.5,
               alignItems: "center",
             }}
           >
@@ -841,7 +875,11 @@ export default function ConfigurePanel({
             </Typography>
 
             <Typography variant="caption" color="text.secondary">
-              PP: {formatInt(projection.current.boostedPP)}
+              Base PP: {formatInt(projection.current.basePP)}
+            </Typography>
+
+            <Typography variant="caption" color="text.secondary">
+              Boosted PP: {formatInt(projection.current.boostedPP)}
             </Typography>
 
             <Typography variant="caption" color="text.secondary">
@@ -852,34 +890,48 @@ export default function ConfigurePanel({
               Total boost: {fmtPct(currentTotalBoost * 100)}
             </Typography>
 
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 0.5,
-              }}
-            >
-              Rewards/hr:
-              {renderResourceIcon(produceResource as Resource)}
-              {formatFixed(projection.current.produce[0]?.amount ?? 0, 3)}
-            </Typography>
-
-            <Typography variant="caption" color="text.secondary">
-              Net: {formatFixed(projection.current.netDEC, 3)} DEC
-            </Typography>
-
-            <Box display="flex" alignItems="center" gap={0.5}>
+            {projection.current.captureRate !== null ? (
               <Typography variant="caption" color="text.secondary">
-                Consume/hr:
+                Capture rate: {fmtPct(projection.current.captureRate * 100)}
               </Typography>
-              {renderConsume(projection.current.consume)}
-            </Box>
+            ) : (
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 0.5,
+                }}
+              >
+                Rewards/hr:
+                {renderResourceIcon(produceResource as Resource)}
+                {formatFixed(projection.current.produce[0]?.amount ?? 0, 3)}
+              </Typography>
+            )}
+
+            {projection.next.captureRate !== null ? (
+              ""
+            ) : (
+              <Typography variant="caption" color="text.secondary">
+                Net: {formatFixed(projection.current.netDEC, 3)} DEC
+              </Typography>
+            )}
+
+            {projection.next.captureRate !== null ? (
+              ""
+            ) : (
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Typography variant="caption" color="text.secondary">
+                  Consume/hr:
+                </Typography>
+                {renderConsume(projection.current.consume)}
+              </Box>
+            )}
 
             {/* New row with transition */}
             <Collapse
-              in={dirty}
+              in={hasChanges}
               timeout={IMPACT_ROW_TRANSITION_MS}
               sx={{
                 gridColumn: "1 / -1",
@@ -890,9 +942,9 @@ export default function ConfigurePanel({
                   display: "grid",
                   gridTemplateColumns: {
                     xs: "auto minmax(0, 1fr)",
-                    md: "auto repeat(6, minmax(0, 1fr))",
+                    md: "auto repeat(7, minmax(0, 1fr))",
                   },
-                  columnGap: 1.5,
+                  columnGap: 1,
                   alignItems: "top",
                 }}
               >
@@ -907,12 +959,31 @@ export default function ConfigurePanel({
 
                 <Stack direction="column">
                   <Typography variant="caption" color="text.secondary">
-                    PP: {formatInt(projection.next.boostedPP)}
+                    Base PP: {formatInt(projection.next.basePP)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
                     (
-                    <Box component="span" sx={{ color: deltaColor(ppDelta) }}>
-                      {fmtDelta(ppDelta)}
+                    <Box
+                      component="span"
+                      sx={{ color: deltaColor(basePpDelta) }}
+                    >
+                      {fmtDelta(basePpDelta)}
+                    </Box>
+                    )
+                  </Typography>
+                </Stack>
+
+                <Stack direction="column">
+                  <Typography variant="caption" color="text.secondary">
+                    Boosted PP: {formatInt(projection.next.boostedPP)}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    (
+                    <Box
+                      component="span"
+                      sx={{ color: deltaColor(boostPpDelta) }}
+                    >
+                      {fmtDelta(boostPpDelta)}
                     </Box>
                     )
                   </Typography>
@@ -950,68 +1021,97 @@ export default function ConfigurePanel({
                   </Typography>
                 </Stack>
 
-                <Stack direction="column">
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: 0.5,
-                    }}
-                  >
-                    Rewards/hr:{" "}
-                    {renderResourceIcon(produceResource as Resource)}
-                    {formatFixed(projection.next.produce[0]?.amount ?? 0, 3)}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    (
-                    <Box
-                      component="span"
-                      sx={{ color: deltaColor(produceDelta) }}
-                    >
-                      {fmtDelta(produceDelta)}
-                    </Box>
-                    )
-                  </Typography>
-                </Stack>
-
-                <Stack direction="column">
-                  <Typography variant="caption" color="text.secondary">
-                    Net: {formatFixed(projection.next.netDEC, 3)} DEC
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    (
-                    <Box component="span" sx={{ color: deltaColor(netDelta) }}>
-                      {fmtDelta(netDelta)}
-                    </Box>
-                    )
-                  </Typography>
-                </Stack>
-
-                <Stack direction="column">
-                  <Stack direction="row" spacing={0.5}>
+                {projection.next.captureRate !== null ? (
+                  <Stack direction="column">
                     <Typography variant="caption" color="text.secondary">
-                      Consume/hr:{" "}
+                      Capture rate: {fmtPct(projection.next.captureRate * 100)}
                     </Typography>
-                    {renderConsume(projection.next.consume, consumeDeltas)}
-                  </Stack>
-
-                  {projection.next.consume.length === 1 && (
                     <Typography variant="caption" color="text.secondary">
                       (
                       <Box
                         component="span"
-                        sx={{
-                          color: deltaColor(consumeDeltas[0]?.amount ?? 0),
-                        }}
+                        sx={{ color: deltaColor(captureRateDelta) }}
                       >
-                        {fmtDelta(consumeDeltas[0]?.amount ?? 0)}
+                        {fmtDelta(captureRateDelta * 100)}%
                       </Box>
                       )
                     </Typography>
-                  )}
-                </Stack>
+                  </Stack>
+                ) : (
+                  <Stack direction="column">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      Rewards/hr:{" "}
+                      {renderResourceIcon(produceResource as Resource)}
+                      {formatFixed(projection.next.produce[0]?.amount ?? 0, 3)}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      (
+                      <Box
+                        component="span"
+                        sx={{ color: deltaColor(produceDelta) }}
+                      >
+                        {fmtDelta(produceDelta)}
+                      </Box>
+                      )
+                    </Typography>
+                  </Stack>
+                )}
+
+                {projection.next.captureRate !== null ? (
+                  ""
+                ) : (
+                  <Stack direction="column">
+                    <Typography variant="caption" color="text.secondary">
+                      Net: {formatFixed(projection.next.netDEC, 3)} DEC
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      (
+                      <Box
+                        component="span"
+                        sx={{ color: deltaColor(netDelta) }}
+                      >
+                        {fmtDelta(netDelta)}
+                      </Box>
+                      )
+                    </Typography>
+                  </Stack>
+                )}
+
+                {projection.next.captureRate !== null ? (
+                  ""
+                ) : (
+                  <Stack direction="column">
+                    <Stack direction="row" spacing={0.5}>
+                      <Typography variant="caption" color="text.secondary">
+                        Consume/hr:{" "}
+                      </Typography>
+                      {renderConsume(projection.next.consume, consumeDeltas)}
+                    </Stack>
+
+                    {projection.next.consume.length === 1 && (
+                      <Typography variant="caption" color="text.secondary">
+                        (
+                        <Box
+                          component="span"
+                          sx={{
+                            color: deltaColor(consumeDeltas[0]?.amount ?? 0),
+                          }}
+                        >
+                          {fmtDelta(consumeDeltas[0]?.amount ?? 0)}
+                        </Box>
+                        )
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
               </Box>
             </Collapse>
           </Box>{" "}
