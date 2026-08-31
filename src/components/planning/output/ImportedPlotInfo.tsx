@@ -1,7 +1,8 @@
+import { ManageLink } from "@/components/player-overview/deed-overview/land-deed-card/link-components/ManageLink";
 import {
+  land_plot_icon_url,
   land_region_icon_url,
   land_tract_icon_url,
-  land_plot_icon_url,
 } from "@/lib/shared/statics_icon_urls";
 import { Avatar, Box, Stack, Tooltip, Typography } from "@mui/material";
 
@@ -38,7 +39,7 @@ export default function Import({
           sx={{
             width: "100%",
             minWidth: 300,
-            maxWidth: 350,
+            maxWidth: 370,
             height: "100%",
           }}
         >
@@ -76,6 +77,13 @@ export default function Import({
           <Typography variant="caption" fontSize={fontSize}>
             {plotNumber} (ID: {plotId})
           </Typography>
+
+          <ManageLink
+            regionNumber={regionNumber}
+            plotId={plotId}
+            tractNumber={tractNumber}
+            plotNumber={plotNumber}
+          />
         </Stack>
       </Tooltip>
     </Box>

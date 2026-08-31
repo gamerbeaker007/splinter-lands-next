@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.xx.x] - 2026-xx-xx
+
+### Added
+
+- **Land Planner:** Add manager plot when plot is imported.
+
+---
+
 ## [v1.25.3] - 2026-08-30
 
 ### Added
