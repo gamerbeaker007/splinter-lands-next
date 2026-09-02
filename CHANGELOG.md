@@ -19,6 +19,8 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ### Added
 
 - **Land Planner:** Add manager plot when plot is imported.
+- **Player overview:** Add planning link to land deed card.
+- **Land Manager:** In Config add select all and deselect all
 
 ---
 

@@ -1,9 +1,9 @@
 // components/BiomeBoosts.stories.tsx
 import Box from "@mui/material/Box";
 import { Meta, StoryObj } from "@storybook/react";
-import { LandDeedCard } from "./LandDeedCard";
 import { DeedComplete } from "../../../../types/deed";
 import { SplCardDetails } from "../../../../types/splCardDetails";
+import { LandDeedCard } from "./LandDeedCard";
 
 const meta: Meta<typeof LandDeedCard> = {
   title: "Components/PlayerOverview/LandDeedCard/LandDeedCard",
@@ -561,7 +561,11 @@ export const Default: Story = {
           zoom: { xs: "35%", sm: "65%", md: "80%", lg: "90%" },
         }}
       >
-        <LandDeedCard deed={completeDeedFixture1} cardDetails={cardDetails} />
+        <LandDeedCard
+          deed={completeDeedFixture1}
+          cardDetails={cardDetails}
+          showOwnershipInfo={true}
+        />
       </Box>
     );
   },

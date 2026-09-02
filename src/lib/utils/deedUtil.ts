@@ -1,9 +1,9 @@
+import { titleIconMapOnTitle } from "@/lib/shared/statics";
 import {
   land_hammer_icon_url,
   land_unsurveyd_deed_url,
   SPL_WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
-import { titleIconMapOnTitle } from "@/lib/shared/statics";
 
 const BASE_URL = "https://next.splinterlands.com/assets/lands/deedsSurveyed";
 
@@ -17,6 +17,10 @@ export function getLandManagerProductionLink(
   plotNumber: number
 ) {
   return `/land-manager/production?region=${regionNumber}&tract=${tractNumber}&plot=${plotNumber}`;
+}
+
+export function getPlannerLink(plotID: number) {
+  return `/planning?plot=${plotID}`;
 }
 
 export function getWorksiteLink(regionNumber: number, plotId: number) {
