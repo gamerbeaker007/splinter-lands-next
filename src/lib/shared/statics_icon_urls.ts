@@ -104,6 +104,10 @@ export const title_emissary_icon_url = `${WEB_URL}website/icons/icon_active_emis
 
 export const dec_icon_url = `${WEB_URL}website/icon_dec.png`;
 export const sps_icon_url = `${WEB_URL}website/land/resources/sps.png`;
+export const hive_icon_url =
+  "https://files.peakd.com/file/peakd-hive/beaker007/23uQvcmsjvnggrKbKehjGjBVvGxQPxpb5r9v32Wj31NrowggLm6qggCtHT4qw3v8Ts6sX.png";
+export const hbd_icon_url =
+  "https://files.peakd.com/file/peakd-hive/beaker007/23tGK3s22hqcrutR68KYswUXQ8DxbAViaxDWxu5tM45JgiStSFMqL8AivUCqAjwGrcoRL.png";
 export const glint_icon_url = `${WEB_URL}website/icons/icon_resource_glint.png`;
 export const cinder_icon_url = `${WEB_URL}website/icons/img_resource_cinder.webp`;
 export const merits_icon_url = `${WEB_URL}website/icons/img_merit_256.png`;

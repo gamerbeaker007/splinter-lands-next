@@ -470,6 +470,18 @@ model LandMythicHarvestLog {
   @@map("land_mythic_harvest_log")
 }
 
+model SupportDonation {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  username   String
+  currency   String
+  amount     Decimal  @db.Decimal(18, 8)
+  usd_value  Decimal  @db.Decimal(18, 8)
+  tx         String   @unique
+
+  @@map("support_donation")
+}
+
 // Combined log for both the rental and purchase ("buy") worker flows. Each run
 // of either flow upserts onto the same (date, player) row.
 model LandWorkerLog {
