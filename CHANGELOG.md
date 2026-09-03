@@ -14,9 +14,12 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.xx.x] - 2026-xx-xx
+## [v1.26.0] - 2026-09-03
 
 ### Added
+
+- **Land Manager — Custom Plan:** New "Custom Plan" process-resource strategy that lets players create, save, edit, reorder, and execute sequences of Transfer, Pool, Buy, Sell, and Swap actions. Up to 5 named plans per player. Plans validate sequentially (each row consumes from a temporary ledger), support percentage or absolute amounts, and execute via the existing Keychain broadcast pipeline with Today-panel reporting.
+- **Land Manager:** Added `transfer` action type to Today-panel post-harvest log.
 
 - **Land Planner:** Add manager plot when plot is imported.
 - **Player overview:** Add planning link to land deed card.

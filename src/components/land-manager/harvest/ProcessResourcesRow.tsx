@@ -1,5 +1,6 @@
 "use client";
 
+import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import {
   ActionPlan,
@@ -16,7 +17,7 @@ import {
   CircularProgress,
   Stack,
 } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -43,10 +44,15 @@ export default function ProcessResourcesRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const [customPlanOpen, setCustomPlanOpen] = useState(false);
+
   const action = useProcessResourcesAction({
     username,
     visibleRegions,
-    postHarvestStrategy,
+    postHarvestStrategy:
+      postHarvestStrategy === "custom_plan"
+        ? "accumulate"
+        : postHarvestStrategy,
     excludedResources: postHarvestExcludedResources,
     sellPct,
     poolPct,
@@ -60,6 +66,10 @@ export default function ProcessResourcesRow({
   // Build the plan first and hand it to the confirm dialog; only the
   // dialog's Confirm actually broadcasts.
   async function run() {
+    if (postHarvestStrategy === "custom_plan") {
+      setCustomPlanOpen(true);
+      return;
+    }
     const plan = await action.execute(true);
     if (plan) {
       onPlan(plan, async () => {
@@ -140,6 +150,19 @@ export default function ProcessResourcesRow({
         <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
           {action.error}
         </Alert>
+      )}
+
+      {customPlanOpen && (
+        <CustomPlanDialog
+          username={username}
+          visibleRegions={visibleRegions}
+          open={customPlanOpen}
+          onClose={() => setCustomPlanOpen(false)}
+          onSuccess={() => {
+            setCustomPlanOpen(false);
+            onSuccess();
+          }}
+        />
       )}
     </>
   );

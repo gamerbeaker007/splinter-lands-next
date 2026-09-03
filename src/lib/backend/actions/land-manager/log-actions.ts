@@ -260,10 +260,10 @@ function mergePostHarvestActions(
   existing: PostHarvestActionSummary[],
   incoming: PostHarvestActionSummary[]
 ): PostHarvestActionSummary[] {
-  // `to_symbol` belongs in the key: without it WOOD→GRAIN and WOOD→IRON in the
-  // same region collapse into one meaningless row.
+  // `to_symbol` and `to_region_uid` belong in the key so that transfers of the
+  // same resource to different regions don't collapse into one line.
   const key = (a: PostHarvestActionSummary) =>
-    `${a.type}|${a.region_uid}|${a.symbol}|${a.to_symbol ?? ""}`;
+    `${a.type}|${a.region_uid}|${a.to_region_uid ?? ""}|${a.symbol}|${a.to_symbol ?? ""}`;
 
   const map: Record<string, PostHarvestActionSummary> = {};
   for (const a of existing) map[key(a)] = { ...a };

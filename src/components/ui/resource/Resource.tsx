@@ -27,7 +27,7 @@ export function renderResourceChip(
 ) {
   return (
     <Tooltip
-      key={resource}
+      key={resource + Math.random()}
       title={capitalize(resource.toLowerCase())}
       placement={"top"}
       followCursor={true}
