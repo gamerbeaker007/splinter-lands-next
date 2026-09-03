@@ -22,6 +22,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Player overview:** Add planning link to land deed card.
 - **Land Manager:** In Config add select all and deselect all.
 - **Support/Donations** Add validator voting and donations.
+- Sorting: Added "Construction End" sort option for deed/worksite lists. It orders by `projected_end` only for plots currently under construction and keeps null/non-construction entries at the end.
 
 ---
 
