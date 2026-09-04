@@ -17,7 +17,8 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useMemo, useState } from "react";
 
 type ZoomKey = "small" | "medium" | "large";
 
@@ -39,6 +40,16 @@ export default function PlanningPageContent({
   marketData,
 }: PlanningPageContentProps) {
   usePageTitle("Land Planning");
+
+  // Deep link from the deed cards: /planning?plot=<plotId> pre-imports that plot
+  // into the first planning tile.
+  const searchParams = useSearchParams();
+  const importPlotId = useMemo(() => {
+    const raw = searchParams.get("plot");
+    if (!raw) return undefined;
+    const id = Number(raw);
+    return Number.isFinite(id) && id > 0 ? id : undefined;
+  }, [searchParams]);
 
   const [plans, setPlans] = useState<ProductionInfo[]>([
     {
@@ -144,6 +155,7 @@ export default function PlanningPageContent({
                   onChange={handlePlanChange}
                   onDelete={deletePlan}
                   deletable={idx !== 0}
+                  importPlotId={idx === 0 ? importPlotId : undefined}
                 />
               </Box>
             ))}

@@ -7,6 +7,7 @@ import { Stack } from "@mui/material";
 import DonationSummary from "./DonationSummary";
 import LaborsLuckRow from "./LaborsLuckRow";
 import TodaySection from "./TodaySection";
+import { Fragment } from "react";
 
 type HarvestLog = NonNullable<TodayLogs["harvest"]>;
 
@@ -19,9 +20,11 @@ export default function HarvestSection({ log }: { log: HarvestLog }) {
       txIds={[...log.harvest_transactions, ...log.donation_transactions]}
     >
       <Stack direction="row" gap={0.5} flexWrap="wrap">
-        {Object.entries(log.resources_json).map(([sym, amt]) =>
-          renderResourceChip(sym as Resource, amt)
-        )}
+        {Object.entries(log.resources_json).map(([sym, amt]) => (
+          <Fragment key={sym}>
+            {renderResourceChip(sym as Resource, amt)}
+          </Fragment>
+        ))}
       </Stack>
       <LaborsLuckRow txIds={log.harvest_transactions} />
       <DonationSummary

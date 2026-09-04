@@ -237,6 +237,17 @@ function getSortValue(
       return deed.progressInfo?.percentageDone ?? 0;
     case "netDEC":
       return deed.productionInfo?.netDEC ?? 0;
+    case "projectedEnd": {
+      // Only sort by projected end when the deed is actively under construction.
+      const isUnderConstruction = deed.worksiteDetail?.is_construction ?? false;
+      if (!isUnderConstruction) return undefined;
+
+      const projectedEnd = deed.worksiteDetail?.projected_end;
+      if (!projectedEnd) return undefined;
+
+      const projectedEndMs = new Date(projectedEnd).getTime();
+      return Number.isNaN(projectedEndMs) ? undefined : projectedEndMs;
+    }
     default:
       return undefined;
   }

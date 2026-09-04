@@ -28,9 +28,9 @@ export const OwnerInfo: React.FC<Props> = ({
     >
       <Typography
         variant="h6"
-        color="black"
+        color="white"
         fontWeight="bold"
-        textAlign="center"
+        textAlign="left"
         sx={{
           fontSize: "0.8rem",
         }}

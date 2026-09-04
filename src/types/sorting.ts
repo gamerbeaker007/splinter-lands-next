@@ -6,7 +6,8 @@ export type SortOptionKey =
   | "basePP"
   | "boostedPP"
   | "percentComplete"
-  | "netDEC";
+  | "netDEC"
+  | "projectedEnd";
 
 export type SortOption = {
   key: SortOptionKey;
@@ -39,5 +40,9 @@ export const defaultSortOptions: SortOption[] = [
   {
     key: "netDEC",
     label: "DEC /hr",
+  },
+  {
+    key: "projectedEnd",
+    label: "Construction End",
   },
 ];

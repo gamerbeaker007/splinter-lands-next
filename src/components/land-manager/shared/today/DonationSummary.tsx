@@ -3,6 +3,7 @@
 import { renderResourceChip } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
 import { Stack, Typography } from "@mui/material";
+import { Fragment } from "react";
 
 interface DonationSummaryProps {
   donations: Record<string, number>;
@@ -29,9 +30,11 @@ export default function DonationSummary({
             Donations made:{" "}
           </Typography>
           <Stack direction="row" gap={0.5} flexWrap="wrap">
-            {Object.entries(donations).map(([sym, amt]) =>
-              renderResourceChip(sym as Resource, amt)
-            )}
+            {Object.entries(donations).map(([sym, amt]) => (
+              <Fragment key={sym}>
+                {renderResourceChip(sym as Resource, amt)}
+              </Fragment>
+            ))}
           </Stack>
         </>
       )}

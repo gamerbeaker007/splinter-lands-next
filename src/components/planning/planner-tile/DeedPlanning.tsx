@@ -29,6 +29,7 @@ export type Props = {
   onChange: (index: number, info: ProductionInfo) => void;
   onDelete?: (index: number) => void;
   deletable?: boolean;
+  importPlotId?: number;
 };
 
 export function DeedPlanning({
@@ -42,6 +43,7 @@ export function DeedPlanning({
   onChange,
   onDelete,
   deletable,
+  importPlotId,
 }: Props) {
   const emitPlanChange = useCallback(
     (info: ProductionInfo) => onChange(index, info),
@@ -90,6 +92,7 @@ export function DeedPlanning({
             regionTax={regionTax}
             marketData={marketData}
             onPlanChange={emitPlanChange}
+            importPlotId={importPlotId}
           />
         </Stack>
       </CardContent>

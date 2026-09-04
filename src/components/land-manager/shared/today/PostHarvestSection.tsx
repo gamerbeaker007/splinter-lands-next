@@ -28,15 +28,21 @@ function aggregate(
     buy_resource: {},
     add_to_pool: {},
     swap_resource: {},
+    transfer: {},
+    remove_from_pool: {},
   };
   for (const a of actions) {
     const bucket = buckets[a.type] ?? buckets.add_to_pool;
-    // A swap has two symbols, so both belong in the key — otherwise WOOD→GRAIN
-    // and WOOD→IRON would merge into one meaningless row.
-    const key =
-      a.type === "swap_resource" && a.to_symbol
-        ? `${a.symbol} → ${a.to_symbol}`
-        : a.symbol;
+    // Build a key that distinguishes transfers to different regions and
+    // swaps of the same symbol to different targets.
+    let key: string;
+    if (a.type === "transfer") {
+      key = `${a.symbol}→${a.to_region_uid ?? ""}`;
+    } else if (a.type === "swap_resource" && a.to_symbol) {
+      key = `${a.symbol} → ${a.to_symbol}`;
+    } else {
+      key = a.symbol;
+    }
     if (!bucket[key])
       bucket[key] = {
         resource_amount: 0,
@@ -79,6 +85,24 @@ const LABELS: Record<ActionType, (sym: string, v: Totals) => ReactNode> = {
       </>
     );
   },
+  // `sym` is "SYMBOL→region_uid"
+  transfer: (sym, v) => {
+    const resource = sym.split("→")[0];
+    return (
+      <>
+        Transferred:{" "}
+        {renderResourceChip(resource as Resource, v.resource_amount)} (~
+        {renderResourceChip(resource as Resource, v.to_resource_amount)}{" "}
+        received)
+      </>
+    );
+  },
+  remove_from_pool: (sym, v) => (
+    <>
+      Withdrawn: {renderResourceChip(sym as Resource, v.resource_amount)} +{" "}
+      {renderResourceChip("DEC" as Resource, v.dec_amount)}
+    </>
+  ),
 };
 
 /** Sells, buys, swaps and pool deposits made after the harvest. */

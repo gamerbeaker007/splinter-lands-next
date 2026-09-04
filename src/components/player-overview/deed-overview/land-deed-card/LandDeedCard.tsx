@@ -1,5 +1,6 @@
 import { CaptureRateOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/CaptureRateOutput";
 import { TotemChanceOutput } from "@/components/player-overview/deed-overview/land-deed-card/info-sections/TotemChangeOutput";
+import { PlanningLink } from "@/components/player-overview/deed-overview/land-deed-card/link-components/PlanningLink";
 import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { land_under_construction_icon_url } from "@/lib/shared/statics_icon_urls";
@@ -108,12 +109,13 @@ export const LandDeedCard: React.FC<LandDeedCardProps> = ({
           plotNumber={plotNumber}
         />
         <HarvestLink regionNumber={regionNumber} />
+        <PlanningLink plotId={plotId} />
       </Stack>
 
       {showOwnershipInfo && (
         <OwnerInfo
           owner={deed.player}
-          pos={{ x: "20px", y: "15px", w: "300px" }}
+          pos={{ x: "15px", y: "15px", w: "300px" }}
         />
       )}
 

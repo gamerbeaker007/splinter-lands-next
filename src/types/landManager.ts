@@ -21,6 +21,12 @@ export const MAX_OPS_PER_BROADCAST = 4;
 // Hive produces a new block every ~3 seconds. Waiting this long between
 // consecutive broadcast batches guarantees they land in different blocks.
 export const HIVE_BLOCK_MS = 3_000;
+// How a broadcast transaction is waited on before it counts as confirmed.
+// Shared by every verify path — the client-side SPL poll in splBroadcast and
+// the server-side donation lookups — so one flow can never quietly use a
+// different patience than another.
+export const TRX_VERIFY_POLL_MS = HIVE_BLOCK_MS;
+export const TRX_VERIFY_TIMEOUT_MS = 30_000;
 
 // === Donation defaults (stored per player config) ===
 export const DEFAULT_DONATION_ENABLED = true;
@@ -166,7 +172,10 @@ export const POOL_BUFFER_WEEKS = 5;
 
 // === Post-Harvest strategy ===
 
-export type PostHarvestStrategy = "accumulate" | "sell_and_pool";
+export type PostHarvestStrategy =
+  | "accumulate"
+  | "sell_and_pool"
+  | "custom_plan";
 export const DEFAULT_POST_HARVEST_STRATEGY: PostHarvestStrategy = "accumulate";
 export const DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES: string[] = [];
 export const DEFAULT_POST_HARVEST_SELL_PCT = 0;
@@ -175,28 +184,141 @@ export const POST_HARVEST_STRATEGY_LABELS: Record<PostHarvestStrategy, string> =
   {
     accumulate: "Accumulate (do nothing)",
     sell_and_pool: "Sell % & add % to pool",
+    custom_plan: "Custom Plan",
   };
 
 export interface PostHarvestActionSummary {
-  type: "sell_for_dec" | "add_to_pool" | "buy_resource" | "swap_resource";
+  type:
+    | "sell_for_dec"
+    | "add_to_pool"
+    | "buy_resource"
+    | "swap_resource"
+    | "transfer"
+    | "remove_from_pool";
   region_uid: string;
+  /** Destination region for `transfer` rows. */
+  to_region_uid?: string;
   /**
-   * Resource the row is about. For `swap_resource` this is the resource that
-   * was SPENT; the swap's output lives in `to_symbol`/`to_resource_amount`.
+   * Resource the row is about. For `swap_resource` and `transfer` this is the
+   * resource that was SPENT; the swap's output lives in `to_symbol`/`to_resource_amount`.
    */
   symbol: string;
   /**
    * How much of `symbol` moved. The DIRECTION is implied by `type` — spent for
-   * `sell_for_dec` and `swap_resource`, received for `buy_resource`, deposited
-   * for `add_to_pool`.
+   * `sell_for_dec`, `swap_resource` and `transfer`, received for `buy_resource`,
+   * deposited for `add_to_pool`.
    */
   resource_amount: number;
   /** DEC that moved. For `swap_resource` this is the intermediate hop. */
   dec_amount: number;
-  /** `swap_resource` only: the resource received. */
+  /** `swap_resource` and `transfer` only: the resource received. */
   to_symbol?: string;
-  /** `swap_resource` only: how much of `to_symbol` the swap delivered. */
+  /** `swap_resource` and `transfer` only: how much of `to_symbol` the swap/transfer delivered. */
   to_resource_amount?: number;
+}
+
+// === Custom Plan ===
+
+export type CustomPlanActionType =
+  | "transfer"
+  | "pool"
+  | "buy"
+  | "sell"
+  | "swap"
+  | "pool_withdraw";
+export type CustomPlanAmountType = "pct" | "abs";
+
+export const CUSTOM_PLAN_ACTION_LABELS: Record<CustomPlanActionType, string> = {
+  transfer: "Transfer",
+  pool: "Pool",
+  buy: "Buy",
+  sell: "Sell",
+  swap: "Swap",
+  pool_withdraw: "Pool Withdraw",
+};
+
+export const MAX_CUSTOM_PLANS_PER_PLAYER = 5;
+export const MAX_CUSTOM_PLAN_NAME_LENGTH = 40;
+
+/** A persisted plan row as loaded from the DB. */
+export interface CustomPlanItem {
+  id: string;
+  sequence: number;
+  action_type: CustomPlanActionType;
+  from_region_uid: string | null;
+  to_region_uid: string | null;
+  from_resource: string | null;
+  to_resource: string | null;
+  amount_type: CustomPlanAmountType;
+  amount: number;
+}
+
+/** A saved Custom Plan with its ordered items. */
+export interface CustomPlan {
+  id: string;
+  player: string;
+  name: string;
+  sort_order: number;
+  created_at: Date;
+  updated_at: Date;
+  items: CustomPlanItem[];
+}
+
+/** An unsaved/in-editor plan row (includes transient UI state). */
+export interface CustomPlanRowDraft {
+  /** Client-only UUID for React key; not persisted. */
+  draftId: string;
+  action_type: CustomPlanActionType | "";
+  from_region_uid: string;
+  to_region_uid: string;
+  from_resource: string;
+  to_resource: string;
+  amount_type: CustomPlanAmountType;
+  amount: string; // string so partial input is supported
+}
+
+/** Per-row validation result produced by validateCustomPlan. */
+export interface CustomPlanRowValidation {
+  valid: boolean;
+  /** Absolute resolved amount (from pct or abs). */
+  resolvedAmount: number;
+  /** Estimated received amount (for transfer, swap) or DEC cost (for pool, buy). */
+  estimatedValue: number;
+  /** Balance BEFORE this row consumes input (already accounting for previous rows). */
+  currentBalance: number;
+  /** Balance AFTER this row input is applied. */
+  inputBalance: number;
+  /** Symbol used for current/input balance chips. */
+  balanceSymbol: string;
+  /** The input consumed by this row shown in absolute terms. */
+  inputAmountAbsolute: number;
+  /** Estimated primary output. */
+  estimatedOutputSymbol: string;
+  estimatedOutputAmount: number;
+  /** Optional secondary output (used by pool withdrawals). */
+  estimatedOutputSymbol2?: string;
+  estimatedOutputAmount2?: number;
+  /**
+   * `pool_withdraw` only: the `shares_out` fraction (0..1) of the player's own
+   * liquidity position this row withdraws, already rounded to the 3 decimals
+   * the chain accepts. Every estimate above is derived from this exact value,
+   * so what the editor shows is what gets broadcast.
+   */
+  poolSharesOut?: number;
+  error: string | null;
+}
+
+export type CustomPlanStatus =
+  | "empty"
+  | "incomplete"
+  | "invalid"
+  | "valid"
+  | "executing";
+
+/** Full validation result for a plan. */
+export interface CustomPlanValidationResult {
+  rows: CustomPlanRowValidation[];
+  status: CustomPlanStatus;
 }
 
 // === Rental strategy ===

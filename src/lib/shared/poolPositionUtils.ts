@@ -85,6 +85,40 @@ export function computePoolHolding(
   };
 }
 
+// ── shares_out precision ─────────────────────────────────────────────────────
+//
+// !!! TEMPORARY EXPERIMENT !!!
+//
+// `shares_out` was assumed to be read with 3 decimals, which puts a floor of
+// 0.001 (0.1% of the position) under every withdrawal. This is raised to 5 to
+// find out whether the engine actually accepts a finer fraction — a 0.00001
+// (0.001%) withdrawal.
+//
+// To revert: set SHARES_OUT_DECIMALS back to 3. Nothing else needs touching.
+//
+// Scope: this knob currently drives the Custom Plan withdrawal path only.
+// `makeHarvestableOps` deliberately keeps its own 3-decimal rounding so the
+// automated harvest flow is not part of the experiment.
+export const SHARES_OUT_DECIMALS = 3;
+
+/** Smallest `shares_out` the chain is assumed to accept. */
+export const MIN_SHARES_OUT = 10 ** -SHARES_OUT_DECIMALS;
+
+/**
+ * Truncate a shares fraction to the precision the chain reads.
+ *
+ * Rounding DOWN matters: rounding up could push the withdrawal past the
+ * unlocked slice and trigger the 10% early-exit penalty. The `toFixed` pass
+ * only strips binary-float noise (0.12345000000000001) — the value is already
+ * truncated, so it cannot round back up.
+ */
+export function floorSharesOut(fraction: number): number {
+  const factor = 10 ** SHARES_OUT_DECIMALS;
+  return Number(
+    (Math.floor(fraction * factor) / factor).toFixed(SHARES_OUT_DECIMALS)
+  );
+}
+
 /**
  * The `shares_out` fraction that withdraws `resourceWanted` units, capped at
  * the unlocked portion so the withdrawal never triggers the 10% early-exit

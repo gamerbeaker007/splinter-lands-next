@@ -8,6 +8,7 @@ import { capitalize, Stack, Typography } from "@mui/material";
 import DonationSummary from "./DonationSummary";
 import TodaySection from "./TodaySection";
 import { useTodayTx } from "./TodayTxContext";
+import { Fragment } from "react";
 
 type MythicHarvestLog = NonNullable<TodayLogs["mythicHarvest"]>;
 
@@ -44,12 +45,14 @@ export default function MythicHarvestSection({
                   {" : "}
                   <Stack direction="row" gap={0.5} flexWrap="wrap">
                     {a.tokens.length > 0
-                      ? a.tokens.map((token) =>
-                          renderResourceChip(
-                            token.token as Resource,
-                            token.received
-                          )
-                        )
+                      ? a.tokens.map((token) => (
+                          <Fragment key={token.token}>
+                            {renderResourceChip(
+                              token.token as Resource,
+                              token.received
+                            )}
+                          </Fragment>
+                        ))
                       : "no tokens"}
                   </Stack>
                 </Typography>

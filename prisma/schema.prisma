@@ -470,6 +470,50 @@ model LandMythicHarvestLog {
   @@map("land_mythic_harvest_log")
 }
 
+model LandCustomPlan {
+  id         String               @id @default(uuid())
+  player     String
+  name       String
+  sort_order Int                  @default(0)
+  created_at DateTime             @default(now())
+  updated_at DateTime             @updatedAt
+  items      LandCustomPlanItem[]
+
+  @@unique([player, name])
+  @@index([player, sort_order])
+  @@map("land_custom_plan")
+}
+
+model LandCustomPlanItem {
+  id              String         @id @default(uuid())
+  plan_id         String
+  sequence        Int
+  action_type     String         // transfer | pool | buy | sell | swap
+  from_region_uid String?
+  to_region_uid   String?
+  from_resource   String?
+  to_resource     String?
+  amount_type     String         // pct | abs
+  amount          Int
+  plan            LandCustomPlan @relation(fields: [plan_id], references: [id], onDelete: Cascade)
+
+  @@unique([plan_id, sequence])
+  @@index([plan_id, sequence])
+  @@map("land_custom_plan_item")
+}
+
+model SupportDonation {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  username   String
+  currency   String
+  amount     Decimal  @db.Decimal(18, 8)
+  usd_value  Decimal  @db.Decimal(18, 8)
+  tx         String   @unique
+
+  @@map("support_donation")
+}
+
 // Combined log for both the rental and purchase ("buy") worker flows. Each run
 // of either flow upserts onto the same (date, player) row.
 model LandWorkerLog {

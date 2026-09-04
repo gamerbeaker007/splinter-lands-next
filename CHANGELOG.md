@@ -14,13 +14,31 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.26.0] - 2026-09-03
+
+### Added
+
+- **Land Manager — Custom Plan:** New "Custom Plan" process-resource strategy that lets players create, save, edit, reorder, and execute sequences of Transfer, Pool, Buy, Sell, and Swap actions. Up to 5 named plans per player. Plans validate sequentially (each row consumes from a temporary ledger), support percentage or absolute amounts, and execute via the existing Keychain broadcast pipeline with Today-panel reporting.
+- **Land Manager:** Added `transfer` action type to Today-panel post-harvest log.
+
+- **Land Planner:** Add manager plot when plot is imported.
+- **Player overview:** Add planning link to land deed card.
+- **Land Manager:** In Config add select all and deselect all.
+- **Support/Donations** Add validator voting and donations.
+- Sorting: Added "Construction End" sort option for deed/worksite lists. It orders by `projected_end` only for plots currently under construction and keeps null/non-construction entries at the end.
+
+### Changed
+
+- Updated primsa dependencies
+
+---
+
 ## [v1.25.3] - 2026-08-30
 
 ### Added
 
 - **Land Manager:**  Configure panel add base PP + rationing lite warning + 100K limit warning.
 - **Land Manager:**  Configure panel add capture rate for castle / keep (remove consume and net DEC for castle and keeps)
-
 
 ---
 
@@ -30,7 +48,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - **Land Manager:**  Configure panel fix consume/hr.
 
-
 ---
 
 ## [v1.25.1] - 2026-08-30
@@ -39,8 +56,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - **Land Manager:**  Configure panel show current consume and update layout.
 - **Land Manager:**  Fetch SPS ratio and prices of the resource once at page load not for every configure panel (even if its cached)
-
-
 
 ---
 

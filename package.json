@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.25.3",
+  "version": "1.26.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -32,8 +32,8 @@
     "@mui/icons-material": "^7.3.5",
     "@mui/material": "^7.3.5",
     "@mui/material-nextjs": "^7.3.5",
-    "@prisma/adapter-pg": "^7.8.0",
-    "@prisma/client": "^7.8.0",
+    "@prisma/adapter-pg": "^7.10.0",
+    "@prisma/client": "^7.10.0",
     "@types/js-cookie": "^3.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "js-cookie": "^3.0.5",
@@ -75,7 +75,7 @@
     "eslint-plugin-storybook": "^10.5.6",
     "playwright": "^1.57.0",
     "prettier": "^3.8.1",
-    "prisma": "^7.8.0",
+    "prisma": "^7.10.0",
     "retry-axios": "^4.0.1",
     "storybook": "^10.5.6",
     "tsx": "^4.21.0",

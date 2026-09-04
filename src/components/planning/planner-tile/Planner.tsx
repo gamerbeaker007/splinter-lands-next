@@ -1,5 +1,6 @@
 "use client";
 import { Resource } from "@/constants/resource/resource";
+import { useFetchPlot } from "@/hooks/useFetchPlot";
 import {
   calcCaptureRate,
   calcProductionInfo,
@@ -39,7 +40,7 @@ import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import SlotEditor from "../card-editor/SlotEditor";
 import { PlannerControls } from "../deed-editor/PlanningControls";
 import { DECOutput } from "../output/DECOutput";
@@ -70,6 +71,8 @@ export type Props = {
   regionTax: RegionTax[] | null;
   marketData: LowestMarketData | null;
   onPlanChange: (info: ProductionInfo) => void;
+  /** Plot id to auto-import on mount (deep link: /planning?plot=<id>). */
+  importPlotId?: number;
 };
 
 const fontColor = "common.white";
@@ -82,6 +85,7 @@ export default function Planner({
   regionTax,
   marketData,
   onPlanChange,
+  importPlotId,
 }: Readonly<Props>) {
   const [plot, setPlot] = useState<PlotPlannerData>({
     plotRarity: "common",
@@ -376,6 +380,22 @@ export default function Planner({
       magicType: importedStatus === "magical" ? importedMagic : "",
     });
   }
+
+  const { fetchPlot } = useFetchPlot();
+  const autoImportedPlotId = useRef<number | null>(null);
+
+  // Auto-import when the planner is opened from a deed card link.
+  useEffect(() => {
+    if (!importPlotId || autoImportedPlotId.current === importPlotId) return;
+    autoImportedPlotId.current = importPlotId;
+
+    (async () => {
+      const deed = await fetchPlot(importPlotId);
+      if (deed) applyImportedDeed(deed);
+    })();
+    // applyImportedDeed only writes state, so it is safe to leave out of deps.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [importPlotId, fetchPlot]);
 
   const onTotemChange = (tier: TotemTier) => {
     updatePlot({ totem: tier });

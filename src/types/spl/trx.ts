@@ -269,6 +269,20 @@ export interface UpdateWorksiteTrxData {
   result_message: string;
 }
 
+// ── token_transfer ────────────────────────────────────────────────────────────
+// Result of sm_token_transfer (DEC/SPS sent to another player). The result IS
+// the outer envelope: `{ success, from, to, amount, token, trx_id, created_date }`.
+
+export interface TokenTransferTrxData {
+  from: string;
+  to: string;
+  /** "DEC", "SPS", … — whatever the engine confirms back, not what was asked for. */
+  token: string;
+  amount: number;
+  /** When the engine settled the transfer; falls back to the envelope date. */
+  date: Date;
+}
+
 // ── set_authority ────────────────────────────────────────────────────────────
 // Result of sm_set_authority (grant/revoke rental/purchase/delegation).
 // The `result` envelope is `{ success, authority: { rental, purchase, delegation } }`.
@@ -314,7 +328,8 @@ export type SplTrxResult =
   | { op: "worksite_construction"; result: WorksiteConstructionTrxData }
   | { op: "cancel_construction"; result: CancelConstructionTrxData }
   | { op: "update_worksite"; result: UpdateWorksiteTrxData }
-  | { op: "set_authority"; result: SetAuthorityTrxData };
+  | { op: "set_authority"; result: SetAuthorityTrxData }
+  | { op: "token_transfer"; result: TokenTransferTrxData };
 
 /**
  * Outcome of a single transaction lookup.
