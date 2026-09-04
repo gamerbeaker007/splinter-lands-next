@@ -13,6 +13,7 @@ import type {
   StakeChangeTrxData,
   SwapTokensTrxData,
   TaxCollectionTrxData,
+  TokenTransferTrxData,
   TrxLookupOutcome,
   UpdateWorksiteTrxData,
 } from "@/types/spl/trx";
@@ -233,6 +234,42 @@ function parseStakeChangeOutcome(outer: Raw): TrxLookupOutcome {
   };
 }
 
+/**
+ * sm_token_transfer. `success` alone is not enough here: a donation is recorded
+ * against a real amount, so a zero/absent amount or a result that belongs to a
+ * different transaction must be treated as a hard failure, not as success.
+ */
+function parseTokenTransferOutcome(
+  outer: Raw,
+  trxInfo: SplTrxInfo
+): TrxLookupOutcome {
+  if (outer?.success === false) {
+    return {
+      status: "failed",
+      error: (outer.error as string) ?? "Token transfer failed",
+    };
+  }
+
+  const amount = Number(outer?.amount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { status: "failed", error: "Invalid transaction amount" };
+  }
+
+  const resultTrxId = outer?.trx_id as string | undefined;
+  if (resultTrxId && resultTrxId !== trxInfo.id) {
+    return { status: "failed", error: "Transaction ID mismatch" };
+  }
+
+  const result: TokenTransferTrxData = {
+    from: (outer.from as string) ?? trxInfo.player,
+    to: (outer.to as string) ?? "",
+    token: (outer.token as string) ?? "",
+    amount,
+    date: new Date((outer.created_date as string) ?? trxInfo.created_date),
+  };
+  return { status: "success", result: { op: "token_transfer", result } };
+}
+
 function parseSetAuthorityOutcome(outer: Raw): TrxLookupOutcome {
   if (outer?.success === false) {
     return {
@@ -269,7 +306,10 @@ const WORKSITE_CONSTRUCTION_OPS = [
   "worksite_sps_construction",
 ] as const;
 
-const PARSERS: Record<string, (outer: Raw) => TrxLookupOutcome> = {
+const PARSERS: Record<
+  string,
+  (outer: Raw, trxInfo: SplTrxInfo) => TrxLookupOutcome
+> = {
   // land_operation ops (nested)
   harvest_all: nested("harvest_all", parseHarvestAll, "Harvest failed"),
   swap_tokens: nested("swap_tokens", parseSwapTokens, "Swap failed"),
@@ -332,6 +372,7 @@ const PARSERS: Record<string, (outer: Raw) => TrxLookupOutcome> = {
   // custom success checks
   stake_change: parseStakeChangeOutcome,
   set_authority: parseSetAuthorityOutcome,
+  token_transfer: parseTokenTransferOutcome,
 };
 
 // All worksite construction ops share one parser, injecting their project_type.
@@ -382,5 +423,5 @@ export function parseTrxInfo(
   const op = (input.op as string | undefined) ?? trxInfo.type;
   const parser = PARSERS[op];
   if (!parser) return { status: "pending" };
-  return parser(outer);
+  return parser(outer, trxInfo);
 }

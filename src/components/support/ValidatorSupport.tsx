@@ -196,7 +196,7 @@ export default function ValidatorSupport({
 
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Support <strong>{SUPPORT_VALIDATOR_BRAND}</strong> by voting for{" "}
-          {SUPPORT_VALIDATOR}&apos;s validator .
+          {SUPPORT_VALIDATOR}&apos;s validator.
         </Typography>
 
         {authLoading && (

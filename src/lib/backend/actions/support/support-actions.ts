@@ -1,20 +1,23 @@
 "use server";
 
-import { DONATION_ACCOUNT } from "@/constants/support";
+import { DONATION_ACCOUNT, type DonationCurrency } from "@/constants/support";
 import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
-import { fetchHiveAccountBalances } from "@/lib/backend/api/hive/hive-account-api";
-import { fetchPlayerBalances } from "@/lib/backend/api/spl/spl-base-api";
-import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import {
-  fetchRawTokenTransfer,
-  parseTokenTransferTrxInfo,
-} from "@/lib/backend/api/spl/spl-support-api";
+  fetchHiveAccountBalances,
+  fetchHiveTransfer,
+} from "@/lib/backend/api/hive/hive-account-api";
+import {
+  fetchPlayerBalances,
+  fetchTransactionLookup,
+} from "@/lib/backend/api/spl/spl-base-api";
+import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
 import {
   fetchValidatorVotesByAccount,
   ValidatorVote,
 } from "@/lib/backend/api/spl/spl-validator-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
+import { TRX_VERIFY_POLL_MS, TRX_VERIFY_TIMEOUT_MS } from "@/types/landManager";
 import { Decimal } from "@prisma/client/runtime/client";
 
 // ── Validator votes ───────────────────────────────────────────────────────────
@@ -89,7 +92,17 @@ export async function getSupportBalances(): Promise<{
   };
 }
 
-// ── DEC/SPS donation recording ────────────────────────────────────────────────
+// ── Donation recording ────────────────────────────────────────────────────────
+//
+// Both flows follow the same shape: the client hands over nothing but a
+// transaction id, and the server reads the amount back off the authoritative
+// source before it writes a row. Nothing the browser claims about what was sent
+// is trusted — the two sources just differ.
+//
+//   DEC / SPS  → sm_token_transfer, settled by the SPL engine, read through the
+//                shared `fetchTransactionLookup` / `parseTrxInfo` pipeline.
+//   HIVE / HBD → a native Hive transfer that never reaches the SPL engine, read
+//                back off the chain with `fetchHiveTransfer`.
 
 export type DonationRecordResult =
   | { status: "success"; donationId: number }
@@ -97,118 +110,52 @@ export type DonationRecordResult =
   | { status: "already_recorded" }
   | { status: "error"; error: string };
 
-const TOKEN_TRANSFER_LOOKUP_ATTEMPTS = 3;
-const TOKEN_TRANSFER_LOOKUP_DELAY_MS = 2000;
+const PENDING_MESSAGE =
+  "Your transaction was broadcast successfully but is still being confirmed. Please try again in a few seconds.";
 
-export async function recordTokenTransferDonation(
-  txId: string
-): Promise<DonationRecordResult> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return { status: "error", error: "Not authenticated" };
-  }
+/** Shared tail: price the confirmed transfer in USD and store it. */
+async function storeDonation(input: {
+  username: string;
+  currency: DonationCurrency;
+  amount: number;
+  txId: string;
+  createdAt?: Date;
+}): Promise<DonationRecordResult> {
+  const { username, currency, amount, txId, createdAt } = input;
 
-  if (!txId || typeof txId !== "string" || txId.trim().length === 0) {
-    return { status: "error", error: "Invalid transaction ID" };
-  }
-
-  // Idempotency: check if already recorded
-  const existing = await prisma.supportDonation.findUnique({
-    where: { tx: txId },
-  });
-  if (existing) return { status: "already_recorded" };
-
-  // Bounded retry for indexing delay
-  let trxInfo = null;
-  for (let attempt = 0; attempt < TOKEN_TRANSFER_LOOKUP_ATTEMPTS; attempt++) {
-    if (attempt > 0) {
-      await new Promise((r) => setTimeout(r, TOKEN_TRANSFER_LOOKUP_DELAY_MS));
-    }
-    trxInfo = await fetchRawTokenTransfer(txId);
-    if (trxInfo) break;
-  }
-
-  if (!trxInfo) {
-    return {
-      status: "pending",
-      message:
-        "Your transaction was broadcast successfully but is still being confirmed. Please try again in a few seconds.",
-    };
-  }
-
-  const parsed = parseTokenTransferTrxInfo(trxInfo);
-  if (!parsed.ok) {
-    if (parsed.pending) {
-      return {
-        status: "pending",
-        message: "Transaction is still confirming. Please try again shortly.",
-      };
-    }
-    return { status: "error", error: parsed.error };
-  }
-
-  const { from, to, token, amount, date } = parsed.data;
-
-  // Verify sender matches authenticated user
-  if (from.toLowerCase() !== auth.username.toLowerCase()) {
-    return {
-      status: "error",
-      error: "Transaction sender does not match authenticated account",
-    };
-  }
-
-  // Verify recipient
-  if (to.toLowerCase() !== DONATION_ACCOUNT.toLowerCase()) {
-    return {
-      status: "error",
-      error: "Transaction recipient is not the donation account",
-    };
-  }
-
-  // Verify supported token
-  if (token !== "DEC" && token !== "SPS") {
-    return {
-      status: "error",
-      error: `Unsupported token: ${token}. Only DEC and SPS are accepted.`,
-    };
-  }
-
-  // Fetch current price server-side
   let prices;
   try {
     prices = await getPrices();
   } catch (err) {
-    logger.error(
-      "[support] Failed to fetch prices for donation recording",
-      err
-    );
+    logger.error("[support] Failed to fetch prices for donation", err);
     return {
       status: "error",
       error: "Could not retrieve current token price. Please try again.",
     };
   }
 
-  const tokenKey = token.toLowerCase() as "dec" | "sps";
-  const usdPrice = prices[tokenKey] ?? 0;
-  const usdValue = amount * usdPrice;
+  // Every donation currency is one of the price feed's keys by construction.
+  const usdPrice =
+    prices[currency.toLowerCase() as Lowercase<DonationCurrency>];
+  const usdValue = amount * (usdPrice ?? 0);
 
   try {
     const donation = await prisma.supportDonation.create({
       data: {
-        created_at: date,
-        username: from,
-        currency: token,
+        ...(createdAt ? { created_at: createdAt } : {}),
+        username,
+        currency,
         amount: new Decimal(amount),
         usd_value: new Decimal(usdValue),
         tx: txId,
       },
     });
     logger.info(
-      `[support] Recorded ${token} donation ${amount} from ${from}, tx=${txId}`
+      `[support] Recorded ${currency} donation ${amount} from ${username}, tx=${txId}`
     );
     return { status: "success", donationId: donation.id };
   } catch (err: unknown) {
-    // Unique constraint violation = already recorded (race condition)
+    // Unique constraint violation = already recorded (race condition).
     if (err instanceof Error && err.message.includes("Unique constraint")) {
       return { status: "already_recorded" };
     }
@@ -217,73 +164,131 @@ export async function recordTokenTransferDonation(
   }
 }
 
-// ── HIVE/HBD donation recording ───────────────────────────────────────────────
-
-export async function recordHiveTransferDonation(input: {
-  txId: string;
-  currency: string;
-  amount: number;
-}): Promise<DonationRecordResult> {
+/** Guard shared by both flows: authenticated, sane txId, not already stored. */
+async function beginRecording(
+  txId: string
+): Promise<
+  { ok: true; username: string } | { ok: false; result: DonationRecordResult }
+> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
-    return { status: "error", error: "Not authenticated" };
-  }
-
-  const { txId, currency, amount } = input;
-
-  if (!txId || typeof txId !== "string" || txId.trim().length === 0) {
-    return { status: "error", error: "Invalid transaction ID" };
-  }
-
-  if (currency !== "HIVE" && currency !== "HBD") {
-    return { status: "error", error: `Unsupported currency: ${currency}` };
-  }
-
-  if (!isFinite(amount) || amount <= 0) {
-    return { status: "error", error: "Invalid donation amount" };
-  }
-
-  // Idempotency check
-  const existing = await prisma.supportDonation.findUnique({
-    where: { tx: txId },
-  });
-  if (existing) return { status: "already_recorded" };
-
-  // Fetch price server-side
-  let prices;
-  try {
-    prices = await getPrices();
-  } catch (err) {
-    logger.error("[support] Failed to fetch prices for HIVE/HBD donation", err);
     return {
-      status: "error",
-      error: "Could not retrieve current token price. Please try again.",
+      ok: false,
+      result: { status: "error", error: "Not authenticated" },
     };
   }
 
-  const priceKey = currency.toLowerCase() as "hive" | "hbd";
-  const usdPrice = prices[priceKey] ?? 0;
-  const usdValue = amount * usdPrice;
-
-  try {
-    const donation = await prisma.supportDonation.create({
-      data: {
-        username: auth.username,
-        currency,
-        amount: new Decimal(amount),
-        usd_value: new Decimal(usdValue),
-        tx: txId,
-      },
-    });
-    logger.info(
-      `[support] Recorded ${currency} donation ${amount} from ${auth.username}, tx=${txId}`
-    );
-    return { status: "success", donationId: donation.id };
-  } catch (err: unknown) {
-    if (err instanceof Error && err.message.includes("Unique constraint")) {
-      return { status: "already_recorded" };
-    }
-    logger.error("[support] Failed to record HIVE/HBD donation", err);
-    return { status: "error", error: "Failed to save donation record" };
+  if (typeof txId !== "string" || txId.trim().length === 0) {
+    return {
+      ok: false,
+      result: { status: "error", error: "Invalid transaction ID" },
+    };
   }
+
+  const existing = await prisma.supportDonation.findUnique({
+    where: { tx: txId },
+  });
+  if (existing) {
+    return { ok: false, result: { status: "already_recorded" } };
+  }
+
+  return { ok: true, username: auth.username };
+}
+
+const sameAccount = (a: string, b: string) =>
+  a.toLowerCase() === b.toLowerCase();
+
+/** Records a DEC or SPS donation from its sm_token_transfer transaction. */
+export async function recordTokenTransferDonation(
+  txId: string
+): Promise<DonationRecordResult> {
+  const start = await beginRecording(txId);
+  if (!start.ok) return start.result;
+
+  // A single lookup, not a poll: the client already waited on this transaction
+  // with `waitForTransactions` before calling in, so by now the engine either
+  // knows about it or something is wrong. This call is the server-side
+  // VERIFICATION of what actually moved, not a second waiting room.
+  const outcome = await fetchTransactionLookup(txId);
+
+  if (outcome.status === "pending") {
+    return { status: "pending", message: PENDING_MESSAGE };
+  }
+  if (outcome.status === "failed") {
+    return { status: "error", error: outcome.error };
+  }
+  if (outcome.result.op !== "token_transfer") {
+    return {
+      status: "error",
+      error: `Unexpected transaction type: ${outcome.result.op}`,
+    };
+  }
+
+  const { from, to, token, amount, date } = outcome.result.result;
+
+  if (!sameAccount(from, start.username)) {
+    return {
+      status: "error",
+      error: "Transaction sender does not match authenticated account",
+    };
+  }
+  if (!sameAccount(to, DONATION_ACCOUNT)) {
+    return {
+      status: "error",
+      error: "Transaction recipient is not the donation account",
+    };
+  }
+  if (token !== "DEC" && token !== "SPS") {
+    return {
+      status: "error",
+      error: `Unsupported token: ${token}. Only DEC and SPS are accepted.`,
+    };
+  }
+
+  return storeDonation({
+    username: from,
+    currency: token,
+    amount,
+    txId,
+    createdAt: date,
+  });
+}
+
+/** Records a HIVE or HBD donation from its native Hive transfer transaction. */
+export async function recordHiveTransferDonation(
+  txId: string
+): Promise<DonationRecordResult> {
+  const start = await beginRecording(txId);
+  if (!start.ok) return start.result;
+
+  // Unlike the SPL path there is no client-side wait to lean on — nothing in
+  // the browser can see a native Hive transfer — so the wait happens here, on
+  // the cadence and ceiling every other confirmation in the app uses.
+  const deadline = Date.now() + TRX_VERIFY_TIMEOUT_MS;
+  let transfer = await fetchHiveTransfer(txId);
+  while (!transfer && Date.now() + TRX_VERIFY_POLL_MS < deadline) {
+    await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
+    transfer = await fetchHiveTransfer(txId);
+  }
+  if (!transfer) return { status: "pending", message: PENDING_MESSAGE };
+
+  if (!sameAccount(transfer.from, start.username)) {
+    return {
+      status: "error",
+      error: "Transaction sender does not match authenticated account",
+    };
+  }
+  if (!sameAccount(transfer.to, DONATION_ACCOUNT)) {
+    return {
+      status: "error",
+      error: "Transaction recipient is not the donation account",
+    };
+  }
+
+  return storeDonation({
+    username: transfer.from,
+    currency: transfer.currency,
+    amount: transfer.amount,
+    txId,
+  });
 }

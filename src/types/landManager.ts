@@ -21,6 +21,12 @@ export const MAX_OPS_PER_BROADCAST = 4;
 // Hive produces a new block every ~3 seconds. Waiting this long between
 // consecutive broadcast batches guarantees they land in different blocks.
 export const HIVE_BLOCK_MS = 3_000;
+// How a broadcast transaction is waited on before it counts as confirmed.
+// Shared by every verify path — the client-side SPL poll in splBroadcast and
+// the server-side donation lookups — so one flow can never quietly use a
+// different patience than another.
+export const TRX_VERIFY_POLL_MS = HIVE_BLOCK_MS;
+export const TRX_VERIFY_TIMEOUT_MS = 30_000;
 
 // === Donation defaults (stored per player config) ===
 export const DEFAULT_DONATION_ENABLED = true;
@@ -292,6 +298,13 @@ export interface CustomPlanRowValidation {
   /** Optional secondary output (used by pool withdrawals). */
   estimatedOutputSymbol2?: string;
   estimatedOutputAmount2?: number;
+  /**
+   * `pool_withdraw` only: the `shares_out` fraction (0..1) of the player's own
+   * liquidity position this row withdraws, already rounded to the 3 decimals
+   * the chain accepts. Every estimate above is derived from this exact value,
+   * so what the editor shows is what gets broadcast.
+   */
+  poolSharesOut?: number;
   error: string | null;
 }
 

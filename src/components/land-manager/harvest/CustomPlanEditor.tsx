@@ -212,9 +212,6 @@ export default function CustomPlanEditor({
               onDelete={!empty ? () => deleteRow(index) : undefined}
               onDuplicate={!empty ? () => duplicateRow(index) : undefined}
               isEmptyRow={empty}
-              dragHandleProps={{
-                onMouseDown: !empty ? () => onDragStart(index) : undefined,
-              }}
             />
           </Box>
         );

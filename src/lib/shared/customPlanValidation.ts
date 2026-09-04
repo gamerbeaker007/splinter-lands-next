@@ -4,6 +4,8 @@ import {
 } from "@/lib/shared/landManagerUtils";
 import {
   computePoolHolding,
+  floorSharesOut,
+  MIN_SHARES_OUT,
   sharesFractionForResource,
 } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
@@ -480,11 +482,12 @@ export function validateCustomPlan(
           unlockedResource: 0,
           usedFraction: 0,
         };
-        const baseUnlocked = computePoolHolding(
-          poolPositions[symbol],
-          pools
-        ).unlockedResource;
-        const resolved = parseAndScaleInput(draft, baseUnlocked, multiplier);
+        const holding = computePoolHolding(poolPositions[symbol], pools);
+        const resolved = parseAndScaleInput(
+          draft,
+          holding.unlockedResource,
+          multiplier
+        );
         const current = entry.unlockedResource;
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
@@ -501,7 +504,6 @@ export function validateCustomPlan(
           return invalid;
         }
 
-        const holding = computePoolHolding(poolPositions[symbol], pools);
         const fraction = sharesFractionForResource(
           holding,
           resolved,
@@ -512,17 +514,19 @@ export function validateCustomPlan(
             "No unlocked pool shares available to withdraw"
           );
         }
-        if (fraction < 0.001) {
+        // Truncated to the precision the chain reads — see floorSharesOut.
+        const sharesOut = floorSharesOut(fraction);
+        if (sharesOut < MIN_SHARES_OUT) {
           return emptyRowValidation(
-            "Withdrawal too small for chain precision (minimum shares_out is 0.001)"
+            `Withdrawal too small for chain precision (minimum is ${MIN_SHARES_OUT * 100}% of the position)`
           );
         }
 
-        const resourceOut = holding.resource * fraction;
-        const decOut = holding.dec * fraction;
+        const resourceOut = holding.resource * sharesOut;
+        const decOut = holding.dec * sharesOut;
         poolLedger.set(symbol, {
-          unlockedResource: Math.max(0, current - resolved),
-          usedFraction: entry.usedFraction + fraction,
+          unlockedResource: Math.max(0, current - resourceOut),
+          usedFraction: entry.usedFraction + sharesOut,
         });
 
         return {
@@ -530,13 +534,14 @@ export function validateCustomPlan(
           resolvedAmount: resolved,
           estimatedValue: resourceOut,
           currentBalance: current,
-          inputBalance: Math.max(0, current - resolved),
+          inputBalance: Math.max(0, current - resourceOut),
           balanceSymbol: symbol,
           inputAmountAbsolute: resolved,
           estimatedOutputSymbol: symbol,
           estimatedOutputAmount: resourceOut,
           estimatedOutputSymbol2: "DEC",
           estimatedOutputAmount2: decOut,
+          poolSharesOut: sharesOut,
           error: null,
         };
       }

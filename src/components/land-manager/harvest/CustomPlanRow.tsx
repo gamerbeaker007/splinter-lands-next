@@ -2,6 +2,8 @@
 
 import { renderResourceChip } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
+import { formatNumber } from "@/lib/formatters";
+import { SHARES_OUT_DECIMALS } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   CUSTOM_PLAN_ACTION_LABELS,
@@ -41,7 +43,6 @@ interface Props {
   onChange: (updated: Partial<CustomPlanRowDraft>) => void;
   onDelete?: () => void;
   onDuplicate?: () => void;
-  dragHandleProps?: Record<string, unknown>;
   isEmptyRow?: boolean;
 }
 
@@ -112,14 +113,11 @@ function AmountToggle({
   value,
   onChange,
   disabled,
-  hidePercent,
 }: {
   value: CustomPlanAmountType;
   onChange: (v: CustomPlanAmountType) => void;
   disabled?: boolean;
-  hidePercent?: boolean;
 }) {
-  if (hidePercent) return null;
   return (
     <ToggleButtonGroup
       size="small"
@@ -140,6 +138,15 @@ function AmountToggle({
 
 function renderOutput(validation: CustomPlanRowValidation | null) {
   if (!validation || !validation.estimatedOutputSymbol) return null;
+
+  // `poolSharesOut` is the `shares_out` fraction of the player's own liquidity
+  // position, so it doubles as "how much of the position this row withdraws".
+  // It is only set on a valid pool withdrawal, which already rules out an empty
+  // or fully locked position.
+  const poolPct = validation.poolSharesOut
+    ? validation.poolSharesOut * 100
+    : null;
+
   return (
     <Stack direction="row" alignItems="center" gap={0.75}>
       {renderResourceChip(
@@ -154,6 +161,17 @@ function renderOutput(validation: CustomPlanRowValidation | null) {
           validation.estimatedOutputAmount2,
           true
         )}
+      {poolPct !== null && (
+        <Typography variant="caption" color="text.secondary">
+          (
+          {formatNumber(poolPct, {
+            // A percentage has two fewer decimals than the fraction it came
+            // from, so this always shows the full precision actually broadcast.
+            maximumFractionDigits: Math.max(0, SHARES_OUT_DECIMALS - 2),
+          })}
+          % of pool position)
+        </Typography>
+      )}
     </Stack>
   );
 }
@@ -165,7 +183,6 @@ export default function CustomPlanRow({
   onChange,
   onDelete,
   onDuplicate,
-  dragHandleProps,
   isEmptyRow,
 }: Props) {
   const actionType = draft.action_type as CustomPlanActionType | "";
@@ -177,7 +194,6 @@ export default function CustomPlanRow({
       ? "success.main"
       : "divider";
 
-  const fromRegionOptions = regions;
   const toRegionOptions =
     actionType === "transfer"
       ? regions.filter((r) => r.region_uid !== draft.from_region_uid)
@@ -198,7 +214,6 @@ export default function CustomPlanRow({
       <Stack gap={1}>
         <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
           <Box
-            {...(dragHandleProps ?? {})}
             sx={{
               cursor: isEmptyRow ? "default" : "grab",
               color: "text.disabled",
@@ -244,7 +259,7 @@ export default function CustomPlanRow({
               <RegionSelect
                 label="From"
                 value={draft.from_region_uid}
-                regions={fromRegionOptions}
+                regions={regions}
                 onChange={(v) => onChange({ from_region_uid: v })}
               />
               <ResourceSelect
@@ -273,7 +288,7 @@ export default function CustomPlanRow({
               <RegionSelect
                 label="From"
                 value={draft.from_region_uid}
-                regions={fromRegionOptions}
+                regions={regions}
                 onChange={(v) => onChange({ from_region_uid: v })}
               />
               <ResourceSelect
@@ -312,7 +327,7 @@ export default function CustomPlanRow({
               <RegionSelect
                 label="From"
                 value={draft.from_region_uid}
-                regions={fromRegionOptions}
+                regions={regions}
                 onChange={(v) => onChange({ from_region_uid: v })}
               />
               <ResourceSelect
@@ -334,7 +349,7 @@ export default function CustomPlanRow({
               <RegionSelect
                 label="From"
                 value={draft.from_region_uid}
-                regions={fromRegionOptions}
+                regions={regions}
                 onChange={(v) => onChange({ from_region_uid: v })}
               />
               <ResourceSelect

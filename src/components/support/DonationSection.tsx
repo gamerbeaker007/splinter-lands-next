@@ -10,11 +10,12 @@ import {
   getSupportBalances,
   recordHiveTransferDonation,
   recordTokenTransferDonation,
-  type DonationRecordResult,
 } from "@/lib/backend/actions/support/support-actions";
+import { formatFixed } from "@/lib/formatters";
 import {
   broadcastOperations,
   KeychainKeyTypes,
+  waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import {
   buildHiveTransferOp,
@@ -45,11 +46,11 @@ import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
-import Select, { type SelectChangeEvent } from "@mui/material/Select";
+import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Props {
   username: string | null;
@@ -99,7 +100,6 @@ export default function DonationSection({
     SUPPORTED_DONATION_CURRENCIES[0]
   );
   const [amount, setAmount] = useState("");
-  const [amountError, setAmountError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -109,89 +109,45 @@ export default function DonationSection({
   const balancesLoading =
     refreshing || (!!username && !authLoading && balances === null);
 
-  const applyBalanceResult = useCallback(
-    (result: Awaited<ReturnType<typeof getSupportBalances>>) => {
-      setBalances({
-        dec: result.dec,
-        sps: result.sps,
-        hive: result.hive,
-        hbd: result.hbd,
-      });
-      setBalancesError(result.error ?? null);
-      setRefreshing(false);
-    },
-    []
-  );
-
-  const refreshBalances = useCallback(() => {
+  // Memoised because the mount effect below depends on it.
+  const refreshBalances = useCallback(async () => {
     if (!username) return;
     setRefreshing(true);
-    void getSupportBalances().then(applyBalanceResult);
-  }, [username, applyBalanceResult]);
+    const result = await getSupportBalances();
+    setBalances({
+      dec: result.dec,
+      sps: result.sps,
+      hive: result.hive,
+      hbd: result.hbd,
+    });
+    setBalancesError(result.error ?? null);
+    setRefreshing(false);
+  }, [username]);
 
   useEffect(() => {
-    if (!username || authLoading) return;
-    void getSupportBalances().then(applyBalanceResult);
-  }, [username, authLoading, applyBalanceResult]);
+    if (authLoading) return;
+    void refreshBalances();
+  }, [authLoading, refreshBalances]);
 
-  const validateAmount = useCallback(
-    (raw: string) => {
-      const value = Number.parseFloat(raw);
-      if (!raw || Number.isNaN(value)) return "Enter a valid amount";
-      if (!Number.isFinite(value)) return "Enter a finite amount";
-      if (value <= 0) return "Amount must be greater than zero";
-      if (balanceValue !== null && value > balanceValue) {
-        return `Insufficient known balance (${balanceValue.toFixed(currencyConfig.precision)} ${currency})`;
-      }
-      return null;
-    },
-    [balanceValue, currencyConfig.precision, currency]
-  );
-
-  const onCurrencyChange = (event: SelectChangeEvent<DonationCurrency>) => {
-    const next = event.target.value as DonationCurrency;
-    setCurrency(next);
-    setAmountError(validateAmount(amount));
-  };
-
-  const onAmountChange = (value: string) => {
-    setAmount(value);
-    setAmountError(validateAmount(value));
-  };
-
-  const applyOptimisticBalance = useCallback(
-    (donatedAmount: number) => {
-      setBalances((prev) => {
-        if (!prev) return prev;
-        const key = currencyConfig.balanceKey;
-        const nextValue = Math.max(0, prev[key] - donatedAmount);
-        return { ...prev, [key]: nextValue };
-      });
-    },
-    [currencyConfig.balanceKey]
-  );
-
-  const scheduleBalanceResync = useCallback(() => {
-    refreshBalances();
-    setTimeout(() => {
-      refreshBalances();
-    }, 6000);
-  }, [refreshBalances]);
-
-  const openConfirm = () => {
-    const err = validateAmount(amount);
-    setAmountError(err);
-    if (!err) {
-      setConfirmOpen(true);
+  const validateAmount = (raw: string) => {
+    const value = Number.parseFloat(raw);
+    if (!raw || Number.isNaN(value)) return "Enter a valid amount";
+    if (!Number.isFinite(value)) return "Enter a finite amount";
+    if (value <= 0) return "Amount must be greater than zero";
+    if (balanceValue !== null && value > balanceValue) {
+      return `Insufficient known balance (${formatFixed(balanceValue, currencyConfig.precision)} ${currency})`;
     }
+    return null;
   };
+
+  // Derived, not state: keeping it in state made a currency switch validate the
+  // new amount against the previously selected currency's balance.
+  const amountError = amount.length > 0 ? validateAmount(amount) : null;
 
   const handleDonate = async () => {
     if (!username) return;
 
-    const err = validateAmount(amount);
-    if (err) {
-      setAmountError(err);
+    if (amountError) {
       setConfirmOpen(false);
       return;
     }
@@ -200,88 +156,67 @@ export default function DonationSection({
     setConfirmOpen(false);
     setPending(true);
 
+    const isSplToken = currency === "DEC" || currency === "SPS";
+
     try {
-      let recordResult: DonationRecordResult | null = null;
+      const broadcast = await broadcastOperations(
+        username,
+        [
+          isSplToken
+            ? buildTokenTransferOp(username, currency, DONATION_ACCOUNT, qty)
+            : buildHiveTransferOp(username, DONATION_ACCOUNT, qty, currency),
+        ],
+        KeychainKeyTypes.active
+      );
 
-      if (currency === "DEC" || currency === "SPS") {
-        const broadcast = await broadcastOperations(
-          username,
-          [buildTokenTransferOp(username, currency, DONATION_ACCOUNT, qty)],
-          KeychainKeyTypes.active
+      if (!broadcast.success) {
+        onMessage(
+          broadcast.error ?? "Transaction failed or was cancelled",
+          "error"
         );
-
-        if (!broadcast.success) {
-          onMessage(
-            broadcast.error ?? "Transaction failed or was cancelled",
-            "error"
-          );
-          return;
-        }
-
-        const txId = broadcast.txIds[0];
-        if (!txId) {
-          onMessage("No transaction ID returned from Keychain", "error");
-          return;
-        }
-
-        for (let attempt = 0; attempt < 5; attempt++) {
-          recordResult = await recordTokenTransferDonation(txId);
-          if (recordResult.status !== "pending") break;
-          if (attempt < 4) {
-            await new Promise((resolve) => setTimeout(resolve, 2500));
-          }
-        }
-      } else {
-        const broadcast = await broadcastOperations(
-          username,
-          [buildHiveTransferOp(username, DONATION_ACCOUNT, qty, currency)],
-          KeychainKeyTypes.active
-        );
-
-        if (!broadcast.success) {
-          onMessage(
-            broadcast.error ?? "Transaction failed or was cancelled",
-            "error"
-          );
-          return;
-        }
-
-        const txId = broadcast.txIds[0];
-        if (!txId) {
-          onMessage("No transaction ID returned from Keychain", "error");
-          return;
-        }
-
-        recordResult = await recordHiveTransferDonation({
-          txId,
-          currency,
-          amount: qty,
-        });
-      }
-
-      if (!recordResult) {
-        onMessage("Unexpected donation recording error", "error");
         return;
       }
 
+      const txId = broadcast.txIds[0];
+      if (!txId) {
+        onMessage("No transaction ID returned from Keychain", "error");
+        return;
+      }
+
+      // DEC/SPS settle through the SPL engine, so wait on it the same way every
+      // other broadcast in the app does. A wait that times out must not abandon
+      // a transfer that did land, and the engine's own rejection reason comes
+      // back from the record action below either way — so the wait only paces
+      // us, it never decides the outcome.
+      // A HIVE/HBD transfer never reaches that engine and nothing in the
+      // browser can see it, so its wait happens server-side instead.
+      if (isSplToken) {
+        await waitForTransactions([txId]).catch(() => {});
+      }
+
+      const recordResult = isSplToken
+        ? await recordTokenTransferDonation(txId)
+        : await recordHiveTransferDonation(txId);
+
+      // The donation is only recorded once the transfer has been confirmed
+      // against the chain, so the wallet balance is already settled — one real
+      // refresh replaces the old optimistic guess plus timed re-poll.
       if (
         recordResult.status === "success" ||
         recordResult.status === "already_recorded"
       ) {
-        applyOptimisticBalance(qty);
         setAmount("");
-        setAmountError(null);
         onMessage(
-          `Thank you. ${qty.toFixed(currencyConfig.precision)} ${currency} was sent to ${DONATION_ACCOUNT}.`,
+          `Thank you. ${formatFixed(qty, currencyConfig.precision)} ${currency} was sent to ${DONATION_ACCOUNT}.`,
           "success"
         );
-        scheduleBalanceResync();
+        await refreshBalances();
         return;
       }
 
       if (recordResult.status === "pending") {
         onMessage(recordResult.message, "info");
-        scheduleBalanceResync();
+        await refreshBalances();
         return;
       }
 
@@ -296,21 +231,13 @@ export default function DonationSection({
     }
   };
 
-  const balanceText = useMemo(() => {
-    if (!username) return "Log in to see your balance";
-    if (balancesLoading) return "Loading balance...";
-    if (balanceValue === null) return "Balance unavailable";
-    return `Balance: ${balanceValue.toLocaleString(undefined, {
-      minimumFractionDigits: currencyConfig.precision,
-      maximumFractionDigits: currencyConfig.precision,
-    })} ${currency}`;
-  }, [
-    username,
-    balancesLoading,
-    balanceValue,
-    currencyConfig.precision,
-    currency,
-  ]);
+  const balanceText = !username
+    ? "Log in to see your balance"
+    : balancesLoading
+      ? "Loading balance..."
+      : balanceValue === null
+        ? "Balance unavailable"
+        : `Balance: ${formatFixed(balanceValue, currencyConfig.precision)} ${currency}`;
 
   return (
     <Card variant="outlined">
@@ -325,7 +252,7 @@ export default function DonationSection({
               <span>
                 <IconButton
                   size="small"
-                  onClick={refreshBalances}
+                  onClick={() => void refreshBalances()}
                   disabled={balancesLoading}
                 >
                   {balancesLoading ? (
@@ -371,7 +298,9 @@ export default function DonationSection({
                 labelId="support-donation-currency-label"
                 value={currency}
                 label="Currency"
-                onChange={onCurrencyChange}
+                onChange={(event) =>
+                  setCurrency(event.target.value as DonationCurrency)
+                }
                 disabled={pending}
                 renderValue={(value) => (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -405,7 +334,7 @@ export default function DonationSection({
               size="small"
               label="Amount"
               value={amount}
-              onChange={(event) => onAmountChange(event.target.value)}
+              onChange={(event) => setAmount(event.target.value)}
               type="number"
               inputProps={{ min: 0, step: "any" }}
               disabled={!username || pending}
@@ -426,7 +355,7 @@ export default function DonationSection({
                   disabled={
                     !username || pending || !!amountError || amount.length === 0
                   }
-                  onClick={openConfirm}
+                  onClick={() => setConfirmOpen(true)}
                   sx={{ minHeight: 40, whiteSpace: "nowrap" }}
                   startIcon={
                     pending ? (
@@ -461,7 +390,8 @@ export default function DonationSection({
             <DialogContentText>
               Donate{" "}
               <strong>
-                {Number.parseFloat(amount || "0").toFixed(
+                {formatFixed(
+                  Number.parseFloat(amount || "0"),
                   currencyConfig.precision
                 )}{" "}
                 {currency}

@@ -7,8 +7,8 @@ import { useCustomPlanAction } from "@/hooks/useCustomPlanAction";
 import {
   deleteCustomPlan,
   getCustomPlans,
-  saveCustomPlan,
   renameCustomPlan,
+  saveCustomPlan,
 } from "@/lib/backend/actions/land-manager/custom-plan-actions";
 import {
   getBulkRegionData,
@@ -246,12 +246,14 @@ export default function CustomPlanDialog({
       const { ok } = await doSave();
       if (!ok) return;
     }
-    const rows = currentRowsRef.current;
-    const multiplier = Number.parseFloat(multiplierText);
-    const plan = await action.execute(rows, true, multiplier);
-    if (!plan) return;
-    // Execute immediately (no extra confirmation dialog needed — rows are already validated)
-    await action.execute(rows, false, multiplier);
+    // No extra confirmation dialog — every row is validated live in the editor
+    // and `execute` re-validates against freshly fetched balances before it
+    // broadcasts anything.
+    await action.execute(
+      currentRowsRef.current,
+      false,
+      Number.parseFloat(multiplierText)
+    );
   }
 
   // ── Unsaved dialog handling ───────────────────────────────────────────────────
@@ -481,7 +483,7 @@ export default function CustomPlanDialog({
                 validationResult.rows.filter((r) => r.resolvedAmount > 0)
                   .length > MAX_OPS_PER_BROADCAST && (
                   <Alert severity="info" sx={{ mt: 1.5 }}>
-                    This plan will require multiple Keychain signature prompts.
+                    This plan will spread across multiple transactions.
                   </Alert>
                 )}
 

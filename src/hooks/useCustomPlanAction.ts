@@ -15,16 +15,13 @@ import {
   computeSwapAmounts,
 } from "@/lib/shared/landManagerUtils";
 import {
-  computePoolHolding,
-  sharesFractionForResource,
-} from "@/lib/shared/poolPositionUtils";
-import {
   buildAddLiquidityOp,
   buildBuyWithDecOp,
   buildRemoveLiquidityOp,
   buildSellResourceForDecOp,
   buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
+import { MIN_SHARES_OUT } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   BroadcastResult,
@@ -122,8 +119,6 @@ export function useCustomPlanAction({
             `This plan will require ${totalBroadcasts} Keychain signatures.`
           );
         }
-
-        const usedPoolFractions = new Map<string, number>();
 
         for (let i = 0; i < configuredRows.length; i++) {
           const draft = configuredRows[i];
@@ -290,27 +285,17 @@ export function useCustomPlanAction({
 
             case "pool_withdraw": {
               const symbol = draft.from_resource;
-              const holding = computePoolHolding(poolPositions[symbol], pools);
-              const used = usedPoolFractions.get(symbol) ?? 0;
-              const fraction = sharesFractionForResource(
-                holding,
-                resolvedAmount,
-                used
-              );
-              if (fraction <= 0) {
+              // The shares fraction and the resulting amounts come straight
+              // from the validation pass so the broadcast matches exactly what
+              // the editor showed, including its multi-row bookkeeping.
+              const sharesOut = rowResult.poolSharesOut ?? 0;
+              if (sharesOut < MIN_SHARES_OUT) {
                 throw new Error(
-                  `No unlocked ${symbol} liquidity available for withdrawal`
+                  `No withdrawable ${symbol} liquidity in the pool position`
                 );
               }
-              const sharesOut = Number.parseFloat(fraction.toFixed(3));
-              if (sharesOut < 0.001) {
-                throw new Error(
-                  `Withdrawal for ${symbol} is too small for chain precision`
-                );
-              }
-              usedPoolFractions.set(symbol, used + fraction);
-              const resourceOut = holding.resource * fraction;
-              const decOut = holding.dec * fraction;
+              const resourceOut = rowResult.estimatedOutputAmount;
+              const decOut = rowResult.estimatedOutputAmount2 ?? 0;
               ops.push(
                 buildRemoveLiquidityOp(
                   username,

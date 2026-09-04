@@ -7,8 +7,8 @@ import MakeHarvestableRow from "@/components/land-manager/harvest/MakeHarvestabl
 import ProcessResourcesRow from "@/components/land-manager/harvest/ProcessResourcesRow";
 import TopUpPoolsRow from "@/components/land-manager/harvest/TopUpPoolsRow";
 import {
-  DonationConfig,
   ActionPlan,
+  DonationConfig,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
   TopUpPoolStrategy,
@@ -62,8 +62,12 @@ export default function BulkActionPanel({
     topUpPools: false,
   });
 
-  const visibleRegions = regions.filter((r) =>
-    enabledRegions.includes(r.region_number)
+  // Memoised: this array is a dependency of the action hooks and of the Custom
+  // Plan dialog's data-loading effect. A fresh array on every render would make
+  // that effect re-run and reset the in-progress plan editor.
+  const visibleRegions = useMemo(
+    () => regions.filter((r) => enabledRegions.includes(r.region_number)),
+    [regions, enabledRegions]
   );
 
   const afterSuccess = useCallback(() => {

@@ -23,6 +23,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
+import { Fragment } from "react";
 
 interface Props {
   deeds: MythicDeed[] | null;
@@ -97,13 +98,15 @@ export default function MythicOverview({ deeds }: Props) {
                         </Typography>
                       ) : (
                         <Stack direction="row" gap={1} flexWrap="wrap">
-                          {deed.taxes.map((t) =>
-                            renderResourceChip(
-                              t.token as Resource,
-                              t.balance,
-                              true
-                            )
-                          )}
+                          {deed.taxes.map((t) => (
+                            <Fragment key={t.token}>
+                              {renderResourceChip(
+                                t.token as Resource,
+                                t.balance,
+                                true
+                              )}
+                            </Fragment>
+                          ))}
                         </Stack>
                       )}
                     </TableCell>

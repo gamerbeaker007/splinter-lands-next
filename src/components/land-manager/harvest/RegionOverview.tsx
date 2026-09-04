@@ -44,7 +44,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import RegionAnalysisCell from "./RegionAnalysisCell";
 
 interface Props {
@@ -67,9 +67,15 @@ function ResourceChips({ resources }: { resources: SplHarvestableResource[] }) {
   }
   return (
     <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-      {resources.map((r) =>
-        renderResourceChip(r.token_symbol as Resource, r.amount_claimable, true)
-      )}
+      {resources.map((r) => (
+        <Fragment key={r.token_symbol}>
+          {renderResourceChip(
+            r.token_symbol as Resource,
+            r.amount_claimable,
+            true
+          )}
+        </Fragment>
+      ))}
     </Box>
   );
 }

@@ -1,14 +1,17 @@
 import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
-import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
+import {
+  HIVE_BLOCK_MS,
+  MAX_OPS_PER_BROADCAST,
+  TRX_VERIFY_POLL_MS,
+  TRX_VERIFY_TIMEOUT_MS,
+} from "@/types/landManager";
 import type { SplTrxResult } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import pLimit from "p-limit";
 import { formatError } from "./errorFormat";
 export { KeychainKeyTypes } from "keychain-sdk";
 
-const VERIFY_POLL_MS = 3000;
-const VERIFY_TIMEOUT_MS = 30_000;
 // Max concurrent SPL lookup calls per poll cycle — prevents rate-limiting
 // when waiting on a large number of transactions (e.g. 100+ for big regions).
 const VERIFY_CONCURRENCY = 5;
@@ -32,11 +35,11 @@ export async function waitForTransactions(
 ): Promise<(SplTrxResult | null)[]> {
   const results: (SplTrxResult | null)[] = txIds.map(() => null);
   const pending = new Set(txIds.map((_, i) => i));
-  const deadline = Date.now() + VERIFY_TIMEOUT_MS;
+  const deadline = Date.now() + TRX_VERIFY_TIMEOUT_MS;
   const limit = pLimit(VERIFY_CONCURRENCY);
 
   while (pending.size > 0 && Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, VERIFY_POLL_MS));
+    await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
     await Promise.all(
       [...pending].map((i) =>
         limit(async () => {
@@ -55,7 +58,7 @@ export async function waitForTransactions(
 
   if (pending.size > 0) {
     throw new Error(
-      "Transactions not confirmed within 30s — check your wallet."
+      `Transactions not confirmed within ${TRX_VERIFY_TIMEOUT_MS / 1000}s — check your wallet.`
     );
   }
 

@@ -27,6 +27,10 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Support/Donations** Add validator voting and donations.
 - Sorting: Added "Construction End" sort option for deed/worksite lists. It orders by `projected_end` only for plots currently under construction and keeps null/non-construction entries at the end.
 
+### Changed
+
+- Updated primsa dependencies
+
 ---
 
 ## [v1.25.3] - 2026-08-30
@@ -36,7 +40,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Land Manager:**  Configure panel add base PP + rationing lite warning + 100K limit warning.
 - **Land Manager:**  Configure panel add capture rate for castle / keep (remove consume and net DEC for castle and keeps)
 
-
 ---
 
 ## [v1.25.2] - 2026-08-30
@@ -44,7 +47,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ### Fix
 
 - **Land Manager:**  Configure panel fix consume/hr.
-
 
 ---
 
@@ -54,8 +56,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - **Land Manager:**  Configure panel show current consume and update layout.
 - **Land Manager:**  Fetch SPS ratio and prices of the resource once at page load not for every configure panel (even if its cached)
-
-
 
 ---
 

@@ -74,6 +74,20 @@ export async function getCustomPlans(): Promise<{
   return { plans: rows.map(mapPlan) };
 }
 
+/** Plan items are always rewritten as a whole, renumbered from the array order. */
+function toItemCreateData(items: Omit<CustomPlanItem, "id">[]) {
+  return items.map((item, idx) => ({
+    sequence: idx,
+    action_type: item.action_type,
+    from_region_uid: item.from_region_uid,
+    to_region_uid: item.to_region_uid,
+    from_resource: item.from_resource,
+    to_resource: item.to_resource,
+    amount_type: item.amount_type,
+    amount: item.amount,
+  }));
+}
+
 export interface SaveCustomPlanInput {
   id?: string;
   name: string;
@@ -127,18 +141,7 @@ export async function saveCustomPlan(
           where: { id: input.id },
           data: {
             name: trimmedName,
-            items: {
-              create: input.items.map((item, idx) => ({
-                sequence: idx,
-                action_type: item.action_type,
-                from_region_uid: item.from_region_uid,
-                to_region_uid: item.to_region_uid,
-                from_resource: item.from_resource,
-                to_resource: item.to_resource,
-                amount_type: item.amount_type,
-                amount: item.amount,
-              })),
-            },
+            items: { create: toItemCreateData(input.items) },
           },
           include: { items: true },
         });
@@ -170,27 +173,15 @@ export async function saveCustomPlan(
       });
       const nextOrder = (maxOrder._max.sort_order ?? -1) + 1;
 
-      const created = await prisma.$transaction(async (tx) => {
-        return tx.landCustomPlan.create({
-          data: {
-            player,
-            name: trimmedName,
-            sort_order: nextOrder,
-            items: {
-              create: input.items.map((item, idx) => ({
-                sequence: idx,
-                action_type: item.action_type,
-                from_region_uid: item.from_region_uid,
-                to_region_uid: item.to_region_uid,
-                from_resource: item.from_resource,
-                to_resource: item.to_resource,
-                amount_type: item.amount_type,
-                amount: item.amount,
-              })),
-            },
-          },
-          include: { items: true },
-        });
+      // A nested create is already atomic — no explicit transaction needed.
+      const created = await prisma.landCustomPlan.create({
+        data: {
+          player,
+          name: trimmedName,
+          sort_order: nextOrder,
+          items: { create: toItemCreateData(input.items) },
+        },
+        include: { items: true },
       });
 
       return { plan: mapPlan(created) };
