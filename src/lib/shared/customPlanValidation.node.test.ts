@@ -30,6 +30,28 @@ const withdrawRow = (amount: string): CustomPlanRowDraft => ({
   amount,
 });
 
+const poolRow = (amount: string): CustomPlanRowDraft => ({
+  draftId: `p${amount}`,
+  action_type: "pool",
+  from_region_uid: "region-a",
+  to_region_uid: "",
+  from_resource: "GRAIN",
+  to_resource: "",
+  amount_type: "abs",
+  amount,
+});
+
+const buyRow = (amount: string): CustomPlanRowDraft => ({
+  draftId: `b${amount}`,
+  action_type: "buy",
+  from_region_uid: "",
+  to_region_uid: "region-a",
+  from_resource: "GRAIN",
+  to_resource: "",
+  amount_type: "abs",
+  amount,
+});
+
 const validate = (
   rows: CustomPlanRowDraft[],
   vestingShares = 0,
@@ -117,5 +139,52 @@ describe("validateCustomPlan — pool withdrawals", () => {
 
     expect(row.valid).toBe(false);
     expect(row.poolSharesOut).toBeUndefined();
+  });
+
+  it("includes withdrawal DEC output for later DEC-consuming rows", () => {
+    const result = validateCustomPlan(
+      [withdrawRow("10000"), buyRow("1000")],
+      { "region-a": {} },
+      0,
+      [GRAIN_POOL],
+      {
+        poolPositions: { GRAIN: grainPosition(0) },
+      }
+    );
+
+    expect(result.status).toBe("valid");
+    expect(result.rows[0].valid).toBe(true);
+    expect(result.rows[1].valid).toBe(true);
+  });
+
+  it("uses aggregate DEC balance across pool and buy rows", () => {
+    const invalidPool = validateCustomPlan(
+      [poolRow("3000")],
+      { "region-a": { GRAIN: 10_000 } },
+      100,
+      [GRAIN_POOL]
+    );
+    expect(invalidPool.status).toBe("invalid");
+    expect(invalidPool.rows[0].error).toContain("Insufficient DEC");
+
+    const invalidBuy = validateCustomPlan(
+      [buyRow("3000")],
+      { "region-a": { GRAIN: 10_000 } },
+      100,
+      [GRAIN_POOL]
+    );
+    expect(invalidBuy.status).toBe("invalid");
+    expect(invalidBuy.rows[0].error).toContain("Insufficient DEC");
+
+    const aggregate = validateCustomPlan(
+      [poolRow("1000"), buyRow("1500")],
+      { "region-a": { GRAIN: 10_000 } },
+      150,
+      [GRAIN_POOL]
+    );
+    expect(aggregate.rows[0].valid).toBe(true);
+    expect(aggregate.rows[1].valid).toBe(false);
+    expect(aggregate.rows[1].error).toContain("Insufficient DEC");
+    expect(aggregate.status).toBe("invalid");
   });
 });

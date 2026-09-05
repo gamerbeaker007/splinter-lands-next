@@ -4,10 +4,12 @@ import AuthorityControl from "@/components/land-manager/production/rental-action
 import { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
 import { UseWorkerAction } from "@/hooks/useWorkerAction";
 import { formatFixed } from "@/lib/formatters";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { foilLabel } from "@/lib/utils/cardUtil";
 import {
   BUY_STRATEGY_LABELS,
   BuyConfig,
+  LandManagerConfigSection,
   RENTAL_STRATEGY_LABELS,
   RentalConfig,
 } from "@/types/landManager";
@@ -16,6 +18,7 @@ import {
   ShoppingCart as ShoppingCartIcon,
   Storefront as StorefrontIcon,
 } from "@mui/icons-material";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Accordion,
   AccordionDetails,
@@ -24,12 +27,19 @@ import {
   Button,
   Chip,
   CircularProgress,
+  IconButton,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 
-function RentalConfigChips({ rental }: { rental: RentalConfig }) {
+function RentalConfigChips({
+  rental,
+  openConfigDialog,
+}: {
+  rental: RentalConfig;
+  openConfigDialog: (section?: LandManagerConfigSection) => void;
+}) {
   const chips: { key: string; label: string }[] = [
     { key: "strategy", label: RENTAL_STRATEGY_LABELS[rental.strategy] },
     {
@@ -57,6 +67,13 @@ function RentalConfigChips({ rental }: { rental: RentalConfig }) {
 
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap" alignItems="center" mb={1}>
+      <IconButton
+        size="small"
+        onClick={() => openConfigDialog("rental")}
+        sx={{ mb: 1 }}
+      >
+        <SettingsIcon fontSize="small" />
+      </IconButton>
       <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
         Config:
       </Typography>
@@ -67,7 +84,13 @@ function RentalConfigChips({ rental }: { rental: RentalConfig }) {
   );
 }
 
-function BuyConfigChips({ buy }: { buy: BuyConfig }) {
+function BuyConfigChips({
+  buy,
+  openConfigDialog,
+}: {
+  buy: BuyConfig;
+  openConfigDialog: (section?: LandManagerConfigSection) => void;
+}) {
   const chips: { key: string; label: string }[] = [
     { key: "strategy", label: BUY_STRATEGY_LABELS[buy.strategy] },
     { key: "batch", label: `Batch: ${buy.buy_batch_size} plots` },
@@ -89,6 +112,14 @@ function BuyConfigChips({ buy }: { buy: BuyConfig }) {
 
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap" alignItems="center" mb={1}>
+      <IconButton
+        size="small"
+        onClick={() => openConfigDialog("buy")}
+        sx={{ mb: 1, textTransform: "none" }}
+      >
+        <SettingsIcon fontSize="small" />
+      </IconButton>
+
       <Typography variant="caption" color="text.secondary" sx={{ mr: 0.5 }}>
         Config:
       </Typography>
@@ -118,6 +149,7 @@ export default function WorkerActionsAccordions({
   rentalAuthority,
   purchaseAuthority,
 }: Props) {
+  const { openConfigDialog } = useLandManagerContext();
   const rentalAuthStatus = rentalAuthority.status;
   const purchaseAuthStatus = purchaseAuthority.status;
 
@@ -163,7 +195,10 @@ export default function WorkerActionsAccordions({
             actionNoun="rental"
             opName="sm_market_rent"
           />
-          <RentalConfigChips rental={rentalConfig} />
+          <RentalConfigChips
+            rental={rentalConfig}
+            openConfigDialog={openConfigDialog}
+          />
           <Tooltip
             title={
               blockedByRentalAuthority
@@ -242,7 +277,7 @@ export default function WorkerActionsAccordions({
             actionNoun="purchase"
             opName="sm_market_purchase"
           />
-          <BuyConfigChips buy={buyConfig} />
+          <BuyConfigChips buy={buyConfig} openConfigDialog={openConfigDialog} />
           <Tooltip
             title={
               blockedByPurchaseAuthority

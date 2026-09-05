@@ -29,7 +29,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 
 interface Props {
   auth: LandManagerAuthStatus;
@@ -71,10 +71,19 @@ function NotLoggedIn() {
 }
 
 function LandManagerShell({ children }: { children: ReactNode }) {
-  const { auth, config, setConfig, allRegions, refreshKey, triggerRefresh } =
-    useLandManagerContext();
+  const {
+    auth,
+    config,
+    setConfig,
+    allRegions,
+    refreshKey,
+    triggerRefresh,
+    configDialogOpen,
+    configDialogSection,
+    openConfigDialog,
+    closeConfigDialog,
+  } = useLandManagerContext();
   const pathname = usePathname();
-  const [configOpen, setConfigOpen] = useState(false);
 
   if (!auth.authenticated) {
     return <NotLoggedIn />;
@@ -113,7 +122,7 @@ function LandManagerShell({ children }: { children: ReactNode }) {
           )}
         </Stack>
         <Tooltip title="Configure regions & settings">
-          <IconButton onClick={() => setConfigOpen(true)} color="inherit">
+          <IconButton onClick={() => openConfigDialog()} color="inherit">
             <SettingsIcon />
           </IconButton>
         </Tooltip>
@@ -159,13 +168,13 @@ function LandManagerShell({ children }: { children: ReactNode }) {
         <Alert
           severity="info"
           action={
-            <Button
+            <IconButton
               size="small"
               color="inherit"
-              onClick={() => setConfigOpen(true)}
+              onClick={() => openConfigDialog("enabled_regions")}
             >
-              Open Config
-            </Button>
+              <SettingsIcon />
+            </IconButton>
           }
           sx={{ mb: 2 }}
         >
@@ -177,7 +186,7 @@ function LandManagerShell({ children }: { children: ReactNode }) {
           Showing {enabledCount} enabled region{enabledCount === 1 ? "" : "s"}.{" "}
           <Button
             size="small"
-            onClick={() => setConfigOpen(true)}
+            onClick={() => openConfigDialog("enabled_regions")}
             sx={{ ml: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
           >
             Edit config
@@ -229,10 +238,11 @@ function LandManagerShell({ children }: { children: ReactNode }) {
       {children}
 
       <ConfigDialog
-        open={configOpen}
-        onClose={() => setConfigOpen(false)}
+        open={configDialogOpen}
+        onClose={closeConfigDialog}
         config={config}
         allRegions={allRegions}
+        focusedSection={configDialogSection}
         onSaved={(updated) => {
           setConfig(updated);
           triggerRefresh();

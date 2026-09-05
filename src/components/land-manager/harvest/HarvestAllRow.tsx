@@ -1,10 +1,20 @@
 "use client";
 
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
-import { DonationConfig, ActionPlan } from "@/types/landManager";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import { ActionPlan, DonationConfig } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
-import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
+
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  IconButton,
+  Stack,
+  Tooltip,
+} from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -26,6 +36,8 @@ export default function HarvestAllRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const { openConfigDialog } = useLandManagerContext();
+
   const action = useHarvestAllAction({
     username,
     visibleRegions,
@@ -77,6 +89,13 @@ export default function HarvestAllRow({
             </Button>
           </span>
         </Tooltip>
+        <IconButton
+          size="small"
+          color="inherit"
+          onClick={() => openConfigDialog("enabled_regions")}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
       </Stack>
 
       {action.result?.success && (
