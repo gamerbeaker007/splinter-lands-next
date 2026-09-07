@@ -144,7 +144,9 @@ export function buildCoverGrainOpsMulti(params: {
     strategies,
     decBalance,
     pools,
-    targetUids
+    // No `overviews`: the worksite-feed requirement is a fixed grain amount, not
+    // an accruing harvest cost, so it needs no drift margin.
+    { onlyRegionUids: targetUids }
   );
 
   const regionResults: CoverGrainRegionResult[] = targets.map((target) => {

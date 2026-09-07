@@ -176,10 +176,14 @@ describe("validateCustomPlan — pool withdrawals", () => {
     expect(invalidBuy.status).toBe("invalid");
     expect(invalidBuy.rows[0].error).toContain("Insufficient DEC");
 
+    // 1,000 GRAIN costs ~55.6 DEC and 1,500 GRAIN ~83.5 DEC against this pool.
+    // The budget has to sit between the second row's cost and the pair's total
+    // (~139 DEC), or the second row is affordable on its own terms and the test
+    // proves nothing about the running balance.
     const aggregate = validateCustomPlan(
       [poolRow("1000"), buyRow("1500")],
       { "region-a": { GRAIN: 10_000 } },
-      150,
+      100,
       [GRAIN_POOL]
     );
     expect(aggregate.rows[0].valid).toBe(true);

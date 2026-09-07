@@ -21,6 +21,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Land Manager - Custom Plan validation:** Sequential executability checks now apply both debits and credits across rows, including pool-withdraw outputs. This fixes false negatives where a valid preceding row (for example pool withdrawal or sell) should fund later DEC-consuming rows.
 - **Land Manager - Custom Plan validation:** Withdraw from pool will add to after balance iso deduct.
 - **Land Manager - Custom Plan DEC safety:** Plan validity now consistently enforces wallet DEC availability for both `pool` (add liquidity) and `buy` rows in single-row runs and aggregated multi-row plans.
+- **Land Manager - Make Harvestable** Add extra resources to cover shortfall growth for ${DRIFT_COVER_MINUTES} minutes before harvesting.
 
 ### Changed
 
