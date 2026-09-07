@@ -509,6 +509,28 @@ export interface LandManagerConfig {
   buy: BuyConfig;
 }
 
+export type LandManagerConfigSection =
+  | "enabled_regions"
+  | "make_harvestable"
+  | "donation"
+  | "post_harvest"
+  | "top_up_pools"
+  | "rental"
+  | "buy";
+
+export const LAND_MANAGER_CONFIG_SECTION_LABELS: Record<
+  LandManagerConfigSection,
+  string
+> = {
+  enabled_regions: "Enabled Regions",
+  make_harvestable: "Make Harvestable",
+  donation: "Donation",
+  post_harvest: "Post-Harvest",
+  top_up_pools: "Top Up Pools",
+  rental: "Rent Empty Workers",
+  buy: "Buy Empty Workers",
+};
+
 export function createDefaultLandManagerConfig(
   username: string
 ): LandManagerConfig {

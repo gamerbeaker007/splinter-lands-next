@@ -8,12 +8,26 @@ import { formatNumber } from "@/lib/formatters";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { MythicDeed } from "@/types/landManager";
-import { Box, Chip, Stack, Tooltip, Typography } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
+import {
+  Box,
+  Chip,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 
 export default function HarvestPage() {
-  const { auth, config, allRegions, refreshKey, triggerRefresh } =
-    useLandManagerContext();
+  const {
+    auth,
+    config,
+    allRegions,
+    refreshKey,
+    triggerRefresh,
+    openConfigDialog,
+  } = useLandManagerContext();
 
   const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
     null
@@ -96,6 +110,13 @@ export default function HarvestPage() {
             }}
           />
         )}
+        <IconButton
+          size="small"
+          sx={{ ml: 1, textTransform: "none" }}
+          onClick={() => openConfigDialog("donation")}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
       </Stack>
 
       <BulkActionPanel

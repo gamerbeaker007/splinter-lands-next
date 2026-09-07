@@ -2,6 +2,7 @@
 
 import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import {
   ActionPlan,
   POST_HARVEST_STRATEGY_LABELS,
@@ -9,12 +10,14 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Savings as SavingsIcon } from "@mui/icons-material";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Alert,
   Button,
   ButtonGroup,
   Chip,
   CircularProgress,
+  IconButton,
   Stack,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -44,6 +47,7 @@ export default function ProcessResourcesRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const { openConfigDialog } = useLandManagerContext();
   const [customPlanOpen, setCustomPlanOpen] = useState(false);
 
   const action = useProcessResourcesAction({
@@ -87,7 +91,7 @@ export default function ProcessResourcesRow({
     <>
       <Stack
         direction="row"
-        gap={2}
+        gap={1}
         flexWrap="wrap"
         alignItems="center"
         mb={1.5}
@@ -111,6 +115,14 @@ export default function ProcessResourcesRow({
             Process Resources…
           </Button>
         </ButtonGroup>
+
+        <IconButton
+          size="small"
+          onClick={() => openConfigDialog("post_harvest")}
+          sx={{ textTransform: "none" }}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
 
         <Chip
           label={strategyLabel}

@@ -64,6 +64,23 @@ function ledgerGet(
   return ledger.get(regionUid)?.get(symbol) ?? 0;
 }
 
+function ledgerCredit(
+  ledger: RegionBalanceLedger,
+  regionUid: string,
+  symbol: string,
+  amount: number
+): void {
+  if (amount <= 0) return;
+  let inner = ledger.get(regionUid);
+  if (!inner) {
+    inner = new Map<string, number>();
+    for (const sym of NATURAL_RESOURCES) inner.set(sym, 0);
+    ledger.set(regionUid, inner);
+  }
+  const current = inner.get(symbol) ?? 0;
+  inner.set(symbol, current + amount);
+}
+
 function ledgerDeduct(
   ledger: RegionBalanceLedger,
   regionUid: string,
@@ -218,14 +235,12 @@ export function validateCustomPlan(
 
     switch (draft.action_type) {
       case "transfer": {
-        const base =
-          balances[draft.from_region_uid]?.[draft.from_resource] ?? 0;
-        const resolved = parseAndScaleInput(draft, base, multiplier);
         const current = ledgerGet(
           ledger,
           draft.from_region_uid,
           draft.from_resource
         );
+        const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -252,6 +267,7 @@ export function validateCustomPlan(
           draft.from_resource,
           resolved
         );
+        ledgerCredit(ledger, draft.to_region_uid, draft.from_resource, out);
         return {
           valid: true,
           resolvedAmount: resolved,
@@ -267,14 +283,12 @@ export function validateCustomPlan(
       }
 
       case "pool": {
-        const base =
-          balances[draft.from_region_uid]?.[draft.from_resource] ?? 0;
-        const resolved = parseAndScaleInput(draft, base, multiplier);
         const current = ledgerGet(
           ledger,
           draft.from_region_uid,
           draft.from_resource
         );
+        const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -377,14 +391,12 @@ export function validateCustomPlan(
       }
 
       case "sell": {
-        const base =
-          balances[draft.from_region_uid]?.[draft.from_resource] ?? 0;
-        const resolved = parseAndScaleInput(draft, base, multiplier);
         const current = ledgerGet(
           ledger,
           draft.from_region_uid,
           draft.from_resource
         );
+        const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -412,6 +424,7 @@ export function validateCustomPlan(
           draft.from_resource,
           resolved
         );
+        runningDec += decOut;
         return {
           valid: true,
           resolvedAmount: resolved,
@@ -427,14 +440,12 @@ export function validateCustomPlan(
       }
 
       case "swap": {
-        const base =
-          balances[draft.from_region_uid]?.[draft.from_resource] ?? 0;
-        const resolved = parseAndScaleInput(draft, base, multiplier);
         const current = ledgerGet(
           ledger,
           draft.from_region_uid,
           draft.from_resource
         );
+        const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -462,6 +473,12 @@ export function validateCustomPlan(
           draft.from_resource,
           resolved
         );
+        ledgerCredit(
+          ledger,
+          draft.to_region_uid,
+          draft.to_resource,
+          swap.out_amount_2
+        );
         return {
           valid: true,
           resolvedAmount: resolved,
@@ -483,12 +500,8 @@ export function validateCustomPlan(
           usedFraction: 0,
         };
         const holding = computePoolHolding(poolPositions[symbol], pools);
-        const resolved = parseAndScaleInput(
-          draft,
-          holding.unlockedResource,
-          multiplier
-        );
         const current = entry.unlockedResource;
+        const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -528,13 +541,15 @@ export function validateCustomPlan(
           unlockedResource: Math.max(0, current - resourceOut),
           usedFraction: entry.usedFraction + sharesOut,
         });
+        ledgerCredit(ledger, draft.to_region_uid, symbol, resourceOut);
+        runningDec += decOut;
 
         return {
           valid: true,
           resolvedAmount: resolved,
           estimatedValue: resourceOut,
           currentBalance: current,
-          inputBalance: Math.max(0, current - resourceOut),
+          inputBalance: Math.max(0, current + resourceOut),
           balanceSymbol: symbol,
           inputAmountAbsolute: resolved,
           estimatedOutputSymbol: symbol,

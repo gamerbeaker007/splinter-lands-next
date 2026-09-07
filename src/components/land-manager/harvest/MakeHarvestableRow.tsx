@@ -1,9 +1,11 @@
 "use client";
 
 import { useMakeHarvestableAction } from "@/hooks/useMakeHarvestableAction";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { ActionPlan, MakeHarvestableStrategy } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { PlaylistAddCheck } from "@mui/icons-material";
+import SettingsIcon from "@mui/icons-material/Settings";
 import {
   Alert,
   Button,
@@ -12,6 +14,7 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import IconButton from "@mui/material/IconButton";
 import { useEffect } from "react";
 
 interface Props {
@@ -33,6 +36,7 @@ export default function MakeHarvestableRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const { openConfigDialog } = useLandManagerContext();
   const action = useMakeHarvestableAction({
     username,
     visibleRegions,
@@ -59,7 +63,7 @@ export default function MakeHarvestableRow({
     <>
       <Stack
         direction="row"
-        gap={2}
+        gap={1}
         flexWrap="wrap"
         alignItems="center"
         mb={1.5}
@@ -85,6 +89,13 @@ export default function MakeHarvestableRow({
           </span>
         </Tooltip>
 
+        <IconButton
+          size="small"
+          onClick={() => openConfigDialog("make_harvestable")}
+          sx={{ textTransform: "none" }}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
         <Stack direction="row" gap={0.5} flexWrap="wrap">
           {strategies.map((s, i) => (
             <Chip

@@ -4,6 +4,7 @@ import {
   buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
 import {
+  computeRegionResourceBalance,
   PoolHolding,
   sharesFractionForResource,
 } from "@/lib/shared/poolPositionUtils";
@@ -21,10 +22,51 @@ import { ActionSummary, MakeHarvestableStrategy } from "@/types/landManager";
 import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
+  SplRegionOverviewData,
 } from "@/types/spl/landManager";
 import { SplLandPool } from "@/types/spl/landPools";
 
+/** Relative safety margin on a shortfall. Floor, not the whole story — see `topUpMargin`. */
 export const DEFICIT_BUFFER = 1.02;
+
+/**
+ * How much *time* of shortfall growth the top-up must also cover.
+ *
+ * A harvest cost is not a fixed number: `grain_required_for_food` and the
+ * WOOD/STONE/IRON recipe costs accrue continuously since the last harvest, while
+ * the region's own output accrues into `*_ready`. So a region's shortfall grows
+ * at (consumption - production) per hour for as long as the player takes to get
+ * from "Make All Harvestable" to "Harvest All" — plan review, confirm, broadcast,
+ * block time, then a second button press.
+ *
+ * DEFICIT_BUFFER alone cannot cover that: it is a percentage of the *shortfall*,
+ * while the drift is proportional to the region's *burn rate*, and the two are
+ * unrelated. A 500-unit shortfall in a region burning 4,000/hr got 10 units of
+ * cover for 66 units/minute of drift — which is why small top-ups completed
+ * successfully and the region was still not harvestable.
+ */
+export const DRIFT_COVER_MINUTES = 10;
+
+/**
+ * Absolute floor on the margin, in resource units. Every op amount is rounded to
+ * 3 decimals, and a sub-unit margin can be rounded away entirely.
+ */
+export const MIN_TOPUP_MARGIN = 1;
+
+/**
+ * The engine accepts a swap whose real output is up to `max_slippage` percent
+ * below the declared out amount — it does not fail, it succeeds and credits the
+ * lower amount. With the builder default of 2.5% that tolerance was *wider* than
+ * DEFICIT_BUFFER, so a "successful" buy could still land under the shortfall.
+ * Every hub-routed leg is therefore sized with enough headroom to stay above the
+ * target even on a worst-case fill.
+ */
+const SWAP_MAX_SLIPPAGE_PCT = 2.5;
+const SLIPPAGE_HEADROOM = 1 / (1 - SWAP_MAX_SLIPPAGE_PCT / 100);
+
+const round3 = (value: number): number => Number.parseFloat(value.toFixed(3));
+const ceil3 = (value: number): number => Math.ceil(value * 1000) / 1000;
+const floor3 = (value: number): number => Math.floor(value * 1000) / 1000;
 
 /**
  * Don't spend a transaction on a pool withdrawal smaller than this — a dust
@@ -53,6 +95,30 @@ interface Ctx {
   // one budget or the plan would withdraw the same liquidity twice.
   holdings: Record<string, PoolHolding>;
   usedPoolFraction: Record<string, number>;
+  // region_uid → symbol → net units the region's shortfall grows by per hour
+  // (consumption minus own production). Empty when no overviews were supplied,
+  // in which case the margin falls back to DEFICIT_BUFFER / MIN_TOPUP_MARGIN.
+  driftPerHour: Record<string, Record<string, number>>;
+}
+
+/**
+ * How far past the raw shortfall to aim: the largest of the relative buffer, the
+ * drift the region accrues before the player actually harvests, and an absolute
+ * floor. Returned as extra units, not a multiplier — drift is an absolute rate
+ * and does not scale with the shortfall.
+ */
+function topUpMargin(
+  ctx: Ctx,
+  regionUid: string,
+  symbol: string,
+  deficit: number
+): number {
+  const perHour = ctx.driftPerHour[regionUid]?.[symbol] ?? 0;
+  return Math.max(
+    deficit * (DEFICIT_BUFFER - 1),
+    (perHour * DRIFT_COVER_MINUTES) / 60,
+    MIN_TOPUP_MARGIN
+  );
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
@@ -179,8 +245,9 @@ function tryPool(
   }
 
   const used = ctx.usedPoolFraction[cost.symbol] ?? 0;
-  const wanted = deficit * DEFICIT_BUFFER;
-  const fraction = sharesFractionForResource(holding, wanted, used);
+  // `deficit` already carries the top-up margin; a liquidity withdrawal pays no
+  // hub fee and declares no slippage, so it needs no further headroom.
+  const fraction = sharesFractionForResource(holding, deficit, used);
 
   if (fraction <= 0) {
     ctx.log.push(
@@ -281,9 +348,7 @@ function tryTransfer(
     }
   }
 
-  const inAmount = Number.parseFloat(
-    ((deficit * DEFICIT_BUFFER) / TRADE_HUB_FEE).toFixed(3)
-  );
+  const inAmount = ceil3((deficit * SLIPPAGE_HEADROOM) / TRADE_HUB_FEE);
 
   if (!bestDonor || bestSurplus < inAmount) {
     ctx.log.push(
@@ -356,11 +421,11 @@ function trySwap(
     ctx.pools,
     bestSymbol,
     cost.symbol,
-    deficit * DEFICIT_BUFFER
+    deficit * SLIPPAGE_HEADROOM
   );
-  const inAmount = Number.parseFloat(
-    Math.min(neededIn, bestSurplus).toFixed(3)
-  );
+  // Round the input UP: rounding to nearest can shave the margin back off on
+  // small trades, which is exactly the case that was landing short.
+  const inAmount = Math.min(ceil3(neededIn), floor3(bestSurplus));
   const received = commitSwap(
     ctx,
     bestSource.region_uid,
@@ -405,7 +470,7 @@ function tryBuyDec(
   const decNeeded = computeDecNeededForResource(
     ctx.pools,
     cost.symbol,
-    deficit * DEFICIT_BUFFER
+    deficit * SLIPPAGE_HEADROOM
   );
   if (!Number.isFinite(decNeeded)) {
     ctx.log.push(
@@ -414,16 +479,23 @@ function tryBuyDec(
     return false;
   }
 
-  const decAmount = Number.parseFloat(
-    Math.min(ctx.decBalance, decNeeded).toFixed(3)
-  );
+  // Round the DEC input UP and the balance cap DOWN. Rounding the input to the
+  // nearest 0.001 could shave more off the buy than the whole margin on a small
+  // purchase (a 1-GRAIN top-up came out at 0.995 GRAIN).
+  const decAmount = Math.min(floor3(ctx.decBalance), ceil3(decNeeded));
+  if (decAmount <= 0) {
+    ctx.log.push(
+      `  - Buy DEC: ${cost.symbol} top-up rounds to 0 DEC — nothing to buy`
+    );
+    return false;
+  }
   const { out_amount_2: resourceOut } = computeSwapAmounts(
     ctx.pools,
     "DEC",
     cost.symbol,
     decAmount
   );
-  const sharesOut = Number.parseFloat(resourceOut.toFixed(3));
+  const sharesOut = round3(resourceOut);
   ctx.actions.push({
     type: "buy_dec",
     from_region: "DEC",
@@ -446,6 +518,10 @@ function tryBuyDec(
   ctx.decBalance -= decAmount;
   ctx.working[region.region_uid][cost.symbol] =
     (ctx.working[region.region_uid][cost.symbol] ?? 0) + sharesOut;
+  // Bought resource lands in the region's STORED balance, same as a pool
+  // withdrawal or an incoming transfer — keep both ledgers in step.
+  ctx.stored[region.region_uid][cost.symbol] =
+    (ctx.stored[region.region_uid][cost.symbol] ?? 0) + sharesOut;
 
   if (sharesOut >= deficit) {
     ctx.log.push(
@@ -482,6 +558,25 @@ export interface RegionBalances {
   poolHoldings?: Record<string, PoolHolding>;
 }
 
+export interface BuildMakeHarvestableOptions {
+  /**
+   * When set, only resolve deficits for these region_uids. Every region still
+   * contributes its costs as a donor reserve (so we never strip grain another
+   * region needs for its own harvest) — we just don't try to *make harvestable*
+   * the regions outside this set. Used by the worksite-feed cover flow, which
+   * only needs to top up grain in the single region being fed.
+   */
+  onlyRegionUids?: string[];
+  /**
+   * region_uid → production overview, used to derive each region's burn rate so
+   * the top-up can also cover the shortfall growth between planning and the
+   * actual harvest (see `DRIFT_COVER_MINUTES`). Omit for flows whose costs are
+   * fixed rather than accruing — the worksite-feed cover plan, for instance —
+   * and the margin falls back to DEFICIT_BUFFER / MIN_TOPUP_MARGIN.
+   */
+  overviews?: Record<string, SplRegionOverviewData>;
+}
+
 export function buildMakeHarvestableOps(
   visibleRegions: SplProductionOverviewRegion[],
   username: string,
@@ -490,13 +585,9 @@ export function buildMakeHarvestableOps(
   strategies: MakeHarvestableStrategy[],
   initialDecBalance: number,
   pools: SplLandPool[],
-  // When set, only resolve deficits for these region_uids. Every region still
-  // contributes its costs as a donor reserve (so we never strip grain another
-  // region needs for its own harvest) — we just don't try to *make harvestable*
-  // the regions outside this set. Used by the worksite-feed cover flow, which
-  // only needs to top up grain in the single region being fed.
-  onlyRegionUids?: string[]
+  options: BuildMakeHarvestableOptions = {}
 ): { ops: [string, object][]; log: string[]; actions: ActionSummary[] } {
+  const { onlyRegionUids, overviews } = options;
   const ctx: Ctx = {
     username,
     pools,
@@ -525,6 +616,15 @@ export function buildMakeHarvestableOps(
     actions: [],
     holdings: balances.poolHoldings ?? {},
     usedPoolFraction: {},
+    driftPerHour: Object.fromEntries(
+      visibleRegions.map((r) => [
+        r.region_uid,
+        overviews
+          ? computeRegionResourceBalance(r, overviews[r.region_uid] ?? null)
+              .externalNeedPerHour
+          : {},
+      ])
+    ),
   };
 
   for (const region of visibleRegions) {
@@ -544,16 +644,47 @@ export function buildMakeHarvestableOps(
         .join(", ")}`
     );
 
+    const drifting = missing
+      .map((m) => {
+        const shortfall =
+          m.amount - (ctx.working[region.region_uid][m.symbol] ?? 0);
+        return {
+          symbol: m.symbol,
+          margin: topUpMargin(ctx, region.region_uid, m.symbol, shortfall),
+          drift:
+            ((ctx.driftPerHour[region.region_uid]?.[m.symbol] ?? 0) *
+              DRIFT_COVER_MINUTES) /
+            60,
+        };
+      })
+      // Only worth a line when the burn rate is what set the margin — otherwise
+      // it is just the 2% buffer and says nothing the shortfall didn't.
+      .filter((m) => m.margin === m.drift && m.drift > 0);
+    if (drifting.length > 0) {
+      ctx.log.push(
+        `  + margin: ${drifting
+          .map((m) => `${m.margin.toFixed(0)} ${m.symbol}`)
+          .join(
+            ", "
+          )} (includes enough extra resources to cover ${DRIFT_COVER_MINUTES} min before harvesting)`
+      );
+    }
+
     for (const cost of missing) {
       let resolved = false;
       for (const strategy of strategies) {
         if (resolved) break;
-        const deficit =
+        const shortfall =
           cost.amount - (ctx.working[region.region_uid][cost.symbol] ?? 0);
-        if (deficit <= 0) {
+        if (shortfall <= 0) {
           resolved = true;
           break;
         }
+        // Aim past the raw shortfall: harvest costs keep accruing while the
+        // plan is confirmed, broadcast and finally harvested.
+        const deficit =
+          shortfall +
+          topUpMargin(ctx, region.region_uid, cost.symbol, shortfall);
         resolved = STRATEGY_FN[strategy](ctx, region, cost, deficit);
       }
 

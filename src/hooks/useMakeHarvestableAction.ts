@@ -52,7 +52,7 @@ export function useMakeHarvestableAction({
       setResult(null);
       setError(null);
       try {
-        const [{ harvestable, balances }, dec] = await Promise.all([
+        const [{ harvestable, balances, overviews }, dec] = await Promise.all([
           getBulkRegionData(
             visibleRegions.map((r) => r.region_uid),
             !planOnly
@@ -107,7 +107,10 @@ export function useMakeHarvestableAction({
           },
           strategies,
           dec,
-          pools
+          pools,
+          // Overviews carry each region's burn rate, which sizes the top-up
+          // margin so the plan survives the delay before Harvest All is pressed.
+          { overviews }
         );
 
         if (planOnly) {

@@ -3,6 +3,7 @@
 import {
   createDefaultLandManagerConfig,
   LandManagerConfig,
+  LandManagerConfigSection,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
@@ -25,6 +26,10 @@ interface LandManagerContextType {
   allRegions: SplProductionOverviewRegion[];
   refreshKey: number;
   triggerRefresh: () => void;
+  configDialogOpen: boolean;
+  configDialogSection: LandManagerConfigSection | null;
+  openConfigDialog: (section?: LandManagerConfigSection) => void;
+  closeConfigDialog: () => void;
 }
 
 const LandManagerContext = createContext<LandManagerContextType | undefined>(
@@ -46,7 +51,18 @@ export function LandManagerContextProvider({
 }: ProviderProps) {
   const [config, setConfig] = useState<LandManagerConfig>(initialConfig);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [configDialogOpen, setConfigDialogOpen] = useState(false);
+  const [configDialogSection, setConfigDialogSection] =
+    useState<LandManagerConfigSection | null>(null);
   const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  const openConfigDialog = useCallback((section?: LandManagerConfigSection) => {
+    setConfigDialogSection(section ?? null);
+    setConfigDialogOpen(true);
+  }, []);
+  const closeConfigDialog = useCallback(() => {
+    setConfigDialogOpen(false);
+    setConfigDialogSection(null);
+  }, []);
 
   return (
     <LandManagerContext.Provider
@@ -57,6 +73,10 @@ export function LandManagerContextProvider({
         allRegions,
         refreshKey,
         triggerRefresh,
+        configDialogOpen,
+        configDialogSection,
+        openConfigDialog,
+        closeConfigDialog,
       }}
     >
       {children}

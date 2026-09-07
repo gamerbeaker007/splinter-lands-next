@@ -16,7 +16,9 @@ import {
   DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
   DonationConfig,
+  LAND_MANAGER_CONFIG_SECTION_LABELS,
   LandManagerConfig,
+  LandManagerConfigSection,
   MakeHarvestableStrategy,
   PostHarvestStrategy,
   RentalConfig,
@@ -24,16 +26,21 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
+  Box,
   Button,
   CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Grid,
+  Paper,
   Typography,
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import BuyEmptyWorkersSection from "./BuyEmptyWorkersSection";
 import DonationSettingsSection from "./DonationSettingsSection";
 import EnabledRegionsSection from "./EnabledRegionsSection";
@@ -48,6 +55,7 @@ interface Props {
   config: LandManagerConfig;
   allRegions: SplProductionOverviewRegion[];
   onSaved: (updated: LandManagerConfig) => void;
+  focusedSection?: LandManagerConfigSection | null;
 }
 
 export default function ConfigDialog({
@@ -56,6 +64,7 @@ export default function ConfigDialog({
   config,
   allRegions,
   onSaved,
+  focusedSection = null,
 }: Props) {
   const [enabledRegions, setEnabledRegions] = useState<number[]>(
     config.enabled_regions
@@ -85,6 +94,8 @@ export default function ConfigDialog({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up("md"));
 
   // Reset edits to the last-saved config and close. Wired to both the Cancel
   // button and the Dialog's backdrop/escape close so a misclick discards the
@@ -135,6 +146,85 @@ export default function ConfigDialog({
   const moveStrategy = moveIn(strategies, setStrategies);
   const toggleTopUpStrategy = toggleIn<TopUpPoolStrategy>(setTopUpStrategies);
   const moveTopUpStrategy = moveIn(topUpStrategies, setTopUpStrategies);
+
+  const useFlatLayout = isDesktop || !!focusedSection;
+
+  const sectionNodes: Record<LandManagerConfigSection, ReactNode> = {
+    enabled_regions: (
+      <EnabledRegionsSection
+        allRegions={allRegions}
+        enabledRegions={enabledRegions}
+        onToggle={(n) =>
+          setEnabledRegions((prev) =>
+            prev.includes(n) ? prev.filter((r) => r !== n) : [...prev, n]
+          )
+        }
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    make_harvestable: (
+      <MakeHarvestableSection
+        strategies={strategies}
+        onToggle={toggleStrategy}
+        onMove={moveStrategy}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    donation: (
+      <DonationSettingsSection
+        donation={donation}
+        onChange={setDonation}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    post_harvest: (
+      <PostHarvestSection
+        strategy={postHarvestStrategy}
+        onStrategyChange={setPostHarvestStrategy}
+        excludedResources={excludedResources}
+        onExcludedChange={setExcludedResources}
+        sellPct={sellPct}
+        poolPct={poolPct}
+        onSellPctChange={setSellPct}
+        onPoolPctChange={setPoolPct}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    top_up_pools: (
+      <TopUpPoolSection
+        strategies={topUpStrategies}
+        onToggle={toggleTopUpStrategy}
+        onMove={moveTopUpStrategy}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    rental: (
+      <RentEmptyWorkersSection
+        rental={rental}
+        onChange={setRental}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+    buy: (
+      <BuyEmptyWorkersSection
+        buy={buy}
+        onChange={setBuy}
+        layout={useFlatLayout ? "flat" : "accordion"}
+      />
+    ),
+  };
+
+  const orderedSections: LandManagerConfigSection[] = [
+    "enabled_regions",
+    "make_harvestable",
+    "donation",
+    "post_harvest",
+    "top_up_pools",
+    "rental",
+    "buy",
+  ];
+
+  const visibleSections = focusedSection ? [focusedSection] : orderedSections;
 
   const handleSave = async () => {
     setSaving(true);
@@ -195,47 +285,38 @@ export default function ConfigDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Land Manager Config</DialogTitle>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      maxWidth={focusedSection ? "md" : useFlatLayout ? "lg" : "sm"}
+      fullWidth
+    >
+      <DialogTitle>
+        {focusedSection
+          ? `Edit ${LAND_MANAGER_CONFIG_SECTION_LABELS[focusedSection]}`
+          : "Land Manager Config"}
+      </DialogTitle>
       <DialogContent dividers sx={{ p: 0 }}>
-        <EnabledRegionsSection
-          allRegions={allRegions}
-          enabledRegions={enabledRegions}
-          onToggle={(n) =>
-            setEnabledRegions((prev) =>
-              prev.includes(n) ? prev.filter((r) => r !== n) : [...prev, n]
-            )
-          }
-        />
-
-        <MakeHarvestableSection
-          strategies={strategies}
-          onToggle={toggleStrategy}
-          onMove={moveStrategy}
-        />
-
-        <DonationSettingsSection donation={donation} onChange={setDonation} />
-
-        <PostHarvestSection
-          strategy={postHarvestStrategy}
-          onStrategyChange={setPostHarvestStrategy}
-          excludedResources={excludedResources}
-          onExcludedChange={setExcludedResources}
-          sellPct={sellPct}
-          poolPct={poolPct}
-          onSellPctChange={setSellPct}
-          onPoolPctChange={setPoolPct}
-        />
-
-        <TopUpPoolSection
-          strategies={topUpStrategies}
-          onToggle={toggleTopUpStrategy}
-          onMove={moveTopUpStrategy}
-        />
-
-        <RentEmptyWorkersSection rental={rental} onChange={setRental} />
-
-        <BuyEmptyWorkersSection buy={buy} onChange={setBuy} />
+        {!useFlatLayout ? (
+          <>
+            {visibleSections.map((section) => (
+              <Box key={section}>{sectionNodes[section]}</Box>
+            ))}
+          </>
+        ) : (
+          <Grid container spacing={2} sx={{ p: 2 }}>
+            {visibleSections.map((section) => (
+              <Grid
+                key={section}
+                size={{ xs: 12, md: focusedSection ? 12 : 6 }}
+              >
+                <Paper variant="outlined" sx={{ p: 2, height: "100%" }}>
+                  {sectionNodes[section]}
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        )}
 
         {error && (
           <Typography color="error" variant="body2" sx={{ px: 2, pb: 1 }}>

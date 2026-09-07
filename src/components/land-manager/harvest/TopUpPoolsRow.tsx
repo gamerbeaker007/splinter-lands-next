@@ -1,14 +1,17 @@
 "use client";
 
 import { useTopUpPoolsAction } from "@/hooks/useTopUpPoolsAction";
+import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { ActionPlan, TopUpPoolStrategy } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import { WaterDrop as WaterDropIcon } from "@mui/icons-material";
+import SettingsIcon from "@mui/icons-material/Settings";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import {
   Alert,
   Button,
   Chip,
   CircularProgress,
+  IconButton,
   Stack,
   Tooltip,
   Typography,
@@ -34,6 +37,7 @@ export default function TopUpPoolsRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const { openConfigDialog } = useLandManagerContext();
   const action = useTopUpPoolsAction({
     username,
     visibleRegions,
@@ -93,6 +97,13 @@ export default function TopUpPoolsRow({
             </Button>
           </span>
         </Tooltip>
+        <IconButton
+          size="small"
+          onClick={() => openConfigDialog("top_up_pools")}
+          sx={{ textTransform: "none" }}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
 
         <Stack direction="row" gap={0.5} flexWrap="wrap">
           {strategies.length === 0 ? (
