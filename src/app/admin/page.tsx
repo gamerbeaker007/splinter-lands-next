@@ -1,6 +1,7 @@
 // app/admin/page.tsx
 import CacheSectionServer from "@/components/admin/CacheSectionServer";
 import DbSizeSection from "@/components/admin/DbSizeSection";
+import DirectDonationsSectionServer from "@/components/admin/DirectDonationsSectionServer";
 import DonationsMadeSection from "@/components/admin/DonationsMadeSection";
 import LogSectionServer from "@/components/admin/LogSectionServer";
 import MemorySectionServer from "@/components/admin/MemorySectionServer";
@@ -41,6 +42,7 @@ async function AdminContent() {
         <DbSizeSection />
         <MemorySectionServer />
         <DonationsMadeSection />
+        <DirectDonationsSectionServer />
         <LogSectionServer />
       </Suspense>
     </>

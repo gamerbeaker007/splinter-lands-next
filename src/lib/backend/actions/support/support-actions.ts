@@ -110,8 +110,82 @@ export type DonationRecordResult =
   | { status: "already_recorded" }
   | { status: "error"; error: string };
 
+export type SupportDonationSortBy =
+  | "created_at"
+  | "username"
+  | "currency"
+  | "amount"
+  | "usd_value";
+
+export type SupportDonationSortDirection = "asc" | "desc";
+
+export interface SupportDonationRow {
+  id: number;
+  created_at: string;
+  username: string;
+  currency: string;
+  amount: number;
+  usd_value: number;
+  tx: string;
+}
+
+export interface SupportDonationPage {
+  rows: SupportDonationRow[];
+  total: number;
+  pages: number;
+}
+
 const PENDING_MESSAGE =
   "Your transaction was broadcast successfully but is still being confirmed. Please try again in a few seconds.";
+
+/**
+ * Admin listing for direct support donations (support_donation table).
+ * Defaults to newest first and supports sorting/pagination for table views.
+ */
+export async function getSupportDonationsPage(
+  page = 1,
+  pageSize = 10,
+  sortBy: SupportDonationSortBy = "created_at",
+  sortDirection: SupportDonationSortDirection = "desc"
+): Promise<SupportDonationPage> {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+  const safePageSize =
+    Number.isFinite(pageSize) && pageSize > 0
+      ? Math.min(100, Math.floor(pageSize))
+      : 10;
+
+  const [total, rows] = await Promise.all([
+    prisma.supportDonation.count(),
+    prisma.supportDonation.findMany({
+      orderBy: { [sortBy]: sortDirection },
+      skip: (safePage - 1) * safePageSize,
+      take: safePageSize,
+      select: {
+        id: true,
+        created_at: true,
+        username: true,
+        currency: true,
+        amount: true,
+        usd_value: true,
+        tx: true,
+      },
+    }),
+  ]);
+
+  return {
+    rows: rows.map((row) => ({
+      id: row.id,
+      created_at: row.created_at.toISOString(),
+      username: row.username,
+      currency: row.currency,
+      amount: Number(row.amount),
+      usd_value: Number(row.usd_value),
+      tx: row.tx,
+    })),
+    total,
+    pages: Math.max(1, Math.ceil(total / safePageSize)),
+  };
+}
 
 /** Shared tail: price the confirmed transfer in USD and store it. */
 async function storeDonation(input: {

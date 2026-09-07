@@ -44,7 +44,7 @@ export default async function DonationsMadeSection() {
               textUnderlineOffset: 3,
             }}
           >
-            Donations Made (daily totals)
+            Land-Operation Donations Made (daily totals)
           </Typography>
         </Tooltip>
 
