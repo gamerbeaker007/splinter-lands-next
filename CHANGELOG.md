@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.27.1] - 2026-09-10
+
+### Updated
+
+- **Land Manager - Harvest:** reoder button for correct flow.
+
+---
+
 ## [v1.27.0] - 2026-09-05
 
 ### Fixed

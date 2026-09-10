@@ -107,22 +107,22 @@ export default function BulkActionPanel({
   return (
     <Box sx={{ mb: 3 }}>
       <Stack direction="column" gap={0.5} flexWrap="wrap" alignItems="left">
-        <HarvestAllRow
-          username={username}
-          visibleRegions={visibleRegions}
-          donation={donation}
-          anyBusy={anyBusy}
-          onBusyChange={onHarvestBusy}
-          onPlan={(plan, confirm) => setPending({ plan, confirm })}
-          onSuccess={afterSuccess}
-        />
-
         <MakeHarvestableRow
           username={username}
           visibleRegions={visibleRegions}
           strategies={strategies}
           anyBusy={anyBusy}
           onBusyChange={onMakeHarvestableBusy}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
+          onSuccess={afterSuccess}
+        />
+
+        <HarvestAllRow
+          username={username}
+          visibleRegions={visibleRegions}
+          donation={donation}
+          anyBusy={anyBusy}
+          onBusyChange={onHarvestBusy}
           onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
@@ -138,6 +138,18 @@ export default function BulkActionPanel({
           onSuccess={afterSuccess}
         />
 
+        {/* Closes the rolling-buffer loop: Make Harvestable draws matured
+            liquidity out, Top Up Pools puts next week's worth back in. */}
+        <TopUpPoolsRow
+          username={username}
+          visibleRegions={visibleRegions}
+          strategies={topUpPoolStrategies}
+          anyBusy={anyBusy}
+          onBusyChange={onTopUpPoolsBusy}
+          onPlan={(plan, confirm) => setPending({ plan, confirm })}
+          onSuccess={afterSuccess}
+        />
+
         <ProcessResourcesRow
           username={username}
           visibleRegions={visibleRegions}
@@ -147,18 +159,6 @@ export default function BulkActionPanel({
           poolPct={postHarvestPoolPct}
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
-          onPlan={(plan, confirm) => setPending({ plan, confirm })}
-          onSuccess={afterSuccess}
-        />
-
-        {/* Closes the rolling-buffer loop: Make Harvestable draws matured
-            liquidity out, Top Up Pools puts next week's worth back in. */}
-        <TopUpPoolsRow
-          username={username}
-          visibleRegions={visibleRegions}
-          strategies={topUpPoolStrategies}
-          anyBusy={anyBusy}
-          onBusyChange={onTopUpPoolsBusy}
           onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
         />
