@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.27.2] - 2026-09-10
+
+### Updated
+
+- **Land Manager - Harvest (Top up pools):** add skip row for resolved value less then 10 (so plans can still be executed)
+
+---
+
 ## [v1.27.1] - 2026-09-10
 
 ### Updated

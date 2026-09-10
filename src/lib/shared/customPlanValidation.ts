@@ -25,11 +25,15 @@ interface PoolLedgerEntry {
   usedFraction: number;
 }
 
+const MIN_EXECUTABLE_ACTION_AMOUNT = 10;
+
 function emptyRowValidation(
   error: string | null = null
 ): CustomPlanRowValidation {
   return {
     valid: false,
+    skipped: false,
+    skipReason: null,
     resolvedAmount: 0,
     estimatedValue: 0,
     currentBalance: 0,
@@ -39,6 +43,27 @@ function emptyRowValidation(
     estimatedOutputSymbol: "",
     estimatedOutputAmount: 0,
     error,
+  };
+}
+
+function skippedRowValidation(
+  reason: string,
+  currentBalance: number,
+  balanceSymbol: string
+): CustomPlanRowValidation {
+  return {
+    valid: true,
+    skipped: true,
+    skipReason: reason,
+    resolvedAmount: 0,
+    estimatedValue: 0,
+    currentBalance,
+    inputBalance: currentBalance,
+    balanceSymbol,
+    inputAmountAbsolute: 0,
+    estimatedOutputSymbol: "",
+    estimatedOutputAmount: 0,
+    error: null,
   };
 }
 
@@ -107,8 +132,12 @@ export function isRowEmpty(draft: CustomPlanRowDraft): boolean {
 export function isRowComplete(draft: CustomPlanRowDraft): boolean {
   if (!draft.action_type) return false;
 
-  const raw = parseInt(draft.amount, 10);
-  const hasPositiveAmount = Number.isFinite(raw) && raw > 0;
+  const rawAbs = Number.parseFloat(draft.amount);
+  const rawPct = parseInt(draft.amount, 10);
+  const hasPositiveAbs = Number.isFinite(rawAbs) && rawAbs > 0;
+  const hasPositivePct = Number.isFinite(rawPct) && rawPct > 0;
+  const hasPositiveAmount =
+    draft.amount_type === "pct" ? hasPositivePct : hasPositiveAbs;
 
   switch (draft.action_type) {
     case "transfer":
@@ -163,17 +192,31 @@ function parseAndScaleInput(
   sourceBalance: number,
   multiplier: number
 ): number {
-  const raw = parseInt(draft.amount, 10);
-  if (!Number.isFinite(raw) || raw <= 0) return 0;
+  const rawAbs = Number.parseFloat(draft.amount);
+  const rawPct = parseInt(draft.amount, 10);
 
-  let baseAmount = raw;
+  let baseAmount = rawAbs;
   if (draft.amount_type === "pct") {
-    if (!Number.isInteger(raw) || raw < 1 || raw > 100) return 0;
-    baseAmount = Math.floor((raw / 100) * sourceBalance);
+    if (!Number.isInteger(rawPct) || rawPct < 1 || rawPct > 100) return 0;
+    baseAmount = Math.floor((rawPct / 100) * sourceBalance);
+  } else if (!Number.isFinite(rawAbs) || rawAbs <= 0) {
+    return 0;
   }
 
-  const scaled = Math.floor(baseAmount * multiplier);
+  const scaled = Math.floor(baseAmount * multiplier * 1000) / 1000;
   return scaled;
+}
+
+function isPctTooSmall(
+  draft: CustomPlanRowDraft,
+  sourceBalance: number,
+  multiplier: number
+): boolean {
+  if (draft.amount_type !== "pct") return false;
+  const raw = parseInt(draft.amount, 10);
+  if (!Number.isFinite(raw) || raw <= 0) return false;
+  const pctBase = Math.floor((raw / 100) * sourceBalance);
+  return Math.floor(pctBase * multiplier) <= 0;
 }
 
 function initPoolLedger(
@@ -240,7 +283,21 @@ export function validateCustomPlan(
           draft.from_region_uid,
           draft.from_resource
         );
+        if (isPctTooSmall(draft, current, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of ${draft.from_resource} resolves below 1 and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         const resolved = parseAndScaleInput(draft, current, multiplier);
+        if (resolved > 0 && resolved < MIN_EXECUTABLE_ACTION_AMOUNT) {
+          return skippedRowValidation(
+            `Resolved ${draft.from_resource} amount ${resolved} is below ${MIN_EXECUTABLE_ACTION_AMOUNT} and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -288,7 +345,21 @@ export function validateCustomPlan(
           draft.from_region_uid,
           draft.from_resource
         );
+        if (isPctTooSmall(draft, current, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of ${draft.from_resource} resolves below 1 and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         const resolved = parseAndScaleInput(draft, current, multiplier);
+        if (resolved > 0 && resolved < MIN_EXECUTABLE_ACTION_AMOUNT) {
+          return skippedRowValidation(
+            `Resolved ${draft.from_resource} amount ${resolved} is below ${MIN_EXECUTABLE_ACTION_AMOUNT} and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -396,6 +467,13 @@ export function validateCustomPlan(
           draft.from_region_uid,
           draft.from_resource
         );
+        if (isPctTooSmall(draft, current, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of ${draft.from_resource} resolves below 1 and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
@@ -445,7 +523,21 @@ export function validateCustomPlan(
           draft.from_region_uid,
           draft.from_resource
         );
+        if (isPctTooSmall(draft, current, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of ${draft.from_resource} resolves below 1 and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         const resolved = parseAndScaleInput(draft, current, multiplier);
+        if (resolved > 0 && resolved < MIN_EXECUTABLE_ACTION_AMOUNT) {
+          return skippedRowValidation(
+            `Resolved ${draft.from_resource} amount ${resolved} is below ${MIN_EXECUTABLE_ACTION_AMOUNT} and is skipped`,
+            current,
+            draft.from_resource
+          );
+        }
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
         if (resolved > current) {
@@ -501,6 +593,13 @@ export function validateCustomPlan(
         };
         const holding = computePoolHolding(poolPositions[symbol], pools);
         const current = entry.unlockedResource;
+        if (isPctTooSmall(draft, current, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of unlocked ${symbol} resolves below 1 and is skipped`,
+            current,
+            symbol
+          );
+        }
         const resolved = parseAndScaleInput(draft, current, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");

@@ -95,6 +95,10 @@ export function useCustomPlanAction({
           { multiplier, poolPositions }
         );
 
+        const executableRows = validation.rows.filter(
+          (r) => r.valid && !r.skipped && r.resolvedAmount > 0
+        ).length;
+
         if (validation.status !== "valid") {
           setError(
             "Plan is not valid. Please fix all row errors before executing."
@@ -112,7 +116,7 @@ export function useCustomPlanAction({
         }
 
         const totalBroadcasts = Math.ceil(
-          configuredRows.length / MAX_OPS_PER_BROADCAST
+          executableRows / MAX_OPS_PER_BROADCAST
         );
         if (totalBroadcasts > 1) {
           log.push(
@@ -123,7 +127,13 @@ export function useCustomPlanAction({
         for (let i = 0; i < configuredRows.length; i++) {
           const draft = configuredRows[i];
           const rowResult = validation.rows[i];
-          if (!rowResult || !rowResult.valid) continue;
+          if (
+            !rowResult ||
+            !rowResult.valid ||
+            rowResult.skipped ||
+            rowResult.resolvedAmount <= 0
+          )
+            continue;
 
           const resolvedAmount = rowResult.resolvedAmount;
 

@@ -19,6 +19,7 @@ import {
   ContentCopy,
   Delete,
   DragIndicator,
+  SkipNext,
 } from "@mui/icons-material";
 import {
   Alert,
@@ -190,9 +191,11 @@ export default function CustomPlanRow({
 
   const borderColor = validation?.error
     ? "error.main"
-    : validation?.valid
-      ? "success.main"
-      : "divider";
+    : validation?.skipped
+      ? "warning.main"
+      : validation?.valid
+        ? "success.main"
+        : "divider";
 
   const toRegionOptions =
     actionType === "transfer"
@@ -421,11 +424,15 @@ export default function CustomPlanRow({
             />
           )}
 
-          {validation?.valid && (
+          {validation?.skipped ? (
+            <Tooltip title={validation.skipReason ?? "Skipped"}>
+              <SkipNext color="warning" fontSize="small" />
+            </Tooltip>
+          ) : validation?.valid ? (
             <Tooltip title="Valid">
               <CheckCircle color="success" fontSize="small" />
             </Tooltip>
-          )}
+          ) : null}
         </Stack>
 
         <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
@@ -495,6 +502,11 @@ export default function CustomPlanRow({
       {validation?.error && hasAction && (
         <Alert severity="error" sx={{ mt: 0.8, py: 0.25 }} icon={false}>
           <Typography variant="caption">{validation.error}</Typography>
+        </Alert>
+      )}
+      {!validation?.error && validation?.skipped && validation.skipReason && (
+        <Alert severity="warning" sx={{ mt: 0.8, py: 0.25 }} icon={false}>
+          <Typography variant="caption">{validation.skipReason}</Typography>
         </Alert>
       )}
     </Box>

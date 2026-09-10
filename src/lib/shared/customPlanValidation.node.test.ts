@@ -52,6 +52,39 @@ const buyRow = (amount: string): CustomPlanRowDraft => ({
   amount,
 });
 
+const transferPctRow = (amount: string): CustomPlanRowDraft => ({
+  draftId: `t${amount}`,
+  action_type: "transfer",
+  from_region_uid: "region-a",
+  to_region_uid: "region-b",
+  from_resource: "GRAIN",
+  to_resource: "",
+  amount_type: "pct",
+  amount,
+});
+
+const poolPctRow = (amount: string): CustomPlanRowDraft => ({
+  draftId: `pp${amount}`,
+  action_type: "pool",
+  from_region_uid: "region-a",
+  to_region_uid: "",
+  from_resource: "GRAIN",
+  to_resource: "",
+  amount_type: "pct",
+  amount,
+});
+
+const swapPctRow = (amount: string): CustomPlanRowDraft => ({
+  draftId: `s${amount}`,
+  action_type: "swap",
+  from_region_uid: "region-a",
+  to_region_uid: "region-b",
+  from_resource: "GRAIN",
+  to_resource: "WOOD",
+  amount_type: "pct",
+  amount,
+});
+
 const validate = (
   rows: CustomPlanRowDraft[],
   vestingShares = 0,
@@ -190,5 +223,116 @@ describe("validateCustomPlan — pool withdrawals", () => {
     expect(aggregate.rows[1].valid).toBe(false);
     expect(aggregate.rows[1].error).toContain("Insufficient DEC");
     expect(aggregate.status).toBe("invalid");
+  });
+});
+
+describe("validateCustomPlan — tiny percentage rows", () => {
+  it("marks tiny percentage transfer/pool/swap rows as skipped, not invalid", () => {
+    const result = validateCustomPlan(
+      [transferPctRow("1"), poolPctRow("1"), swapPctRow("1")],
+      {
+        "region-a": { GRAIN: 5, WOOD: 0 },
+        "region-b": { GRAIN: 0, WOOD: 0 },
+      },
+      10_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.status).toBe("valid");
+    expect(result.rows[0].skipped).toBe(true);
+    expect(result.rows[1].skipped).toBe(true);
+    expect(result.rows[2].skipped).toBe(true);
+    expect(result.rows[0].error).toBeNull();
+    expect(result.rows[1].error).toBeNull();
+    expect(result.rows[2].error).toBeNull();
+  });
+
+  it("keeps truly invalid rows invalid while allowing skipped ones", () => {
+    const result = validateCustomPlan(
+      [transferPctRow("1"), poolRow("9999")],
+      {
+        "region-a": { GRAIN: 5 },
+        "region-b": { GRAIN: 0 },
+      },
+      10_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.rows[0].skipped).toBe(true);
+    expect(result.rows[1].valid).toBe(false);
+    expect(result.status).toBe("invalid");
+  });
+
+  it("skips transfer/pool/swap rows when resolved amount is below 10", () => {
+    const transferAbs: CustomPlanRowDraft = {
+      draftId: "ta",
+      action_type: "transfer",
+      from_region_uid: "region-a",
+      to_region_uid: "region-b",
+      from_resource: "GRAIN",
+      to_resource: "",
+      amount_type: "abs",
+      amount: "9",
+    };
+    const poolAbs: CustomPlanRowDraft = {
+      draftId: "pa",
+      action_type: "pool",
+      from_region_uid: "region-a",
+      to_region_uid: "",
+      from_resource: "GRAIN",
+      to_resource: "",
+      amount_type: "abs",
+      amount: "9",
+    };
+    const swapAbs: CustomPlanRowDraft = {
+      draftId: "sa",
+      action_type: "swap",
+      from_region_uid: "region-a",
+      to_region_uid: "region-b",
+      from_resource: "GRAIN",
+      to_resource: "WOOD",
+      amount_type: "abs",
+      amount: "9",
+    };
+
+    const result = validateCustomPlan(
+      [transferAbs, poolAbs, swapAbs],
+      {
+        "region-a": { GRAIN: 1_000, WOOD: 0 },
+        "region-b": { GRAIN: 0, WOOD: 0 },
+      },
+      10_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.status).toBe("valid");
+    expect(result.rows[0].skipped).toBe(true);
+    expect(result.rows[1].skipped).toBe(true);
+    expect(result.rows[2].skipped).toBe(true);
+  });
+
+  it("accepts decimal abs input for pool_withdraw (not incomplete)", () => {
+    const row: CustomPlanRowDraft = {
+      draftId: "w01",
+      action_type: "pool_withdraw",
+      from_region_uid: "",
+      to_region_uid: "region-a",
+      from_resource: "GRAIN",
+      to_resource: "",
+      amount_type: "abs",
+      amount: "0.1",
+    };
+
+    const result = validateCustomPlan(
+      [row],
+      { "region-a": {} },
+      0,
+      [GRAIN_POOL],
+      {
+        poolPositions: { GRAIN: grainPosition(0) },
+      }
+    );
+
+    expect(result.rows[0].error).not.toBe("Row is incomplete");
   });
 });

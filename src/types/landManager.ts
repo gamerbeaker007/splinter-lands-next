@@ -280,6 +280,10 @@ export interface CustomPlanRowDraft {
 /** Per-row validation result produced by validateCustomPlan. */
 export interface CustomPlanRowValidation {
   valid: boolean;
+  /** True when a configured row is intentionally ignored at execution time. */
+  skipped?: boolean;
+  /** Human-readable reason when `skipped` is true. */
+  skipReason?: string | null;
   /** Absolute resolved amount (from pct or abs). */
   resolvedAmount: number;
   /** Estimated received amount (for transfer, swap) or DEC cost (for pool, buy). */
