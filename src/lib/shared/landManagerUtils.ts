@@ -192,6 +192,33 @@ export function computeDecNeededForResource(
 }
 
 /**
+ * Compute DEC needed for add_liquidity at current pool spot ratio.
+ *
+ * Unlike swap/buy quotes, add_liquidity should use value matching at the pool's
+ * current ratio (DEC qty / resource qty), not inverse price-impact math.
+ */
+export function computeDecNeededForAddLiquidity(
+  pools: SplLandPool[],
+  resourceSymbol: string,
+  resourceAmount: number
+): number {
+  const pool = poolFor(pools, resourceSymbol);
+  if (!pool) return Infinity;
+  const decQty = Number.parseFloat(pool.dec_quantity);
+  const resourceQty = Number.parseFloat(pool.resource_quantity);
+  if (
+    !Number.isFinite(decQty) ||
+    !Number.isFinite(resourceQty) ||
+    resourceQty <= 0
+  )
+    return Infinity;
+  const decNeeded = resourceAmount * (decQty / resourceQty);
+  return Number.isFinite(decNeeded)
+    ? Number.parseFloat(decNeeded.toFixed(3))
+    : Infinity;
+}
+
+/**
  * Inverse of computeSwapAmounts: given a desired output amount, return how much
  * input is needed. Returns Infinity when the pool cannot supply the output.
  *

@@ -224,6 +224,20 @@ describe("validateCustomPlan — pool withdrawals", () => {
     expect(aggregate.rows[1].error).toContain("Insufficient DEC");
     expect(aggregate.status).toBe("invalid");
   });
+
+  it("uses pool spot ratio for pool rows", () => {
+    const result = validateCustomPlan(
+      [poolRow("1000")],
+      { "region-a": { GRAIN: 10_000 } },
+      1_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.status).toBe("valid");
+    expect(result.rows[0].valid).toBe(true);
+    // Spot ratio is 50,000 / 1,000,000 = 0.05 DEC per GRAIN.
+    expect(result.rows[0].estimatedOutputAmount).toBeCloseTo(50, 6);
+  });
 });
 
 describe("validateCustomPlan — tiny percentage rows", () => {

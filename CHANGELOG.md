@@ -12,6 +12,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+
+---
+
+## [v1.27.3] - 2026-09-10
+
+### Updated
+
+- **Land Manager - Harvest (Top up pools):** Fix caluculation to pool 
+
 ---
 
 ## [v1.27.2] - 2026-09-10

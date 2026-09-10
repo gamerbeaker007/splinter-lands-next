@@ -1,4 +1,5 @@
 import {
+  computeDecNeededForAddLiquidity,
   computeDecNeededForResource,
   computeSwapAmounts,
 } from "@/lib/shared/landManagerUtils";
@@ -375,7 +376,7 @@ export function validateCustomPlan(
           return invalid;
         }
 
-        const decNeeded = computeDecNeededForResource(
+        const decNeeded = computeDecNeededForAddLiquidity(
           pools,
           draft.from_resource,
           resolved

@@ -16,6 +16,7 @@ import {
 } from "@/lib/frontend/splBroadcast";
 import { validateCustomPlan } from "@/lib/shared/customPlanValidation";
 import {
+  computeDecNeededForAddLiquidity,
   computeDecNeededForResource,
   computeSwapAmounts,
 } from "@/lib/shared/landManagerUtils";
@@ -174,7 +175,7 @@ export function useCustomPlanAction({
             }
 
             case "pool": {
-              const decNeeded = computeDecNeededForResource(
+              const decNeeded = computeDecNeededForAddLiquidity(
                 pools,
                 draft.from_resource,
                 resolvedAmount
