@@ -82,6 +82,7 @@ export interface PlanCaps {
   maxPerWorker: number;
   minLandBasePp: number;
   minFoil: number;
+  requireTerrainBoost: boolean;
 }
 
 /** Cost of a single listing, plus the rental-only fields when applicable. */
@@ -210,6 +211,7 @@ function selectCandidateTuples(
   maxPerWorker: number,
   minLandBasePp: number,
   minFoil: number,
+  requireTerrainBoost: boolean,
   label: string
 ): CandidateTuple[] {
   const seen = new Set<string>();
@@ -235,7 +237,7 @@ function selectCandidateTuples(
     let bestScore = 0;
     for (const plot of eligible) {
       const mod = plot.biome_modifiers[element] ?? 0;
-      if (mod < 0) continue; // element is penalised on this plot
+      if (requireTerrainBoost ? mod <= 0 : mod < 0) continue;
       const score = (estPp * (1 + mod)) / g.low_price;
       if (score > bestScore) bestScore = score;
     }
@@ -311,7 +313,7 @@ async function buildScoredPairs<Ctx>(
 
       for (const plot of eligible) {
         const mod = plot.biome_modifiers[tuple.element] ?? 0;
-        if (mod < 0) continue; // element is penalised on this plot
+        if (caps.requireTerrainBoost ? mod <= 0 : mod < 0) continue;
         const effective_pp = land_base_pp * (1 + mod);
         pairs.push({
           listing,
@@ -429,6 +431,7 @@ export async function buildWorkerPlan<Ctx>(
     maxPerWorker,
     caps.minLandBasePp,
     caps.minFoil,
+    caps.requireTerrainBoost,
     strategy.label
   );
   if (tuples.length === 0) {

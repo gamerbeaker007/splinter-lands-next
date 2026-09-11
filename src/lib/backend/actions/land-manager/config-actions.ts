@@ -65,6 +65,7 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       max_dec_per_day_per_worker: row?.rental_max_dec_per_day_per_worker ?? 0,
       min_land_base_pp: row?.rental_min_land_base_pp ?? 0,
       min_foil: row?.rental_min_foil ?? 0,
+      terrain_boost_only: row?.rental_terrain_boost_only ?? false,
       rental_batch_size: row?.rental_batch_size ?? null,
       land_renters_only: row?.rental_land_renters_only ?? false,
     },
@@ -74,6 +75,7 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       max_dec_per_worker: row?.buy_max_dec_per_worker ?? 0,
       min_land_base_pp: row?.buy_min_land_base_pp ?? 0,
       min_foil: row?.buy_min_foil ?? 0,
+      terrain_boost_only: row?.buy_terrain_boost_only ?? false,
       buy_batch_size: row?.buy_batch_size ?? 10,
     },
   };
@@ -98,6 +100,7 @@ export async function saveBuyConfig(
     buy_max_dec_per_worker: buy.max_dec_per_worker,
     buy_min_land_base_pp: buy.min_land_base_pp,
     buy_min_foil: buy.min_foil,
+    buy_terrain_boost_only: buy.terrain_boost_only,
     buy_batch_size: batchSize,
   };
 
@@ -170,6 +173,7 @@ export async function saveRentalConfig(
         rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
+        rental_terrain_boost_only: rental.terrain_boost_only,
         rental_batch_size: rental.rental_batch_size ?? null,
         rental_land_renters_only: rental.land_renters_only,
       },
@@ -181,6 +185,7 @@ export async function saveRentalConfig(
         rental_max_dec_per_day_per_worker: rental.max_dec_per_day_per_worker,
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
+        rental_terrain_boost_only: rental.terrain_boost_only,
         rental_batch_size: rental.rental_batch_size ?? null,
         rental_land_renters_only: rental.land_renters_only,
       },

@@ -9,6 +9,7 @@
  *   max_per_worker   – max_dec_per_day_per_worker (default 0 = unlimited)
  *   min_pp           – min_land_base_pp (default 0)
  *   min_foil         – min_foil rank 0=Regular 1=Gold (default 0)
+ *   terrain_only     – 1=true, 0=false (default 0)
  *   batch            – rental_batch_size (default 3)
  *   plots            – number of synthetic test plots to generate (default 3)
  *
@@ -110,6 +111,7 @@ interface SearchParams {
   max_per_worker?: string;
   min_pp?: string;
   min_foil?: string;
+  terrain_only?: string;
   batch?: string;
   plots?: string;
 }
@@ -126,6 +128,7 @@ async function RentalPlanDevContent({
   const params = await searchParams;
 
   const numPlots = Number(params.plots ?? 3);
+  const terrainOnly = params.terrain_only === "1";
   const eligible: WorkerEligiblePlot[] = Array.from(
     { length: numPlots },
     (_, i) => makePlot(i)
@@ -137,6 +140,7 @@ async function RentalPlanDevContent({
     max_dec_per_day_per_worker: Number(params.max_per_worker ?? 0),
     min_land_base_pp: Number(params.min_pp ?? 0),
     min_foil: Number(params.min_foil ?? 0),
+    terrain_boost_only: terrainOnly,
     rental_batch_size: Number(params.batch ?? 3),
     land_renters_only: false,
   };
@@ -147,12 +151,13 @@ async function RentalPlanDevContent({
     max_dec_per_worker: Number(params.max_per_worker ?? 0),
     min_land_base_pp: Number(params.min_pp ?? 0),
     min_foil: Number(params.min_foil ?? 0),
+    terrain_boost_only: terrainOnly,
     buy_batch_size: Number(params.batch ?? 3),
   };
 
   // ── Quick-launch link (all params explicit for easy editing in URL bar) ──────
   const DEFAULT_LINK =
-    "/dev/worker-plan?plots=14&batch=5&max_dec=0&max_per_worker=0&min_pp=0&min_foil=0";
+    "/dev/worker-plan?plots=14&batch=5&max_dec=0&max_per_worker=0&min_pp=0&min_foil=0&terrain_only=0";
 
   return (
     <Stack direction="column" m={2} spacing={3}>

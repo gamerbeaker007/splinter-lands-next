@@ -50,6 +50,7 @@ export async function buildBuyPlan(
     maxPerWorker: config.max_dec_per_worker,
     minLandBasePp: config.min_land_base_pp,
     minFoil: config.min_foil,
+    requireTerrainBoost: config.terrain_boost_only,
   };
   const base = await buildWorkerPlan(eligible, caps, buyStrategy);
   return {

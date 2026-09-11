@@ -23,6 +23,7 @@ import {
   Select,
   Slider,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from "@mui/material";
@@ -165,6 +166,31 @@ export default function BuyEmptyWorkersSection({
             Skip cards whose foil rank is below this. Regular = include all.
           </Typography>
         </FormControl>
+      </Stack>
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        mt={2}
+      >
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">
+            Terrain boost only
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Only consider cards that get a positive terrain boost on the target
+            plot. Cards with neutral or negative terrain interaction are
+            ignored.
+          </Typography>
+        </Stack>
+        <Switch
+          checked={buy.terrain_boost_only}
+          onChange={(e) =>
+            onChange({ ...buy, terrain_boost_only: e.target.checked })
+          }
+          size="small"
+        />
       </Stack>
     </>
   );

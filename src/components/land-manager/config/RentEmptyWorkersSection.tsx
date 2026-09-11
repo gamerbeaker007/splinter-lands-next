@@ -189,6 +189,31 @@ export default function RentEmptyWorkersSection({
       >
         <Stack>
           <Typography variant="body2" fontWeight="bold">
+            Terrain boost only
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Only consider cards that get a positive terrain boost on the target
+            plot. Cards with neutral or negative terrain interaction are
+            ignored.
+          </Typography>
+        </Stack>
+        <Switch
+          checked={rental.terrain_boost_only}
+          onChange={(e) =>
+            onChange({ ...rental, terrain_boost_only: e.target.checked })
+          }
+          size="small"
+        />
+      </Stack>
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        mt={2}
+      >
+        <Stack>
+          <Typography variant="body2" fontWeight="bold">
             Land renters only (Renew Rentals)
           </Typography>
           <Typography variant="caption" color="text.secondary">

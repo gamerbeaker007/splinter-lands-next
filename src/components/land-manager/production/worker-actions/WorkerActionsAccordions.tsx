@@ -64,6 +64,8 @@ function RentalConfigChips({
     chips.push({ key: "pp", label: `>= ${rental.min_land_base_pp} PP` });
   if (rental.min_foil > 0)
     chips.push({ key: "foil", label: `${foilLabel(rental.min_foil)} Foil+` });
+  if (rental.terrain_boost_only)
+    chips.push({ key: "terrain", label: "Terrain boost only" });
 
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap" alignItems="center" mb={1}>
@@ -109,6 +111,8 @@ function BuyConfigChips({
     chips.push({ key: "pp", label: `>= ${buy.min_land_base_pp} PP` });
   if (buy.min_foil > 0)
     chips.push({ key: "foil", label: `${foilLabel(buy.min_foil)} Foil+` });
+  if (buy.terrain_boost_only)
+    chips.push({ key: "terrain", label: "Terrain boost only" });
 
   return (
     <Stack direction="row" gap={0.5} flexWrap="wrap" alignItems="center" mb={1}>

@@ -343,6 +343,8 @@ export interface RentalConfig {
   min_land_base_pp: number;
   /** Minimum foil rank (0=Regular). Cards below this are skipped. */
   min_foil: number;
+  /** When true, only cards with a positive terrain boost on the target plot are considered. */
+  terrain_boost_only: boolean;
   /**
    * Max plots to process per run. null = process all eligible plots at once.
    * Smaller batches allow re-evaluation of market conditions between runs
@@ -362,6 +364,7 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   max_dec_per_day_per_worker: 0,
   min_land_base_pp: 0,
   min_foil: 0,
+  terrain_boost_only: false,
   rental_batch_size: 10,
   land_renters_only: false,
 };
@@ -391,6 +394,8 @@ export interface BuyConfig {
   min_land_base_pp: number;
   /** Minimum foil rank (0=Regular). Cards below this are skipped. */
   min_foil: number;
+  /** When true, only cards with a positive terrain boost on the target plot are considered. */
+  terrain_boost_only: boolean;
   /** Max plots to process per run (1..50). */
   buy_batch_size: number;
 }
@@ -401,6 +406,7 @@ export const DEFAULT_BUY_CONFIG: BuyConfig = {
   max_dec_per_worker: 0,
   min_land_base_pp: 0,
   min_foil: 0,
+  terrain_boost_only: false,
   buy_batch_size: 10,
 };
 

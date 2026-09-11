@@ -50,6 +50,7 @@ export default function WorkerPlanAction({ config, execute }: Props) {
                     ? "Gold+"
                     : config.min_foil,
               ],
+              ["terrain_boost_only", config.terrain_boost_only ? "yes" : "no"],
               [
                 "batch_size",
                 isRental

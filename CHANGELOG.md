@@ -12,6 +12,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+---
+
+## [v1.28.0] - 2026-09-11
+
+### Updated
+
+- **Land Manager - Production (Buy/Rent):** Add terrain boosted cards only to the strategy
+
 
 ---
 
@@ -19,7 +27,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Updated
 
-- **Land Manager - Harvest (Top up pools):** Fix caluculation to pool 
+- **Land Manager - Harvest (Top up pools):** Fix caluculation to pool
 
 ---
 
