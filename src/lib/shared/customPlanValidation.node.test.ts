@@ -52,6 +52,20 @@ const buyRow = (amount: string): CustomPlanRowDraft => ({
   amount,
 });
 
+const stakeDecRow = (
+  amount: string,
+  amountType: "abs" | "pct" = "abs"
+): CustomPlanRowDraft => ({
+  draftId: `sd${amountType}${amount}`,
+  action_type: "stake_dec",
+  from_region_uid: "",
+  to_region_uid: "region-a",
+  from_resource: "",
+  to_resource: "",
+  amount_type: amountType,
+  amount,
+});
+
 const transferPctRow = (amount: string): CustomPlanRowDraft => ({
   draftId: `t${amount}`,
   action_type: "transfer",
@@ -348,5 +362,32 @@ describe("validateCustomPlan — tiny percentage rows", () => {
     );
 
     expect(result.rows[0].error).not.toBe("Row is incomplete");
+  });
+
+  it("resolves stake_dec pct from wallet DEC total, not running DEC", () => {
+    const result = validateCustomPlan(
+      [buyRow("1000"), stakeDecRow("50", "pct")],
+      { "region-a": { GRAIN: 10_000 } },
+      1_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.rows[0].valid).toBe(true);
+    // 50% of wallet DEC (1000) is 500, independent of prior row's DEC spend.
+    expect(result.rows[1].resolvedAmount).toBe(500);
+    expect(result.rows[1].valid).toBe(true);
+  });
+
+  it("marks stake_dec pct row invalid when running DEC drops below resolved amount", () => {
+    const result = validateCustomPlan(
+      [buyRow("12000"), stakeDecRow("50", "pct")],
+      { "region-a": { GRAIN: 10_000 } },
+      1_000,
+      [GRAIN_POOL]
+    );
+
+    expect(result.rows[0].valid).toBe(true);
+    expect(result.rows[1].valid).toBe(false);
+    expect(result.rows[1].error).toContain("Insufficient DEC");
   });
 });

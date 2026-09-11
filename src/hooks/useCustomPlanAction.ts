@@ -25,6 +25,7 @@ import {
   buildBuyWithDecOp,
   buildRemoveLiquidityOp,
   buildSellResourceForDecOp,
+  buildStakeDecRegionOp,
   buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
 import { MIN_SHARES_OUT } from "@/lib/shared/poolPositionUtils";
@@ -324,6 +325,27 @@ export function useCustomPlanAction({
               });
               log.push(
                 `Withdraw pool ${symbol} into ${draft.to_region_uid} (~${formatNumber(resourceOut, { maximumFractionDigits: 0 })} ${symbol} + ~${formatNumber(decOut, { maximumFractionDigits: 0 })} DEC)`
+              );
+              break;
+            }
+
+            case "stake_dec": {
+              ops.push(
+                buildStakeDecRegionOp(
+                  username,
+                  draft.to_region_uid,
+                  resolvedAmount
+                )
+              );
+              actions.push({
+                type: "stake_dec",
+                region_uid: draft.to_region_uid,
+                symbol: "DEC",
+                resource_amount: 0,
+                dec_amount: resolvedAmount,
+              });
+              log.push(
+                `Stake ${formatNumber(resolvedAmount)} DEC into ${draft.to_region_uid}`
               );
               break;
             }

@@ -194,7 +194,8 @@ export interface PostHarvestActionSummary {
     | "buy_resource"
     | "swap_resource"
     | "transfer"
-    | "remove_from_pool";
+    | "remove_from_pool"
+    | "stake_dec";
   region_uid: string;
   /** Destination region for `transfer` rows. */
   to_region_uid?: string;
@@ -225,7 +226,8 @@ export type CustomPlanActionType =
   | "buy"
   | "sell"
   | "swap"
-  | "pool_withdraw";
+  | "pool_withdraw"
+  | "stake_dec";
 export type CustomPlanAmountType = "pct" | "abs";
 
 export const CUSTOM_PLAN_ACTION_LABELS: Record<CustomPlanActionType, string> = {
@@ -235,6 +237,7 @@ export const CUSTOM_PLAN_ACTION_LABELS: Record<CustomPlanActionType, string> = {
   sell: "Sell",
   swap: "Swap",
   pool_withdraw: "Pool Withdraw",
+  stake_dec: "Stake DEC",
 };
 
 export const MAX_CUSTOM_PLANS_PER_PLAYER = 5;

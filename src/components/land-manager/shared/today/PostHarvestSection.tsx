@@ -30,6 +30,7 @@ function aggregate(
     swap_resource: {},
     transfer: {},
     remove_from_pool: {},
+    stake_dec: {},
   };
   for (const a of actions) {
     const bucket = buckets[a.type] ?? buckets.add_to_pool;
@@ -38,6 +39,8 @@ function aggregate(
     let key: string;
     if (a.type === "transfer") {
       key = `${a.symbol}→${a.to_region_uid ?? ""}`;
+    } else if (a.type === "stake_dec") {
+      key = a.region_uid;
     } else if (a.type === "swap_resource" && a.to_symbol) {
       key = `${a.symbol} → ${a.to_symbol}`;
     } else {
@@ -101,6 +104,12 @@ const LABELS: Record<ActionType, (sym: string, v: Totals) => ReactNode> = {
     <>
       Withdrawn: {renderResourceChip(sym as Resource, v.resource_amount)} +{" "}
       {renderResourceChip("DEC" as Resource, v.dec_amount)}
+    </>
+  ),
+  stake_dec: (sym, v) => (
+    <>
+      Staked DEC: {renderResourceChip("DEC" as Resource, v.dec_amount)} into{" "}
+      {sym}
     </>
   ),
 };

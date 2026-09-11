@@ -183,6 +183,8 @@ export function isRowComplete(draft: CustomPlanRowDraft): boolean {
         draft.from_resource &&
         hasPositiveAmount
       );
+    case "stake_dec":
+      return !!(draft.to_region_uid && hasPositiveAmount);
     default:
       return false;
   }
@@ -657,6 +659,50 @@ export function validateCustomPlan(
           estimatedOutputSymbol2: "DEC",
           estimatedOutputAmount2: decOut,
           poolSharesOut: sharesOut,
+          error: null,
+        };
+      }
+
+      case "stake_dec": {
+        const currentDec = runningDec;
+        const walletDec = decBalance;
+        if (isPctTooSmall(draft, walletDec, multiplier)) {
+          return skippedRowValidation(
+            `${draft.amount}% of wallet DEC resolves below 1 and is skipped`,
+            currentDec,
+            "DEC"
+          );
+        }
+
+        const resolved = parseAndScaleInput(draft, walletDec, multiplier);
+        if (resolved <= 0)
+          return emptyRowValidation("Amount must resolve to at least 1");
+        if (resolved > currentDec) {
+          const invalid = emptyRowValidation(
+            `Insufficient DEC (need ${resolved}, have ${currentDec.toFixed(0)})`
+          );
+          invalid.resolvedAmount = resolved;
+          invalid.currentBalance = currentDec;
+          invalid.inputBalance = currentDec;
+          invalid.balanceSymbol = "DEC";
+          invalid.inputAmountAbsolute = resolved;
+          invalid.estimatedOutputSymbol = "DEC";
+          invalid.estimatedOutputAmount = resolved;
+          invalid.estimatedValue = resolved;
+          return invalid;
+        }
+
+        runningDec -= resolved;
+        return {
+          valid: true,
+          resolvedAmount: resolved,
+          estimatedValue: resolved,
+          currentBalance: currentDec,
+          inputBalance: currentDec - resolved,
+          balanceSymbol: "DEC",
+          inputAmountAbsolute: resolved,
+          estimatedOutputSymbol: "DEC",
+          estimatedOutputAmount: resolved,
           error: null,
         };
       }

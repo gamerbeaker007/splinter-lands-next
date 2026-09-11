@@ -407,6 +407,22 @@ export default function CustomPlanRow({
             </>
           )}
 
+          {actionType === "stake_dec" && (
+            <>
+              <RegionSelect
+                label="To"
+                value={draft.to_region_uid}
+                regions={toRegionOptions}
+                onChange={(v) => onChange({ to_region_uid: v })}
+              />
+              <AmountToggle
+                value={draft.amount_type}
+                onChange={(v) => onChange({ amount_type: v })}
+                disabled={!draft.to_region_uid}
+              />
+            </>
+          )}
+
           {hasAction && (
             <TextField
               size="small"

@@ -14,6 +14,18 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.29.0] - 2026-09-11
+
+### Added
+
+- **Land Manager - Harvest (Custom Plan):** Add `Stake DEC` row action to custom plans. The row validates and executes with the same staking operation path used by existing DEC power actions, supports absolute and percentage input, and resolves `%` against the player's total wallet DEC balance.
+
+### Updated
+
+- **Land Manager - Harvest (Custom Plan):** Extend custom plan validation/execution and Today post-harvest aggregation to include `stake_dec` rows with consistent DEC balance/error handling.
+
+---
+
 ## [v1.28.0] - 2026-09-11
 
 ### Updated
