@@ -42,8 +42,6 @@ const PAGE_SIZE_OPTIONS = [10, 50, 100] as const;
 
 interface Props {
   username: string;
-  /** Region numbers from the land manager config — pre-filters deeds to these regions when set. */
-  enabledRegions?: number[];
   /** Configured make-harvestable strategy order — used by the Fix grain deficit proposal. */
   strategies: MakeHarvestableStrategy[];
   /** Bubbled up after any worksite action so page-level panels (e.g. Today) refresh too. */
@@ -142,12 +140,7 @@ function RegionGroup({
 
 // ── Inner component (uses FilterContext) ─────────────────────────────────────
 
-function WorksiteContentBody({
-  username,
-  enabledRegions,
-  strategies,
-  onSuccess,
-}: Props) {
+function WorksiteContentBody({ username, strategies, onSuccess }: Props) {
   const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
   // Grain held per region_uid — gates the Feed workers button on each plot.
   const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
@@ -237,13 +230,8 @@ function WorksiteContentBody({
     const f: FilterInput = { ...filters };
     // Player filter not applicable — data is always for the current user
     delete f.filter_players;
-    let result = filterDeeds(allDeeds, f);
-    // Pre-filter by configured regions when provided
-    if (enabledRegions && enabledRegions.length > 0) {
-      result = result.filter((d) => enabledRegions.includes(d.region_number));
-    }
-    return result;
-  }, [allDeeds, filters, enabledRegions]);
+    return filterDeeds(allDeeds, f);
+  }, [allDeeds, filters]);
 
   // Reset list pagination when the filtered set changes (render-phase reset:
   // React.dev/reference/react/useState#resetting-state).
@@ -417,7 +405,6 @@ function WorksiteContentBody({
 
 export default function WorksiteContent({
   username,
-  enabledRegions,
   strategies,
   onSuccess,
 }: Props) {
@@ -439,7 +426,6 @@ export default function WorksiteContent({
       />
       <WorksiteContentBody
         username={username}
-        enabledRegions={enabledRegions}
         strategies={strategies}
         onSuccess={onSuccess}
       />

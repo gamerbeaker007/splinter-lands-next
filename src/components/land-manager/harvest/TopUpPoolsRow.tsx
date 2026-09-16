@@ -1,22 +1,25 @@
 "use client";
 
+import ActionCard, {
+  ActionCardColumn,
+} from "@/components/land-manager/harvest/ActionCard";
 import { useTopUpPoolsAction } from "@/hooks/useTopUpPoolsAction";
+import { getTopUpWindowInfo } from "@/lib/backend/actions/land-manager/log-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
-import { ActionPlan, TopUpPoolStrategy } from "@/types/landManager";
-import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import SettingsIcon from "@mui/icons-material/Settings";
-import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import {
-  Alert,
-  Button,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Stack,
-  Tooltip,
-  Typography,
-} from "@mui/material";
-import { useEffect } from "react";
+  formatTopUpWindow,
+  HOURS_PER_WEEK,
+} from "@/lib/shared/poolPositionUtils";
+import { land_worksite_select_aura_icon_url } from "@/lib/shared/statics_icon_urls";
+import {
+  ActionPlan,
+  TopUpPoolStrategy,
+  TopUpWindowInfo,
+} from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import { Alert, Chip, Stack, Tooltip } from "@mui/material";
+import { useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -37,11 +40,49 @@ export default function TopUpPoolsRow({
   onPlan,
   onSuccess,
 }: Props) {
+  const [windowInfo, setWindowInfo] = useState<TopUpWindowInfo>({
+    hours: HOURS_PER_WEEK,
+    disabled: false,
+    source: "fallback",
+    reason:
+      "No successful Top Up Pools run found yet; defaulting to a full 7-day window.",
+    lastCompletedAt: null,
+  });
+  const [windowLoading, setWindowLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+
+    (async () => {
+      try {
+        const info = await getTopUpWindowInfo(username);
+        if (mounted) setWindowInfo(info);
+      } catch {
+        if (!mounted) return;
+        setWindowInfo({
+          hours: HOURS_PER_WEEK,
+          disabled: false,
+          source: "fallback",
+          reason:
+            "Could not read Top Up history; defaulting to a full 7-day window.",
+          lastCompletedAt: null,
+        });
+      } finally {
+        if (mounted) setWindowLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [username]);
+
   const { openConfigDialog } = useLandManagerContext();
   const action = useTopUpPoolsAction({
     username,
     visibleRegions,
     strategies,
+    topUpWindow: windowInfo,
     onSuccess,
   });
 
@@ -60,101 +101,105 @@ export default function TopUpPoolsRow({
     }
   }
 
-  const disabled = anyBusy || strategies.length === 0;
+  const disabled =
+    anyBusy || strategies.length === 0 || windowLoading || windowInfo.disabled;
+
+  const displayStrategy = (s: TopUpPoolStrategy) => {
+    const labels = {
+      use_owned_dec: "Use DEC",
+      swap_resource: "Swap",
+      sell_resource: "Sell",
+      buy_resources: "Buy",
+    };
+    return labels[s] ?? s;
+  };
+
+  const productionHours = windowInfo.hours;
+  const isFullWeek = productionHours >= HOURS_PER_WEEK;
+  const windowLabel = formatTopUpWindow(productionHours);
+  const tooltip =
+    strategies.length === 0
+      ? "Enable at least one Top Up Pool strategy in the config"
+      : windowLoading
+        ? "Loading Top Up timing window from successful run history..."
+        : windowInfo.disabled
+          ? `Top Up Pools is temporarily disabled: ${windowInfo.reason}`
+          : `Add ${windowLabel} of consumption (+10%) back into the liquidity pools — shows the plan for confirmation first`;
 
   return (
-    <>
-      <Stack
-        direction="row"
-        gap={2}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Tooltip
-          title={
-            strategies.length === 0
-              ? "Enable at least one Top Up Pool strategy in the config"
-              : "Add ~1 week of consumption (+10%) back into the liquidity pools — shows the plan for confirmation first"
-          }
-        >
-          <span>
-            <Button
-              size="small"
-              variant="contained"
-              color="info"
-              disabled={disabled}
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <WaterDropIcon fontSize="small" />
-                )
-              }
-              onClick={run}
-            >
-              Top Up Pools…
-            </Button>
-          </span>
-        </Tooltip>
-        <IconButton
-          size="small"
-          onClick={() => openConfigDialog("top_up_pools")}
-          sx={{ textTransform: "none" }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-
-        <Stack direction="row" gap={0.5} flexWrap="wrap">
-          {strategies.length === 0 ? (
-            <Chip
-              label="No strategies enabled"
-              size="small"
-              variant="outlined"
-              color="warning"
-              sx={{ fontSize: "0.7rem" }}
-            />
-          ) : (
-            strategies.map((s, i) => (
+    <ActionCardColumn>
+      <ActionCard
+        title="4. Top Up Pools"
+        tooltip={tooltip}
+        backgroundImage={land_worksite_select_aura_icon_url}
+        icon={<WaterDropIcon />}
+        accentColor="info.main"
+        busy={action.busy}
+        disabled={disabled}
+        onClick={run}
+        onSettings={() => openConfigDialog("top_up_pools")}
+        settingsLabel="Top Up Pools settings"
+        strategy={
+          <Stack direction="column" spacing={0.5}>
+            {strategies.length === 0 ? (
               <Chip
-                key={s}
-                label={`${i + 1}. ${s}`}
+                label="No strategies enabled"
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: "0.7rem" }}
+                color="warning"
+                sx={{ fontSize: "0.65rem", height: 18 }}
               />
-            ))
-          )}
-        </Stack>
+            ) : (
+              <Stack direction="row" spacing={0.5}>
+                {strategies.map((s, i) => (
+                  <Chip
+                    key={s}
+                    label={`${i + 1}. ${displayStrategy(s)}`}
+                    size="small"
+                    variant="outlined"
+                    sx={{ fontSize: "0.65rem", height: 18 }}
+                  />
+                ))}
+              </Stack>
+            )}
 
-        <Alert
-          severity="info"
-          sx={{
-            height: 24,
-            py: 0,
-            px: 1,
-            alignItems: "center",
-            borderRadius: "12px",
-            "& .MuiAlert-message": { p: 0.5 },
-            "& .MuiAlert-icon": {
-              p: 0,
-              mr: 0.5,
-              fontSize: 20,
-            },
-          }}
-        >
-          <Typography variant="caption">Run once per week</Typography>
-        </Alert>
-      </Stack>
+            <Tooltip
+              title={
+                windowLoading
+                  ? "Loading planning window..."
+                  : `${windowInfo.reason}${windowInfo.lastCompletedAt ? ` Last successful run: ${new Date(windowInfo.lastCompletedAt).toLocaleString("en-US")}.` : ""}${isFullWeek ? " Top-up is currently sized to 7 days." : ` Top-up is currently sized to ${windowLabel}.`}`
+              }
+            >
+              <Chip
+                label={windowInfo.disabled ? "<1h" : windowLabel}
+                size="small"
+                color={
+                  windowInfo.disabled
+                    ? "warning"
+                    : isFullWeek
+                      ? "success"
+                      : "secondary"
+                }
+                sx={{
+                  fontSize: "0.65rem",
+                  height: 18,
+                  fontWeight: 700,
+                  alignSelf: "center",
+                }}
+              />
+            </Tooltip>
+          </Stack>
+        }
+      />
 
       {action.warning && (
-        <Alert severity="warning" onClose={action.clearWarning} sx={{ mb: 1 }}>
+        <Alert severity="warning" onClose={action.clearWarning}>
           {action.warning}
         </Alert>
       )}
 
       {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+        <Alert severity="success" onClose={action.clearResult}>
           Pools topped up
           {action.result.txIds.length > 1
             ? ` (${action.result.txIds.length} transactions)`
@@ -164,10 +209,10 @@ export default function TopUpPoolsRow({
       )}
 
       {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+        <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
       )}
-    </>
+    </ActionCardColumn>
   );
 }

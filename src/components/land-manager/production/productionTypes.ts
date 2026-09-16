@@ -1,8 +1,10 @@
+import { getWorksitePlotState } from "@/lib/shared/worksiteEligibility";
 import {
   BiomeModifiers,
   getBiomeModifiersFromStakingDetail,
 } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
+import { WorksiteType } from "@/types/planner";
 
 /** A flat, render-ready view of one plot for the Production table. */
 export interface ProductionRow {
@@ -41,6 +43,32 @@ export interface ProductionRow {
   listed: boolean;
   /** Positive Terrain Boosts **/
   biomeModifiers: BiomeModifiers;
+  /**
+   * Worksite/construction state, derived from the shared eligibility helper so
+   * the table, the Change worksite dialog and the Worksite page agree. Carried
+   * on the row itself — the deed data it comes from is already loaded, so the
+   * table needs no extra state or request to show construction progress.
+   */
+  construction: RowConstruction;
+}
+
+export interface RowConstruction {
+  /** A construction project exists (building OR finished-but-unfed). */
+  isConstruction: boolean;
+  /** Still building — projected_end is in the future. */
+  isActivelyBuilding: boolean;
+  /** Build finished; the workers must be fed before the worksite produces. */
+  isReadyToFeed: boolean;
+  /** Target of the running construction. */
+  buildingWorksite: WorksiteType | null;
+  /** When the build completes, epoch ms. */
+  endsAtMs: number | null;
+  /** Grain the region must hold to feed this worksite. */
+  grainCost: number;
+  /** Kingdom (KEEP/CASTLE) plot — fixed worksite, no swap possible. */
+  isMythic: boolean;
+  /** No worksite built yet. */
+  isUndeveloped: boolean;
 }
 
 export type ProductionSortKey =
@@ -65,8 +93,20 @@ export function worksiteLabel(worksiteType: string): string {
     : "Undeveloped";
 }
 
-/** Build a ProductionRow from an enriched DeedComplete. */
-export function toProductionRow(deed: DeedComplete): ProductionRow {
+/**
+ * Build a ProductionRow from an enriched DeedComplete.
+ *
+ * `nowMs` is passed in rather than read from the clock so renders stay pure and
+ * so the table judges construction against the same instant as the dialogs.
+ */
+export function toProductionRow(
+  deed: DeedComplete,
+  nowMs: number
+): ProductionRow {
+  const plotState = getWorksitePlotState(deed, nowMs);
+  const endsAtMs = deed.worksiteDetail?.projected_end
+    ? new Date(deed.worksiteDetail.projected_end).getTime()
+    : null;
   const st = deed.stakingDetail;
   const ws = deed.worksiteDetail;
   const powered = st?.is_powered ?? false;
@@ -101,6 +141,16 @@ export function toProductionRow(deed: DeedComplete): ProductionRow {
     maxWorkers: st?.max_workers_allowed ?? 0,
     hasStakedItems,
     listed: deed.listed ?? false,
+    construction: {
+      isConstruction: plotState.isConstruction,
+      isActivelyBuilding: plotState.isActivelyBuilding,
+      isReadyToFeed: plotState.isReadyToFeed,
+      buildingWorksite: plotState.buildingWorksite,
+      endsAtMs,
+      grainCost: plotState.grainCost,
+      isMythic: plotState.isMythic,
+      isUndeveloped: plotState.isUndeveloped,
+    },
   };
 }
 

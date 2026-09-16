@@ -106,7 +106,7 @@ export default function BulkActionPanel({
 
   return (
     <Box sx={{ mb: 3 }}>
-      <Stack direction="column" gap={0.5} flexWrap="wrap" alignItems="left">
+      <Stack direction="row" gap={1.5} flexWrap="wrap" alignItems="flex-start">
         <MakeHarvestableRow
           username={username}
           visibleRegions={visibleRegions}

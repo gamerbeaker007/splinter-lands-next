@@ -3,12 +3,13 @@
 import HarvestButton from "@/components/land-manager/harvest/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
 import { renderResourceChip } from "@/components/ui/resource/Resource";
+import CustomIconSpinner from "@/components/ui/CustomIconSpinner";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { Resource } from "@/constants/resource/resource";
 import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import {
-  getRegionResourceBalance,
-  getSplHarvestableResources,
+  getBulkRegionData,
+  invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatInt } from "@/lib/formatters";
 import {
@@ -23,6 +24,7 @@ import {
   SplHarvestableResource,
   SplProductionOverviewRegion,
 } from "@/types/spl/landManager";
+import { SplLandPool } from "@/types/spl/landPools";
 import {
   AgricultureOutlined as HarvestIcon,
   WarningAmber as WarnIcon,
@@ -30,7 +32,6 @@ import {
 import {
   Box,
   capitalize,
-  CircularProgress,
   IconButton,
   Paper,
   Stack,
@@ -44,7 +45,7 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import RegionAnalysisCell from "./RegionAnalysisCell";
 
 interface Props {
@@ -149,55 +150,29 @@ interface RowProps {
   region: SplProductionOverviewRegion;
   username: string;
   donation: DonationConfig;
-  externalRefreshKey?: number;
+  /** Harvestable resources for this region, from the table-wide bulk fetch. */
+  harvestable: SplHarvestableResource[];
+  /** Stored region balance, from the same bulk fetch. */
+  regionBalance: Record<string, number>;
+  /** Why this region's harvestable list is missing, if it is. */
+  error: string | null;
+  loading: boolean;
+  pools: SplLandPool[];
+  /** Ask the table to drop the server cache and refetch every row. */
+  onHarvested: () => void;
 }
 
 function RegionRow({
   region,
   username,
   donation,
-  externalRefreshKey,
+  harvestable,
+  regionBalance,
+  error,
+  loading,
+  pools,
+  onHarvested,
 }: RowProps) {
-  const { landPoolData } = useLandLiquidityPools();
-  const [harvestable, setHarvestable] = useState<SplHarvestableResource[]>([]);
-  const [regionBalance, setRegionBalance] = useState<Record<string, number>>({
-    GRAIN: 0,
-    WOOD: 0,
-    STONE: 0,
-    IRON: 0,
-    AURA: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchData() {
-      try {
-        setLoading(true);
-        setError(null);
-        const [{ data, error: err }, { balance }] = await Promise.all([
-          getSplHarvestableResources(region.region_uid),
-          getRegionResourceBalance(region.region_uid),
-        ]);
-        if (cancelled) return;
-        if (err) setError(err);
-        else setHarvestable(data);
-        setRegionBalance(balance);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    fetchData();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [region.region_uid, refreshKey, externalRefreshKey]);
-
   const balances = effectiveBalance(regionBalance, region);
   const costs = aggregateCosts(harvestable);
   const canAfford =
@@ -217,10 +192,10 @@ function RegionRow({
         </Typography>
       </TableCell>
 
+      {/* No per-cell spinners: with ten regions that was thirty of them at
+          once. The table paints a single overlay instead (see below). */}
       <TableCell>
-        {loading ? (
-          <CircularProgress size={16} />
-        ) : error ? (
+        {error ? (
           <Typography variant="body2" color="error">
             {error}
           </Typography>
@@ -230,17 +205,11 @@ function RegionRow({
       </TableCell>
 
       <TableCell>
-        {loading ? null : (
-          <HarvestCostsCell resources={harvestable} balances={balances} />
-        )}
+        <HarvestCostsCell resources={harvestable} balances={balances} />
       </TableCell>
 
       <TableCell>
-        {loading ? (
-          <CircularProgress size={14} />
-        ) : (
-          <RegionAnalysisCell resources={harvestable} pools={landPoolData} />
-        )}
+        <RegionAnalysisCell resources={harvestable} pools={pools} />
       </TableCell>
 
       <TableCell>
@@ -248,37 +217,44 @@ function RegionRow({
       </TableCell>
 
       <TableCell>
-        {!loading && (
-          <Stack direction="row" alignItems="center" spacing={0.5}>
-            <HarvestButton
-              username={username}
-              regionUid={region.region_uid}
-              regionNumber={region.region_number}
-              regionName={region.name}
-              harvestable={harvestable}
-              canAfford={canAfford}
-              donation={donation}
-              onSuccess={() => setRefreshKey((k) => k + 1)}
-            />
-            <Tooltip title="Open harvest page on Splinterlands">
-              <IconButton
-                size="small"
-                component="a"
-                href={getHarvestRegion(region.region_number)}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <HarvestIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        )}
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <HarvestButton
+            username={username}
+            regionUid={region.region_uid}
+            regionNumber={region.region_number}
+            regionName={region.name}
+            harvestable={harvestable}
+            canAfford={canAfford}
+            donation={donation}
+            onSuccess={onHarvested}
+          />
+          <Tooltip title="Open harvest page on Splinterlands">
+            <IconButton
+              size="small"
+              component="a"
+              href={getHarvestRegion(region.region_number)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <HarvestIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       </TableCell>
     </TableRow>
   );
 }
 
 // ── Main component ─────────────────────────────────────────────────────────
+
+const EMPTY_BALANCE: Record<string, number> = {
+  GRAIN: 0,
+  WOOD: 0,
+  STONE: 0,
+  IRON: 0,
+  AURA: 0,
+};
+const NO_RESOURCES: SplHarvestableResource[] = [];
 
 export default function RegionOverview({
   username,
@@ -287,9 +263,69 @@ export default function RegionOverview({
   donation,
   refreshKey,
 }: Props) {
-  const visibleRegions = regions.filter((r) =>
-    enabledRegions.includes(r.region_number)
+  const visibleRegions = useMemo(
+    () => regions.filter((r) => enabledRegions.includes(r.region_number)),
+    [regions, enabledRegions]
   );
+
+  // Pools are global, not per region: fetched once here and passed down, rather
+  // than once per row.
+  const { landPoolData } = useLandLiquidityPools();
+
+  // One bulk fetch for the whole table. Every row used to fetch its own
+  // harvestable list and balance, which cost two server round trips per region
+  // and skipped the 30s server cache that getBulkRegionData keeps.
+  const [harvestable, setHarvestable] = useState<
+    Record<string, SplHarvestableResource[]>
+  >({});
+  const [balances, setBalances] = useState<
+    Record<string, Record<string, number>>
+  >({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [localRefreshKey, setLocalRefreshKey] = useState(0);
+
+  const uids = visibleRegions.map((r) => r.region_uid);
+  const uidKey = [...uids].sort().join(",");
+
+  useEffect(() => {
+    if (uidKey === "") {
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    async function load() {
+      setLoading(true);
+      try {
+        const data = await getBulkRegionData(uidKey.split(","));
+        if (cancelled) return;
+        setHarvestable(data.harvestable);
+        setBalances(data.balances);
+        setErrors(
+          data.error
+            ? Object.fromEntries(uidKey.split(",").map((u) => [u, data.error!]))
+            : (data.errors ?? {})
+        );
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [uidKey, refreshKey, localRefreshKey]);
+
+  // A single-region harvest leaves the cached snapshot describing pre-harvest
+  // state, so drop it before refetching — otherwise the table reads back the
+  // numbers it had a moment ago and looks like it never refreshed.
+  const handleHarvested = useCallback(async () => {
+    await invalidatePlayerRegionCaches().catch(() => {});
+    setLocalRefreshKey((k) => k + 1);
+  }, []);
 
   if (visibleRegions.length === 0) {
     return (
@@ -302,32 +338,60 @@ export default function RegionOverview({
   }
 
   return (
-    <ScrollableTableContainer>
-      <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
-        <Table size="small">
-          <TableHead>
-            <TableRow>
-              <TableCell>Region</TableCell>
-              <TableCell>Harvestable</TableCell>
-              <TableCell>Cost to Harvest</TableCell>
-              <TableCell>Natural Resource Analysis</TableCell>
-              <TableCell>Last Claimed</TableCell>
-              <TableCell>Action</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {visibleRegions.map((region) => (
-              <RegionRow
-                key={region.region_uid}
-                region={region}
-                username={username}
-                donation={donation}
-                externalRefreshKey={refreshKey}
-              />
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </ScrollableTableContainer>
+    <Box sx={{ position: "relative" }} aria-busy={loading}>
+      <ScrollableTableContainer>
+        <TableContainer component={Paper} sx={{ mt: 2, mb: 2 }}>
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Region</TableCell>
+                <TableCell>Harvestable</TableCell>
+                <TableCell>Cost to Harvest</TableCell>
+                <TableCell>Natural Resource Analysis</TableCell>
+                <TableCell>Last Claimed</TableCell>
+                <TableCell>Action</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {visibleRegions.map((region) => (
+                <RegionRow
+                  key={region.region_uid}
+                  region={region}
+                  username={username}
+                  donation={donation}
+                  harvestable={harvestable[region.region_uid] ?? NO_RESOURCES}
+                  regionBalance={balances[region.region_uid] ?? EMPTY_BALANCE}
+                  error={errors[region.region_uid] ?? null}
+                  loading={loading}
+                  pools={landPoolData}
+                  onHarvested={handleHarvested}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </ScrollableTableContainer>
+
+      {/* One overlay for the whole table rather than a spinner in every cell.
+          The rows stay in place underneath so the layout does not jump when the
+          data lands; they are dimmed and made inert while the fetch runs. */}
+      {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "background.paper",
+            opacity: 0.85,
+            borderRadius: 1,
+            zIndex: 2,
+          }}
+        >
+          <CustomIconSpinner label="Loading regions…" size={200} />
+        </Box>
+      )}
+    </Box>
   );
 }

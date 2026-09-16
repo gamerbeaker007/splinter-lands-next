@@ -15,7 +15,10 @@ import { TAX_ESTIMATE_NOTE } from "@/lib/shared/taxProduction";
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import {
   ArrowDownward as ArrowDownwardIcon,
+  Build as BuildIcon,
   DeleteSweep as DeleteSweepIcon,
+  Restaurant as RestaurantIcon,
+  SwapHoriz as SwapHorizIcon,
   MoreVert as MoreVertIcon,
   PersonRemove as PersonRemoveIcon,
   PowerOff as PowerOffIcon,
@@ -28,6 +31,7 @@ import {
   Avatar,
   Box,
   capitalize,
+  Chip,
   Collapse,
   IconButton,
   ListItemIcon,
@@ -52,6 +56,7 @@ import { Fragment, ReactNode, useState } from "react";
 import {
   ProductionRow,
   ProductionSortKey,
+  RowConstruction,
   SortDirection,
   worksiteLabel,
 } from "./productionTypes";
@@ -267,6 +272,64 @@ function HeaderLabel({ cell }: { cell: HeadCell }) {
   );
 }
 
+/** Short "2h 15m" style remaining-time text for the construction badge. */
+function remainingLabel(endsAtMs: number | null, nowMs: number): string | null {
+  if (endsAtMs == null) return null;
+  const ms = endsAtMs - nowMs;
+  if (ms <= 0) return null;
+  const totalMinutes = Math.floor(ms / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+/**
+ * Compact in-table marker for a plot with a construction project.
+ *
+ * Reads only from the row's own `construction` block — no extra state or
+ * request. Kept to a single small chip so the table stays dense; the detail
+ * (target building, time left) lives in the tooltip.
+ */
+function ConstructionBadge({
+  construction,
+  nowMs,
+}: {
+  construction: RowConstruction;
+  nowMs: number;
+}) {
+  if (!construction.isConstruction) return null;
+
+  const remaining = remainingLabel(construction.endsAtMs, nowMs);
+  const target = construction.buildingWorksite;
+  const readyToFeed = construction.isReadyToFeed;
+
+  return (
+    <Tooltip
+      title={
+        readyToFeed
+          ? `Construction finished${target ? ` (${target})` : ""} — feed the workers to activate it.`
+          : `Building${target ? ` a ${target}` : ""}${remaining ? ` — ${remaining} left` : ""}.`
+      }
+      placement="top"
+    >
+      <Chip
+        size="small"
+        icon={
+          readyToFeed ? (
+            <RestaurantIcon sx={{ fontSize: "0.8rem !important" }} />
+          ) : (
+            <BuildIcon sx={{ fontSize: "0.8rem !important" }} />
+          )
+        }
+        color={readyToFeed ? "success" : "warning"}
+        variant="outlined"
+        label={readyToFeed ? "Feed" : (remaining ?? "Building")}
+        sx={{ height: 18, fontSize: "0.62rem", ml: 0.5 }}
+      />
+    </Tooltip>
+  );
+}
+
 export interface ProductionTableProps {
   rows: ProductionRow[];
   sortKey: ProductionSortKey;
@@ -274,8 +337,12 @@ export interface ProductionTableProps {
   busy: boolean;
   /** deed_uids whose Configure panel is expanded. */
   expandedDeedUids: Set<string>;
+  /** Shared "now" for construction progress — re-stamped when data reloads. */
+  nowMs: number;
   onSort: (key: ProductionSortKey) => void;
   onAction: (kind: ProductionActionKind, row: ProductionRow) => void;
+  /** Open the Change worksite dialog for this row. */
+  onChangeWorksite: (row: ProductionRow) => void;
   onToggleConfigure: (deedUid: string) => void;
   /** Render the Configure panel for an expanded row. */
   renderConfigure: (deedUid: string) => ReactNode;
@@ -331,8 +398,10 @@ export default function ProductionTable({
   sortDir,
   busy,
   expandedDeedUids,
+  nowMs,
   onSort,
   onAction,
+  onChangeWorksite,
   onToggleConfigure,
   renderConfigure,
 }: ProductionTableProps) {
@@ -515,7 +584,21 @@ export default function ProductionTable({
                     </Typography>
                   </TableCell>
                   <TableCell {...cellProps("worksite")}>
-                    {capitalize(worksiteLabel(r.worksiteType).toLowerCase())}
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      sx={{ minWidth: 0 }}
+                    >
+                      <Typography variant="body2" noWrap>
+                        {capitalize(
+                          worksiteLabel(r.worksiteType).toLowerCase()
+                        )}
+                      </Typography>
+                      <ConstructionBadge
+                        construction={r.construction}
+                        nowMs={nowMs}
+                      />
+                    </Stack>
                   </TableCell>
                   <TableCell {...cellProps("rewards")}>
                     {r.rewardsPerHour > 0
@@ -621,6 +704,20 @@ export default function ProductionTable({
             <ListItemText>
               {menuRow.powered ? "Unpower" : "Power on"}
             </ListItemText>
+          </MenuItem>
+        )}
+        {menuRow && (
+          <MenuItem
+            disabled={busy || menuRow.listed || menuRow.construction.isMythic}
+            onClick={() => {
+              onChangeWorksite(menuRow);
+              closeActionMenu();
+            }}
+          >
+            <ListItemIcon>
+              <SwapHorizIcon fontSize="small" color="primary" />
+            </ListItemIcon>
+            <ListItemText>Change worksite</ListItemText>
           </MenuItem>
         )}
         {menuRow && (

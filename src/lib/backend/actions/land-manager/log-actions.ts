@@ -6,9 +6,13 @@ import {
   ActionSummary,
   MythicHarvestResult,
   PostHarvestActionSummary,
+  TopUpWindowInfo,
   TodayLogs,
 } from "@/types/landManager";
 import { getAuthStatus } from "../auth-actions";
+
+const TOP_UP_MIN_HOURS = 1;
+const TOP_UP_MAX_HOURS = 7 * 24;
 
 function today(): Date {
   const d = new Date();
@@ -314,6 +318,87 @@ export async function recordPostHarvestLog(
       },
     });
   }
+}
+
+/** Persist one successful Top Up Pools run for elapsed-window sizing. */
+export async function recordTopUpPoolRun(
+  player: string,
+  windowHours: number,
+  txIds: string[]
+): Promise<void> {
+  await prisma.landTopUpPoolRun.create({
+    data: {
+      player,
+      window_hours: Number.parseFloat(
+        Math.min(
+          TOP_UP_MAX_HOURS,
+          Math.max(TOP_UP_MIN_HOURS, windowHours)
+        ).toFixed(3)
+      ),
+      transactions: txIds,
+    },
+  });
+}
+
+/**
+ * Planning window for Top Up Pools.
+ *
+ * - No prior successful run => default to 7 days.
+ * - <1h since last run => disable the action.
+ * - 1..168h => use elapsed hours.
+ * - >168h => cap at 168h.
+ */
+export async function getTopUpWindowInfo(
+  player: string
+): Promise<TopUpWindowInfo> {
+  const latest = await prisma.landTopUpPoolRun.findFirst({
+    where: { player },
+    orderBy: { executed_at: "desc" },
+    select: { executed_at: true },
+  });
+
+  if (!latest) {
+    return {
+      hours: TOP_UP_MAX_HOURS,
+      disabled: false,
+      source: "fallback",
+      reason:
+        "No successful Top Up Pools run found yet; defaulting to a full 7-day window.",
+      lastCompletedAt: null,
+    };
+  }
+
+  const nowMs = Date.now();
+  const elapsedHours = (nowMs - latest.executed_at.getTime()) / 3_600_000;
+  if (elapsedHours < TOP_UP_MIN_HOURS) {
+    return {
+      hours: TOP_UP_MIN_HOURS,
+      disabled: true,
+      source: "db",
+      reason:
+        "Last successful Top Up Pools run was less than 1 hour ago; wait until 1 hour has elapsed.",
+      lastCompletedAt: latest.executed_at.toISOString(),
+    };
+  }
+
+  if (elapsedHours >= TOP_UP_MAX_HOURS) {
+    return {
+      hours: TOP_UP_MAX_HOURS,
+      disabled: false,
+      source: "db",
+      reason:
+        "Last successful Top Up Pools run was over 7 days ago; window is capped at 7 days.",
+      lastCompletedAt: latest.executed_at.toISOString(),
+    };
+  }
+
+  return {
+    hours: Number.parseFloat(elapsedHours.toFixed(3)),
+    disabled: false,
+    source: "db",
+    reason: "Using elapsed time since the last successful Top Up Pools run.",
+    lastCompletedAt: latest.executed_at.toISOString(),
+  };
 }
 
 // ── Mythic harvest log ────────────────────────────────────────────────────────

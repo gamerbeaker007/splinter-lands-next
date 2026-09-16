@@ -1,17 +1,14 @@
 "use client";
 
+import ActionCard, {
+  ActionCardColumn,
+} from "@/components/land-manager/harvest/ActionCard";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
-import { DonationConfig, ActionPlan } from "@/types/landManager";
+import { land_castle_icon_url } from "@/lib/shared/statics_icon_urls";
+import { ActionPlan, DonationConfig } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { AutoAwesome as MythicIcon } from "@mui/icons-material";
-import {
-  Alert,
-  Button,
-  Chip,
-  CircularProgress,
-  Stack,
-  Tooltip,
-} from "@mui/material";
+import { Alert, Chip, CircularProgress } from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -57,56 +54,51 @@ export default function HarvestMythicsRow({
     }
   }
 
-  return (
-    <>
-      <Stack
-        direction="row"
-        gap={2}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Tooltip title="Collect Keep & Castle taxes — shows the plan for confirmation first">
-          <span>
-            <Button
-              size="small"
-              disabled={anyBusy || !hasMythics}
-              variant="contained"
-              color="secondary"
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <MythicIcon fontSize="small" />
-                )
-              }
-              onClick={run}
-            >
-              Harvest Mythics…
-            </Button>
-          </span>
-        </Tooltip>
+  const donationEnabled = donation.enabled && donation.pct > 0;
 
-        <Chip
-          label="Keeps &amp; Castles"
-          size="small"
-          variant="outlined"
-          sx={{ fontSize: "0.7rem" }}
-        />
-      </Stack>
+  return (
+    <ActionCardColumn>
+      <ActionCard
+        title="3. Harvest Mythics"
+        tooltip={
+          hasMythics
+            ? "Collect Keep & Castle taxes — shows the plan for confirmation first"
+            : "No Keeps or Castles in the enabled regions"
+        }
+        backgroundImage={land_castle_icon_url}
+        icon={<MythicIcon />}
+        accentColor="secondary.main"
+        busy={action.busy}
+        disabled={anyBusy || !hasMythics}
+        onClick={run}
+        strategy={
+          <>
+            <Chip
+              label="Keeps & Castles"
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: "0.65rem", height: 18 }}
+            />
+            {donationEnabled && (
+              <Chip
+                label={`Donation ${donation.pct}%`}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: "0.65rem", height: 18 }}
+              />
+            )}
+          </>
+        }
+      />
 
       {action.isVerifying && (
-        <Alert
-          severity="info"
-          sx={{ mb: 1 }}
-          icon={<CircularProgress size={16} />}
-        >
+        <Alert severity="info" icon={<CircularProgress size={16} />}>
           Verifying transactions on-chain… (up to 30s)
         </Alert>
       )}
 
       {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+        <Alert severity="success" onClose={action.clearResult}>
           Broadcast successful
           {action.result.txIds.length > 1
             ? ` (${action.result.txIds.length} transactions)`
@@ -116,10 +108,10 @@ export default function HarvestMythicsRow({
       )}
 
       {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+        <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
       )}
-    </>
+    </ActionCardColumn>
   );
 }

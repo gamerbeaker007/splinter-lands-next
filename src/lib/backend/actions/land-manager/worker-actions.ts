@@ -15,15 +15,9 @@ import {
 import { Card, StakedAssets } from "@/types/stakedAssets";
 import pLimit from "p-limit";
 
-export async function getWorkerEligibility(
-  enabledRegions: number[]
-): Promise<WorkerEligibilityResult> {
+export async function getWorkerEligibility(): Promise<WorkerEligibilityResult> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
-    return { eligible: [], unpoweredSkipped: [] };
-  }
-
-  if (enabledRegions.length === 0) {
     return { eligible: [], unpoweredSkipped: [] };
   }
 
@@ -37,14 +31,11 @@ export async function getWorkerEligibility(
   const worksiteByDeed = new Map(
     regionData.worksite_details.map((s) => [s.deed_uid, s])
   );
-  const enabledSet = new Set(enabledRegions);
 
   const eligible: WorkerEligiblePlot[] = [];
   const unpoweredSkipped: WorkerEligiblePlot[] = [];
 
   for (const deed of regionData.deeds) {
-    if (!enabledSet.has(deed.region_number)) continue;
-
     const staking = stakingByDeed.get(deed.deed_uid);
     if (!staking) continue;
     const worksiteDetails = worksiteByDeed.get(deed.deed_uid) ?? null;

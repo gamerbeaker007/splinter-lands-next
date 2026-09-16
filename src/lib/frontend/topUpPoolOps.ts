@@ -144,6 +144,12 @@ export interface TopUpPoolParams {
   };
   /** Regions whose consumption could not be measured (surfaced in the plan). */
   consumptionWarnings?: string[];
+  /** Accrual window used to size external need, in hours (1..168). */
+  productionWindowHours?: number;
+  /** Why this accrual window was chosen. */
+  productionWindowReason?: string;
+  /** Whether the window came from DB history or fallback default. */
+  productionWindowSource?: "db" | "fallback";
 }
 
 /** Mutable projection shared across every resource in one plan. */
@@ -1095,6 +1101,11 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
   const plan: TopUpPoolPlan = {
     resources,
     dec_balance: round3(params.decBalance),
+    production_window_hours: round3(params.productionWindowHours ?? 168),
+    production_window_reason:
+      params.productionWindowReason ??
+      "No planning-window reason provided; defaulting to 7 days.",
+    production_window_source: params.productionWindowSource ?? "fallback",
     consumption_warnings: params.consumptionWarnings ?? [],
     log: [],
   };
@@ -1113,9 +1124,10 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   const log: string[] = [];
 
   log.push(
-    "This action is intended to run ONCE PER WEEK, preferably on about the same day.",
-    "Running it more often adds extra resource to the pools; running it less often may",
-    "shrink the tax-free buffer available to Make Harvestable.",
+    "Run this after Harvest, roughly once per week.",
+    `Top-up window: ${formatNumber(plan.production_window_hours)}h (${plan.production_window_source === "db" ? "from last successful Top Up" : "fallback default"}).`,
+    plan.production_window_reason,
+    "Skipping runs can shrink the tax-free buffer available to Make Harvestable.",
     `\nAccount DEC available: ${formatNumber(plan.dec_balance)} DEC`
   );
 

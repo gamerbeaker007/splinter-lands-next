@@ -169,6 +169,20 @@ const MAX_ACCRUAL_HOURS = HOURS_PER_WEEK;
 /** Below this, accrued totals are too small to cross-check a rate against. */
 const MIN_ACCRUAL_HOURS = 6;
 
+/**
+ * Floor on the top-up window. A second run inside the same hour then sizes
+ * itself against one hour of burn — effectively nothing — rather than 0.
+ */
+
+/** Human-readable form of a {@link topUpProductionHours} window, e.g. "3d 4h". */
+export function formatTopUpWindow(hours: number): string {
+  const total = Math.round(hours);
+  const days = Math.floor(total / 24);
+  const rest = total % 24;
+  if (days === 0) return `${rest}h`;
+  return rest === 0 ? `${days}d` : `${days}d ${rest}h`;
+}
+
 const zeroedNaturals = (): Record<string, number> =>
   Object.fromEntries(NATURAL_RESOURCES.map((s) => [s, 0]));
 

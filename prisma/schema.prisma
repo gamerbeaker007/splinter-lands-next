@@ -456,6 +456,17 @@ model LandPostHarvestLog {
   @@map("land_post_harvest_log")
 }
 
+model LandTopUpPoolRun {
+  id           Int      @id @default(autoincrement())
+  player       String
+  executed_at  DateTime @default(now())
+  window_hours Float
+  transactions String[] @default([])
+
+  @@index([player, executed_at(sort: Desc)])
+  @@map("land_top_up_pool_run")
+}
+
 model LandMythicHarvestLog {
   date              DateTime @db.Date
   player            String

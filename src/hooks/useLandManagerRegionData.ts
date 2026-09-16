@@ -39,7 +39,6 @@ interface LandRegionData {
 }
 
 export function useLandManagerRegionData(
-  enabledRegions: number[],
   refreshKey: number = 0
 ): LandRegionData {
   const [eligibility, setEligibility] =
@@ -51,22 +50,21 @@ export function useLandManagerRegionData(
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      getWorkerEligibility(enabledRegions),
-      getRegionStakedDEC(),
-    ]).then(([e, a]) => {
-      if (!cancelled) {
-        setEligibility(e);
-        setStakedDEC(a.regions);
-        setTotalStaked(a.totalStaked);
-        setTotalRequired(a.totalRequired);
-        setLoading(false);
+    Promise.all([getWorkerEligibility(), getRegionStakedDEC()]).then(
+      ([e, a]) => {
+        if (!cancelled) {
+          setEligibility(e);
+          setStakedDEC(a.regions);
+          setTotalStaked(a.totalStaked);
+          setTotalRequired(a.totalRequired);
+          setLoading(false);
+        }
       }
-    });
+    );
     return () => {
       cancelled = true;
     };
-  }, [enabledRegions, refreshKey]);
+  }, [refreshKey]);
 
   const globalShortfall = Math.max(0, totalRequired - totalStaked);
   const globalExcess = Math.max(0, totalStaked - totalRequired);
