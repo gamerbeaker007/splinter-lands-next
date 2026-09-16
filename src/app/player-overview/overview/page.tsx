@@ -1,6 +1,6 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import PlayerRegionOverview from "@/components/player-overview/region-overview/PlayerRegionOverview";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Box, CircularProgress } from "@mui/material";
@@ -20,7 +20,7 @@ export default function PlayerOverviewPage() {
 
   return (
     <>
-      <FilterDrawer player={selectedPlayer} filtersEnabled={filterConfig} />
+      <LandFilterDrawer player={selectedPlayer} filtersEnabled={filterConfig} />
       <Suspense
         fallback={
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>

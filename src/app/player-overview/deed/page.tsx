@@ -1,6 +1,6 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import DeedOverview from "@/components/player-overview/deed-overview/DeedOverview";
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import { Box, CircularProgress } from "@mui/material";
@@ -22,7 +22,10 @@ export default function Deed() {
 
   return (
     <>
-      <FilterDrawer player={selectedPlayer} filtersEnabled={filterOptions} />
+      <LandFilterDrawer
+        player={selectedPlayer}
+        filtersEnabled={filterOptions}
+      />
       <Suspense
         fallback={
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>

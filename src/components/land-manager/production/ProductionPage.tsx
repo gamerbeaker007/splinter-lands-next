@@ -1,6 +1,6 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import BulkActionsAccordion from "@/components/land-manager/production/BulkActionsAccordion";
 import ConfigurePanel from "@/components/land-manager/production/ConfigurePanel";
 import ConfirmActionDialog, {
@@ -53,7 +53,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -217,7 +216,7 @@ function ProductionPageContent() {
     };
   }, []);
 
-  // Feed this player's live region/tract/plot lists into FilterDrawer.
+  // Feed this player's live region/tract/plot lists into LandFilterDrawer.
   useEffect(() => {
     if (allDeeds.length === 0) return;
     const regions = new Set<number>();
@@ -309,7 +308,7 @@ function ProductionPageContent() {
     }
   }, [loading, allDeeds, parsedLocationQuery, availableLocations, setFilters]);
 
-  // Deeds after FilterDrawer filters (which now include powered/workers) + region pre-filter.
+  // Deeds after LandFilterDrawer filters (which now include powered/workers) + region pre-filter.
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
     if (allDeeds.length === 0) return [];
     const f: FilterInput = { ...filters };
@@ -662,16 +661,11 @@ function ProductionPageContent() {
 // ── Outer component — provides FilterContext ──────────────────────────────────
 
 export default function ProductionPage() {
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  // FilterDrawer auto-opens from 1024px up; match that threshold so content
-  // shifts whenever the persistent drawer is visible.
-  const isDrawerDesktop = useMediaQuery("(min-width:1024px)");
-
   return (
     <FilterProvider>
-      <FilterDrawer
+      {/* The panel reserves its own room in the main layout — no offset here. */}
+      <LandFilterDrawer
         player={null}
-        onOpenChange={setDrawerOpen}
         filtersEnabled={{
           regions: true,
           tracts: true,
@@ -682,14 +676,7 @@ export default function ProductionPage() {
           poweredWorkers: true,
         }}
       />
-      <Box
-        sx={{
-          transition: "margin-right 0.2s ease",
-          mr: isDrawerDesktop && drawerOpen ? "330px" : 0,
-        }}
-      >
-        <ProductionPageContent />
-      </Box>
+      <ProductionPageContent />
     </FilterProvider>
   );
 }

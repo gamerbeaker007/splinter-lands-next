@@ -13,7 +13,7 @@ export default function ResetCardFiltersButton() {
       variant="outlined"
       color="secondary"
       onClick={handleClear}
-      sx={{ mt: 2 }}
+      fullWidth
     >
       Clear All Filters
     </Button>

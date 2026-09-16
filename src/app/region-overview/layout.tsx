@@ -1,6 +1,6 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import PageNavTabs from "@/components/nav-tabs/PageNavTabs";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
@@ -104,7 +104,7 @@ export default function RegionOverviewLayout({
 
   return (
     <FilterProvider>
-      <FilterDrawer filtersEnabled={filterOptions} />
+      <LandFilterDrawer filtersEnabled={filterOptions} />
       <Container maxWidth={false} sx={{ px: { xs: 1, md: 3, lg: 6 } }}>
         <Suspense fallback={<Box sx={{ height: 48 }} />}>
           <PageNavTabs pages={pages} />

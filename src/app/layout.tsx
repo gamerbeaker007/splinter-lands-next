@@ -1,4 +1,5 @@
 // app/layout.tsx
+import FilterPanelHost from "@/components/filter/panel/FilterPanelHost";
 import SideBar from "@/components/side-bar/SideBar";
 import TestModeChip from "@/components/test-mode/TestModeChip";
 import TopBar from "@/components/top-bar/TopBar";
@@ -32,13 +33,24 @@ export default function RootLayout({
                       minWidth={0}
                     >
                       <TopBar />
+                      {/* Content row: `main` shrinks as a flex sibling of the
+                          filter panel slot, so an open panel never hides it. */}
                       <Box
-                        component="main"
+                        position="relative"
+                        display="flex"
                         flexGrow={1}
-                        overflow="auto"
+                        minHeight={0}
                         minWidth={0}
                       >
-                        {children}
+                        <Box
+                          component="main"
+                          flexGrow={1}
+                          overflow="auto"
+                          minWidth={0}
+                        >
+                          {children}
+                        </Box>
+                        <FilterPanelHost />
                       </Box>
                     </Box>
                   </Box>

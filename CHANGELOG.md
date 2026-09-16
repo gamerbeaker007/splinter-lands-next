@@ -14,6 +14,20 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.30.0] - 2026-09-14
+
+### Updated
+
+- **Filters (Land & Cards):** Reworked the filter drawers into a responsive filter panel. On large screens the panel docks beside the data instead of covering it; on small screens it becomes an overlay drawer. The text button is replaced by a red filter icon button at the edge of the content that shows how many filters are active, and refreshing filter data now shows progress inside the panel instead of hiding it.
+- **Production Table:** Update layout action to first column
+
+### Fixed
+
+- **Filters (Land & Cards):** The filter button stayed unclickable after resizing from a desktop to a mobile viewport, and page content could end up hidden behind the docked panel with no way to scroll to it.
+- **Charts:** Plotly charts kept their old dimensions when the available space changed; they now reflow whenever their container resizes.
+
+---
+
 ## [v1.29.0] - 2026-09-11
 
 ### Added

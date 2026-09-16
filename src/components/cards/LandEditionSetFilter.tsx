@@ -2,7 +2,7 @@
 
 import { CROSS_ERA_EDITIONS, editionMap } from "@/types/editions";
 import { Box, Button, Stack, Tooltip, Typography } from "@mui/material";
-import Image from "next/image";
+import { useAppTheme } from "@/lib/frontend/context/ThemeSetup";
 
 /**
  * The four selectable arrays mirror the spl-stats edition filter, but keyed by
@@ -114,6 +114,10 @@ function IconBox({
   size: number;
   onClick: () => void;
 }) {
+  const { theme } = useAppTheme();
+
+  const bgColor = theme === "light" ? "grey.400" : "transparent";
+
   return (
     <Tooltip title={label} placement="top" arrow>
       <Box
@@ -121,31 +125,47 @@ function IconBox({
         sx={{
           width: size,
           height: size,
-          p: 0.5,
+          boxSizing: "border-box",
+          p: "2px",
+
           cursor: "pointer",
           borderRadius: 1,
-          border: 2,
+          border: "2px solid",
           borderColor: active
             ? "primary.main"
             : partial
               ? "warning.main"
               : "divider",
-          bgcolor: active || partial ? "action.selected" : "transparent",
+
+          // Grey icon background in light mode
+          bgcolor: bgColor,
+
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          overflow: "hidden",
+
           opacity: active || partial ? 1 : 0.5,
+
           transition: "all 0.15s",
-          "&:hover": { bgcolor: "action.hover", opacity: 1 },
+
+          "&:hover": {
+            bgcolor: "action.hover",
+            opacity: 1,
+          },
         }}
       >
         {icon && (
-          <Image
+          <Box
+            component="img"
             src={icon}
             alt={label}
-            width={size - 12}
-            height={size - 12}
-            style={{ objectFit: "contain", width: "auto", height: "auto" }}
+            sx={{
+              width: "100%",
+              height: "100%",
+              objectFit: "contain",
+              display: "block",
+            }}
           />
         )}
       </Box>

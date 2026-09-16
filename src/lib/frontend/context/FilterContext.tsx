@@ -11,7 +11,7 @@ import {
 
 /**
  * Override for location filter options only (region / tract / plot). When set,
- * the FilterDrawer uses these in place of the globally-fetched location lists.
+ * the LandFilterDrawer uses these in place of the globally-fetched location lists.
  * Categorical filters (rarity, resources, worksites, deed_type, plot_status)
  * always come from the global fetch.
  */

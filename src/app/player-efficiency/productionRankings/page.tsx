@@ -1,13 +1,13 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import { ProductionRankingsContent } from "@/components/player-efficiency/ProductionRankingsContent";
 import { FilterProvider } from "@/lib/frontend/context/FilterContext";
 
 export default function ProductionRankings() {
   return (
     <FilterProvider>
-      <FilterDrawer />
+      <LandFilterDrawer />
       <ProductionRankingsContent />
     </FilterProvider>
   );
