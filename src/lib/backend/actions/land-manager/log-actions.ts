@@ -325,22 +325,28 @@ export async function recordTopUpPoolRun(
   player: string,
   windowHours: number,
   txIds: string[]
-): Promise<void> {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const transactions = txIds.filter(
     (id): id is string => typeof id === "string" && id.trim().length > 0
   );
-  await prisma.landTopUpPoolRun.create({
-    data: {
-      player,
-      window_hours: Number.parseFloat(
-        Math.min(
-          TOP_UP_MAX_HOURS,
-          Math.max(TOP_UP_MIN_HOURS, windowHours)
-        ).toFixed(3)
-      ),
-      transactions,
-    },
-  });
+  try {
+    await prisma.landTopUpPoolRun.create({
+      data: {
+        player,
+        window_hours: Number.parseFloat(
+          Math.min(
+            TOP_UP_MAX_HOURS,
+            Math.max(TOP_UP_MIN_HOURS, windowHours)
+          ).toFixed(3)
+        ),
+        transactions,
+      },
+    });
+    return { ok: true };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { ok: false, error: message };
+  }
 }
 
 /**

@@ -258,12 +258,7 @@ export function useTopUpPoolsAction({
             username,
             topUpWindow.hours,
             res.txIds
-          )
-            .then(() => ({ ok: true as const }))
-            .catch((err: unknown) => ({
-              ok: false as const,
-              error: formatError(err),
-            }));
+          );
 
           if (!recordRunResult.ok) {
             warnings.push(
