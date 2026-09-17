@@ -3,7 +3,7 @@
 import HarvestButton from "@/components/land-manager/harvest/HarvestButton";
 import LastHarvestAgeChip from "@/components/land-manager/harvest/LastHarvestAgeChip";
 import { renderResourceChip } from "@/components/ui/resource/Resource";
-import CustomIconSpinner from "@/components/ui/CustomIconSpinner";
+import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { Resource } from "@/constants/resource/resource";
 import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";

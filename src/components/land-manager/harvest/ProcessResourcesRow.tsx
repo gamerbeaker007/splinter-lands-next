@@ -4,6 +4,8 @@ import ActionCard, {
   ActionCardColumn,
 } from "@/components/land-manager/harvest/ActionCard";
 import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
+import { renderResourceIcon } from "@/components/ui/resource/Resource";
+import { Resource } from "@/constants/resource/resource";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { land_worksite_select_iron_icon_url } from "@/lib/shared/statics_icon_urls";
@@ -14,7 +16,7 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Savings as SavingsIcon } from "@mui/icons-material";
-import { Alert, Chip } from "@mui/material";
+import { Alert, Box, Chip, Stack } from "@mui/material";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -100,24 +102,33 @@ export default function ProcessResourcesRow({
         onSettings={() => openConfigDialog("post_harvest")}
         settingsLabel="Process Resources settings"
         strategy={
-          <>
+          <Stack direction="column" spacing={0.5} alignItems="flex-start">
             <Chip
               label={strategyLabel}
               size="small"
               variant="outlined"
               sx={{ fontSize: "0.65rem", height: 18 }}
             />
-            {postHarvestExcludedResources.map((r) => (
+
+            {postHarvestExcludedResources.length > 0 && (
               <Chip
-                key={r}
-                label={`Excl: ${r}`}
+                label={
+                  <Stack direction="row" spacing={0.25} alignItems="center">
+                    <span>Excl:</span>
+                    {postHarvestExcludedResources.map((r) => (
+                      <Box key={r} sx={{ display: "flex" }}>
+                        {renderResourceIcon(r as Resource)}
+                      </Box>
+                    ))}
+                  </Stack>
+                }
                 size="small"
                 variant="outlined"
                 color="warning"
                 sx={{ fontSize: "0.65rem", height: 18 }}
               />
-            ))}
-          </>
+            )}
+          </Stack>
         }
       />
 

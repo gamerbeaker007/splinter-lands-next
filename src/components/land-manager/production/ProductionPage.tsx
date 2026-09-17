@@ -56,7 +56,7 @@ import {
 } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import CustomIconSpinner from "@/components/ui/CustomIconSpinner";
+import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 
 const PAGE_SIZE = 25;
 

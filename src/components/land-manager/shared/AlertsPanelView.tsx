@@ -21,7 +21,6 @@ import {
   Box,
   Card,
   CardContent,
-  Skeleton,
   Stack,
   Table,
   TableBody,
@@ -80,15 +79,7 @@ export default function AlertsPanelView({
   onFeedWorkers,
   onFixGrainDeficit,
 }: AlertsPanelViewProps) {
-  // Both sources load concurrently on mount; rendering the DEC rows before
-  // their data lands would claim "0 staked matches 0 required".
-  if (loading) {
-    return (
-      <Box sx={{ mb: 2 }}>
-        <Skeleton variant="rounded" height={100} />
-      </Box>
-    );
-  }
+  if (loading) return <></>;
 
   // Whether enough DEC is staked is decided from the GLOBAL pool, not the sum
   // of per-region gaps: while a building is in progress a region's staked DEC
