@@ -172,8 +172,30 @@ export interface BulkRegionData {
    * response as `balances`, so exposing it costs no extra request.
    */
   overviews: Record<string, SplRegionOverviewData>;
+  /**
+   * region_uid → why that region's harvestable list could not be fetched.
+   * The fan-out below is per region, so one failing region must not blank out
+   * the others; callers render this next to the region it belongs to instead of
+   * silently showing it as "nothing to harvest".
+   */
+  errors: Record<string, string>;
+  /** Set only when the whole call failed before any region was attempted. */
   error?: string;
 }
+
+/**
+ * cacheKey → the fan-out currently running for it.
+ *
+ * Several panels on the Harvest page ask for the same region set at the same
+ * moment (the regions summary and the region table both mount together). Without
+ * this, each one misses the still-empty cache and starts its own duplicate
+ * fan-out; joining the in-flight promise collapses them into a single upstream
+ * round of requests. Entries live only for the duration of one fetch.
+ */
+const inFlightBulkRegion = new Map<
+  string,
+  Promise<Omit<BulkRegionData, "error">>
+>();
 
 export async function getBulkRegionData(
   regionUids: string[],
@@ -185,6 +207,7 @@ export async function getBulkRegionData(
       harvestable: {},
       balances: {},
       overviews: {},
+      errors: {},
       error: "Not authenticated",
     };
   }
@@ -194,49 +217,65 @@ export async function getBulkRegionData(
       harvestable: {},
       balances: {},
       overviews: {},
+      errors: {},
       error: "No session token",
     };
 
   const cacheKey = `bulk-region:${auth.username}:${[...regionUids].sort().join(",")}`;
 
+  // A forced read must never settle for another caller's older snapshot, so it
+  // skips both the cache and any fan-out already running.
   if (!force) {
     const cached = cache.get<Omit<BulkRegionData, "error">>(cacheKey);
     if (cached) return cached;
+    const pending = inFlightBulkRegion.get(cacheKey);
+    if (pending) return pending;
   }
 
-  const results = await Promise.allSettled(
-    regionUids.flatMap((uid) => [
-      fetchSplHarvestableResources(auth.username!, uid, jwt).then((d) => ({
-        type: "harvestable" as const,
-        uid,
-        data: d,
-      })),
-      fetchRegionOverview(auth.username!, uid, jwt).then((o) => ({
-        type: "overview" as const,
-        uid,
-        data: o,
-      })),
-    ])
-  );
+  const player = auth.username;
+  const run = (async () => {
+    const results = await Promise.all(
+      regionUids.map(async (uid) => {
+        const [harvestableResult, overview] = await Promise.all([
+          fetchSplHarvestableResources(player, uid, jwt)
+            .then((data) => ({ data, error: null as string | null }))
+            .catch((err: unknown) => ({
+              data: null,
+              error: err instanceof Error ? err.message : "Unknown error",
+            })),
+          // fetchRegionOverview swallows its own failures and resolves to null,
+          // which regionBalanceFrom turns into an all-zero balance.
+          fetchRegionOverview(player, uid, jwt),
+        ]);
+        return { uid, harvestableResult, overview };
+      })
+    );
 
-  const harvestable: Record<string, SplHarvestableResource[]> = {};
-  const balances: Record<string, Record<string, number>> = {};
-  const overviews: Record<string, SplRegionOverviewData> = {};
+    const harvestable: Record<string, SplHarvestableResource[]> = {};
+    const balances: Record<string, Record<string, number>> = {};
+    const overviews: Record<string, SplRegionOverviewData> = {};
+    const errors: Record<string, string> = {};
 
-  for (const r of results) {
-    if (r.status !== "fulfilled") continue;
-    const v = r.value;
-    if (v.type === "harvestable") {
-      harvestable[v.uid] = v.data;
-    } else {
-      balances[v.uid] = regionBalanceFrom(v.data);
-      if (v.data) overviews[v.uid] = v.data;
+    for (const { uid, harvestableResult, overview } of results) {
+      if (harvestableResult.error) errors[uid] = harvestableResult.error;
+      else harvestable[uid] = harvestableResult.data ?? [];
+      balances[uid] = regionBalanceFrom(overview);
+      if (overview) overviews[uid] = overview;
     }
-  }
 
-  const fresh = { harvestable, balances, overviews };
-  cache.set(cacheKey, fresh, BULK_REGION_CACHE_TTL);
-  return fresh;
+    const fresh = { harvestable, balances, overviews, errors };
+    cache.set(cacheKey, fresh, BULK_REGION_CACHE_TTL);
+    return fresh;
+  })();
+
+  inFlightBulkRegion.set(cacheKey, run);
+  try {
+    return await run;
+  } finally {
+    // Only clear our own entry; a later forced call may have replaced it.
+    if (inFlightBulkRegion.get(cacheKey) === run)
+      inFlightBulkRegion.delete(cacheKey);
+  }
 }
 
 // ── DEC balance ───────────────────────────────────────────────────────────

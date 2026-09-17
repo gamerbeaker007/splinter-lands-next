@@ -8,12 +8,18 @@ import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import {
   land_default_off_icon_url_placeholder,
   land_mythic_icon_url,
+  land_runi_power_core_icon_url,
   WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
 import { TAX_ESTIMATE_NOTE } from "@/lib/shared/taxProduction";
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import {
+  ArrowDownward as ArrowDownwardIcon,
+  Build as BuildIcon,
   DeleteSweep as DeleteSweepIcon,
+  Restaurant as RestaurantIcon,
+  SwapHoriz as SwapHorizIcon,
+  MoreVert as MoreVertIcon,
   PersonRemove as PersonRemoveIcon,
   PowerOff as PowerOffIcon,
   PowerSettingsNew as PowerOnIcon,
@@ -21,12 +27,17 @@ import {
   WarningAmber as WarningAmberIcon,
 } from "@mui/icons-material";
 import CancelIcon from "@mui/icons-material/Cancel";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   Avatar,
+  Box,
   capitalize,
+  Chip,
   Collapse,
   IconButton,
+  ListItemIcon,
+  ListItemText,
+  Menu,
+  MenuItem,
   Stack,
   Table,
   TableBody,
@@ -37,60 +48,287 @@ import {
   TableSortLabel,
   Tooltip,
   Typography,
+  type SxProps,
+  type Theme,
 } from "@mui/material";
 import Image from "next/image";
-import { Fragment, ReactNode } from "react";
+import { Fragment, ReactNode, useState } from "react";
 import {
   ProductionRow,
   ProductionSortKey,
+  RowConstruction,
   SortDirection,
   worksiteLabel,
 } from "./productionTypes";
 
+type ColumnId =
+  | "actions"
+  | "plot"
+  | "rarity"
+  | "plotStatus"
+  | "region"
+  | "worksite"
+  | "rewards"
+  | "netDec"
+  | "basePP"
+  | "boostedPP"
+  | "powered"
+  | "boosts"
+  | "workers";
+
 interface HeadCell {
-  key?: ProductionSortKey;
+  id: ColumnId;
+  /** Column this sorts by; omit when the column has nothing to sort on. */
+  sortKey?: ProductionSortKey;
   label: string;
+  /** Abbreviation shown when the table is too narrow for the full label. */
+  shortLabel?: string;
+  /** Header tooltip — falls back to the label, so short labels stay readable. */
+  tooltip?: string;
   numeric: boolean;
-  tootTip?: string;
-  width?: number;
-  iconCell?: boolean;
+  sortable: boolean;
+  /** Lower bound for the column; the browser may grow it past this. */
+  minWidth?: number;
+  /** Upper bound; longer content is ellipsised rather than widening the table. */
+  maxWidth?: number;
 }
 
-const ICON_COLUMN_WIDTH = 50;
-
-const iconCellSx = {
-  width: ICON_COLUMN_WIDTH,
-  minWidth: ICON_COLUMN_WIDTH,
-  maxWidth: ICON_COLUMN_WIDTH,
-  px: 0.5,
-};
-
 const HEAD_CELLS: HeadCell[] = [
-  { key: "label", label: "Plot", numeric: false },
   {
-    key: "rarity",
-    label: "R",
-    tootTip: "Rarity",
+    id: "actions",
+    label: "Actions",
     numeric: false,
-    iconCell: true,
+    sortable: false,
   },
   {
-    key: "plotStatus",
-    label: "S",
-    tootTip: "Plot Status",
+    id: "plot",
+    sortKey: "label",
+    label: "Plot",
     numeric: false,
-    iconCell: true,
+    sortable: true,
+    minWidth: 90,
   },
-  { key: "regionNumber", label: "Region", numeric: false },
-  { key: "worksiteType", label: "Worksite", numeric: false },
-  { key: "rewardsPerHour", label: "Rewards/hr", numeric: true },
-  { key: "netDEC", label: "Net DEC/hr", numeric: true },
-  { key: "basePP", label: "Base PP", numeric: true },
-  { key: "boostedPP", label: "Boosted PP", numeric: true },
-  { key: "powered", label: "P", tootTip: "Powered", numeric: false },
-  { label: "B", tootTip: "Positive Terrain Boosts", numeric: false }, // Not Sortable
-  { key: "workerCount", label: "Workers", numeric: true },
+  {
+    id: "rarity",
+    sortKey: "rarity",
+    label: "Rarity",
+    shortLabel: "R",
+    numeric: false,
+    sortable: true,
+  },
+  {
+    id: "plotStatus",
+    sortKey: "plotStatus",
+    label: "Status",
+    shortLabel: "S",
+    tooltip: "Plot Status",
+    numeric: false,
+    sortable: true,
+  },
+  {
+    id: "region",
+    sortKey: "regionNumber",
+    label: "Region",
+    numeric: false,
+    sortable: true,
+    minWidth: 72,
+    maxWidth: 120,
+  },
+  {
+    id: "worksite",
+    sortKey: "worksiteType",
+    label: "Worksite",
+    numeric: false,
+    sortable: true,
+    minWidth: 84,
+    maxWidth: 140,
+  },
+  {
+    id: "rewards",
+    sortKey: "rewardsPerHour",
+    label: "Rewards/hr",
+    numeric: true,
+    sortable: true,
+    minWidth: 104,
+  },
+  {
+    id: "netDec",
+    sortKey: "netDEC",
+    label: "Net DEC/hr",
+    shortLabel: "D/hr",
+    numeric: true,
+    sortable: true,
+    minWidth: 96,
+  },
+  {
+    id: "basePP",
+    sortKey: "basePP",
+    label: "Base PP",
+    shortLabel: "BaPP",
+    numeric: true,
+    sortable: true,
+    minWidth: 72,
+  },
+  {
+    id: "boostedPP",
+    sortKey: "boostedPP",
+    label: "Boosted PP",
+    shortLabel: "BoPP",
+    numeric: true,
+    sortable: true,
+    minWidth: 84,
+  },
+  {
+    id: "powered",
+    sortKey: "powered",
+    label: "Powered",
+    shortLabel: "P",
+    numeric: false,
+    sortable: true,
+  },
+  {
+    id: "boosts",
+    label: "Boosts",
+    shortLabel: "B",
+    tooltip: "Positive Terrain Boosts",
+    numeric: false,
+    sortable: false,
+  },
+  {
+    id: "workers",
+    sortKey: "workerCount",
+    label: "Workers",
+    numeric: true,
+    sortable: true,
+    minWidth: 64,
+  },
 ];
+
+/**
+ * Width reserved at the right of every sortable column for the sort arrow.
+ *
+ * The arrow is drawn absolutely rather than inline, and the gutter is applied
+ * to the header *and* the body cells — so the header label lines up exactly
+ * with the column's content, and sorting never shifts the layout.
+ */
+const SORT_GUTTER = "14px";
+
+function columnSx(cell: HeadCell): SxProps<Theme> {
+  // Tight vertical rhythm — the table is dense enough that the default
+  // `size="small"` padding is the main thing costing height.
+  return {
+    py: 0.25,
+    pl: 0.5,
+    pr: cell.sortable ? SORT_GUTTER : 0.5,
+    minWidth: cell.minWidth,
+    maxWidth: cell.maxWidth,
+    ...(cell.maxWidth
+      ? { overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }
+      : null),
+  };
+}
+
+function columnAlign(cell: HeadCell): "left" | "right" {
+  return cell.numeric ? "right" : "left";
+}
+
+const COLUMNS = Object.fromEntries(
+  HEAD_CELLS.map((cell) => [cell.id, cell])
+) as Record<ColumnId, HeadCell>;
+
+/**
+ * Alignment and sizing for one column, shared by its header and body cells so
+ * the two can never drift apart.
+ */
+function cellProps(id: ColumnId): {
+  align: "left" | "right";
+  sx: SxProps<Theme>;
+} {
+  const cell = COLUMNS[id];
+  return { align: columnAlign(cell), sx: columnSx(cell) };
+}
+
+/**
+ * Full labels are shown when the table has room; below that the abbreviation
+ * takes over, with the full name still in the tooltip. A container query
+ * rather than a viewport one, so docking the filter panel switches them too.
+ */
+const FULL_LABEL_QUERY = "@container production-table (min-width: 1280px)";
+
+function HeaderLabel({ cell }: { cell: HeadCell }) {
+  if (!cell.shortLabel) return <>{cell.label}</>;
+  return (
+    <>
+      <Box component="span" sx={{ [FULL_LABEL_QUERY]: { display: "none" } }}>
+        {cell.shortLabel}
+      </Box>
+      <Box
+        component="span"
+        sx={{ display: "none", [FULL_LABEL_QUERY]: { display: "inline" } }}
+      >
+        {cell.label}
+      </Box>
+    </>
+  );
+}
+
+/** Short "2h 15m" style remaining-time text for the construction badge. */
+function remainingLabel(endsAtMs: number | null, nowMs: number): string | null {
+  if (endsAtMs == null) return null;
+  const ms = endsAtMs - nowMs;
+  if (ms <= 0) return null;
+  const totalMinutes = Math.floor(ms / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+}
+
+/**
+ * Compact in-table marker for a plot with a construction project.
+ *
+ * Reads only from the row's own `construction` block — no extra state or
+ * request. Kept to a single small chip so the table stays dense; the detail
+ * (target building, time left) lives in the tooltip.
+ */
+function ConstructionBadge({
+  construction,
+  nowMs,
+}: {
+  construction: RowConstruction;
+  nowMs: number;
+}) {
+  if (!construction.isConstruction) return null;
+
+  const remaining = remainingLabel(construction.endsAtMs, nowMs);
+  const target = construction.buildingWorksite;
+  const readyToFeed = construction.isReadyToFeed;
+
+  return (
+    <Tooltip
+      title={
+        readyToFeed
+          ? `Construction finished${target ? ` (${target})` : ""} — feed the workers to activate it.`
+          : `Building${target ? ` a ${target}` : ""}${remaining ? ` — ${remaining} left` : ""}.`
+      }
+      placement="top"
+    >
+      <Chip
+        size="small"
+        icon={
+          readyToFeed ? (
+            <RestaurantIcon sx={{ fontSize: "0.8rem !important" }} />
+          ) : (
+            <BuildIcon sx={{ fontSize: "0.8rem !important" }} />
+          )
+        }
+        color={readyToFeed ? "success" : "warning"}
+        variant="outlined"
+        label={readyToFeed ? "Feed" : (remaining ?? "Building")}
+        sx={{ height: 18, fontSize: "0.62rem", ml: 0.5 }}
+      />
+    </Tooltip>
+  );
+}
 
 export interface ProductionTableProps {
   rows: ProductionRow[];
@@ -99,19 +337,27 @@ export interface ProductionTableProps {
   busy: boolean;
   /** deed_uids whose Configure panel is expanded. */
   expandedDeedUids: Set<string>;
+  /** Shared "now" for construction progress — re-stamped when data reloads. */
+  nowMs: number;
   onSort: (key: ProductionSortKey) => void;
   onAction: (kind: ProductionActionKind, row: ProductionRow) => void;
+  /** Open the Change worksite dialog for this row. */
+  onChangeWorksite: (row: ProductionRow) => void;
   onToggleConfigure: (deedUid: string) => void;
   /** Render the Configure panel for an expanded row. */
   renderConfigure: (deedUid: string) => ReactNode;
 }
 
-const COLUMN_COUNT = 11; // 10 data columns + actions
+const COLUMN_COUNT = HEAD_CELLS.length;
 
 function rarityIcon(rarity: string): string {
   return rarity === "mythic"
     ? land_mythic_icon_url
     : land_default_off_icon_url_placeholder.replace("__NAME__", rarity);
+}
+
+function isMagical(plotStatus: string): boolean {
+  return plotStatus.toLowerCase() === "magical";
 }
 
 function plotStatusIcon(plotStatus: string): string {
@@ -121,7 +367,7 @@ function plotStatusIcon(plotStatus: string): string {
 
 function showPositiveTerrainBoosts(biomeModifiers: BiomeModifiers) {
   return (
-    <Stack direction="row" spacing={1}>
+    <Stack direction="row" spacing={0.25}>
       {Object.entries(biomeModifiers)
         .filter(([, modifier]) => modifier > 0)
         .map(([biome, modifier]) => {
@@ -135,8 +381,8 @@ function showPositiveTerrainBoosts(biomeModifiers: BiomeModifiers) {
               <Avatar
                 src={getElementIconUrl(biome)}
                 sx={{
-                  height: 20,
-                  width: 20,
+                  height: 18,
+                  width: 18,
                 }}
               />
             </Tooltip>
@@ -152,256 +398,351 @@ export default function ProductionTable({
   sortDir,
   busy,
   expandedDeedUids,
+  nowMs,
   onSort,
   onAction,
+  onChangeWorksite,
   onToggleConfigure,
   renderConfigure,
 }: ProductionTableProps) {
+  const [actionMenu, setActionMenu] = useState<{
+    anchorEl: HTMLElement;
+    row: ProductionRow;
+  } | null>(null);
+
+  const closeActionMenu = () => setActionMenu(null);
+
+  const runAction = (kind: ProductionActionKind) => {
+    if (actionMenu) onAction(kind, actionMenu.row);
+    closeActionMenu();
+  };
+
+  const menuRow = actionMenu?.row;
+
   return (
-    <TableContainer>
-      <Table size="small" stickyHeader>
-        <TableHead>
-          <TableRow>
-            {HEAD_CELLS.map((cell, index) => (
-              <Tooltip
-                title={cell.tootTip ?? ""}
-                placement={"top"}
-                followCursor={true}
-                key={cell.key ?? `column-${index}`}
-              >
+    <>
+      <TableContainer
+        sx={{ containerType: "inline-size", containerName: "production-table" }}
+      >
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              {HEAD_CELLS.map((cell) => (
                 <TableCell
-                  align={
-                    cell.iconCell ? "center" : cell.numeric ? "right" : "left"
-                  }
+                  key={cell.id}
+                  {...cellProps(cell.id)}
                   sortDirection={
-                    cell.key && sortKey === cell.key ? sortDir : false
+                    cell.sortKey && sortKey === cell.sortKey ? sortDir : false
                   }
-                  sx={cell.iconCell ? iconCellSx : { width: cell.width }}
+                  sx={{ ...columnSx(cell), position: "relative" }}
                 >
-                  {cell.key ? (
-                    <TableSortLabel
-                      active={sortKey === cell.key}
-                      direction={sortKey === cell.key ? sortDir : "asc"}
-                      onClick={() => onSort(cell.key!)}
-                    >
-                      {cell.label}
-                    </TableSortLabel>
-                  ) : (
-                    cell.label
-                  )}
-                </TableCell>
-              </Tooltip>
-            ))}
-            <TableCell align="center">Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {rows.map((r) => (
-            <Fragment key={r.deedUid}>
-              <TableRow hover>
-                <TableCell>{r.label}</TableCell>
-                <TableCell sx={iconCellSx}>
                   <Tooltip
-                    title={r.rarity}
+                    title={cell.tooltip ?? cell.label}
                     placement={"top"}
                     followCursor={true}
                   >
-                    <span>
-                      <Image
-                        src={rarityIcon(r.rarity)}
-                        alt={r.rarity}
-                        width={18}
-                        height={18}
-                      />
-                    </span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell sx={iconCellSx}>
-                  <Tooltip
-                    title={r.plotStatus}
-                    placement={"top"}
-                    followCursor={true}
-                  >
-                    <span>
-                      <Image
-                        src={plotStatusIcon(r.plotStatus)}
-                        alt={r.plotStatus}
-                        width={18}
-                        height={18}
-                      />
-                    </span>
-                  </Tooltip>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2" noWrap>
-                    {r.regionName || r.regionNumber}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  {capitalize(worksiteLabel(r.worksiteType).toLowerCase())}
-                </TableCell>
-                <TableCell align="right">
-                  {r.rewardsPerHour > 0
-                    ? renderResourceChip(
-                        r.tokenSymbol as Resource,
-                        r.rewardsPerHour
-                      )
-                    : "—"}
-                </TableCell>
-                <TableCell align="right">
-                  <Stack
-                    direction="row"
-                    gap={0.25}
-                    alignItems="center"
-                    justifyContent="flex-end"
-                  >
-                    <Typography
-                      variant="body2"
-                      color={
-                        r.netDEC > 0
-                          ? "success.main"
-                          : r.netDEC < 0
-                            ? "error.main"
-                            : "text.secondary"
-                      }
-                      noWrap
-                    >
-                      {formatNumber(r.netDEC, { maximumFractionDigits: 2 })}
-                    </Typography>
-                    {r.netDecEstimated && (
-                      <Tooltip title={TAX_ESTIMATE_NOTE}>
-                        <WarningAmberIcon
-                          fontSize="inherit"
-                          color="warning"
-                          sx={{ cursor: "help" }}
-                        />
-                      </Tooltip>
+                    {cell.sortable && cell.sortKey ? (
+                      <TableSortLabel
+                        active={sortKey === cell.sortKey}
+                        direction={sortKey === cell.sortKey ? sortDir : "asc"}
+                        onClick={() => onSort(cell.sortKey!)}
+                        // The arrow is drawn in the gutter below instead, so the
+                        // label keeps the column's own alignment.
+                        sx={{
+                          "& .MuiTableSortLabel-icon": { display: "none" },
+                        }}
+                      >
+                        <HeaderLabel cell={cell} />
+                      </TableSortLabel>
+                    ) : (
+                      <span>
+                        <HeaderLabel cell={cell} />
+                      </span>
                     )}
-                  </Stack>
-                </TableCell>
-                <TableCell align="right">{formatInt(r.basePP)}</TableCell>
-                <TableCell align="right">{formatInt(r.boostedPP)}</TableCell>
-                <TableCell align="left">
-                  {r.powered ? (
-                    <CheckCircleIcon
-                      sx={{ fontSize: 16, color: "success.main" }}
+                  </Tooltip>
+                  {cell.sortKey === sortKey && (
+                    <ArrowDownwardIcon
+                      sx={{
+                        position: "absolute",
+                        right: 0,
+                        top: "50%",
+                        fontSize: 13,
+                        color: "text.secondary",
+                        pointerEvents: "none",
+                        transform:
+                          sortDir === "asc"
+                            ? "translateY(-50%) rotate(180deg)"
+                            : "translateY(-50%)",
+                      }}
                     />
-                  ) : (
-                    <CancelIcon sx={{ fontSize: 16, color: "error.main" }} />
                   )}
                 </TableCell>
-                <TableCell>
-                  {showPositiveTerrainBoosts(r.biomeModifiers)}
-                </TableCell>
-                <TableCell align="right">
-                  {r.workerCount}/{r.maxWorkers}
-                </TableCell>
-                <TableCell align="center">
-                  <Stack direction="row" spacing={0.5} justifyContent="center">
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rows.map((r) => (
+              <Fragment key={r.deedUid}>
+                <TableRow hover>
+                  <TableCell {...cellProps("actions")}>
+                    <Stack direction="row" spacing={0}>
+                      <Tooltip title="Plot actions">
+                        <span>
+                          <IconButton
+                            size="small"
+                            aria-label={`Actions for ${r.label}`}
+                            disabled={busy}
+                            onClick={(event) =>
+                              setActionMenu({
+                                anchorEl: event.currentTarget,
+                                row: r,
+                              })
+                            }
+                          >
+                            <MoreVertIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip
+                        title={
+                          r.listed
+                            ? "Plot is listed on the market — cancel the listing to configure"
+                            : "Configure plot"
+                        }
+                      >
+                        <span>
+                          <IconButton
+                            size="small"
+                            color={
+                              expandedDeedUids.has(r.deedUid)
+                                ? "primary"
+                                : "default"
+                            }
+                            disabled={r.listed}
+                            onClick={() => onToggleConfigure(r.deedUid)}
+                          >
+                            <TuneIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Stack>
+                  </TableCell>
+                  <TableCell {...cellProps("plot")}>{r.label}</TableCell>
+                  <TableCell {...cellProps("rarity")}>
                     <Tooltip
-                      title={
-                        r.listed
-                          ? "Plot is listed on the market — cancel the listing to configure"
-                          : r.powered
-                            ? "Unpower"
-                            : "Power on"
-                      }
+                      title={r.rarity}
+                      placement={"top"}
+                      followCursor={true}
                     >
                       <span>
-                        <IconButton
-                          size="small"
-                          color={r.powered ? "warning" : "success"}
-                          disabled={busy || r.listed}
-                          onClick={() =>
-                            r.powered
-                              ? onAction("unpower", r)
-                              : onAction("powerOn", r)
-                          }
-                        >
-                          {r.powered ? (
-                            <PowerOffIcon fontSize="small" />
-                          ) : (
-                            <PowerOnIcon fontSize="small" />
-                          )}
-                        </IconButton>
+                        <Image
+                          src={rarityIcon(r.rarity)}
+                          alt={r.rarity}
+                          width={18}
+                          height={18}
+                        />
                       </span>
                     </Tooltip>
-                    <Tooltip
-                      title={
-                        r.workerCount > 0
-                          ? "Remove workers (and Runi)"
-                          : "No workers"
-                      }
+                  </TableCell>
+                  <TableCell {...cellProps("plotStatus")}>
+                    <Stack direction="row" spacing={0.25} alignItems="center">
+                      <Tooltip
+                        title={r.plotStatus}
+                        placement={"top"}
+                        followCursor={true}
+                      >
+                        <span>
+                          <Image
+                            src={plotStatusIcon(r.plotStatus)}
+                            alt={r.plotStatus}
+                            width={18}
+                            height={18}
+                          />
+                        </span>
+                      </Tooltip>
+                      {isMagical(r.plotStatus) && r.magicType && (
+                        <Tooltip
+                          title={`${r.plotStatus}: ${r.magicType}`}
+                          placement={"top"}
+                          followCursor={true}
+                        >
+                          <span>
+                            <Image
+                              src={getElementIconUrl(r.magicType)}
+                              alt={r.magicType}
+                              width={18}
+                              height={18}
+                            />
+                          </span>
+                        </Tooltip>
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell {...cellProps("region")}>
+                    <Typography variant="body2" noWrap>
+                      {r.regionName || r.regionNumber}
+                    </Typography>
+                  </TableCell>
+                  <TableCell {...cellProps("worksite")}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      sx={{ minWidth: 0 }}
                     >
-                      <span>
-                        <IconButton
-                          size="small"
-                          color="warning"
-                          disabled={busy || r.workerCount === 0}
-                          onClick={() => onAction("removeWorkers", r)}
-                        >
-                          <PersonRemoveIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip
-                      title={r.hasStakedItems ? "Empty plot" : "Already empty"}
+                      <Typography variant="body2" noWrap>
+                        {capitalize(
+                          worksiteLabel(r.worksiteType).toLowerCase()
+                        )}
+                      </Typography>
+                      <ConstructionBadge
+                        construction={r.construction}
+                        nowMs={nowMs}
+                      />
+                    </Stack>
+                  </TableCell>
+                  <TableCell {...cellProps("rewards")}>
+                    {r.rewardsPerHour > 0
+                      ? renderResourceChip(
+                          r.tokenSymbol as Resource,
+                          r.rewardsPerHour
+                        )
+                      : "—"}
+                  </TableCell>
+                  <TableCell {...cellProps("netDec")}>
+                    <Stack
+                      direction="row"
+                      gap={0.25}
+                      alignItems="center"
+                      justifyContent="flex-end"
                     >
-                      <span>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          disabled={busy || !r.hasStakedItems}
-                          onClick={() => onAction("empty", r)}
-                        >
-                          <DeleteSweepIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                    <Tooltip
-                      title={
-                        r.listed
-                          ? "Plot is listed on the market — cancel the listing to configure"
-                          : "Configure spots"
-                      }
-                    >
-                      <span>
-                        <IconButton
-                          size="small"
-                          color={
-                            expandedDeedUids.has(r.deedUid)
-                              ? "primary"
-                              : "default"
-                          }
-                          disabled={r.listed}
-                          onClick={() => onToggleConfigure(r.deedUid)}
-                        >
-                          <TuneIcon fontSize="small" />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
-                  </Stack>
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell
-                  colSpan={COLUMN_COUNT}
-                  sx={{ py: 0, borderBottom: "none" }}
-                >
-                  <Collapse
-                    in={expandedDeedUids.has(r.deedUid)}
-                    timeout="auto"
-                    unmountOnExit
+                      <Typography
+                        variant="body2"
+                        color={
+                          r.netDEC > 0
+                            ? "success.main"
+                            : r.netDEC < 0
+                              ? "error.main"
+                              : "text.secondary"
+                        }
+                        noWrap
+                      >
+                        {formatNumber(r.netDEC, { maximumFractionDigits: 2 })}
+                      </Typography>
+                      {r.netDecEstimated && (
+                        <Tooltip title={TAX_ESTIMATE_NOTE}>
+                          <WarningAmberIcon
+                            fontSize="inherit"
+                            color="warning"
+                            sx={{ cursor: "help" }}
+                          />
+                        </Tooltip>
+                      )}
+                    </Stack>
+                  </TableCell>
+                  <TableCell {...cellProps("basePP")}>
+                    {formatInt(r.basePP)}
+                  </TableCell>
+                  <TableCell {...cellProps("boostedPP")}>
+                    {formatInt(r.boostedPP)}
+                  </TableCell>
+                  <TableCell {...cellProps("powered")}>
+                    {r.powered ? (
+                      <Avatar
+                        src={land_runi_power_core_icon_url}
+                        alt={"Powered"}
+                        sx={{ width: 16, height: 16 }}
+                      />
+                    ) : (
+                      <CancelIcon sx={{ fontSize: 16, color: "error.main" }} />
+                    )}
+                  </TableCell>
+                  <TableCell {...cellProps("boosts")}>
+                    {showPositiveTerrainBoosts(r.biomeModifiers)}
+                  </TableCell>
+                  <TableCell {...cellProps("workers")}>
+                    {r.workerCount}/{r.maxWorkers}
+                  </TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell
+                    colSpan={COLUMN_COUNT}
+                    sx={{ py: 0, borderBottom: "none" }}
                   >
-                    {expandedDeedUids.has(r.deedUid) &&
-                      renderConfigure(r.deedUid)}
-                  </Collapse>
-                </TableCell>
-              </TableRow>
-            </Fragment>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+                    <Collapse
+                      in={expandedDeedUids.has(r.deedUid)}
+                      timeout="auto"
+                      unmountOnExit
+                    >
+                      {expandedDeedUids.has(r.deedUid) &&
+                        renderConfigure(r.deedUid)}
+                    </Collapse>
+                  </TableCell>
+                </TableRow>
+              </Fragment>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+
+      <Menu
+        anchorEl={actionMenu?.anchorEl ?? null}
+        open={Boolean(actionMenu)}
+        onClose={closeActionMenu}
+      >
+        {menuRow && (
+          <MenuItem
+            disabled={busy || menuRow.listed}
+            onClick={() => runAction(menuRow.powered ? "unpower" : "powerOn")}
+          >
+            <ListItemIcon>
+              {menuRow.powered ? (
+                <PowerOffIcon fontSize="small" color="warning" />
+              ) : (
+                <PowerOnIcon fontSize="small" color="success" />
+              )}
+            </ListItemIcon>
+            <ListItemText>
+              {menuRow.powered ? "Unpower" : "Power on"}
+            </ListItemText>
+          </MenuItem>
+        )}
+        {menuRow && (
+          <MenuItem
+            disabled={busy || menuRow.listed || menuRow.construction.isMythic}
+            onClick={() => {
+              onChangeWorksite(menuRow);
+              closeActionMenu();
+            }}
+          >
+            <ListItemIcon>
+              <SwapHorizIcon fontSize="small" color="primary" />
+            </ListItemIcon>
+            <ListItemText>Change worksite</ListItemText>
+          </MenuItem>
+        )}
+        {menuRow && (
+          <MenuItem
+            disabled={busy || menuRow.workerCount === 0}
+            onClick={() => runAction("removeWorkers")}
+          >
+            <ListItemIcon>
+              <PersonRemoveIcon fontSize="small" color="warning" />
+            </ListItemIcon>
+            <ListItemText>Remove workers (and Runi)</ListItemText>
+          </MenuItem>
+        )}
+        {menuRow && (
+          <MenuItem
+            disabled={busy || !menuRow.hasStakedItems}
+            onClick={() => runAction("empty")}
+          >
+            <ListItemIcon>
+              <DeleteSweepIcon fontSize="small" color="error" />
+            </ListItemIcon>
+            <ListItemText>Empty plot</ListItemText>
+          </MenuItem>
+        )}
+      </Menu>
+    </>
   );
 }

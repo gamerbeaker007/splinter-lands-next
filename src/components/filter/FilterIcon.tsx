@@ -6,6 +6,7 @@ type FilterIconProps = {
   isActive: boolean;
   image: string;
   onChange: () => void;
+  backgroundColorGrey?: boolean;
 };
 
 export default function FilterIcon({
@@ -13,13 +14,14 @@ export default function FilterIcon({
   isActive,
   image,
   onChange,
-}: FilterIconProps) {
+  backgroundColorGrey = false,
+}: Readonly<FilterIconProps>) {
   return (
     <Box
       onClick={onChange}
       sx={{
-        width: 35,
-        height: 35,
+        width: "35px",
+        height: "35px",
         border: "3px solid",
         borderColor: isActive ? "secondary.main" : "grey.400",
         borderRadius: 1,
@@ -28,6 +30,7 @@ export default function FilterIcon({
         display: "inline-block",
         padding: "2px",
         mr: "5px",
+        background: backgroundColorGrey ? "grey" : "transparent",
       }}
       title={name}
     >
@@ -43,7 +46,6 @@ export default function FilterIcon({
           sx={{
             width: "100%",
             height: "100%",
-            objectFit: "cover",
             display: "block",
           }}
         />

@@ -136,11 +136,10 @@ export interface RentalExecutionPlan {
 }
 
 export async function getRentalExecutionPlan(
-  enabledRegions: number[],
   rental: RentalConfig = DEFAULT_RENTAL_CONFIG,
   filteredDeedUids?: string[]
 ): Promise<RentalExecutionPlan> {
-  const eligibility = await getWorkerEligibility(enabledRegions);
+  const eligibility = await getWorkerEligibility();
   let eligible = eligibility.eligible;
   if (filteredDeedUids && filteredDeedUids.length > 0) {
     const uidSet = new Set(filteredDeedUids);

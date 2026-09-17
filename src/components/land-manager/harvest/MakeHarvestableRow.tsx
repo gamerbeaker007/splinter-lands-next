@@ -1,20 +1,15 @@
 "use client";
 
+import ActionCard, {
+  ActionCardColumn,
+} from "@/components/land-manager/harvest/ActionCard";
 import { useMakeHarvestableAction } from "@/hooks/useMakeHarvestableAction";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import { land_worksite_select_stone_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, MakeHarvestableStrategy } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { PlaylistAddCheck } from "@mui/icons-material";
-import SettingsIcon from "@mui/icons-material/Settings";
-import {
-  Alert,
-  Button,
-  Chip,
-  CircularProgress,
-  Stack,
-  Tooltip,
-} from "@mui/material";
-import IconButton from "@mui/material/IconButton";
+import { Alert, Chip } from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -59,58 +54,42 @@ export default function MakeHarvestableRow({
     }
   }
 
-  return (
-    <>
-      <Stack
-        direction="row"
-        gap={1}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Tooltip title="Cover every region's harvest shortfall — shows the plan for confirmation first">
-          <span>
-            <Button
-              size="small"
-              disabled={anyBusy}
-              variant="contained"
-              color="warning"
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <PlaylistAddCheck fontSize="small" />
-                )
-              }
-              onClick={run}
-            >
-              Make All Harvestable…
-            </Button>
-          </span>
-        </Tooltip>
+  const displayStrategy = (s: MakeHarvestableStrategy) => {
+    const labels = {
+      pool: "Pool",
+      buy_dec: "Buy",
+      transfer: "Transfer",
+      swap: "Swap",
+    };
+    return labels[s] ?? s;
+  };
 
-        <IconButton
-          size="small"
-          onClick={() => openConfigDialog("make_harvestable")}
-          sx={{ textTransform: "none" }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-        <Stack direction="row" gap={0.5} flexWrap="wrap">
-          {strategies.map((s, i) => (
-            <Chip
-              key={s}
-              label={`${i + 1}. ${s}`}
-              size="small"
-              variant="outlined"
-              sx={{ fontSize: "0.7rem" }}
-            />
-          ))}
-        </Stack>
-      </Stack>
+  return (
+    <ActionCardColumn>
+      <ActionCard
+        title="1. Make Harvestable"
+        tooltip="Cover every region's harvest shortfall — shows the plan for confirmation first"
+        backgroundImage={land_worksite_select_stone_icon_url}
+        icon={<PlaylistAddCheck />}
+        accentColor="warning.main"
+        busy={action.busy}
+        disabled={anyBusy}
+        onClick={run}
+        onSettings={() => openConfigDialog("make_harvestable")}
+        settingsLabel="Make Harvestable settings"
+        strategy={strategies.map((s, i) => (
+          <Chip
+            key={s}
+            label={`${i + 1}. ${displayStrategy(s)}`}
+            size="small"
+            variant="outlined"
+            sx={{ fontSize: "0.65rem", height: 18 }}
+          />
+        ))}
+      />
 
       {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+        <Alert severity="success" onClose={action.clearResult}>
           Broadcast successful
           {action.result.txIds.length > 1
             ? ` (${action.result.txIds.length} transactions)`
@@ -120,10 +99,10 @@ export default function MakeHarvestableRow({
       )}
 
       {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+        <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
       )}
-    </>
+    </ActionCardColumn>
   );
 }

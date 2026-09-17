@@ -786,9 +786,23 @@ export interface TopUpPoolPlan {
   resources: TopUpPoolResourcePlan[];
   /** Wallet DEC at planning time. */
   dec_balance: number;
+  /** Accrual window used to size this plan (hours, clamped to 1..168). */
+  production_window_hours: number;
+  /** Why this window was chosen (DB elapsed vs 7-day fallback/cap). */
+  production_window_reason: string;
+  /** Whether the window came from DB history or fallback default. */
+  production_window_source: "db" | "fallback";
   /** Regions with no reliable last-claim timestamp, so consumption is unknown. */
   consumption_warnings: string[];
   log: string[];
+}
+
+export interface TopUpWindowInfo {
+  hours: number;
+  disabled: boolean;
+  source: "db" | "fallback";
+  reason: string;
+  lastCompletedAt: string | null;
 }
 
 // === Action summary for make-harvestable log ===

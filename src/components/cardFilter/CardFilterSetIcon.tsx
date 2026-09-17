@@ -1,6 +1,7 @@
 import { useCardFilters } from "@/lib/frontend/context/CardFilterContext";
 import { cardSetIconMap, CardSetNameLandValid } from "@/types/editions";
 import FilterIcon from "../filter/FilterIcon";
+import { useAppTheme } from "@/lib/frontend/context/ThemeSetup";
 
 type Props = {
   name: CardSetNameLandValid;
@@ -8,6 +9,7 @@ type Props = {
 
 export default function CardFilterSetIcon({ name }: Props) {
   const { cardFilters, setCardFilters } = useCardFilters();
+  const { theme } = useAppTheme();
 
   //Skip empty name
   if (!name) {
@@ -35,6 +37,7 @@ export default function CardFilterSetIcon({ name }: Props) {
       isActive={isActive}
       image={image}
       onChange={toggleFilter}
+      backgroundColorGrey={theme === "light"}
     />
   );
 }

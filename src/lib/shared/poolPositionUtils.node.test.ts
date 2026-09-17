@@ -5,6 +5,7 @@ import {
   computeWeeklyConsumption,
   computeWeeklyPoolNeed,
   regionConsumptionPerHour,
+  formatTopUpWindow,
   regionProductionPerHour,
   sharesFractionForResource,
 } from "@/lib/shared/poolPositionUtils";
@@ -339,5 +340,18 @@ describe("LP vesting and withdrawal math", () => {
   it("returns an empty holding when there is no position or pool", () => {
     expect(computePoolHolding(undefined, [pool]).resource).toBe(0);
     expect(computePoolHolding(position(1_000, 0), []).resource).toBe(0);
+  });
+});
+
+describe("formatTopUpWindow", () => {
+  it("renders days and hours", () => {
+    expect(formatTopUpWindow(HOURS_PER_WEEK)).toBe("7d");
+    expect(formatTopUpWindow(72)).toBe("3d");
+    expect(formatTopUpWindow(76)).toBe("3d 4h");
+    expect(formatTopUpWindow(5)).toBe("5h");
+  });
+
+  it("rounds up into whole days rather than showing 24h", () => {
+    expect(formatTopUpWindow(23.7)).toBe("1d");
   });
 });

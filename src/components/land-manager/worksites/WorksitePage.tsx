@@ -9,7 +9,6 @@ export default function WorksitePage() {
   return (
     <WorksiteContent
       username={auth.username ?? ""}
-      enabledRegions={config.enabled_regions}
       strategies={config.make_harvestable_strategies}
       onSuccess={triggerRefresh}
     />

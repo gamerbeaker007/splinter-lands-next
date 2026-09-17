@@ -3,7 +3,6 @@
 import LoginComponent from "@/components/auth/LoginComponent";
 import ConfigDialog from "@/components/land-manager/config/ConfigDialog";
 import AlertsPanel from "@/components/land-manager/shared/AlertsPanel";
-import RegionResourceSummary from "@/components/land-manager/shared/RegionResourceSummary";
 import TodayPanel from "@/components/land-manager/shared/TodayPanel";
 import {
   LandManagerAuthStatus,
@@ -17,7 +16,6 @@ import {
   Alert,
   Avatar,
   Box,
-  Button,
   Chip,
   Divider,
   IconButton,
@@ -92,7 +90,6 @@ function LandManagerShell({ children }: { children: ReactNode }) {
   const activeTabIndex = NAV_TABS.findIndex((t) =>
     pathname?.startsWith(t.href)
   );
-  const enabledCount = config.enabled_regions.length;
 
   return (
     <Box maxWidth={2400} mx="auto" py={3}>
@@ -164,42 +161,6 @@ function LandManagerShell({ children }: { children: ReactNode }) {
         </Box>
       </Alert>
 
-      {enabledCount === 0 ? (
-        <Alert
-          severity="info"
-          action={
-            <IconButton
-              size="small"
-              color="inherit"
-              onClick={() => openConfigDialog("enabled_regions")}
-            >
-              <SettingsIcon />
-            </IconButton>
-          }
-          sx={{ mb: 2 }}
-        >
-          No regions selected. Click <strong>Config</strong> to choose which of
-          your regions to manage.
-        </Alert>
-      ) : (
-        <Typography variant="body2" color="text.secondary" mb={1}>
-          Showing {enabledCount} enabled region{enabledCount === 1 ? "" : "s"}.{" "}
-          <Button
-            size="small"
-            onClick={() => openConfigDialog("enabled_regions")}
-            sx={{ ml: 0.5, p: 0, minWidth: 0, textTransform: "none" }}
-          >
-            Edit config
-          </Button>
-        </Typography>
-      )}
-
-      <RegionResourceSummary
-        regions={allRegions}
-        enabledRegions={config.enabled_regions}
-        refreshKey={refreshKey}
-      />
-
       <TodayPanel refreshKey={refreshKey} />
 
       {/* The buffer only matters to a player who actually withdraws from the
@@ -214,6 +175,7 @@ function LandManagerShell({ children }: { children: ReactNode }) {
           "pool"
         )}
         refreshKey={refreshKey}
+        onSuccess={triggerRefresh}
       />
 
       {/* Navigation tabs */}

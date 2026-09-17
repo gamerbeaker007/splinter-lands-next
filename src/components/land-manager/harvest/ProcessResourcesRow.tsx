@@ -1,8 +1,14 @@
 "use client";
 
+import ActionCard, {
+  ActionCardColumn,
+} from "@/components/land-manager/harvest/ActionCard";
 import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
+import { renderResourceIcon } from "@/components/ui/resource/Resource";
+import { Resource } from "@/constants/resource/resource";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import { land_worksite_select_iron_icon_url } from "@/lib/shared/statics_icon_urls";
 import {
   ActionPlan,
   POST_HARVEST_STRATEGY_LABELS,
@@ -10,16 +16,7 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Savings as SavingsIcon } from "@mui/icons-material";
-import SettingsIcon from "@mui/icons-material/Settings";
-import {
-  Alert,
-  Button,
-  ButtonGroup,
-  Chip,
-  CircularProgress,
-  IconButton,
-  Stack,
-} from "@mui/material";
+import { Alert, Box, Chip, Stack } from "@mui/material";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -88,68 +85,61 @@ export default function ProcessResourcesRow({
       : POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy];
 
   return (
-    <>
-      <Stack
-        direction="row"
-        gap={1}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <ButtonGroup
-          size="small"
-          disabled={anyBusy || postHarvestStrategy === "accumulate"}
-        >
-          <Button
-            variant="contained"
-            color="secondary"
-            startIcon={
-              action.busy ? (
-                <CircularProgress size={14} color="inherit" />
-              ) : (
-                <SavingsIcon fontSize="small" />
-              )
-            }
-            onClick={run}
-          >
-            Process Resources…
-          </Button>
-        </ButtonGroup>
+    <ActionCardColumn>
+      <ActionCard
+        title="5. Process Resources"
+        tooltip={
+          postHarvestStrategy === "accumulate"
+            ? "Accumulate keeps everything in the region — nothing to process"
+            : "Apply the post-harvest strategy — shows the plan for confirmation first"
+        }
+        backgroundImage={land_worksite_select_iron_icon_url}
+        icon={<SavingsIcon />}
+        accentColor="secondary.main"
+        busy={action.busy}
+        disabled={anyBusy || postHarvestStrategy === "accumulate"}
+        onClick={run}
+        onSettings={() => openConfigDialog("post_harvest")}
+        settingsLabel="Process Resources settings"
+        strategy={
+          <Stack direction="column" spacing={0.5} alignItems="flex-start">
+            <Chip
+              label={strategyLabel}
+              size="small"
+              variant="outlined"
+              sx={{ fontSize: "0.65rem", height: 18 }}
+            />
 
-        <IconButton
-          size="small"
-          onClick={() => openConfigDialog("post_harvest")}
-          sx={{ textTransform: "none" }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-
-        <Chip
-          label={strategyLabel}
-          size="small"
-          variant="outlined"
-          sx={{ fontSize: "0.7rem" }}
-        />
-        {postHarvestExcludedResources.map((r) => (
-          <Chip
-            key={r}
-            label={`Excl: ${r}`}
-            size="small"
-            variant="outlined"
-            color="warning"
-            sx={{ fontSize: "0.7rem" }}
-          />
-        ))}
-      </Stack>
+            {postHarvestExcludedResources.length > 0 && (
+              <Chip
+                label={
+                  <Stack direction="row" spacing={0.25} alignItems="center">
+                    <span>Excl:</span>
+                    {postHarvestExcludedResources.map((r) => (
+                      <Box key={r} sx={{ display: "flex" }}>
+                        {renderResourceIcon(r as Resource)}
+                      </Box>
+                    ))}
+                  </Stack>
+                }
+                size="small"
+                variant="outlined"
+                color="warning"
+                sx={{ fontSize: "0.65rem", height: 18 }}
+              />
+            )}
+          </Stack>
+        }
+      />
 
       {action.warning && (
-        <Alert severity="warning" onClose={action.clearWarning} sx={{ mb: 1 }}>
+        <Alert severity="warning" onClose={action.clearWarning}>
           {action.warning}
         </Alert>
       )}
 
       {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+        <Alert severity="success" onClose={action.clearResult}>
           Broadcast successful
           {action.result.txIds.length > 1
             ? ` (${action.result.txIds.length} transactions)`
@@ -159,7 +149,7 @@ export default function ProcessResourcesRow({
       )}
 
       {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+        <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
       )}
@@ -176,6 +166,6 @@ export default function ProcessResourcesRow({
           }}
         />
       )}
-    </>
+    </ActionCardColumn>
   );
 }

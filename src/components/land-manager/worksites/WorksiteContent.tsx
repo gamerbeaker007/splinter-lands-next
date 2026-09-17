@@ -1,6 +1,6 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import WorksiteBulkActions from "@/components/land-manager/worksites/WorksiteBulkActions";
 import WorksitePlotCard from "@/components/land-manager/worksites/WorksitePlotCard";
 import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
@@ -35,7 +35,6 @@ import {
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -43,8 +42,6 @@ const PAGE_SIZE_OPTIONS = [10, 50, 100] as const;
 
 interface Props {
   username: string;
-  /** Region numbers from the land manager config — pre-filters deeds to these regions when set. */
-  enabledRegions?: number[];
   /** Configured make-harvestable strategy order — used by the Fix grain deficit proposal. */
   strategies: MakeHarvestableStrategy[];
   /** Bubbled up after any worksite action so page-level panels (e.g. Today) refresh too. */
@@ -143,12 +140,7 @@ function RegionGroup({
 
 // ── Inner component (uses FilterContext) ─────────────────────────────────────
 
-function WorksiteContentBody({
-  username,
-  enabledRegions,
-  strategies,
-  onSuccess,
-}: Props) {
+function WorksiteContentBody({ username, strategies, onSuccess }: Props) {
   const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
   // Grain held per region_uid — gates the Feed workers button on each plot.
   const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
@@ -199,7 +191,7 @@ function WorksiteContentBody({
     };
   }, [allDeeds]);
 
-  // Push live region/tract/plot lists into the FilterDrawer so the location
+  // Push live region/tract/plot lists into the LandFilterDrawer so the location
   // filter reflects this player's plots (rather than the global DB cache).
   useEffect(() => {
     if (allDeeds.length === 0) return;
@@ -238,13 +230,8 @@ function WorksiteContentBody({
     const f: FilterInput = { ...filters };
     // Player filter not applicable — data is always for the current user
     delete f.filter_players;
-    let result = filterDeeds(allDeeds, f);
-    // Pre-filter by configured regions when provided
-    if (enabledRegions && enabledRegions.length > 0) {
-      result = result.filter((d) => enabledRegions.includes(d.region_number));
-    }
-    return result;
-  }, [allDeeds, filters, enabledRegions]);
+    return filterDeeds(allDeeds, f);
+  }, [allDeeds, filters]);
 
   // Reset list pagination when the filtered set changes (render-phase reset:
   // React.dev/reference/react/useState#resetting-state).
@@ -418,23 +405,16 @@ function WorksiteContentBody({
 
 export default function WorksiteContent({
   username,
-  enabledRegions,
   strategies,
   onSuccess,
 }: Props) {
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  // FilterDrawer auto-opens from 1024px up; match that threshold so the content
-  // reflows beside the persistent drawer instead of being covered by it. Below
-  // that breakpoint the drawer overlays as before and the content is untouched.
-  const isDrawerDesktop = useMediaQuery("(min-width:1024px)");
-
   return (
     <FilterProvider>
       {/* player=null → categorical filters show site-wide options;
-          WorksiteContentBody narrows regions/tracts/plots via locationOverride. */}
-      <FilterDrawer
+          WorksiteContentBody narrows regions/tracts/plots via locationOverride.
+          The panel reserves its own room in the main layout — no offset here. */}
+      <LandFilterDrawer
         player={null}
-        onOpenChange={setDrawerOpen}
         filtersEnabled={{
           regions: true,
           tracts: true,
@@ -444,19 +424,11 @@ export default function WorksiteContent({
           sorting: false,
         }}
       />
-      <Box
-        sx={{
-          transition: "margin-right 0.2s ease",
-          mr: isDrawerDesktop && drawerOpen ? "330px" : 0,
-        }}
-      >
-        <WorksiteContentBody
-          username={username}
-          enabledRegions={enabledRegions}
-          strategies={strategies}
-          onSuccess={onSuccess}
-        />
-      </Box>
+      <WorksiteContentBody
+        username={username}
+        strategies={strategies}
+        onSuccess={onSuccess}
+      />
     </FilterProvider>
   );
 }

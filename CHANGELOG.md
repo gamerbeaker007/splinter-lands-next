@@ -14,6 +14,47 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.30.0] - 2026-09-14
+
+### Added
+
+- **Land Manager - Production (Change worksite):** Added a `Change worksite` action to the plot row menu. The dialog shows the currently assigned building and available alternatives. Building availability follows the same eligibility rules as the Worksite page, with unavailable options hidden or disabled with a reason.
+
+- **Land Manager - Alerts (Worksite actions):** Added blocked worksite states to the Alerts panel. Alerts now cover finished construction waiting for workers, regions with grain deficits, and plots without a building. Where applicable, alerts provide `Feed workers`, `Fix grain deficit`, or a link to the Worksite page.
+
+- **Land Manager - Harvest (Top Up Pools):** Added a `land_top_up_pool_run` log table to record successful Top Up Pools runs, including timestamps and transaction IDs. Run history is now used to determine the planning window.
+
+### Updated
+
+- **Land Manager - Harvest (Top Up Pools):** Planning windows are now determined per player from successful run history. The window defaults to 7 days when no history exists, uses the elapsed time since the last run when between 1 hour and 7 days, and is capped at 7 days.
+
+- **Land Manager - Harvest (Top Up Pools):** Added a 1-hour cooldown after a successful top-up. During the cooldown, the action is disabled and the UI explains why it is unavailable. Fallback 7-day planning is also indicated when applicable.
+
+- **Land Manager - Harvest (Top Up Pools):** Plan logs now include the exact planning window, its source (DB or fallback), and the reason used to determine it.
+
+- **Land Manager - Production (Construction status):** The worksite column now shows construction status directly. Active construction displays the remaining time, while completed construction waiting for workers displays `Feed`.
+
+- **Filters (Land & Cards):** Redesigned filter drawers into a responsive filter panel. On larger screens it docks beside the content; on smaller screens it opens as an overlay. The new filter icon shows the number of active filters, and loading progress is displayed inside the panel.
+
+- **Production Table:** Moved the action column to the first column.
+
+- **Land Manager - Harvest (Regions summary):** Moved the region resource summary to the Harvest page and redesigned it. All regions are now shown with their enabled/disabled state, while resource cards summarize production across enabled regions. Hovering a resource shows its per-region breakdown. SPS is excluded, and DEC now shows the wallet total without a regional breakdown.
+
+- **Land Manager - Harvest (Region table performance):** Reworked region data loading to use bulk requests instead of per-region requests, reducing round trips and avoiding duplicate upstream calls between the region summary and table. Region-specific failures are now shown as errors instead of appearing as `nothing to harvest`.
+
+- **Land Manager - Harvest (Region table loading):** Replaced per-cell loading spinners with a single table overlay and resource spinner. Existing rows remain in place while loading to prevent layout shifts.
+
+- **Land Manager - Harvest (Bulk actions):** Redesigned bulk actions as responsive action cards. Each card includes its action number, name, strategy where applicable, background image, and settings shortcut. Keyboard navigation, focus states, disabled states, and accessibility labels are preserved.
+
+- **Land Manager:** Enabled-region settings now apply only to the Harvest flow and pool-related alerts. Other Land Manager functionality operates across all regions.
+
+### Fixed
+
+- **Filters (Land & Cards):** Fixed the filter button becoming unclickable after resizing from desktop to mobile, as well as content becoming inaccessible behind the docked filter panel.
+
+- **Charts:** Plotly charts now resize when their container dimensions change instead of retaining their previous dimensions.
+---
+
 ## [v1.29.0] - 2026-09-11
 
 ### Added

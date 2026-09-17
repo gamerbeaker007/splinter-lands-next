@@ -18,11 +18,10 @@ export interface BuyExecutionPlan {
  * getRentalEligibility and only swap the plan builder.
  */
 export async function getBuyExecutionPlan(
-  enabledRegions: number[],
   buy: BuyConfig = DEFAULT_BUY_CONFIG,
   filteredDeedUids?: string[]
 ): Promise<BuyExecutionPlan> {
-  const eligibility = await getWorkerEligibility(enabledRegions);
+  const eligibility = await getWorkerEligibility();
   let eligible = eligibility.eligible;
   if (filteredDeedUids && filteredDeedUids.length > 0) {
     const uidSet = new Set(filteredDeedUids);

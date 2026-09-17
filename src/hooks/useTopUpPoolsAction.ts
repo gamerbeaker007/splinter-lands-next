@@ -1,6 +1,9 @@
 "use client";
 
-import { recordPostHarvestLog } from "@/lib/backend/actions/land-manager/log-actions";
+import {
+  recordPostHarvestLog,
+  recordTopUpPoolRun,
+} from "@/lib/backend/actions/land-manager/log-actions";
 import {
   getBulkRegionData,
   getDecBalance,
@@ -27,6 +30,7 @@ import {
   PostHarvestActionSummary,
   TopUpPoolPlan,
   TopUpPoolStrategy,
+  TopUpWindowInfo,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { useCallback, useState } from "react";
@@ -53,6 +57,7 @@ interface Params {
   username: string;
   visibleRegions: SplProductionOverviewRegion[];
   strategies: TopUpPoolStrategy[];
+  topUpWindow: TopUpWindowInfo;
   onSuccess?: () => void;
 }
 
@@ -70,14 +75,15 @@ interface UseTopUpPoolsAction {
 /** Fetch everything the planner needs and produce the plan. */
 async function planTopUp(
   username: string,
-  visibleRegions: SplProductionOverviewRegion[],
+  regions: SplProductionOverviewRegion[],
   strategies: TopUpPoolStrategy[],
+  topUpWindow: TopUpWindowInfo,
   force: boolean
 ): Promise<TopUpPoolPlan> {
   const [{ harvestable, balances, overviews }, { pools }, decBalance] =
     await Promise.all([
       getBulkRegionData(
-        visibleRegions.map((r) => r.region_uid),
+        regions.map((r) => r.region_uid),
         force
       ),
       getLandPools(),
@@ -88,25 +94,36 @@ async function planTopUp(
   // when this action runs (Make Harvestable → Harvest → Top Up Pools). Netted per
   // region: only what a region cannot produce itself has to be deposited for it.
   const regionBalances = Object.fromEntries(
-    visibleRegions.map((r) => [
+    regions.map((r) => [
       r.region_uid,
       computeRegionResourceBalance(r, overviews[r.region_uid] ?? null),
     ])
   );
-  const need = computeWeeklyPoolNeed(
-    visibleRegions,
-    regionBalances,
+  // Size the deposit against the DB-backed window for this account: elapsed
+  // hours since the last successful top-up (clamped), or fallback 7 days when
+  // no successful run exists yet.
+  const productionHours = Math.min(
     HOURS_PER_WEEK,
+    Math.max(1, topUpWindow.hours)
+  );
+  const need = computeWeeklyPoolNeed(
+    regions,
+    regionBalances,
+    productionHours,
     harvestable
   );
 
   return buildTopUpPoolPlan({
-    regions: visibleRegions,
+    regions,
     balances,
     pools,
     decBalance,
     strategies,
     weeklyExternalNeed: need.perResource,
+    // Deliberately still a FULL week, unlike weeklyExternalNeed above: this
+    // feeds the donor reserve, which protects what a donor region will burn
+    // before the next run. That is forward-looking, so a short window since the
+    // last claim must not shrink it.
     weeklyConsumption: Object.fromEntries(
       Object.entries(need.consumedPerHour).map(([symbol, rate]) => [
         symbol,
@@ -119,6 +136,9 @@ async function planTopUp(
       externalNeed: need.externalNeedPerHour,
     },
     consumptionWarnings: need.warnings,
+    productionWindowHours: productionHours,
+    productionWindowReason: topUpWindow.reason,
+    productionWindowSource: topUpWindow.source,
   });
 }
 
@@ -126,6 +146,7 @@ export function useTopUpPoolsAction({
   username,
   visibleRegions,
   strategies,
+  topUpWindow,
   onSuccess,
 }: Params): UseTopUpPoolsAction {
   const [busy, setBusy] = useState(false);
@@ -144,6 +165,7 @@ export function useTopUpPoolsAction({
           username,
           visibleRegions,
           strategies,
+          topUpWindow,
           !planOnly
         );
 
@@ -230,6 +252,11 @@ export function useTopUpPoolsAction({
           await waitForTransactions(res.txIds);
           allTxIds = [...allTxIds, ...res.txIds];
           allActions.push(...deposits.actions);
+          await recordTopUpPoolRun(
+            username,
+            topUpWindow.hours,
+            res.txIds
+          ).catch(() => {});
         }
 
         await recordPostHarvestLog(username, allActions, allTxIds).catch(
@@ -247,7 +274,7 @@ export function useTopUpPoolsAction({
       }
       return null;
     },
-    [username, visibleRegions, strategies, onSuccess]
+    [username, visibleRegions, strategies, topUpWindow, onSuccess]
   );
 
   return {

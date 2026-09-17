@@ -1,16 +1,10 @@
 "use client";
 
+import { LoadingText } from "@/components/ui/loaders/LoaderText";
 import { TodayLogs } from "@/types/landManager";
 import { SplTrxResult } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
-import {
-  Box,
-  Card,
-  CardContent,
-  Skeleton,
-  Stack,
-  Typography,
-} from "@mui/material";
+import { Card, CardContent, Stack, Typography } from "@mui/material";
 import BuyWorkersSection from "./today/BuyWorkersSection";
 import DecStakeSection from "./today/DecStakeSection";
 import HarvestSection from "./today/HarvestSection";
@@ -54,14 +48,6 @@ export default function TodayPanelView({
   txResults = new Map(),
   cardDetails = null,
 }: TodayPanelViewProps) {
-  if (loading) {
-    return (
-      <Box sx={{ mb: 2 }}>
-        <Skeleton variant="rounded" height={100} />
-      </Box>
-    );
-  }
-
   const hasActivity =
     data?.harvest != null ||
     data?.makeHarvestable != null ||
@@ -70,6 +56,40 @@ export default function TodayPanelView({
     data?.worker != null ||
     data?.stakeDec != null ||
     data?.unstakeDec != null;
+
+  const renderContent = () => {
+    return !hasActivity ? (
+      <Typography variant="body2" color="text.disabled">
+        No activity today
+      </Typography>
+    ) : (
+      <Stack gap={1.5}>
+        {data?.harvest && <HarvestSection log={data.harvest} />}
+        {data?.makeHarvestable && (
+          <MakeHarvestableSection log={data.makeHarvestable} />
+        )}
+        {data?.postHarvest && <PostHarvestSection log={data.postHarvest} />}
+        {data?.mythicHarvest && (
+          <MythicHarvestSection log={data.mythicHarvest} />
+        )}
+        {data?.worker && data.worker.rented_count > 0 && (
+          <RentWorkersSection log={data.worker} />
+        )}
+        {data?.worker && data.worker.bought_count > 0 && (
+          <BuyWorkersSection log={data.worker} />
+        )}
+        {data?.worker && data.worker.staked_count > 0 && (
+          <StakedWorkersSection log={data.worker} />
+        )}
+        {data?.stakeDec && (
+          <DecStakeSection log={data.stakeDec} direction="stake" />
+        )}
+        {data?.unstakeDec && (
+          <DecStakeSection log={data.unstakeDec} direction="unstake" />
+        )}
+      </Stack>
+    );
+  };
 
   return (
     <TodayTxProvider
@@ -86,39 +106,9 @@ export default function TodayPanelView({
             Today
           </Typography>
 
-          {!hasActivity ? (
-            <Typography variant="body2" color="text.disabled">
-              No activity today
-            </Typography>
-          ) : (
-            <Stack gap={1.5}>
-              {data?.harvest && <HarvestSection log={data.harvest} />}
-              {data?.makeHarvestable && (
-                <MakeHarvestableSection log={data.makeHarvestable} />
-              )}
-              {data?.postHarvest && (
-                <PostHarvestSection log={data.postHarvest} />
-              )}
-              {data?.mythicHarvest && (
-                <MythicHarvestSection log={data.mythicHarvest} />
-              )}
-              {data?.worker && data.worker.rented_count > 0 && (
-                <RentWorkersSection log={data.worker} />
-              )}
-              {data?.worker && data.worker.bought_count > 0 && (
-                <BuyWorkersSection log={data.worker} />
-              )}
-              {data?.worker && data.worker.staked_count > 0 && (
-                <StakedWorkersSection log={data.worker} />
-              )}
-              {data?.stakeDec && (
-                <DecStakeSection log={data.stakeDec} direction="stake" />
-              )}
-              {data?.unstakeDec && (
-                <DecStakeSection log={data.unstakeDec} direction="unstake" />
-              )}
-            </Stack>
-          )}
+          {loading && <LoadingText />}
+
+          {!loading && renderContent()}
         </CardContent>
       </Card>
     </TodayTxProvider>

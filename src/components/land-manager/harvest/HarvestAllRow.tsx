@@ -1,20 +1,15 @@
 "use client";
 
+import ActionCard, {
+  ActionCardColumn,
+} from "@/components/land-manager/harvest/ActionCard";
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import { land_worksite_select_grain_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, DonationConfig } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
-import SettingsIcon from "@mui/icons-material/Settings";
-
-import {
-  Alert,
-  Button,
-  CircularProgress,
-  IconButton,
-  Stack,
-  Tooltip,
-} from "@mui/material";
+import { Alert, Chip } from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -60,46 +55,43 @@ export default function HarvestAllRow({
     }
   }
 
+  const donationEnabled = donation.enabled && donation.pct > 0;
+
   return (
-    <>
-      <Stack
-        direction="row"
-        gap={2}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Tooltip title="Harvest every enabled region — shows the plan for confirmation first">
-          <span>
-            <Button
+    <ActionCardColumn>
+      <ActionCard
+        title="2. Harvest All"
+        tooltip="Harvest every enabled region — shows the plan for confirmation first"
+        backgroundImage={land_worksite_select_grain_icon_url}
+        icon={<HarvestIcon />}
+        accentColor="success.main"
+        busy={action.busy}
+        disabled={anyBusy}
+        onClick={run}
+        onSettings={() => openConfigDialog("enabled_regions")}
+        settingsLabel="Harvest All settings"
+        strategy={
+          <>
+            <Chip
+              label={"All enabled regions"}
               size="small"
-              disabled={anyBusy}
-              variant="contained"
-              color="success"
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <HarvestIcon fontSize="small" />
-                )
-              }
-              onClick={run}
-            >
-              Harvest All…
-            </Button>
-          </span>
-        </Tooltip>
-        <IconButton
-          size="small"
-          color="inherit"
-          onClick={() => openConfigDialog("enabled_regions")}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-      </Stack>
+              variant="outlined"
+              sx={{ fontSize: "0.65rem", height: 18 }}
+            />
+            {donationEnabled && (
+              <Chip
+                label={`Donation ${donation.pct}%`}
+                size="small"
+                variant="outlined"
+                sx={{ fontSize: "0.65rem", height: 18 }}
+              />
+            )}
+          </>
+        }
+      />
 
       {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+        <Alert severity="success" onClose={action.clearResult}>
           Broadcast successful
           {action.result.txIds.length > 1
             ? ` (${action.result.txIds.length} transactions)`
@@ -109,10 +101,10 @@ export default function HarvestAllRow({
       )}
 
       {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+        <Alert severity="error" onClose={action.clearError}>
           {action.error}
         </Alert>
       )}
-    </>
+    </ActionCardColumn>
   );
 }

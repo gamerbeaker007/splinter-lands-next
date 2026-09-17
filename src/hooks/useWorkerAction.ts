@@ -60,7 +60,6 @@ export interface WorkerExecuteResult {
 
 interface BaseParams {
   username: string;
-  enabledRegions: number[];
   eligiblePlotCount?: number | null;
   /** When set, restricts planning to only these deed UIDs (filtered Production plots). */
   filteredDeedUids?: string[];
@@ -94,15 +93,11 @@ export interface UseWorkerAction<P extends WorkerExecPlan = WorkerExecPlan> {
 // Per-mode wiring: which plan to fetch, which authority to check, how to
 // broadcast phase 1, and how the run is logged. Everything else (balance
 // check, staking, verification, result bookkeeping) is shared.
-function rentMode(
-  rental: RentalConfig,
-  regions: number[],
-  filteredDeedUids?: string[]
-) {
+function rentMode(rental: RentalConfig, filteredDeedUids?: string[]) {
   return {
     label: "rent",
     notConfiguredError: "Server-side renting is not configured.",
-    fetchPlan: () => getRentalExecutionPlan(regions, rental, filteredDeedUids),
+    fetchPlan: () => getRentalExecutionPlan(rental, filteredDeedUids),
     authority: getRentalAuthorityStatus,
     async broadcast(picks: WorkerPlanPick[]) {
       const marketIds = picks.map((p) => p.market_id);
@@ -129,15 +124,11 @@ function rentMode(
   };
 }
 
-function buyMode(
-  buy: BuyConfig,
-  regions: number[],
-  filteredDeedUids?: string[]
-) {
+function buyMode(buy: BuyConfig, filteredDeedUids?: string[]) {
   return {
     label: "buy",
     notConfiguredError: "Server-side buying is not configured.",
-    fetchPlan: () => getBuyExecutionPlan(regions, buy, filteredDeedUids),
+    fetchPlan: () => getBuyExecutionPlan(buy, filteredDeedUids),
     authority: getPurchaseAuthorityStatus,
     async broadcast(picks: WorkerPlanPick[]) {
       const items = picks.map((p) => ({
@@ -177,7 +168,6 @@ export function useWorkerAction(
 export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
   const {
     username,
-    enabledRegions,
     eligiblePlotCount = null,
     filteredDeedUids,
     onSuccess,
@@ -197,9 +187,9 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
   const strategy = useCallback(
     () =>
       mode === "rent"
-        ? rentMode(config as RentalConfig, enabledRegions, filteredDeedUids)
-        : buyMode(config as BuyConfig, enabledRegions, filteredDeedUids),
-    [mode, config, enabledRegions, filteredDeedUids]
+        ? rentMode(config as RentalConfig, filteredDeedUids)
+        : buyMode(config as BuyConfig, filteredDeedUids),
+    [mode, config, filteredDeedUids]
   );
 
   const prepareExecution = useCallback(async () => {

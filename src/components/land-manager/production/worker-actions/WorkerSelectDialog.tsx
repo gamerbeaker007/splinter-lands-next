@@ -39,10 +39,10 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { SpotCardVM } from "../productionConfigTypes";
 import { scoreLandCard } from "./workerScoring";
+import { useAppTheme } from "@/lib/frontend/context/ThemeSetup";
 
 type WorkerSortKey =
   | "img"
@@ -196,6 +196,7 @@ export default function WorkerSelectDialog({
   onClose,
   onConfirm,
 }: Props) {
+  const { theme } = useAppTheme();
   const [cards, setCards] = useState<PlayerLandCard[] | null>(null);
   // Mounted on demand, so it always opens in a loading state.
   const [loading, setLoading] = useState(true);
@@ -325,6 +326,7 @@ export default function WorkerSelectDialog({
     page * rowsPerPage + rowsPerPage
   );
 
+  const iconBackgroundColor = theme === "light" ? "grey" : "transparent";
   return (
     <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
       <DialogTitle>
@@ -473,32 +475,70 @@ export default function WorkerSelectDialog({
                               />
                             </TableCell>
                             <TableCell sx={{ textTransform: "capitalize" }}>
-                              <Image
-                                src={
-                                  cardSetIconMap[r.set] ?? land_hammer_icon_url
-                                }
-                                alt={capitalize(r.set)}
-                                width={24}
-                                height={24}
-                                style={{ objectFit: "contain" }}
-                              />
+                              <Box
+                                sx={{
+                                  width: "30px",
+                                  height: "30px",
+                                  border: "1px solid",
+                                  borderColor: "transparent",
+                                  borderRadius: 1,
+                                  overflow: "hidden",
+                                  display: "inline-block",
+                                  padding: "2px",
+                                  mr: "5px",
+                                  background: iconBackgroundColor,
+                                }}
+                                title={capitalize(r.set)}
+                              >
+                                <Box
+                                  component="img"
+                                  src={
+                                    cardSetIconMap[r.set] ??
+                                    land_hammer_icon_url
+                                  }
+                                  alt={capitalize(r.set)}
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "block",
+                                  }}
+                                />
+                              </Box>
                             </TableCell>
                             <TableCell sx={{ textTransform: "capitalize" }}>
-                              <Image
-                                src={
-                                  editionMap[r.edition].editionIcon ??
-                                  land_hammer_icon_url
-                                }
-                                alt={capitalize(
-                                  editionMap[r.edition].displayName
-                                )}
-                                width={24}
-                                height={24}
-                                style={{ objectFit: "contain" }}
+                              <Box
+                                sx={{
+                                  width: "30px",
+                                  height: "30px",
+                                  border: "1px solid",
+                                  borderColor: "transparent",
+                                  borderRadius: 1,
+                                  overflow: "hidden",
+                                  display: "inline-block",
+                                  padding: "2px",
+                                  mr: "5px",
+                                  background: iconBackgroundColor,
+                                }}
                                 title={capitalize(
                                   editionMap[r.edition].displayName
                                 )}
-                              />
+                              >
+                                <Box
+                                  component="img"
+                                  src={
+                                    editionMap[r.edition].editionIcon ??
+                                    land_hammer_icon_url
+                                  }
+                                  alt={capitalize(
+                                    editionMap[r.edition].displayName
+                                  )}
+                                  sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    display: "block",
+                                  }}
+                                />
+                              </Box>
                             </TableCell>
                             <TableCell align="left">
                               <Tooltip

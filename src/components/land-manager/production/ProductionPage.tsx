@@ -1,7 +1,8 @@
 "use client";
 
-import FilterDrawer from "@/components/filter/FilterDrawer";
+import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import BulkActionsAccordion from "@/components/land-manager/production/BulkActionsAccordion";
+import ChangeWorksiteDialog from "@/components/land-manager/production/ChangeWorksiteDialog";
 import ConfigurePanel from "@/components/land-manager/production/ConfigurePanel";
 import ConfirmActionDialog, {
   ACTION_META,
@@ -47,16 +48,15 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   Pagination,
   Stack,
   ToggleButton,
   ToggleButtonGroup,
   Typography,
-  useMediaQuery,
 } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 
 const PAGE_SIZE = 25;
 
@@ -101,10 +101,9 @@ function ProductionPageContent() {
     triggerRefresh,
   } = useLandManagerContext();
   const username = auth.username ?? "";
-  const enabledRegions = config.enabled_regions;
 
   // Single shared call for DEC/rental/purchase eligibility data
-  const regionData = useLandManagerRegionData(enabledRegions, ctxRefreshKey);
+  const regionData = useLandManagerRegionData(ctxRefreshKey);
 
   const rentalAuthorityHook = useRentalAuthorityStatus();
   const purchaseAuthorityHook = usePurchaseAuthorityStatus();
@@ -114,6 +113,10 @@ function ProductionPageContent() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [localRefreshKey, setLocalRefreshKey] = useState(0);
+  // One "now" for the page so the table's construction badges and the Change
+  // worksite dialog judge against the same instant. Re-stamped on every reload,
+  // so a finished construction becomes actionable after Refresh.
+  const [nowMs, setNowMs] = useState(() => Date.now());
   const [sort, setSort] = useState<{
     key: ProductionSortKey;
     dir: SortDirection;
@@ -127,6 +130,10 @@ function ProductionPageContent() {
     kind: ProductionActionKind;
     rows: ProductionRow[];
   } | null>(null);
+  /** deed_uid whose Change worksite dialog is open. */
+  const [changeWorksiteUid, setChangeWorksiteUid] = useState<string | null>(
+    null
+  );
 
   // DEC row busy flags
   const [stakeBusy, setStakeBusy] = useState(false);
@@ -193,6 +200,7 @@ function ProductionPageContent() {
       if (cancelled) return;
       if (error) setFetchError(error);
       setAllDeeds(deeds);
+      setNowMs(Date.now());
       setLoading(false);
     });
     return () => {
@@ -217,7 +225,7 @@ function ProductionPageContent() {
     };
   }, []);
 
-  // Feed this player's live region/tract/plot lists into FilterDrawer.
+  // Feed this player's live region/tract/plot lists into LandFilterDrawer.
   useEffect(() => {
     if (allDeeds.length === 0) return;
     const regions = new Set<number>();
@@ -309,21 +317,17 @@ function ProductionPageContent() {
     }
   }, [loading, allDeeds, parsedLocationQuery, availableLocations, setFilters]);
 
-  // Deeds after FilterDrawer filters (which now include powered/workers) + region pre-filter.
+  // Deeds after LandFilterDrawer filters (which now include powered/workers) + region pre-filter.
   const filteredDeeds = useMemo<DeedComplete[]>(() => {
     if (allDeeds.length === 0) return [];
     const f: FilterInput = { ...filters };
     delete f.filter_players;
-    let result = filterDeeds(allDeeds, f);
-    if (enabledRegions.length > 0) {
-      result = result.filter((d) => enabledRegions.includes(d.region_number));
-    }
-    return result;
-  }, [allDeeds, filters, enabledRegions]);
+    return filterDeeds(allDeeds, f);
+  }, [allDeeds, filters]);
 
   const allRows = useMemo(
-    () => filteredDeeds.map(toProductionRow),
-    [filteredDeeds]
+    () => filteredDeeds.map((deed) => toProductionRow(deed, nowMs)),
+    [filteredDeeds, nowMs]
   );
 
   const filteredRows = useMemo(
@@ -388,7 +392,6 @@ function ProductionPageContent() {
     mode: "rent",
     username,
     rental: config.rental,
-    enabledRegions,
     eligiblePlotCount: filteredEligibleCount,
     filteredDeedUids,
     onSuccess: handleSuccess,
@@ -397,7 +400,6 @@ function ProductionPageContent() {
     mode: "buy",
     username,
     buy: config.buy,
-    enabledRegions,
     eligiblePlotCount: filteredEligibleCount,
     filteredDeedUids,
     onSuccess: handleSuccess,
@@ -453,9 +455,11 @@ function ProductionPageContent() {
     sortDir: sort.dir,
     busy: actions.busy,
     expandedDeedUids,
+    nowMs,
     onSort: handleSort,
     onAction: (kind: ProductionActionKind, row: ProductionRow) =>
       openConfirm(kind, [row]),
+    onChangeWorksite: (row: ProductionRow) => setChangeWorksiteUid(row.deedUid),
     onToggleConfigure: (deedUid: string) =>
       setExpandedDeedUids((cur) => {
         const next = new Set(cur);
@@ -465,6 +469,10 @@ function ProductionPageContent() {
       }),
     renderConfigure,
   };
+
+  const changeWorksiteDeed = changeWorksiteUid
+    ? (deedByUid.get(changeWorksiteUid) ?? null)
+    : null;
 
   const result = actions.result;
   const decAnyBusy = stakeBusy || unstakeBusy;
@@ -506,16 +514,9 @@ function ProductionPageContent() {
         gap={1}
       >
         <Stack direction="row" alignItems="center" gap={1}>
-          <Typography variant="body2" color="text.secondary">
-            {loading
-              ? "Loading…"
-              : `${filteredRows.length} / ${allDeeds.length} plots`}
-          </Typography>
           <Button
             size="small"
-            startIcon={
-              loading ? <CircularProgress size={14} /> : <RefreshIcon />
-            }
+            startIcon={<RefreshIcon />}
             onClick={handleRefresh}
             disabled={loading || actions.busy}
           >
@@ -588,7 +589,11 @@ function ProductionPageContent() {
       {/* ── Table ─────────────────────────────────────────────────────────── */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
-          <CircularProgress />
+          <CustomIconSpinner
+            label={"Loading plots…"}
+            iconType={"Worksite"}
+            size={200}
+          />
         </Box>
       ) : filteredRows.length === 0 ? (
         <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
@@ -636,6 +641,20 @@ function ProductionPageContent() {
         />
       )}
 
+      {changeWorksiteDeed && (
+        <ChangeWorksiteDialog
+          open
+          deed={changeWorksiteDeed}
+          username={username}
+          nowMs={nowMs}
+          onClose={() => setChangeWorksiteUid(null)}
+          onSuccess={() => {
+            setChangeWorksiteUid(null);
+            handleSuccess();
+          }}
+        />
+      )}
+
       {rentAction.executionPlan && (
         <WorkerConfirmDialog
           exec={rentAction.executionPlan}
@@ -662,16 +681,11 @@ function ProductionPageContent() {
 // ── Outer component — provides FilterContext ──────────────────────────────────
 
 export default function ProductionPage() {
-  const [drawerOpen, setDrawerOpen] = useState(true);
-  // FilterDrawer auto-opens from 1024px up; match that threshold so content
-  // shifts whenever the persistent drawer is visible.
-  const isDrawerDesktop = useMediaQuery("(min-width:1024px)");
-
   return (
     <FilterProvider>
-      <FilterDrawer
+      {/* The panel reserves its own room in the main layout — no offset here. */}
+      <LandFilterDrawer
         player={null}
-        onOpenChange={setDrawerOpen}
         filtersEnabled={{
           regions: true,
           tracts: true,
@@ -682,14 +696,7 @@ export default function ProductionPage() {
           poweredWorkers: true,
         }}
       />
-      <Box
-        sx={{
-          transition: "margin-right 0.2s ease",
-          mr: isDrawerDesktop && drawerOpen ? "330px" : 0,
-        }}
-      >
-        <ProductionPageContent />
-      </Box>
+      <ProductionPageContent />
     </FilterProvider>
   );
 }

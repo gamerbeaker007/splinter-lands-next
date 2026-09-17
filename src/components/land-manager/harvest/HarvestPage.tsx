@@ -3,6 +3,7 @@
 import BulkActionPanel from "@/components/land-manager/harvest/BulkActionPanel";
 import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
 import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
+import RegionResourceSummary from "@/components/land-manager/harvest/RegionResourceSummary";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatNumber } from "@/lib/formatters";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
@@ -48,6 +49,12 @@ export default function HarvestPage() {
 
   return (
     <>
+      <RegionResourceSummary
+        regions={allRegions}
+        enabledRegions={config.enabled_regions}
+        refreshKey={refreshKey}
+      />
+
       <Stack direction="row" alignItems="center" mb={1.5}>
         {donationEnabled ? (
           <Tooltip

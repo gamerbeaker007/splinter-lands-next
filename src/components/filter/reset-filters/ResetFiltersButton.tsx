@@ -13,7 +13,7 @@ export default function ResetFiltersButton() {
       variant="outlined"
       color="secondary"
       onClick={handleClear}
-      sx={{ mt: 2 }}
+      fullWidth
     >
       Clear All Filters
     </Button>
