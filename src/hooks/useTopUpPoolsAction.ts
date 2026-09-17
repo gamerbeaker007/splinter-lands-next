@@ -15,6 +15,7 @@ import {
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   buildDepositOps,
   buildFundingOps,
@@ -183,6 +184,7 @@ export function useTopUpPoolsAction({
 
         let allTxIds: string[] = [];
         const allActions: PostHarvestActionSummary[] = [];
+        const warnings: string[] = [];
 
         // Phase 1 — sell / buy, then wait for settlement.
         const funding = buildFundingOps(username, plan);
@@ -233,7 +235,7 @@ export function useTopUpPoolsAction({
           freshBalances
         );
         if (deposits.dropped.length > 0) {
-          setWarning(
+          warnings.push(
             `Some pool additions were skipped: ${deposits.dropped.join(" · ")}`
           );
         }
@@ -252,23 +254,35 @@ export function useTopUpPoolsAction({
           await waitForTransactions(res.txIds);
           allTxIds = [...allTxIds, ...res.txIds];
           allActions.push(...deposits.actions);
-          await recordTopUpPoolRun(
+          const recordRunResult = await recordTopUpPoolRun(
             username,
             topUpWindow.hours,
             res.txIds
-          ).catch(() => {});
+          )
+            .then(() => ({ ok: true as const }))
+            .catch((err: unknown) => ({
+              ok: false as const,
+              error: formatError(err),
+            }));
+
+          if (!recordRunResult.ok) {
+            warnings.push(
+              `Top Up succeeded on-chain, but run history could not be saved (${recordRunResult.error}). The cooldown will be applied locally and refreshed from the server.`
+            );
+          }
         }
 
         await recordPostHarvestLog(username, allActions, allTxIds).catch(
           () => {}
         );
         setResult({ success: true, txIds: allTxIds });
+        if (warnings.length > 0) setWarning(warnings.join(" · "));
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.
         await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(formatError(err));
       } finally {
         setBusy(false);
       }

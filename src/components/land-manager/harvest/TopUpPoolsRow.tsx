@@ -19,7 +19,7 @@ import {
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { Alert, Chip, Stack, Tooltip } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -49,6 +49,25 @@ export default function TopUpPoolsRow({
     lastCompletedAt: null,
   });
   const [windowLoading, setWindowLoading] = useState(true);
+
+  const reloadWindowInfo = useCallback(async () => {
+    setWindowLoading(true);
+    try {
+      const info = await getTopUpWindowInfo(username);
+      setWindowInfo(info);
+    } catch {
+      setWindowInfo({
+        hours: HOURS_PER_WEEK,
+        disabled: false,
+        source: "fallback",
+        reason:
+          "Could not read Top Up history; defaulting to a full 7-day window.",
+        lastCompletedAt: null,
+      });
+    } finally {
+      setWindowLoading(false);
+    }
+  }, [username]);
 
   useEffect(() => {
     let mounted = true;
@@ -89,6 +108,24 @@ export default function TopUpPoolsRow({
   useEffect(() => {
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
+
+  useEffect(() => {
+    if (!action.result?.success) return;
+
+    // Apply cooldown immediately in the UI after a successful broadcast, then
+    // refresh from DB so the persisted source of truth takes over.
+    const justCompletedAt = new Date().toISOString();
+    setWindowInfo({
+      hours: 1,
+      disabled: true,
+      source: "fallback",
+      reason:
+        "Top Up Pools just completed successfully. A 1-hour cooldown is now active.",
+      lastCompletedAt: justCompletedAt,
+    });
+    setWindowLoading(false);
+    void reloadWindowInfo();
+  }, [action.result?.success, reloadWindowInfo]);
 
   // Build the plan first and hand it to the confirm dialog; only the
   // dialog's Confirm actually broadcasts.

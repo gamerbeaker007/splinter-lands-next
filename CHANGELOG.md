@@ -14,6 +14,18 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.30.1] - 2026-09-17
+
+### Fixed
+
+- **Land Manager - Harvest (Top Up Pools):** Top Up Pools now surfaces persistence failures instead of silently swallowing them when saving run history. If on-chain transactions succeed but `land_top_up_pool_run` cannot be written, the UI now reports that state explicitly so the user knows the chain action completed.
+
+- **Land Manager - Harvest (Top Up Pools):** The 1-hour cooldown now updates immediately after a successful top-up in the action row, so the button is disabled right away and cannot be re-triggered while the cooldown window is active.
+
+- **Land Manager - Harvest (Top Up Pools):** Planning-window lookup now falls back to recent post-harvest `add_to_pool` activity timestamps when run-history rows are missing, keeping cooldown and elapsed-window behavior aligned even when historical run logging is incomplete.
+
+---
+
 ## [v1.30.0] - 2026-09-14
 
 ### Added

@@ -326,6 +326,9 @@ export async function recordTopUpPoolRun(
   windowHours: number,
   txIds: string[]
 ): Promise<void> {
+  const transactions = txIds.filter(
+    (id): id is string => typeof id === "string" && id.trim().length > 0
+  );
   await prisma.landTopUpPoolRun.create({
     data: {
       player,
@@ -335,7 +338,7 @@ export async function recordTopUpPoolRun(
           Math.max(TOP_UP_MIN_HOURS, windowHours)
         ).toFixed(3)
       ),
-      transactions: txIds,
+      transactions,
     },
   });
 }
