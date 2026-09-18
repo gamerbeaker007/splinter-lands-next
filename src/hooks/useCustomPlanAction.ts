@@ -9,6 +9,7 @@ import {
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatNumber } from "@/lib/formatters";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -384,7 +385,7 @@ export function useCustomPlanAction({
 
         return plan;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown error";
+        const msg = formatError(err);
         setError(msg);
         await invalidatePlayerRegionCaches();
         return null;

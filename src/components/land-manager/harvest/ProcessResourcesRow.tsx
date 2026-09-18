@@ -2,21 +2,24 @@
 
 import ActionCard, {
   ActionCardColumn,
+  buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
 import { renderResourceIcon } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
+import { getDefaultCustomPlan } from "@/lib/backend/actions/land-manager/custom-plan-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { land_worksite_select_iron_icon_url } from "@/lib/shared/statics_icon_urls";
 import {
   ActionPlan,
   POST_HARVEST_STRATEGY_LABELS,
   PostHarvestStrategy,
+  postHarvestSupportsExclusions,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Savings as SavingsIcon } from "@mui/icons-material";
-import { Alert, Box, Chip, Stack } from "@mui/material";
+import { Box, Chip, Stack } from "@mui/material";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -26,6 +29,8 @@ interface Props {
   postHarvestExcludedResources: string[];
   sellPct: number;
   poolPct: number;
+  /** Destination region for the `transfer_to_region` strategy. */
+  transferRegionUid: string | null;
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
@@ -39,6 +44,7 @@ export default function ProcessResourcesRow({
   postHarvestExcludedResources,
   sellPct,
   poolPct,
+  transferRegionUid,
   anyBusy,
   onBusyChange,
   onPlan,
@@ -46,6 +52,7 @@ export default function ProcessResourcesRow({
 }: Props) {
   const { openConfigDialog } = useLandManagerContext();
   const [customPlanOpen, setCustomPlanOpen] = useState(false);
+  const [defaultPlanName, setDefaultPlanName] = useState<string | null>(null);
 
   const action = useProcessResourcesAction({
     username,
@@ -57,12 +64,26 @@ export default function ProcessResourcesRow({
     excludedResources: postHarvestExcludedResources,
     sellPct,
     poolPct,
+    transferRegionUid,
     onSuccess,
   });
 
   useEffect(() => {
     onBusyChange(action.busy);
   }, [action.busy, onBusyChange]);
+
+  // Which plan the Custom Plan dialog will open on. Re-read after the dialog
+  // closes — the player can have changed the default from inside it.
+  useEffect(() => {
+    if (postHarvestStrategy !== "custom_plan" || customPlanOpen) return;
+    let cancelled = false;
+    getDefaultCustomPlan().then(({ plan }) => {
+      if (!cancelled) setDefaultPlanName(plan?.name ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [postHarvestStrategy, customPlanOpen]);
 
   // Build the plan first and hand it to the confirm dialog; only the
   // dialog's Confirm actually broadcasts.
@@ -79,10 +100,24 @@ export default function ProcessResourcesRow({
     }
   }
 
+  const destinationRegion = visibleRegions.find(
+    (r) => r.region_uid === transferRegionUid
+  );
+
   const strategyLabel =
     postHarvestStrategy === "sell_and_pool"
       ? `Sell ${sellPct}% · Pool ${poolPct}%${sellPct + poolPct < 100 ? ` · Accumulate ${100 - sellPct - poolPct}%` : ""}`
-      : POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy];
+      : postHarvestStrategy === "transfer_to_region"
+        ? `Transfer to ${destinationRegion?.name ?? transferRegionUid ?? "— pick a region"}`
+        : POST_HARVEST_STRATEGY_LABELS[postHarvestStrategy];
+
+  // Exclusions do not apply to Custom Plan — the plan names its own resources.
+  const showExclusions =
+    postHarvestSupportsExclusions(postHarvestStrategy) &&
+    postHarvestExcludedResources.length > 0;
+
+  // Custom Plan opens on the player's default plan, so name it up front.
+  const showDefaultPlan = postHarvestStrategy === "custom_plan";
 
   return (
     <ActionCardColumn>
@@ -91,29 +126,41 @@ export default function ProcessResourcesRow({
         tooltip={
           postHarvestStrategy === "accumulate"
             ? "Accumulate keeps everything in the region — nothing to process"
-            : "Apply the post-harvest strategy — shows the plan for confirmation first"
+            : postHarvestStrategy === "transfer_to_region" && !transferRegionUid
+              ? "Pick a destination region in the Process Resources settings first"
+              : "Apply the post-harvest strategy — shows the plan for confirmation first"
         }
         backgroundImage={land_worksite_select_iron_icon_url}
         icon={<SavingsIcon />}
         accentColor="secondary.main"
         busy={action.busy}
-        disabled={anyBusy || postHarvestStrategy === "accumulate"}
+        disabled={
+          anyBusy ||
+          postHarvestStrategy === "accumulate" ||
+          // Transfer needs somewhere to transfer TO before it can plan anything.
+          (postHarvestStrategy === "transfer_to_region" && !transferRegionUid)
+        }
+        statuses={buildActionStatuses({
+          result: action.result,
+          error: action.error,
+          warning: action.warning,
+        })}
         onClick={run}
         onSettings={() => openConfigDialog("post_harvest")}
         settingsLabel="Process Resources settings"
         strategy={
-          <Stack direction="column" spacing={0.5} alignItems="flex-start">
+          <Stack direction="column" spacing={0.5}>
             <Chip
               label={strategyLabel}
               size="small"
               variant="outlined"
-              sx={{ fontSize: "0.65rem", height: 18 }}
+              sx={{ fontSize: "0.65rem", height: 18, alignSelf: "center" }}
             />
 
-            {postHarvestExcludedResources.length > 0 && (
+            {showExclusions && (
               <Chip
                 label={
-                  <Stack direction="row" spacing={0.25} alignItems="center">
+                  <Stack direction="row" spacing={0.25}>
                     <span>Excl:</span>
                     {postHarvestExcludedResources.map((r) => (
                       <Box key={r} sx={{ display: "flex" }}>
@@ -125,34 +172,25 @@ export default function ProcessResourcesRow({
                 size="small"
                 variant="outlined"
                 color="warning"
-                sx={{ fontSize: "0.65rem", height: 18 }}
+                sx={{ fontSize: "0.65rem", height: 18, alignSelf: "center" }}
+              />
+            )}
+            {showDefaultPlan && (
+              <Chip
+                label={
+                  defaultPlanName
+                    ? `Default Plan: ${defaultPlanName}`
+                    : "No default plan"
+                }
+                size="small"
+                variant="outlined"
+                color={defaultPlanName ? "success" : "warning"}
+                sx={{ fontSize: "0.65rem", height: 18, alignSelf: "center" }}
               />
             )}
           </Stack>
         }
       />
-
-      {action.warning && (
-        <Alert severity="warning" onClose={action.clearWarning}>
-          {action.warning}
-        </Alert>
-      )}
-
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult}>
-          Broadcast successful
-          {action.result.txIds.length > 1
-            ? ` (${action.result.txIds.length} transactions)`
-            : ""}{" "}
-          · TX: {action.result.txIds.at(-1) ?? "confirmed"}
-        </Alert>
-      )}
-
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError}>
-          {action.error}
-        </Alert>
-      )}
 
       {customPlanOpen && (
         <CustomPlanDialog

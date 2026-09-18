@@ -2,6 +2,7 @@
 
 import ActionCard, {
   ActionCardColumn,
+  buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import { useMakeHarvestableAction } from "@/hooks/useMakeHarvestableAction";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
@@ -9,7 +10,7 @@ import { land_worksite_select_stone_icon_url } from "@/lib/shared/statics_icon_u
 import { ActionPlan, MakeHarvestableStrategy } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { PlaylistAddCheck } from "@mui/icons-material";
-import { Alert, Chip } from "@mui/material";
+import { Chip } from "@mui/material";
 import { useEffect } from "react";
 
 interface Props {
@@ -74,6 +75,11 @@ export default function MakeHarvestableRow({
         accentColor="warning.main"
         busy={action.busy}
         disabled={anyBusy}
+        statuses={buildActionStatuses({
+          result: action.result,
+          error: action.error,
+          warning: action.warning,
+        })}
         onClick={run}
         onSettings={() => openConfigDialog("make_harvestable")}
         settingsLabel="Make Harvestable settings"
@@ -87,22 +93,6 @@ export default function MakeHarvestableRow({
           />
         ))}
       />
-
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult}>
-          Broadcast successful
-          {action.result.txIds.length > 1
-            ? ` (${action.result.txIds.length} transactions)`
-            : ""}{" "}
-          · TX: {action.result.txIds.at(-1) ?? "confirmed"}
-        </Alert>
-      )}
-
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError}>
-          {action.error}
-        </Alert>
-      )}
     </ActionCardColumn>
   );
 }

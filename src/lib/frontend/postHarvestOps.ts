@@ -1,7 +1,11 @@
-import { computeResourceToDec } from "@/lib/shared/landManagerUtils";
+import {
+  computeResourceToDec,
+  computeSameResourceTransfer,
+} from "@/lib/shared/landManagerUtils";
 import {
   buildAddLiquidityOp,
   buildSellResourceForDecOp,
+  buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
 import {
   PostHarvestActionSummary,
@@ -15,7 +19,7 @@ const MIN_RESOURCE = 10; // skip tiny amounts
 const NATURAL_RESOURCE_SET = new Set<string>(NATURAL_RESOURCES);
 
 export interface PostHarvestOpsResult {
-  /** All ops in execution order (sell phase then liquidity phase). Used for dry-run display. */
+  /** All ops in execution order (sell phase, liquidity phase, transfers). Used for dry-run display. */
   ops: [string, object][];
   /** Phase 1: resource → DEC sells. Phase-1 of add_to_pool and sell portion of sell_and_pool. */
   sellOps: [string, object][];
@@ -24,6 +28,12 @@ export interface PostHarvestOpsResult {
    * Used for dry-run display only. Live execution builds these from actual sell tx results.
    */
   liquidityOps: [string, object][];
+  /**
+   * `transfer_to_region` only: same-symbol cross-region moves into the
+   * configured destination. They neither fund nor depend on the other phases,
+   * so they are broadcast on their own.
+   */
+  transferOps: [string, object][];
   log: string[];
   actions: PostHarvestActionSummary[];
 }
@@ -36,20 +46,32 @@ export function buildPostHarvestOps(
   strategy: PostHarvestStrategy,
   excludedResources: string[] = [],
   sellPct: number = 0,
-  poolPct: number = 100
+  poolPct: number = 100,
+  /** Destination region uid — required by `transfer_to_region`, ignored otherwise. */
+  transferRegionUid: string | null = null
 ): PostHarvestOpsResult {
-  if (strategy === "accumulate")
+  const empty: PostHarvestOpsResult = {
+    ops: [],
+    sellOps: [],
+    liquidityOps: [],
+    transferOps: [],
+    log: [],
+    actions: [],
+  };
+  if (strategy === "accumulate" || strategy === "custom_plan") return empty;
+  if (strategy === "transfer_to_region" && !transferRegionUid) {
     return {
-      ops: [],
-      sellOps: [],
-      liquidityOps: [],
-      log: [],
-      actions: [],
+      ...empty,
+      log: [
+        "No destination region configured — pick one in the Process Resources settings.",
+      ],
     };
+  }
 
   const excludedSet = new Set(excludedResources);
   const sellOps: [string, object][] = [];
   const liquidityOps: [string, object][] = [];
+  const transferOps: [string, object][] = [];
   const log: string[] = [];
   const actions: PostHarvestActionSummary[] = [];
 
@@ -60,6 +82,49 @@ export function buildPostHarvestOps(
       if (!NATURAL_RESOURCE_SET.has(symbol)) continue;
       if (excludedSet.has(symbol)) continue;
       if (amount < MIN_RESOURCE) continue;
+
+      if (strategy === "transfer_to_region") {
+        // A region never transfers to itself; its resources are already home.
+        // The null check is redundant after the guard above, but it is what
+        // narrows the uid to a string for the ops below.
+        if (!transferRegionUid || region.region_uid === transferRegionUid)
+          continue;
+
+        const amountOut = Number.parseFloat(amount.toFixed(3));
+        // Same-symbol moves pay the flat trade-hub fee and touch no AMM, so the
+        // received amount is a plain fee deduction — declared as the engine's
+        // minimum-output guarantee.
+        const { out_amount_2: received } =
+          computeSameResourceTransfer(amountOut);
+        if (received <= 0) continue;
+
+        transferOps.push(
+          buildSwapTokensOp({
+            username,
+            fromRegionUid: region.region_uid,
+            toRegionUid: transferRegionUid,
+            fromSymbol: symbol,
+            toSymbol: symbol,
+            inAmount: amountOut,
+            outAmount1: 0,
+            outAmount2: received,
+          })
+        );
+        log.push(
+          `[${region.name}] transfer ${amountOut} ${symbol} → ${destinationName(regions, transferRegionUid)} (~${received} received after fee)`
+        );
+        actions.push({
+          type: "transfer",
+          region_uid: region.region_uid,
+          to_region_uid: transferRegionUid,
+          symbol,
+          resource_amount: amountOut,
+          dec_amount: 0,
+          to_symbol: symbol,
+          to_resource_amount: received,
+        });
+        continue;
+      }
 
       if (strategy === "sell_and_pool") {
         // Sell portion
@@ -138,10 +203,19 @@ export function buildPostHarvestOps(
   }
 
   return {
-    ops: [...sellOps, ...liquidityOps],
+    ops: [...sellOps, ...liquidityOps, ...transferOps],
     sellOps,
     liquidityOps,
+    transferOps,
     log,
     actions,
   };
+}
+
+/** Region name for the log, falling back to the uid when it is not visible. */
+function destinationName(
+  regions: SplProductionOverviewRegion[],
+  regionUid: string
+): string {
+  return regions.find((r) => r.region_uid === regionUid)?.name ?? regionUid;
 }

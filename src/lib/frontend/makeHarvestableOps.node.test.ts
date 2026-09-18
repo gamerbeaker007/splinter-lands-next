@@ -146,3 +146,74 @@ describe("buildMakeHarvestableOps — buy_dec sizing", () => {
     expect(plan(1_000, 1_000).ops).toHaveLength(0);
   });
 });
+
+// ── Pool withdrawals ─────────────────────────────────────────────────────────
+//
+// `shares_out` is a FRACTION of the player's position read with 3 decimals, so
+// the smallest withdrawal the chain accepts is 0.001 — 0.1% of the position,
+// whatever that is worth. A deficit smaller than that slice is covered by
+// pulling the whole 0.1%; the surplus simply lands in the region.
+
+const holding = (resource: number, dec: number, unlockedFraction = 1) => ({
+  symbol: "GRAIN",
+  resource,
+  dec,
+  lockedFraction: 1 - unlockedFraction,
+  unlockedFraction,
+  unlockedResource: resource * unlockedFraction,
+  unlockedDec: dec * unlockedFraction,
+});
+
+function poolPlan(
+  grainCost: number,
+  storedGrain: number,
+  grainHolding: ReturnType<typeof holding>
+) {
+  return buildMakeHarvestableOps(
+    [region("R1")],
+    "player",
+    { R1: harvestable(grainCost) },
+    {
+      effective: { R1: { GRAIN: storedGrain, WOOD: 0, STONE: 0, IRON: 0 } },
+      stored: { R1: { GRAIN: storedGrain, WOOD: 0, STONE: 0, IRON: 0 } },
+      poolHoldings: { GRAIN: grainHolding },
+    },
+    ["pool"],
+    0,
+    POOLS
+  );
+}
+
+/** `shares_out` of the single remove_liquidity op the plan produced. */
+const sharesOut = (result: ReturnType<typeof buildMakeHarvestableOps>) =>
+  JSON.parse((result.ops[0][1] as { json: string }).json).shares_out;
+
+describe("buildMakeHarvestableOps — pool withdrawal minimum", () => {
+  it("pulls the 0.1% minimum when the deficit is smaller than that slice", () => {
+    // 123 GRAIN short against a 1,003,000 GRAIN position: 0.1% is 1,003 GRAIN,
+    // so that is what comes out.
+    const result = poolPlan(1_123, 1_000, holding(1_003_000, 8_000));
+
+    expect(sharesOut(result)).toBe(0.001);
+    const withdrawn = result.actions.find((a) => a.type === "pool");
+    expect(withdrawn?.out_amount).toBeCloseTo(1_003, 3);
+  });
+
+  it("scales up with the deficit once it exceeds the minimum slice", () => {
+    // 5,000 short of a 1,000,000 position is 0.5% — well above the floor. The
+    // withdrawal covers the deficit plus its top-up margin, rounded up to the
+    // 3 decimals the chain reads.
+    const result = poolPlan(6_000, 1_000, holding(1_000_000, 8_000));
+
+    expect(sharesOut(result)).toBeGreaterThan(0.005);
+    expect(sharesOut(result)).toBeLessThanOrEqual(0.006);
+  });
+
+  it("skips the strategy when even 0.1% does not fit in the unlocked slice", () => {
+    // Only 0.05% of the position is past the 30-day lock.
+    const result = poolPlan(1_123, 1_000, holding(1_003_000, 8_000, 0.0005));
+
+    expect(result.ops).toHaveLength(0);
+    expect(result.log.join(" ")).toContain("too small to withdraw");
+  });
+});

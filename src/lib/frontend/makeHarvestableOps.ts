@@ -5,6 +5,7 @@ import {
 } from "@/lib/shared/operations/opBuilders";
 import {
   computeRegionResourceBalance,
+  MIN_SHARES_OUT,
   PoolHolding,
   sharesFractionForResource,
 } from "@/lib/shared/poolPositionUtils";
@@ -268,13 +269,16 @@ function tryPool(
   if (sharesOut > remainingUnlocked) {
     sharesOut = Math.floor(remainingUnlocked * 1000) / 1000;
   }
-  if (sharesOut <= 0) {
+  if (sharesOut < MIN_SHARES_OUT) {
     ctx.log.push(
-      `  - Pool: unlocked ${cost.symbol} position is too small to withdraw (needs at least 0.1% of the position)`
+      `  - Pool: unlocked ${cost.symbol} position is too small to withdraw ` +
+        `(the chain's smallest withdrawal is ${MIN_SHARES_OUT * 100}% of the position)`
     );
     return false;
   }
 
+  // The withdrawal takes the same slice of BOTH reserves, so the DEC side needs
+  // no check of its own: it is whatever `sharesOut` of the position is worth.
   const resourceOut = sharesOut * holding.resource;
   if (resourceOut < MIN_POOL_WITHDRAWAL) {
     ctx.log.push(

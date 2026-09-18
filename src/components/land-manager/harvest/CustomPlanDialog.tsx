@@ -9,6 +9,7 @@ import {
   getCustomPlans,
   renameCustomPlan,
   saveCustomPlan,
+  setDefaultCustomPlan,
 } from "@/lib/backend/actions/land-manager/custom-plan-actions";
 import {
   getBulkRegionData,
@@ -27,7 +28,14 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { SplLandPool, SplPlayerPoolPosition } from "@/types/spl/landPools";
-import { Add, Delete, DriveFileRenameOutline, Save } from "@mui/icons-material";
+import {
+  Add,
+  Delete,
+  DriveFileRenameOutline,
+  Save,
+  Star,
+  StarBorder,
+} from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -122,9 +130,11 @@ export default function CustomPlanDialog({
       setPoolPositions(positions);
 
       if (plans.length > 0) {
-        const first = plans[0];
-        setSelectedPlanId(first.id);
-        setPlanName(first.name);
+        // The player's default plan is what the dialog opens on; without one
+        // it falls back to the first saved plan.
+        const preselected = plans.find((p) => p.is_default) ?? plans[0];
+        setSelectedPlanId(preselected.id);
+        setPlanName(preselected.name);
       } else {
         setSelectedPlanId(null);
         setPlanName("");
@@ -224,6 +234,25 @@ export default function CustomPlanDialog({
     setPlanName(trimmed);
     setRenameMode(false);
     setRenameValue("");
+  }
+
+  // ── Default plan ──────────────────────────────────────────────────────────────
+  async function toggleDefault() {
+    if (!selectedPlanId) return;
+    const next = !(selectedPlan?.is_default ?? false);
+    const res = await setDefaultCustomPlan(selectedPlanId, next);
+    if (res.error) {
+      setSaveError(res.error);
+      return;
+    }
+    // Only one plan can be the default, so every other row is cleared locally
+    // as well — matching what the transaction just did in the database.
+    setSavedPlans((prev) =>
+      prev.map((p) => ({
+        ...p,
+        is_default: p.id === selectedPlanId ? next : false,
+      }))
+    );
   }
 
   // ── Delete ────────────────────────────────────────────────────────────────────
@@ -343,7 +372,15 @@ export default function CustomPlanDialog({
                     >
                       {savedPlans.map((p) => (
                         <MenuItem key={p.id} value={p.id}>
-                          {p.name}
+                          <Stack direction="row" gap={0.5} alignItems="center">
+                            {p.is_default && (
+                              <Star
+                                fontSize="inherit"
+                                sx={{ color: "warning.main" }}
+                              />
+                            )}
+                            {p.name}
+                          </Stack>
                         </MenuItem>
                       ))}
                     </Select>
@@ -362,6 +399,30 @@ export default function CustomPlanDialog({
 
                 {selectedPlanId && (
                   <>
+                    <Tooltip
+                      title={
+                        selectedPlan?.is_default
+                          ? "Default plan — click to unset"
+                          : "Make this the default plan (preselected when this dialog opens)"
+                      }
+                    >
+                      <IconButton
+                        size="small"
+                        color={selectedPlan?.is_default ? "warning" : "default"}
+                        onClick={toggleDefault}
+                        aria-label={
+                          selectedPlan?.is_default
+                            ? "Unset default plan"
+                            : "Set as default plan"
+                        }
+                      >
+                        {selectedPlan?.is_default ? (
+                          <Star fontSize="small" />
+                        ) : (
+                          <StarBorder fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title="Rename plan">
                       <IconButton
                         size="small"

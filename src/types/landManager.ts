@@ -175,17 +175,33 @@ export const POOL_BUFFER_WEEKS = 5;
 export type PostHarvestStrategy =
   | "accumulate"
   | "sell_and_pool"
+  | "transfer_to_region"
   | "custom_plan";
 export const DEFAULT_POST_HARVEST_STRATEGY: PostHarvestStrategy = "accumulate";
 export const DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES: string[] = [];
 export const DEFAULT_POST_HARVEST_SELL_PCT = 0;
 export const DEFAULT_POST_HARVEST_POOL_PCT = 100;
+export const DEFAULT_POST_HARVEST_TRANSFER_REGION_UID: string | null = null;
 export const POST_HARVEST_STRATEGY_LABELS: Record<PostHarvestStrategy, string> =
   {
     accumulate: "Accumulate (do nothing)",
     sell_and_pool: "Sell % & add % to pool",
+    transfer_to_region: "Transfer to a Region",
     custom_plan: "Custom Plan",
   };
+
+/**
+ * Strategies that honour `post_harvest_excluded_resources`.
+ *
+ * `custom_plan` is deliberately absent: a custom plan already names every
+ * resource it touches row by row, so a second, invisible exclusion list on top
+ * of it could only surprise the player.
+ */
+export function postHarvestSupportsExclusions(
+  strategy: PostHarvestStrategy
+): boolean {
+  return strategy === "sell_and_pool" || strategy === "transfer_to_region";
+}
 
 export interface PostHarvestActionSummary {
   type:
@@ -262,6 +278,8 @@ export interface CustomPlan {
   player: string;
   name: string;
   sort_order: number;
+  /** Preselected when the Custom Plan dialog opens. At most one per player. */
+  is_default: boolean;
   created_at: Date;
   updated_at: Date;
   items: CustomPlanItem[];
@@ -517,6 +535,8 @@ export interface LandManagerConfig {
   post_harvest_excluded_resources: string[];
   post_harvest_sell_pct: number;
   post_harvest_pool_pct: number;
+  /** Destination region for the `transfer_to_region` strategy. */
+  post_harvest_transfer_region_uid: string | null;
   top_up_pool_strategies: TopUpPoolStrategy[];
   rental: RentalConfig;
   buy: BuyConfig;
@@ -556,6 +576,7 @@ export function createDefaultLandManagerConfig(
     post_harvest_excluded_resources: [],
     post_harvest_sell_pct: DEFAULT_POST_HARVEST_SELL_PCT,
     post_harvest_pool_pct: DEFAULT_POST_HARVEST_POOL_PCT,
+    post_harvest_transfer_region_uid: DEFAULT_POST_HARVEST_TRANSFER_REGION_UID,
     top_up_pool_strategies: DEFAULT_TOP_UP_POOL_STRATEGIES,
     rental: DEFAULT_RENTAL_CONFIG,
     buy: DEFAULT_BUY_CONFIG,

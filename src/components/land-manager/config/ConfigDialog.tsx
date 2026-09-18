@@ -86,6 +86,9 @@ export default function ConfigDialog({
   const [poolPct, setPoolPct] = useState<number>(
     config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT
   );
+  const [transferRegionUid, setTransferRegionUid] = useState<string | null>(
+    config.post_harvest_transfer_region_uid ?? null
+  );
   const [topUpStrategies, setTopUpStrategies] = useState<TopUpPoolStrategy[]>(
     config.top_up_pool_strategies
   );
@@ -110,6 +113,7 @@ export default function ConfigDialog({
     setExcludedResources(config.post_harvest_excluded_resources ?? []);
     setSellPct(config.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT);
     setPoolPct(config.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT);
+    setTransferRegionUid(config.post_harvest_transfer_region_uid ?? null);
     setTopUpStrategies(config.top_up_pool_strategies);
     setRental(config.rental);
     setBuy(config.buy);
@@ -187,6 +191,9 @@ export default function ConfigDialog({
         poolPct={poolPct}
         onSellPctChange={setSellPct}
         onPoolPctChange={setPoolPct}
+        regions={allRegions}
+        transferRegionUid={transferRegionUid}
+        onTransferRegionChange={setTransferRegionUid}
         layout={useFlatLayout ? "flat" : "accordion"}
       />
     ),
@@ -242,7 +249,12 @@ export default function ConfigDialog({
       saveLandManagerConfig(enabledRegions),
       saveMakeHarvestableStrategies(strategies),
       saveDonationConfig(donation),
-      savePostHarvestStrategy(postHarvestStrategy, sellPct, poolPct),
+      savePostHarvestStrategy(
+        postHarvestStrategy,
+        sellPct,
+        poolPct,
+        transferRegionUid
+      ),
       savePostHarvestExcludedResources(excludedResources),
       saveTopUpPoolStrategies(topUpStrategies),
       saveRentalConfig(rental),
@@ -273,6 +285,7 @@ export default function ConfigDialog({
       post_harvest_excluded_resources: excludedResources,
       post_harvest_sell_pct: sellPct,
       post_harvest_pool_pct: poolPct,
+      post_harvest_transfer_region_uid: transferRegionUid,
       top_up_pool_strategies: topUpStrategies,
       rental,
       buy,

@@ -394,6 +394,7 @@ model LandManagerConfig {
   post_harvest_excluded_resources String[] @default([])
   post_harvest_sell_pct           Int      @default(0)
   post_harvest_pool_pct           Int      @default(100)
+  post_harvest_transfer_region_uid String?
   top_up_pool_strategies          String[] @default(["use_owned_dec", "swap_resource", "sell_resource", "buy_resources"])
   rental_strategy                   String  @default("highest_pp_per_dec")
   rental_max_total_dec              Int     @default(0)
@@ -486,8 +487,10 @@ model LandMythicHarvestLog {
 model LandCustomPlan {
   id         String               @id @default(uuid())
   player     String
-  name       String
+  // Mirrors MAX_CUSTOM_PLAN_NAME_LENGTH (src/types/landManager.ts).
+  name       String               @db.VarChar(40)
   sort_order Int                  @default(0)
+  is_default Boolean              @default(false)
   created_at DateTime             @default(now())
   updated_at DateTime             @updatedAt
   items      LandCustomPlanItem[]

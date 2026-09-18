@@ -1,16 +1,145 @@
 "use client";
 
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorIcon from "@mui/icons-material/Error";
 import SettingsIcon from "@mui/icons-material/Settings";
+import WarningIcon from "@mui/icons-material/Warning";
 import {
   Box,
   ButtonBase,
   CircularProgress,
   IconButton,
+  Link,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 import { ReactNode } from "react";
+import { BroadcastResult } from "@/lib/frontend/splBroadcast";
+
+/** Block explorer used for the transaction links on a success status. */
+export const HIVE_EXPLORER_TX_URL = "https://hivehub.dev/tx/";
+
+export type ActionCardStatusSeverity = "success" | "warning" | "error";
+
+/**
+ * One outcome of the action, shown as an icon in the card's bottom-left corner.
+ * A single run can produce several at once (successful transactions alongside a
+ * warning and an error), so these are always rendered as a list.
+ */
+export interface ActionCardStatus {
+  severity: ActionCardStatusSeverity;
+  /** Headline of the hover card, e.g. "Broadcast successful". */
+  title: string;
+  /** The error/warning text, or extra context for a success. */
+  detail?: string;
+  /** Transactions to link on {@link HIVE_EXPLORER_TX_URL}. */
+  txIds?: string[];
+}
+
+/**
+ * Translate a bulk-action hook's `result` / `error` / `warning` state into the
+ * card's status list. Every row shares this mapping so one action's icons can
+ * never mean something different from another's.
+ */
+export function buildActionStatuses({
+  result,
+  error,
+  warning,
+  successTitle = "Broadcast successful",
+}: {
+  result?: BroadcastResult | null;
+  error?: string | null;
+  warning?: string | null;
+  successTitle?: string;
+}): ActionCardStatus[] {
+  const statuses: ActionCardStatus[] = [];
+  if (result?.success) {
+    statuses.push({
+      severity: "success",
+      title: successTitle,
+      detail:
+        result.txIds.length > 1
+          ? `${result.txIds.length} transactions confirmed`
+          : result.txIds.length === 0
+            ? "No transaction id was returned"
+            : undefined,
+      txIds: result.txIds,
+    });
+  }
+  if (warning)
+    statuses.push({ severity: "warning", title: "Warning", detail: warning });
+  if (error)
+    statuses.push({ severity: "error", title: "Error", detail: error });
+  return statuses;
+}
+
+const STATUS_ICONS: Record<ActionCardStatusSeverity, typeof CheckCircleIcon> = {
+  success: CheckCircleIcon,
+  warning: WarningIcon,
+  error: ErrorIcon,
+};
+
+const STATUS_COLORS: Record<ActionCardStatusSeverity, string> = {
+  success: "success.main",
+  warning: "warning.main",
+  error: "error.main",
+};
+
+/**
+ * The status icons themselves. They sit ABOVE the card button rather than
+ * inside it: the success hover card carries real links, and a link nested in a
+ * button is neither clickable nor valid markup.
+ */
+function ActionCardStatusIcons({ statuses }: { statuses: ActionCardStatus[] }) {
+  if (statuses.length === 0) return null;
+  return (
+    <Stack
+      direction="row"
+      gap={0.25}
+      sx={{ position: "absolute", bottom: 4, left: 6, zIndex: 2 }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      {statuses.map((status, idx) => {
+        const Icon = STATUS_ICONS[status.severity];
+        return (
+          <Tooltip
+            key={`${status.severity}-${idx}`}
+            title={
+              <Stack gap={0.5} sx={{ py: 0.5, maxWidth: 260 }}>
+                <Typography variant="caption" fontWeight={700}>
+                  {status.title}
+                </Typography>
+                {status.detail && (
+                  <Typography variant="caption">{status.detail}</Typography>
+                )}
+                {status.txIds?.map((txId) => (
+                  <Link
+                    key={txId}
+                    href={`${HIVE_EXPLORER_TX_URL}${txId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    color="inherit"
+                    sx={{ wordBreak: "break-all" }}
+                  >
+                    {`${txId.slice(0, 8)}`}
+                  </Link>
+                ))}
+              </Stack>
+            }
+          >
+            <Icon
+              fontSize="small"
+              aria-label={`${status.severity}: ${status.title}`}
+              role="img"
+              sx={{ fontSize: 18, color: STATUS_COLORS[status.severity] }}
+            />
+          </Tooltip>
+        );
+      })}
+    </Stack>
+  );
+}
 
 // Every card in the bulk action panel is exactly this size, so the row reads as
 // a set of equal tiles no matter how much strategy text each one carries.
@@ -28,6 +157,8 @@ interface Props {
   accentColor: string;
   /** Strategy summary shown under the title (chips, text, …). */
   strategy?: ReactNode;
+  /** Outcomes of the last run, rendered as icons in the bottom-left corner. */
+  statuses?: ActionCardStatus[];
   tooltip: string;
   busy?: boolean;
   disabled?: boolean;
@@ -43,6 +174,7 @@ export default function ActionCard({
   icon,
   accentColor,
   strategy,
+  statuses = [],
   tooltip,
   busy = false,
   disabled = false,
@@ -131,6 +263,8 @@ export default function ActionCard({
           </ButtonBase>
         </span>
       </Tooltip>
+
+      <ActionCardStatusIcons statuses={statuses} />
 
       {onSettings && (
         <Tooltip title={settingsLabel ?? `${title} settings`}>

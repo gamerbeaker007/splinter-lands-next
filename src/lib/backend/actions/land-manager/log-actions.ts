@@ -1,5 +1,6 @@
 "use server";
 
+import { formatError } from "@/lib/frontend/errorFormat";
 import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import {
@@ -344,7 +345,7 @@ export async function recordTopUpPoolRun(
     });
     return { ok: true };
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown error";
+    const message = formatError(error);
     return { ok: false, error: message };
   }
 }

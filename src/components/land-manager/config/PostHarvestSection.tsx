@@ -7,7 +7,9 @@ import {
   DEFAULT_POST_HARVEST_STRATEGY,
   POST_HARVEST_STRATEGY_LABELS,
   PostHarvestStrategy,
+  postHarvestSupportsExclusions,
 } from "@/types/landManager";
+import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { InfoOutlined } from "@mui/icons-material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -18,8 +20,11 @@ import {
   Checkbox,
   FormControl,
   FormControlLabel,
+  InputLabel,
+  MenuItem,
   Radio,
   RadioGroup,
+  Select,
   Slider,
   Stack,
   Tooltip,
@@ -37,6 +42,10 @@ interface Props {
   poolPct: number;
   onSellPctChange: (v: number) => void;
   onPoolPctChange: (v: number) => void;
+  /** Regions selectable as the `transfer_to_region` destination. */
+  regions: SplProductionOverviewRegion[];
+  transferRegionUid: string | null;
+  onTransferRegionChange: (regionUid: string | null) => void;
   layout?: LayoutMode;
 }
 
@@ -49,9 +58,14 @@ export default function PostHarvestSection({
   poolPct,
   onSellPctChange,
   onPoolPctChange,
+  regions,
+  transferRegionUid,
+  onTransferRegionChange,
   layout = "accordion",
 }: Props) {
   const accumulatePct = Math.max(0, 100 - sellPct - poolPct);
+  const selectableUids = regions.map((r) => r.region_uid);
+  const hasDestination = selectableUids.includes(transferRegionUid ?? "");
 
   const content = (
     <>
@@ -161,7 +175,62 @@ export default function PostHarvestSection({
         </Box>
       )}
 
-      {strategy !== "accumulate" && (
+      {strategy === "transfer_to_region" && (
+        <Box mt={2}>
+          <Typography
+            variant="caption"
+            fontWeight="bold"
+            display="block"
+            mb={1}
+          >
+            Destination region
+          </Typography>
+          <FormControl
+            size="small"
+            sx={{ minWidth: 240 }}
+            error={!hasDestination}
+          >
+            <InputLabel>Transfer to</InputLabel>
+            <Select
+              value={
+                selectableUids.includes(transferRegionUid ?? "")
+                  ? transferRegionUid
+                  : ""
+              }
+              label="Transfer to"
+              onChange={(e) => onTransferRegionChange(e.target.value || null)}
+            >
+              {regions.map((r) => (
+                <MenuItem key={r.region_uid} value={r.region_uid}>
+                  {r.name} ({r.region_uid})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <Stack direction="row" spacing={0.75} alignItems="flex-start" mt={1}>
+            <InfoOutlined
+              sx={{ fontSize: 14, color: "text.secondary", mt: 0.3 }}
+            />
+            <Typography variant="caption" color="text.secondary">
+              Every other region ships its stored resources to this region. The
+              destination region keeps its own resources, and cross-region
+              transfers pay the 10% trade-hub fee.
+            </Typography>
+          </Stack>
+          {!hasDestination && (
+            <Typography
+              variant="caption"
+              color="error"
+              display="block"
+              mt={0.5}
+            >
+              Pick a destination region — the strategy cannot run without one.
+            </Typography>
+          )}
+        </Box>
+      )}
+
+      {postHarvestSupportsExclusions(strategy) && (
         <Box mt={2}>
           <Typography
             variant="caption"

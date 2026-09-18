@@ -1,4 +1,5 @@
 import { getTodayPaidDonations } from "@/lib/backend/actions/land-manager/donation-actions";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   recordDonationsLog,
   recordHarvestLog,
@@ -209,7 +210,7 @@ export function useHarvestAllAction({
         await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(formatError(err));
       } finally {
         setBusy(false);
       }

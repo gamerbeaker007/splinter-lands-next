@@ -2,6 +2,7 @@
 
 import ActionCard, {
   ActionCardColumn,
+  buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
 import { land_castle_icon_url } from "@/lib/shared/statics_icon_urls";
@@ -70,6 +71,10 @@ export default function HarvestMythicsRow({
         accentColor="secondary.main"
         busy={action.busy}
         disabled={anyBusy || !hasMythics}
+        statuses={buildActionStatuses({
+          result: action.result,
+          error: action.error,
+        })}
         onClick={run}
         strategy={
           <>
@@ -94,22 +99,6 @@ export default function HarvestMythicsRow({
       {action.isVerifying && (
         <Alert severity="info" icon={<CircularProgress size={16} />}>
           Verifying transactions on-chain… (up to 30s)
-        </Alert>
-      )}
-
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult}>
-          Broadcast successful
-          {action.result.txIds.length > 1
-            ? ` (${action.result.txIds.length} transactions)`
-            : ""}{" "}
-          · TX: {action.result.txIds.at(-1) ?? "confirmed"}
-        </Alert>
-      )}
-
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError}>
-          {action.error}
         </Alert>
       )}
     </ActionCardColumn>

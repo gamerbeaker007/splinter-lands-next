@@ -1,5 +1,6 @@
 "use server";
 
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   fetchPlayerBalances,
   fetchTransactionLookup,
@@ -53,7 +54,7 @@ export async function getProductionOverview(): Promise<{
     const { regions } = await fetchProductionOverview(auth.username, jwt);
     return { regions };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     return { regions: [], error: msg };
   }
 }
@@ -76,7 +77,7 @@ export async function getSplHarvestableResources(
     );
     return { data };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     return { data: [], error: msg };
   }
 }
@@ -96,7 +97,7 @@ export async function getSplPlayerResourceBalances(): Promise<{
     const balances = await fetchSplPlayerResourceBalance(auth.username, jwt);
     return { balances };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     return { balances: [], error: msg };
   }
 }
@@ -127,7 +128,7 @@ export async function getRegionResourceBalance(regionUid: string): Promise<{
     );
     return { balance };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     return { balance: defaultBalance, error: msg };
   }
 }
@@ -241,7 +242,7 @@ export async function getBulkRegionData(
             .then((data) => ({ data, error: null as string | null }))
             .catch((err: unknown) => ({
               data: null,
-              error: err instanceof Error ? err.message : "Unknown error",
+              error: formatError(err),
             })),
           // fetchRegionOverview swallows its own failures and resolves to null,
           // which regionBalanceFrom turns into an all-zero balance.
@@ -296,7 +297,7 @@ export async function getLandPools(): Promise<{
     const pools = await fetchLandResourcesPools();
     return { pools };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     return { pools: [], error: msg };
   }
 }
@@ -428,7 +429,7 @@ export async function getPowerCoreInfo(): Promise<{
     }
     return { count, ids: allIds };
   } catch (err) {
-    const msg = err instanceof Error ? err.message : "Unknown error";
+    const msg = formatError(err);
     return { count: 0, ids: [], error: msg };
   }
 }

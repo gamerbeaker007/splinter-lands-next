@@ -14,6 +14,25 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.31.0] - 2026-09-18
+
+### Added
+
+- **Land Manager - Config (Post-Harvest):** New `Transfer to a Region` strategy. Pick a destination region and every other enabled region ships its stored natural resources there after harvesting. Excluded resources stay put.
+- **Land Manager - Harvest (Custom Plan):** A Custom Plan can be marked as the default (star icon). The default is stored in the database and is preselected when the Custom Plan dialog opens; any other plan can still be selected.
+- **Land Manager - Harvest (Action cards):** Success, warning and error outcomes are now compact icons in the bottom-left of each action card instead of alert boxes underneath it. Hovering shows the details, and a success links each transaction to HiveHub. Multiple statuses are shown side by side.
+
+### Updated
+
+- **Land Manager - Config (Post-Harvest):** `Exclude Resources` is hidden for the `Custom Plan` strategy — a custom plan already names the resources it touches row by row.
+
+### Fixed
+
+- **Land Manager - Harvest:** Failures are reported with their real message instead of `Unknown error`. Non-`Error` rejections (Keychain responses, server actions, plain objects) are now unwrapped before they reach the UI.
+- **Land Manager - Harvest (Make Harvestable, Process Resources):** A failed run-history write is surfaced as a warning instead of being swallowed, so a successful on-chain run that could not be logged is visible.
+
+---
+
 ## [v1.30.1] - 2026-09-17
 
 ### Fixed

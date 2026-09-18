@@ -2,6 +2,7 @@
 
 import ActionCard, {
   ActionCardColumn,
+  buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import { useTopUpPoolsAction } from "@/hooks/useTopUpPoolsAction";
 import { getTopUpWindowInfo } from "@/lib/backend/actions/land-manager/log-actions";
@@ -18,7 +19,7 @@ import {
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
-import { Alert, Chip, Stack, Tooltip } from "@mui/material";
+import { Chip, Stack, Tooltip } from "@mui/material";
 import { useCallback, useEffect, useState } from "react";
 
 interface Props {
@@ -173,6 +174,12 @@ export default function TopUpPoolsRow({
         accentColor="info.main"
         busy={action.busy}
         disabled={disabled}
+        statuses={buildActionStatuses({
+          result: action.result,
+          error: action.error,
+          warning: action.warning,
+          successTitle: "Pools topped up",
+        })}
         onClick={run}
         onSettings={() => openConfigDialog("top_up_pools")}
         settingsLabel="Top Up Pools settings"
@@ -187,7 +194,7 @@ export default function TopUpPoolsRow({
                 sx={{ fontSize: "0.65rem", height: 18 }}
               />
             ) : (
-              <Stack direction="row" spacing={0.5}>
+              <Stack direction="row" spacing={0.25}>
                 {strategies.map((s, i) => (
                   <Chip
                     key={s}
@@ -228,28 +235,6 @@ export default function TopUpPoolsRow({
           </Stack>
         }
       />
-
-      {action.warning && (
-        <Alert severity="warning" onClose={action.clearWarning}>
-          {action.warning}
-        </Alert>
-      )}
-
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult}>
-          Pools topped up
-          {action.result.txIds.length > 1
-            ? ` (${action.result.txIds.length} transactions)`
-            : ""}{" "}
-          · TX: {action.result.txIds.at(-1) ?? "confirmed"}
-        </Alert>
-      )}
-
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError}>
-          {action.error}
-        </Alert>
-      )}
     </ActionCardColumn>
   );
 }

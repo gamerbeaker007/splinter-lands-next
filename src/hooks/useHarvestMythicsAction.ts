@@ -12,6 +12,7 @@ import {
   capDonationsAtBalance,
   planMythicDonations,
 } from "@/lib/frontend/donationPayment";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -198,7 +199,7 @@ export function useHarvestMythicsAction({
         await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(formatError(err));
       } finally {
         setInternalBusy(null);
       }

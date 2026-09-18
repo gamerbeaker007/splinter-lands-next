@@ -28,6 +28,7 @@ interface Props {
   postHarvestExcludedResources: string[];
   postHarvestSellPct: number;
   postHarvestPoolPct: number;
+  postHarvestTransferRegionUid: string | null;
   topUpPoolStrategies: TopUpPoolStrategy[];
   hasMythics: boolean;
   onSuccess?: () => void;
@@ -43,6 +44,7 @@ export default function BulkActionPanel({
   postHarvestExcludedResources,
   postHarvestSellPct,
   postHarvestPoolPct,
+  postHarvestTransferRegionUid,
   topUpPoolStrategies,
   hasMythics,
   onSuccess,
@@ -157,6 +159,7 @@ export default function BulkActionPanel({
           postHarvestExcludedResources={postHarvestExcludedResources}
           sellPct={postHarvestSellPct}
           poolPct={postHarvestPoolPct}
+          transferRegionUid={postHarvestTransferRegionUid}
           anyBusy={anyBusy}
           onBusyChange={onProcessResourcesBusy}
           onPlan={(plan, confirm) => setPending({ plan, confirm })}

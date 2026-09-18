@@ -12,6 +12,7 @@ import {
   DEFAULT_POST_HARVEST_POOL_PCT,
   DEFAULT_POST_HARVEST_SELL_PCT,
   DEFAULT_POST_HARVEST_STRATEGY,
+  DEFAULT_POST_HARVEST_TRANSFER_REGION_UID,
   DEFAULT_RENTAL_STRATEGY,
   DEFAULT_TOP_UP_POOL_STRATEGIES,
   DonationConfig,
@@ -22,6 +23,7 @@ import {
   RentalStrategy,
   TopUpPoolStrategy,
 } from "@/types/landManager";
+import { formatError } from "@/lib/frontend/errorFormat";
 import { getAuthStatus } from "../auth-actions";
 
 export async function getLandManagerConfig(): Promise<LandManagerConfig | null> {
@@ -55,6 +57,9 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       row?.post_harvest_sell_pct ?? DEFAULT_POST_HARVEST_SELL_PCT,
     post_harvest_pool_pct:
       row?.post_harvest_pool_pct ?? DEFAULT_POST_HARVEST_POOL_PCT,
+    post_harvest_transfer_region_uid:
+      row?.post_harvest_transfer_region_uid ??
+      DEFAULT_POST_HARVEST_TRANSFER_REGION_UID,
     top_up_pool_strategies:
       (row?.top_up_pool_strategies as TopUpPoolStrategy[]) ??
       DEFAULT_TOP_UP_POOL_STRATEGIES,
@@ -112,8 +117,7 @@ export async function saveBuyConfig(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
@@ -151,8 +155,7 @@ export async function saveDonationConfig(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
@@ -192,8 +195,7 @@ export async function saveRentalConfig(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
@@ -217,8 +219,7 @@ export async function saveMakeHarvestableStrategies(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 export async function saveTopUpPoolStrategies(
@@ -241,15 +242,15 @@ export async function saveTopUpPoolStrategies(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
 export async function savePostHarvestStrategy(
   strategy: PostHarvestStrategy,
   sellPct?: number,
-  poolPct?: number
+  poolPct?: number,
+  transferRegionUid?: string | null
 ): Promise<{ success: boolean; error?: string }> {
   const auth = await getAuthStatus();
   if (!auth.authenticated || !auth.username) {
@@ -274,26 +275,43 @@ export async function savePostHarvestStrategy(
     }
   }
 
+  // An empty selection is stored as NULL rather than "", so the strategy can
+  // tell "no destination chosen yet" from a real region uid.
+  const destination =
+    transferRegionUid === undefined
+      ? undefined
+      : transferRegionUid?.trim() || null;
+
+  if (strategy === "transfer_to_region" && destination === null) {
+    return {
+      success: false,
+      error:
+        "Select a destination region for the Transfer to a Region strategy",
+    };
+  }
+
+  const data = {
+    post_harvest_strategy: strategy,
+    ...(s !== undefined && { post_harvest_sell_pct: s }),
+    ...(p !== undefined && { post_harvest_pool_pct: p }),
+    ...(destination !== undefined && {
+      post_harvest_transfer_region_uid: destination,
+    }),
+  };
+
   try {
     await prisma.landManagerConfig.upsert({
       where: { player: auth.username },
-      update: {
-        post_harvest_strategy: strategy,
-        ...(s !== undefined && { post_harvest_sell_pct: s }),
-        ...(p !== undefined && { post_harvest_pool_pct: p }),
-      },
+      update: data,
       create: {
         player: auth.username,
         enabled_regions: [],
-        post_harvest_strategy: strategy,
-        ...(s !== undefined && { post_harvest_sell_pct: s }),
-        ...(p !== undefined && { post_harvest_pool_pct: p }),
+        ...data,
       },
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
@@ -317,8 +335,7 @@ export async function savePostHarvestExcludedResources(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }
 
@@ -338,7 +355,6 @@ export async function saveLandManagerConfig(
     });
     return { success: true };
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, error: msg };
+    return { success: false, error: formatError(error) };
   }
 }

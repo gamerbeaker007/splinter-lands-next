@@ -6,6 +6,7 @@ import {
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatNumber } from "@/lib/formatters";
+import { formatError } from "@/lib/frontend/errorFormat";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
 import {
   BroadcastResult,
@@ -33,6 +34,8 @@ interface Params {
   excludedResources: string[];
   sellPct: number;
   poolPct: number;
+  /** Destination region for the `transfer_to_region` strategy. */
+  transferRegionUid: string | null;
   onSuccess?: () => void;
 }
 
@@ -273,6 +276,7 @@ export function useProcessResourcesAction({
   excludedResources,
   sellPct,
   poolPct,
+  transferRegionUid,
   onSuccess,
 }: Params): UseProcessResourcesAction {
   const [busy, setBusy] = useState(false);
@@ -295,16 +299,18 @@ export function useProcessResourcesAction({
           ),
           getLandPools(),
         ]);
-        const { sellOps, liquidityOps, log, actions } = buildPostHarvestOps(
-          visibleRegions,
-          username,
-          balances,
-          pools,
-          postHarvestStrategy,
-          excludedResources,
-          sellPct,
-          poolPct
-        );
+        const { sellOps, liquidityOps, transferOps, log, actions } =
+          buildPostHarvestOps(
+            visibleRegions,
+            username,
+            balances,
+            pools,
+            postHarvestStrategy,
+            excludedResources,
+            sellPct,
+            poolPct,
+            transferRegionUid
+          );
 
         // Append DEC balance info to log when pool portion may be tight
         if (postHarvestStrategy === "sell_and_pool") {
@@ -322,9 +328,15 @@ export function useProcessResourcesAction({
           return { title: "Review plan — Process Resources", log };
         }
 
-        if (sellOps.length === 0 && liquidityOps.length === 0) {
+        if (
+          sellOps.length === 0 &&
+          liquidityOps.length === 0 &&
+          transferOps.length === 0
+        ) {
           setError(
-            "No resources to process (all below minimum or strategy is accumulate)."
+            postHarvestStrategy === "transfer_to_region" && !transferRegionUid
+              ? "No destination region configured for Transfer to a Region — pick one in the Process Resources settings."
+              : "No resources to process (all below minimum, excluded, or strategy is accumulate)."
           );
           return null;
         }
@@ -358,15 +370,41 @@ export function useProcessResourcesAction({
           allTxIds = [...allTxIds, ...liqResult.txIds];
         }
 
-        // Record results
-        await recordPostHarvestLog(username, actions, allTxIds).catch(() => {});
+        // Transfers stand alone: nothing funds them and nothing depends on
+        // them, so they are broadcast as their own phase.
+        if (postHarvestStrategy === "transfer_to_region") {
+          const res = await broadcastOperations(username, transferOps);
+          if (!res.success) {
+            setError(res.error ?? "Broadcast failed (transfer phase)");
+            return null;
+          }
+          await waitForTransactions(res.txIds);
+          allTxIds = [...allTxIds, ...res.txIds];
+        }
+
+        // Record results. The chain work is already done at this point, so a
+        // failed write is reported as a warning rather than swallowed — the
+        // player needs to know the Today panel will under-report this run.
+        const recorded = await recordPostHarvestLog(
+          username,
+          actions,
+          allTxIds
+        ).then(
+          () => null,
+          (err: unknown) => formatError(err)
+        );
+        if (recorded) {
+          setWarning(
+            `Resources were processed on-chain, but the run could not be saved to the log (${recorded}).`
+          );
+        }
         setResult({ success: true, txIds: allTxIds });
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.
         await invalidatePlayerRegionCaches().catch(() => {});
         onSuccess?.();
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(formatError(err));
       } finally {
         setBusy(false);
       }
@@ -379,6 +417,7 @@ export function useProcessResourcesAction({
       excludedResources,
       sellPct,
       poolPct,
+      transferRegionUid,
       onSuccess,
     ]
   );

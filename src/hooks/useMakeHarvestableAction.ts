@@ -9,6 +9,7 @@ import {
 import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
 import { computePoolHolding } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -31,8 +32,10 @@ interface UseMakeHarvestableAction {
   busy: boolean;
   result: BroadcastResult | null;
   error: string | null;
+  warning: string | null;
   clearResult: () => void;
   clearError: () => void;
+  clearWarning: () => void;
   execute: (planOnly: boolean) => Promise<ActionPlan | null>;
 }
 
@@ -45,12 +48,14 @@ export function useMakeHarvestableAction({
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<BroadcastResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const execute = useCallback(
     async (planOnly: boolean): Promise<ActionPlan | null> => {
       setBusy(true);
       setResult(null);
       setError(null);
+      setWarning(null);
       try {
         const [{ harvestable, balances, overviews }, dec] = await Promise.all([
           getBulkRegionData(
@@ -125,9 +130,22 @@ export function useMakeHarvestableAction({
             setError(res.error ?? "Broadcast failed");
           } else {
             await waitForTransactions(res.txIds);
-            await recordMakeHarvestableLog(username, actions, res.txIds).catch(
-              () => {}
+            // The chain work is done by now, so a failed log write is reported
+            // rather than swallowed: the run succeeded, the Today panel will
+            // just be missing it.
+            const recorded = await recordMakeHarvestableLog(
+              username,
+              actions,
+              res.txIds
+            ).then(
+              () => null,
+              (err: unknown) => formatError(err)
             );
+            if (recorded) {
+              setWarning(
+                `Regions were made harvestable on-chain, but the run could not be saved to the log (${recorded}).`
+              );
+            }
             setResult(res);
             // Clear the cached pre-action snapshot so the refresh below reads
             // post-action balances rather than winning a cache hit on stale data.
@@ -136,7 +154,7 @@ export function useMakeHarvestableAction({
           }
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(formatError(err));
       } finally {
         setBusy(false);
       }
@@ -149,8 +167,10 @@ export function useMakeHarvestableAction({
     busy,
     result,
     error,
+    warning,
     clearResult: () => setResult(null),
     clearError: () => setError(null),
+    clearWarning: () => setWarning(null),
     execute,
   };
 }

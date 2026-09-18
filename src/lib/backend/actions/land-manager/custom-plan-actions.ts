@@ -1,6 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/prisma";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   CustomPlan,
   CustomPlanItem,
@@ -38,6 +39,7 @@ function mapPlan(row: {
   player: string;
   name: string;
   sort_order: number;
+  is_default: boolean;
   created_at: Date;
   updated_at: Date;
   items: Parameters<typeof mapItem>[0][];
@@ -47,6 +49,7 @@ function mapPlan(row: {
     player: row.player,
     name: row.name,
     sort_order: row.sort_order,
+    is_default: row.is_default,
     created_at: row.created_at,
     updated_at: row.updated_at,
     items: row.items
@@ -68,10 +71,31 @@ export async function getCustomPlans(): Promise<{
   const rows = await prisma.landCustomPlan.findMany({
     where: { player: auth.username },
     include: { items: true },
-    orderBy: { sort_order: "asc" },
+    orderBy: [{ is_default: "desc" }, { sort_order: "asc" }],
   });
 
   return { plans: rows.map(mapPlan) };
+}
+
+/**
+ * The player's default plan, name only — for callers that just want to show
+ * which plan the Custom Plan dialog will open on, without loading every item.
+ */
+export async function getDefaultCustomPlan(): Promise<{
+  plan: { id: string; name: string } | null;
+  error?: string;
+}> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { plan: null, error: "Not authenticated" };
+  }
+
+  const row = await prisma.landCustomPlan.findFirst({
+    where: { player: auth.username, is_default: true },
+    select: { id: true, name: true },
+  });
+
+  return { plan: row };
 }
 
 /** Plan items are always rewritten as a whole, renumbered from the array order. */
@@ -187,7 +211,7 @@ export async function saveCustomPlan(
       return { plan: mapPlan(created) };
     }
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     // Surface unique-constraint violations from the DB as a friendly message
     if (msg.includes("Unique constraint") && msg.includes("player_name")) {
       return { error: `A plan named "${trimmedName}" already exists` };
@@ -225,7 +249,7 @@ export async function renameCustomPlan(
     });
     return {};
   } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
+    const msg = formatError(error);
     if (msg.includes("Unique constraint")) {
       return { error: `A plan named "${trimmed}" already exists` };
     }
@@ -248,4 +272,45 @@ export async function deleteCustomPlan(
 
   await prisma.landCustomPlan.delete({ where: { id } });
   return {};
+}
+
+/**
+ * Mark one plan as the player's default — the plan the Custom Plan dialog
+ * preselects on open — or clear the default when `isDefault` is false.
+ *
+ * Both writes run in one transaction because the partial unique index allows a
+ * single default row per player: clearing the old one and setting the new one
+ * must not be observable as two separate states.
+ */
+export async function setDefaultCustomPlan(
+  id: string,
+  isDefault: boolean
+): Promise<{ error?: string }> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username) {
+    return { error: "Not authenticated" };
+  }
+  const player = auth.username;
+
+  const existing = await prisma.landCustomPlan.findUnique({ where: { id } });
+  if (!existing || existing.player !== player)
+    return { error: "Plan not found" };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      if (isDefault) {
+        await tx.landCustomPlan.updateMany({
+          where: { player, is_default: true, NOT: { id } },
+          data: { is_default: false },
+        });
+      }
+      await tx.landCustomPlan.update({
+        where: { id },
+        data: { is_default: isDefault },
+      });
+    });
+    return {};
+  } catch (error) {
+    return { error: formatError(error) };
+  }
 }
