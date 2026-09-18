@@ -82,10 +82,10 @@ export class KeychainSigner implements Signer {
     username: string,
     operations: Operation[],
     keyType: SignerKeyType
-  ): Promise<{ txId: string }> {
+  ): Promise<{ txId?: string; submitted: boolean }> {
     const keychain = getKeychain();
     const result = await keychain.broadcast({
-      username,
+      username: username.toLowerCase(),
       operations: operations as Parameters<
         typeof keychain.broadcast
       >[0]["operations"],
@@ -96,6 +96,6 @@ export class KeychainSigner implements Signer {
       throw new Error(formatError(result ?? "Keychain rejected"));
     }
 
-    return { txId: extractKeychainTxId(result.result) ?? "" };
+    return { txId: extractKeychainTxId(result.result), submitted: true };
   }
 }

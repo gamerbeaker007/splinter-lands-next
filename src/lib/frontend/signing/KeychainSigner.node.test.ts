@@ -46,8 +46,14 @@ describe("KeychainSigner", () => {
       success: true,
       result: { id: "tx-id" },
     });
-    await expect(signer.broadcast("alice", [], "posting")).resolves.toEqual({
+    await expect(signer.broadcast("Alice", [], "posting")).resolves.toEqual({
       txId: "tx-id",
+      submitted: true,
+    });
+    expect(keychain.broadcast).toHaveBeenCalledWith({
+      username: "alice",
+      operations: [],
+      method: "Posting",
     });
 
     keychain.broadcast.mockResolvedValueOnce({
@@ -56,6 +62,17 @@ describe("KeychainSigner", () => {
     });
     await expect(signer.broadcast("alice", [], "posting")).resolves.toEqual({
       txId: "legacy-id",
+      submitted: true,
+    });
+  });
+
+  it("reports successful submission when Keychain omits a transaction id", async () => {
+    const signer = new KeychainSigner();
+    keychain.broadcast.mockResolvedValue({ success: true, result: {} });
+
+    await expect(signer.broadcast("alice", [], "posting")).resolves.toEqual({
+      txId: undefined,
+      submitted: true,
     });
   });
 });

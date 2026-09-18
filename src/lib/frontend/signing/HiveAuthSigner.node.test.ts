@@ -138,4 +138,28 @@ describe("HiveAuthSigner", () => {
       ).rejects.toThrow(message);
     }
   );
+
+  it("reports a sign acknowledgement without an id as submitted", async () => {
+    const expire = Date.now() + 1_000;
+    has.authenticate.mockImplementation(
+      async (auth: { token?: string; key?: string; expire?: number }) => {
+        auth.token = "token";
+        auth.key = "key";
+        auth.expire = expire;
+        return { data: { expire } };
+      }
+    );
+    const signer = new HiveAuthSigner();
+    await signer.connect("Alice", vi.fn());
+    has.broadcast.mockResolvedValue({ cmd: "sign_ack", data: {} });
+    await expect(signer.broadcast("Alice", [], "posting")).resolves.toEqual({
+      submitted: true,
+    });
+    expect(has.broadcast).toHaveBeenLastCalledWith(
+      expect.objectContaining({ username: "alice" }),
+      "posting",
+      []
+    );
+    signer.clear();
+  });
 });

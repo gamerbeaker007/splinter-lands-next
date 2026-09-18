@@ -238,11 +238,12 @@ export class HiveAuthSigner implements Signer {
   }
 
   async broadcast(
-    _username: string,
+    username: string,
     operations: Operation[],
     keyType: SignerKeyType
-  ): Promise<{ txId: string }> {
-    const session = this.getSession();
+  ): Promise<{ txId?: string; submitted: boolean }> {
+    const account = username.toLowerCase();
+    const session = { ...this.getSession(), username: account };
 
     try {
       const result = await HAS.broadcast(
@@ -250,9 +251,10 @@ export class HiveAuthSigner implements Signer {
         keyType,
         operations as unknown[]
       );
+      const command = commandOf(result);
+      if (command && command !== "sign_ack") throw result;
       const txId = normalizeHiveAuthTxId(result);
-      if (!txId) throw new Error("HiveAuth returned an empty transaction id");
-      return { txId };
+      return txId ? { txId, submitted: true } : { submitted: true };
     } catch (error) {
       if (shouldClearSession(error)) this.clear();
       throw authError(error);

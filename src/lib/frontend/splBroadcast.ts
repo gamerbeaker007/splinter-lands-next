@@ -22,6 +22,7 @@ export interface BroadcastResult {
   success: boolean;
   txIds: string[];
   error?: string;
+  uncertain?: boolean;
 }
 
 /**
@@ -99,6 +100,15 @@ export async function broadcastOperations(
         keyType === KeychainKeyTypes.active ? "active" : "posting"
       );
       if (result.txId) txIds.push(result.txId);
+      if (result.submitted && !result.txId) {
+        return {
+          success: false,
+          txIds,
+          error:
+            "The wallet reported the transaction as submitted but returned no transaction id. Check your wallet or account history before retrying.",
+          uncertain: true,
+        };
+      }
     } catch (error) {
       return {
         success: false,

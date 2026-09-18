@@ -22,6 +22,9 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Authentication:** HiveAuth login now pairs and signs in one wallet approval,
   keeps progress visible through approval, and reports wallet or transport
   failures with actionable messages.
+- **Authentication:** Signer selection now uses one shared store, normalizes
+  usernames for broadcasts, and preserves an uncertain submitted state when a
+  wallet omits the transaction id.
 
 ---
 

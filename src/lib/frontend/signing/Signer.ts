@@ -15,5 +15,5 @@ export interface Signer {
     username: string,
     operations: Operation[],
     keyType: SignerKeyType
-  ): Promise<{ txId: string }>;
+  ): Promise<{ txId?: string; submitted: boolean }>;
 }

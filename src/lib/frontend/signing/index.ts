@@ -4,9 +4,8 @@ import {
   createContext,
   createElement,
   type ReactNode,
-  useCallback,
   useContext,
-  useState,
+  useSyncExternalStore,
 } from "react";
 import { HiveAuthSigner } from "./HiveAuthSigner";
 import { KeychainSigner } from "./KeychainSigner";
@@ -20,10 +19,10 @@ const signers: Record<SignerKind, Signer> = {
   hiveauth: new HiveAuthSigner(),
 };
 
-let currentKind: SignerKind = "keychain";
+let currentKind: SignerKind | undefined;
+const listeners = new Set<() => void>();
 
 function browserDefaultKind(): SignerKind {
-  if (typeof window === "undefined") return "keychain";
   try {
     const stored = window.localStorage.getItem("land-manager-signer");
     if (stored === "keychain" || stored === "hiveauth") return stored;
@@ -41,12 +40,36 @@ function rememberKind(kind: SignerKind): void {
   }
 }
 
+export function getSignerKind(): SignerKind {
+  if (typeof window === "undefined") return "hiveauth";
+  currentKind ??= browserDefaultKind();
+  return currentKind;
+}
+
+export function setSignerKind(kind: SignerKind): void {
+  const previousKind = getSignerKind();
+  currentKind = kind;
+  rememberKind(kind);
+  if (kind !== previousKind) {
+    listeners.forEach((listener) => listener());
+  }
+}
+
+export function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getServerSignerKind(): SignerKind {
+  return "hiveauth";
+}
+
 export function getSigner(kind: SignerKind): Signer {
   return signers[kind];
 }
 
 export function getCurrentSigner(): Signer {
-  return getSigner(currentKind);
+  return getSigner(getSignerKind());
 }
 
 interface SignerContextValue {
@@ -58,21 +81,15 @@ interface SignerContextValue {
 const SignerContext = createContext<SignerContextValue | undefined>(undefined);
 
 export function SignerProvider({ children }: { children: ReactNode }) {
-  const [kind, setKindState] = useState<SignerKind>(() => {
-    const initialKind = browserDefaultKind();
-    currentKind = initialKind;
-    return initialKind;
-  });
-
-  const setKind = useCallback((nextKind: SignerKind) => {
-    currentKind = nextKind;
-    setKindState(nextKind);
-    if (typeof window !== "undefined") rememberKind(nextKind);
-  }, []);
+  const kind = useSyncExternalStore(
+    subscribe,
+    getSignerKind,
+    getServerSignerKind
+  );
 
   return createElement(
     SignerContext.Provider,
-    { value: { kind, signer: getSigner(kind), setKind } },
+    { value: { kind, signer: getSigner(kind), setKind: setSignerKind } },
     children
   );
 }
