@@ -239,9 +239,16 @@ export default function LoginComponent({
         fullWidth
         sx={{ minHeight: 48, textTransform: "none" }}
       >
-        {error && kind === "hiveauth"
-          ? "Retry HiveAuth"
-          : "Sign in with HiveAuth"}
+        <Image
+          src="/images/HiveAuthLoginButton.png"
+          alt="Sign In with HiveAuth"
+          fill
+          sizes="(max-width: 600px) 100vw, 120px"
+          style={{
+            objectFit: "cover",
+            opacity: signingInProgress || !username.trim() ? 0.5 : 1,
+          }}
+        />
       </Button>
     </Stack>
   );
