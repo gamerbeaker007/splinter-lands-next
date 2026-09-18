@@ -21,6 +21,15 @@ sections:
   configured account name via a server action. See
   `.github/landmanager-feature.md` for the full design.
 
+## Wallet signing
+
+Land Manager supports Hive Keychain and HiveAuth. HiveAuth adds mobile QR-code
+and deep-link signing from a phone wallet when the browser does not provide the
+Keychain extension. HiveAuth sessions live in memory for the current tab only;
+the session token is never persisted. Keychain remains the default on desktop
+when its extension is available, while the selected signer can be changed from
+the login dialog.
+
 ## Getting Started
 
 First, run the development server:

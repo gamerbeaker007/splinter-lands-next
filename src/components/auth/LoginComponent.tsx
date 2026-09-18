@@ -2,6 +2,13 @@
 
 import { getSplMaintenanceStatus } from "@/lib/backend/actions/auth-actions";
 import { useAuth } from "@/lib/frontend/context/AuthContext";
+import {
+  getSigner,
+  HiveAuthSigner,
+  useSigner,
+  type Signer,
+  type SignerKind,
+} from "@/lib/frontend/signing";
 import { Construction, Logout as LogoutIcon } from "@mui/icons-material";
 import {
   Alert,
@@ -22,7 +29,8 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useState } from "react";
+import QRCode from "qrcode";
+import { useEffect, useState } from "react";
 
 interface LoginComponentProps {
   compact?: boolean;
@@ -39,6 +47,7 @@ export default function LoginComponent({
     login,
     logout,
   } = useAuth();
+  const { kind, setKind } = useSigner();
 
   // Separate loading states
   const [loginDialogOpen, setLoginDialogOpen] = useState(false);
@@ -47,6 +56,34 @@ export default function LoginComponent({
   const [isMaintenance, setIsMaintenance] = useState(false);
   const [signingInProgress, setSigningInProgress] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [hiveAuthWait, setHiveAuthWait] = useState<{
+    qr: string;
+    deepLink: string;
+    expire?: number;
+  } | null>(null);
+  const [hiveAuthQr, setHiveAuthQr] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!hiveAuthWait) {
+      setHiveAuthQr(null);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    QRCode.toDataURL(hiveAuthWait.qr, { width: 240 })
+      .then((url) => {
+        if (!cancelled) setHiveAuthQr(url);
+      })
+      .catch(() => {
+        if (!cancelled) setHiveAuthQr(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [hiveAuthWait]);
 
   const handleLoginClick = (event: React.MouseEvent<HTMLElement>) => {
     if (user) {
@@ -72,9 +109,13 @@ export default function LoginComponent({
     setIsMaintenance(false);
     clearError();
     setSigningInProgress(false);
+    setHiveAuthWait(null);
   };
 
-  const handleLogin = async () => {
+  const handleLogin = async (
+    loginKind: SignerKind = kind,
+    loginSigner: Signer = getSigner(loginKind)
+  ) => {
     if (!username.trim()) {
       setError(new Error("Please enter a username"));
       return;
@@ -85,6 +126,13 @@ export default function LoginComponent({
     setSigningInProgress(true);
 
     try {
+      if (loginKind === "hiveauth") {
+        if (!(loginSigner instanceof HiveAuthSigner)) {
+          throw new Error("HiveAuth signer is unavailable");
+        }
+        setHiveAuthWait(null);
+        await loginSigner.connect(username, setHiveAuthWait);
+      }
       await login(username.toLowerCase());
       if (authError) {
         throw authError;
@@ -100,6 +148,84 @@ export default function LoginComponent({
       setSigningInProgress(false);
     }
   };
+
+  const hiveAuthPanel =
+    kind === "hiveauth" && hiveAuthWait ? (
+      <Stack spacing={1} alignItems="center">
+        {hiveAuthQr && (
+          <Box
+            component="img"
+            src={hiveAuthQr}
+            alt="HiveAuth approval QR code"
+            sx={{ width: 240, height: 240, maxWidth: "100%" }}
+          />
+        )}
+        <Button
+          component="a"
+          href={hiveAuthWait.deepLink}
+          target="_blank"
+          rel="noreferrer"
+          variant="outlined"
+          size="small"
+        >
+          Open HiveAuth on this phone
+        </Button>
+        {hiveAuthWait.expire && (
+          <Typography variant="caption" color="text.secondary">
+            Request expires at{" "}
+            {new Date(hiveAuthWait.expire).toLocaleTimeString()}
+          </Typography>
+        )}
+      </Stack>
+    ) : null;
+
+  const signerButtons = (
+    <Stack direction={{ xs: "column", sm: "row" }} spacing={1}>
+      <Button
+        onClick={() => {
+          setKind("keychain");
+          void handleLogin("keychain", getSigner("keychain"));
+        }}
+        variant={kind === "keychain" ? "contained" : "outlined"}
+        size="large"
+        disabled={signingInProgress || !username.trim()}
+        fullWidth
+        sx={{
+          p: 0,
+          minHeight: 48,
+          minWidth: 120,
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        <Image
+          src="/images/HiveKeychainInlogButton.png"
+          alt="Sign In with Keychain"
+          fill
+          sizes="(max-width: 600px) 100vw, 120px"
+          style={{
+            objectFit: "contain",
+            opacity: signingInProgress || !username.trim() ? 0.5 : 1,
+          }}
+        />
+      </Button>
+      <Button
+        onClick={() => {
+          setKind("hiveauth");
+          void handleLogin("hiveauth", getSigner("hiveauth"));
+        }}
+        variant={kind === "hiveauth" ? "contained" : "outlined"}
+        size="large"
+        disabled={signingInProgress || !username.trim()}
+        fullWidth
+        sx={{ minHeight: 48, textTransform: "none" }}
+      >
+        {error && kind === "hiveauth"
+          ? "Retry HiveAuth"
+          : "Sign in with HiveAuth"}
+      </Button>
+    </Stack>
+  );
 
   // Show loading state from useAuth on initial app load
   if (authLoading) {
@@ -185,7 +311,8 @@ export default function LoginComponent({
               color="text.secondary"
               textAlign="center"
             >
-              Sign in with your Hive account using Keychain
+              Sign in with your Hive account using{" "}
+              {kind === "keychain" ? "Keychain" : "HiveAuth"}
             </Typography>
           </DialogTitle>
           <DialogContent>
@@ -232,35 +359,13 @@ export default function LoginComponent({
                 >
                   <CircularProgress size={20} />
                   <Typography variant="body2" color="text.secondary">
-                    Waiting for Keychain signature...
+                    Waiting for {kind === "keychain" ? "Keychain" : "HiveAuth"}{" "}
+                    approval...
                   </Typography>
                 </Stack>
               )}
-              <Button
-                onClick={handleLogin}
-                variant="contained"
-                size="large"
-                disabled={signingInProgress || !username.trim()}
-                fullWidth
-                sx={{
-                  p: 0,
-                  minHeight: 48,
-                  minWidth: 120,
-                  position: "relative",
-                  overflow: "hidden",
-                }}
-              >
-                <Image
-                  src="/images/HiveKeychainInlogButton.png"
-                  alt="Sign In with Keychain"
-                  fill
-                  sizes="(max-width: 600px) 100vw, 120px"
-                  style={{
-                    objectFit: "contain",
-                    opacity: signingInProgress || !username.trim() ? 0.5 : 1,
-                  }}
-                />
-              </Button>
+              {hiveAuthPanel}
+              {signerButtons}
             </Stack>
           </DialogContent>
         </Dialog>
@@ -350,7 +455,8 @@ export default function LoginComponent({
       >
         <DialogTitle>
           <Typography variant="body2" color="text.secondary" textAlign="center">
-            Sign in with your Hive account using Keychain
+            Sign in with your Hive account using{" "}
+            {kind === "keychain" ? "Keychain" : "HiveAuth"}
           </Typography>
         </DialogTitle>
 
@@ -398,36 +504,13 @@ export default function LoginComponent({
               >
                 <CircularProgress size={20} />
                 <Typography variant="body2" color="text.secondary">
-                  Waiting for Keychain signature...
+                  Waiting for {kind === "keychain" ? "Keychain" : "HiveAuth"}{" "}
+                  approval...
                 </Typography>
               </Stack>
             )}
-
-            <Button
-              onClick={handleLogin}
-              variant="contained"
-              size="large"
-              disabled={signingInProgress || !username.trim()}
-              fullWidth
-              sx={{
-                p: 0,
-                minHeight: 48,
-                minWidth: 120,
-                position: "relative",
-                overflow: "hidden",
-              }}
-            >
-              <Image
-                src="/images/HiveKeychainInlogButton.png"
-                alt="Sign In with Keychain"
-                fill
-                sizes="(max-width: 600px) 100vw, 120px"
-                style={{
-                  objectFit: "contain",
-                  opacity: signingInProgress || !username.trim() ? 0.5 : 1,
-                }}
-              />
-            </Button>
+            {hiveAuthPanel}
+            {signerButtons}
           </Stack>
         </DialogContent>
       </Dialog>

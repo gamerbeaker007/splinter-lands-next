@@ -12,6 +12,11 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+### Added
+
+- **Authentication:** Added HiveAuth QR and deep-link signing as an alternative
+  to Hive Keychain, including in-memory per-tab sessions for mobile browsers.
+
 ---
 
 ## [v1.33.0] - 2026-09-18
