@@ -6,10 +6,10 @@ Copy `.env.example` to `.env` and fill in the required values. Documented
 sections:
 
 - **Database** — `DATABASE_URL` (PostgreSQL).
-- **App** — `ALLOWED_ORIGINS`, `NEXTAUTH_URL`, `NEXT_PUBLIC_API_URL`,
+- **App** — `ALLOWED_ORIGINS`,
   `CACHE_INVALIDATE_TOKEN` (must match between the `app` and `worker`
   containers).
-- **Admin auth** — `GITHUB_ID`, `GITHUB_SECRET`, `GITHUB_ALLOWED_USERS`
+- **Admin auth** — `ADMIN_ACCOUNT`
   (only used for `/admin`).
 - **Rental Authority (required for renting)** —
   `SPL_LAND_SERVICE_ACCOUNT`, `SPL_LAND_SERVICE_ACTIVE_KEY`. Renting is

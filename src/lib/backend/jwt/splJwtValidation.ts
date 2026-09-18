@@ -14,15 +14,18 @@ export interface SplJwtValidationResult {
   error?: string;
 }
 
-export async function validateSplJwt(
-  token: string
-): Promise<SplJwtValidationResult> {
+/**
+ * Structurally decodes a JWT and checks local claims (expiry, nbf, sub).
+ * Does NOT verify the JWT signature — this function alone is insufficient for
+ * authentication. Callers must additionally verify the token against an
+ * authoritative upstream source (see getAuthStatus in auth-actions.ts).
+ */
+export function validateSplJwt(token: string): SplJwtValidationResult {
   try {
     if (!token) {
       return { valid: false, error: "No token provided" };
     }
 
-    // Decode the JWT without verification first to check structure
     const decoded = jwt.decode(token, { complete: true });
 
     if (!decoded || typeof decoded === "string") {
@@ -31,13 +34,11 @@ export async function validateSplJwt(
 
     const payload = decoded.payload as SplJwtPayload;
 
-    // Check if token has required SPL fields
     if (!payload || !payload.sub) {
       return { valid: false, error: "Missing required SPL fields" };
     }
 
-    // Check expiration
-    const now = Math.floor(Date.now() / 1000); // Current time in seconds
+    const now = Math.floor(Date.now() / 1000);
 
     if (payload.exp && payload.exp < now) {
       return {
@@ -48,7 +49,6 @@ export async function validateSplJwt(
       };
     }
 
-    // Check if token is not yet valid (nbf - not before)
     if (payload.nbf && payload.nbf > now) {
       return {
         valid: false,

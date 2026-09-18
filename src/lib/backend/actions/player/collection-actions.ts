@@ -103,7 +103,7 @@ export async function getPlayerCardCollection(
   const cookieStore = await cookies();
   const jwtToken = cookieStore.get("jwt_token")?.value;
   if (jwtToken) {
-    const jwtValidation = await validateSplJwt(jwtToken);
+    const jwtValidation = validateSplJwt(jwtToken);
     if (!jwtValidation.valid) {
       // Clear expired JWT token
       cookieStore.delete("jwt_token");

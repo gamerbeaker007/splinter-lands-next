@@ -33,6 +33,34 @@ const splBaseClient = axios.create({
 rax.attach(splBaseClient);
 splBaseClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
 
+export type TokenVerifyResult = "valid" | "invalid" | "error";
+
+/**
+ * Verifies a JWT by calling an authenticated SPL endpoint (balance_history limit=1).
+ * - "valid":   SPL accepted the Bearer token for this username → genuinely issued
+ * - "invalid": SPL returned 401 or an error body → token is forged or revoked
+ * - "error":   transient network/5xx failure → caller handles
+ */
+export async function verifySplJwt(
+  username: string,
+  jwtToken: string
+): Promise<TokenVerifyResult> {
+  try {
+    const res = await splBaseClient.get("/players/balance_history", {
+      headers: { Authorization: `Bearer ${jwtToken}` },
+      params: { username, token_type: "SPS", limit: 1 },
+    });
+    const data = res.data;
+    if (Array.isArray(data)) return "valid";
+    if (data && typeof data === "object" && "error" in data) return "invalid";
+    return "invalid";
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401)
+      return "invalid";
+    return "error";
+  }
+}
+
 /**
  * Helper function to get the JWT token from cookies in server-side contexts
  */
@@ -42,7 +70,7 @@ export async function getAuthorizationHeader(
   try {
     const cookieStore = await cookies();
     const jwtCookie = cookieStore.get("jwt_token")?.value || "";
-    const authToken = await validateSplJwt(jwtCookie);
+    const authToken = validateSplJwt(jwtCookie);
     const headers: Record<string, string> = {};
     if (authToken && authToken.valid && authToken.username === player) {
       headers.Authorization = `Bearer ${jwtCookie}`;

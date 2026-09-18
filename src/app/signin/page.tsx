@@ -1,11 +1,6 @@
-// app/signin/page.tsx
-
-import SignInButton from "@/components/admin/SignInButton";
+// app/signin/page.tsx — GitHub OAuth removed; admin access uses Keychain/SPL auth.
+import { redirect } from "next/navigation";
 
 export default function SignInPage() {
-  return (
-    <div className="h-screen flex items-center justify-center">
-      <SignInButton />
-    </div>
-  );
+  redirect("/");
 }

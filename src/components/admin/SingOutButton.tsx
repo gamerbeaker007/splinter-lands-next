@@ -1,18 +1,22 @@
 "use client";
 
+import { logoutAction } from "@/lib/backend/actions/auth-actions";
+import LogoutIcon from "@mui/icons-material/Logout";
 import { Button } from "@mui/material";
-import { signOut } from "next-auth/react";
-import GitHubIcon from "@mui/icons-material/GitHub";
 
 export default function SignOutButton() {
+  const handleSignOut = async () => {
+    await logoutAction();
+    window.location.href = "/";
+  };
+
   return (
     <Button
       variant="contained"
       color="primary"
-      startIcon={<GitHubIcon />}
-      onClick={() => signOut({ callbackUrl: "/" })}
+      startIcon={<LogoutIcon />}
+      onClick={handleSignOut}
       sx={{ mt: 2, width: "200px" }}
-      fullWidth
     >
       Sign Out
     </Button>
