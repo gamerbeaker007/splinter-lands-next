@@ -17,6 +17,12 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Authentication:** Added HiveAuth QR and deep-link signing as an alternative
   to Hive Keychain, including in-memory per-tab sessions for mobile browsers.
 
+### Fixed
+
+- **Authentication:** HiveAuth login now pairs and signs in one wallet approval,
+  keeps progress visible through approval, and reports wallet or transport
+  failures with actionable messages.
+
 ---
 
 ## [v1.33.0] - 2026-09-18

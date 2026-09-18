@@ -2,6 +2,7 @@
 
 import { getSplMaintenanceStatus } from "@/lib/backend/actions/auth-actions";
 import { useAuth } from "@/lib/frontend/context/AuthContext";
+import { formatError } from "@/lib/frontend/errorFormat";
 import {
   getSigner,
   HiveAuthSigner,
@@ -39,14 +40,7 @@ interface LoginComponentProps {
 export default function LoginComponent({
   compact = false,
 }: LoginComponentProps) {
-  const {
-    user,
-    loading: authLoading,
-    error: authError,
-    clearError,
-    login,
-    logout,
-  } = useAuth();
+  const { user, loading: authLoading, clearError, login, logout } = useAuth();
   const { kind, setKind } = useSigner();
 
   // Separate loading states
@@ -62,6 +56,14 @@ export default function LoginComponent({
     expire?: number;
   } | null>(null);
   const [hiveAuthQr, setHiveAuthQr] = useState<string | null>(null);
+  const [hiveAuthStep, setHiveAuthStep] = useState<"scan" | "approved" | null>(
+    null
+  );
+
+  const normalizeLoginError = (value: unknown): Error => {
+    const message = formatError(value).trim() || "Sign-in failed.";
+    return new Error(message);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -110,6 +112,7 @@ export default function LoginComponent({
     clearError();
     setSigningInProgress(false);
     setHiveAuthWait(null);
+    setHiveAuthStep(null);
   };
 
   const handleLogin = async (
@@ -124,23 +127,35 @@ export default function LoginComponent({
     setError(null);
     setIsMaintenance(false);
     setSigningInProgress(true);
+    setHiveAuthWait(null);
+    setHiveAuthStep(loginKind === "hiveauth" ? "scan" : null);
 
     try {
       if (loginKind === "hiveauth") {
         if (!(loginSigner instanceof HiveAuthSigner)) {
           throw new Error("HiveAuth signer is unavailable");
         }
-        setHiveAuthWait(null);
-        await loginSigner.connect(username, setHiveAuthWait);
+        const timestamp = Date.now();
+        const account = username.toLowerCase();
+        const message = `${account}${timestamp}`;
+        const signature = await loginSigner.connectAndSign(
+          username,
+          message,
+          (wait) => {
+            setHiveAuthStep("scan");
+            setHiveAuthWait(wait);
+          }
+        );
+        setHiveAuthStep("approved");
+        await login(account, timestamp, signature);
+      } else {
+        await login(username.toLowerCase());
       }
-      await login(username.toLowerCase());
-      if (authError) {
-        throw authError;
-      }
-      // Close dialog on success
       handleDialogClose();
     } catch (err) {
-      setError(err as Error);
+      setError(normalizeLoginError(err));
+      setHiveAuthStep(null);
+      setHiveAuthWait(null);
       getSplMaintenanceStatus().then(({ maintenance }) =>
         setIsMaintenance(maintenance)
       );
@@ -150,7 +165,7 @@ export default function LoginComponent({
   };
 
   const hiveAuthPanel =
-    kind === "hiveauth" && hiveAuthWait ? (
+    kind === "hiveauth" && hiveAuthStep === "scan" && hiveAuthWait ? (
       <Stack spacing={1} alignItems="center">
         {hiveAuthQr && (
           <Box
@@ -176,6 +191,10 @@ export default function LoginComponent({
             {new Date(hiveAuthWait.expire).toLocaleTimeString()}
           </Typography>
         )}
+        <Typography variant="body2" color="text.secondary" textAlign="center">
+          Scan the code or open the link on your phone, then approve in your
+          wallet
+        </Typography>
       </Stack>
     ) : null;
 
@@ -327,7 +346,7 @@ export default function LoginComponent({
                 autoFocus
                 placeholder="Enter your Hive username"
               />
-              {(error || isMaintenance) && (
+              {(error?.message || isMaintenance) && (
                 <Alert
                   severity={isMaintenance ? "warning" : "error"}
                   variant="outlined"
@@ -346,24 +365,26 @@ export default function LoginComponent({
                       later.
                     </>
                   ) : (
-                    error?.message
+                    error?.message || "Sign-in failed."
                   )}
                 </Alert>
               )}
-              {signingInProgress && (
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
-                  justifyContent="center"
-                >
-                  <CircularProgress size={20} />
-                  <Typography variant="body2" color="text.secondary">
-                    Waiting for {kind === "keychain" ? "Keychain" : "HiveAuth"}{" "}
-                    approval...
-                  </Typography>
-                </Stack>
-              )}
+              {signingInProgress &&
+                (kind === "keychain" || hiveAuthStep === "approved") && (
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <CircularProgress size={20} />
+                    <Typography variant="body2" color="text.secondary">
+                      {kind === "keychain"
+                        ? "Waiting for Keychain approval..."
+                        : "Approved on your phone. Signing in…"}
+                    </Typography>
+                  </Stack>
+                )}
               {hiveAuthPanel}
               {signerButtons}
             </Stack>
@@ -473,7 +494,7 @@ export default function LoginComponent({
               placeholder="Enter your Hive username"
             />
 
-            {(error || isMaintenance) && (
+            {(error?.message || isMaintenance) && (
               <Alert
                 severity={isMaintenance ? "warning" : "error"}
                 variant="outlined"
@@ -490,25 +511,27 @@ export default function LoginComponent({
                     later.
                   </>
                 ) : (
-                  error?.message
+                  error?.message || "Sign-in failed."
                 )}
               </Alert>
             )}
 
-            {signingInProgress && (
-              <Stack
-                direction="row"
-                spacing={2}
-                alignItems="center"
-                justifyContent="center"
-              >
-                <CircularProgress size={20} />
-                <Typography variant="body2" color="text.secondary">
-                  Waiting for {kind === "keychain" ? "Keychain" : "HiveAuth"}{" "}
-                  approval...
-                </Typography>
-              </Stack>
-            )}
+            {signingInProgress &&
+              (kind === "keychain" || hiveAuthStep === "approved") && (
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <CircularProgress size={20} />
+                  <Typography variant="body2" color="text.secondary">
+                    {kind === "keychain"
+                      ? "Waiting for Keychain approval..."
+                      : "Approved on your phone. Signing in…"}
+                  </Typography>
+                </Stack>
+              )}
             {hiveAuthPanel}
             {signerButtons}
           </Stack>
