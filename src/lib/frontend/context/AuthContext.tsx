@@ -6,7 +6,7 @@ import {
   logoutAction,
 } from "@/lib/backend/actions/auth-actions";
 import logger from "@/lib/frontend/log/logger.client";
-import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
+import { getCurrentSigner } from "@/lib/frontend/signing";
 import { useRouter } from "next/navigation";
 import {
   createContext,
@@ -68,54 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // Sign message with Keychain
-  const signWithKeychain = async (
-    username: string,
-    message: string
-  ): Promise<string> => {
-    try {
-      interface HiveKeychainWindow extends Window {
-        hive_keychain?: unknown;
-      }
-      const win = window as HiveKeychainWindow;
-      if (!win || !win.hive_keychain) {
-        throw new Error("Keychain extension not found");
-      }
-      const keychain = new KeychainSDK(win);
-      const result = await keychain.signBuffer({
-        username: username.toLowerCase(),
-        message,
-        method: KeychainKeyTypes.posting,
-      });
-
-      if (result?.success) {
-        const signature =
-          typeof result.result === "string"
-            ? result.result
-            : result.message || "";
-
-        if (!signature) {
-          throw new Error("Keychain returned empty signature");
-        }
-
-        return signature;
-      } else {
-        throw new Error("Keychain signature was rejected or failed");
-      }
-    } catch (err) {
-      let errorMessage = "Unknown Keychain error occurred";
-
-      if (err instanceof Error) {
-        errorMessage = `Keychain error: ${err.message}`;
-      } else if (err && typeof err === "object" && "message" in err) {
-        errorMessage = `Keychain error: ${err.message}`;
-      }
-
-      logger.error("Keychain signing error:", err);
-      throw new Error(errorMessage);
-    }
-  };
-
   // Login function - throws errors for caller to handle
   const login = async (
     username: string,
@@ -130,7 +82,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Get signature if not provided
       const finalSignature =
-        signature || (await signWithKeychain(username, message));
+        signature ||
+        (await getCurrentSigner().signBuffer(username, message, "posting"));
 
       // Use server action instead of API route
       const result = await loginAction(

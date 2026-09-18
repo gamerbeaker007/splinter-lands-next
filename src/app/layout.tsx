@@ -6,6 +6,7 @@ import TopBar from "@/components/top-bar/TopBar";
 import { AuthProvider } from "@/lib/frontend/context/AuthContext";
 import { PageTitleProvider } from "@/lib/frontend/context/PageTitleContext";
 import { PlayerProvider } from "@/lib/frontend/context/PlayerContext";
+import { SignerProvider } from "@/lib/frontend/signing";
 import { ThemeSetup } from "@/lib/frontend/context/ThemeSetup";
 import { AppRouterCacheProvider } from "@mui/material-nextjs/v15-appRouter";
 import Box from "@mui/material/Box";
@@ -21,43 +22,45 @@ export default function RootLayout({
       <body>
         <AppRouterCacheProvider>
           <ThemeSetup>
-            <AuthProvider>
-              <PageTitleProvider>
-                <PlayerProvider>
-                  <Box display="flex" height="100vh" overflow="hidden">
-                    <SideBar />
-                    <Box
-                      display="flex"
-                      flexDirection="column"
-                      flexGrow={1}
-                      minWidth={0}
-                    >
-                      <TopBar />
-                      {/* Content row: `main` shrinks as a flex sibling of the
-                          filter panel slot, so an open panel never hides it. */}
+            <SignerProvider>
+              <AuthProvider>
+                <PageTitleProvider>
+                  <PlayerProvider>
+                    <Box display="flex" height="100vh" overflow="hidden">
+                      <SideBar />
                       <Box
-                        position="relative"
                         display="flex"
+                        flexDirection="column"
                         flexGrow={1}
-                        minHeight={0}
                         minWidth={0}
                       >
+                        <TopBar />
+                        {/* Content row: `main` shrinks as a flex sibling of the
+                            filter panel slot, so an open panel never hides it. */}
                         <Box
-                          component="main"
+                          position="relative"
+                          display="flex"
                           flexGrow={1}
-                          overflow="auto"
+                          minHeight={0}
                           minWidth={0}
                         >
-                          {children}
+                          <Box
+                            component="main"
+                            flexGrow={1}
+                            overflow="auto"
+                            minWidth={0}
+                          >
+                            {children}
+                          </Box>
+                          <FilterPanelHost />
                         </Box>
-                        <FilterPanelHost />
                       </Box>
                     </Box>
-                  </Box>
-                  <TestModeChip />
-                </PlayerProvider>
-              </PageTitleProvider>
-            </AuthProvider>
+                    <TestModeChip />
+                  </PlayerProvider>
+                </PageTitleProvider>
+              </AuthProvider>
+            </SignerProvider>
           </ThemeSetup>
         </AppRouterCacheProvider>
       </body>

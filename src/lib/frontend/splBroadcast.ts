@@ -1,5 +1,6 @@
 import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
+import { getCurrentSigner } from "@/lib/frontend/signing";
 import {
   HIVE_BLOCK_MS,
   MAX_OPS_PER_BROADCAST,
@@ -7,7 +8,8 @@ import {
   TRX_VERIFY_TIMEOUT_MS,
 } from "@/types/landManager";
 import type { SplTrxResult } from "@/types/spl/trx";
-import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
+import type { Operation } from "@hiveio/dhive";
+import { KeychainKeyTypes } from "keychain-sdk";
 import pLimit from "p-limit";
 import { formatError } from "./errorFormat";
 export { KeychainKeyTypes } from "keychain-sdk";
@@ -20,6 +22,7 @@ export interface BroadcastResult {
   success: boolean;
   txIds: string[];
   error?: string;
+  uncertain?: boolean;
 }
 
 /**
@@ -65,15 +68,6 @@ export async function waitForTransactions(
   return results;
 }
 
-function getKeychain(): KeychainSDK {
-  interface HiveKeychainWindow extends Window {
-    hive_keychain?: unknown;
-  }
-  const win = window as HiveKeychainWindow;
-  if (!win.hive_keychain) throw new Error("Hive Keychain extension not found");
-  return new KeychainSDK(win as Window);
-}
-
 function chunk<T>(arr: T[], size: number): T[][] {
   const chunks: T[][] = [];
   for (let i = 0; i < arr.length; i += size)
@@ -82,7 +76,7 @@ function chunk<T>(arr: T[], size: number): T[][] {
 }
 
 /**
- * Broadcast operations in one or more Keychain popups.
+ * Broadcast operations in one or more signer requests.
  * Operations are split into chunks of MAX_OPS_PER_BROADCAST.
  * Stops and returns failure on the first rejected chunk.
  *
@@ -94,33 +88,34 @@ export async function broadcastOperations(
   operations: [string, object][],
   keyType: KeychainKeyTypes = KeychainKeyTypes.posting
 ): Promise<BroadcastResult> {
-  const keychain = getKeychain();
+  const signer = getCurrentSigner();
   const txIds: string[] = [];
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
   for (let i = 0; i < batches.length; i++) {
-    const result = await keychain.broadcast({
-      username,
-      operations: batches[i] as Parameters<
-        typeof keychain.broadcast
-      >[0]["operations"],
-      method: keyType,
-    });
-
-    if (!result?.success) {
-      // Keychain may return either a string message or an object (e.g.
-      // `{ message: "user_cancel" }`); formatError handles both.
+    try {
+      const result = await signer.broadcast(
+        username,
+        batches[i] as unknown as Operation[],
+        keyType === KeychainKeyTypes.active ? "active" : "posting"
+      );
+      if (result.txId) txIds.push(result.txId);
+      if (result.submitted && !result.txId) {
+        return {
+          success: false,
+          txIds,
+          error:
+            "The wallet reported the transaction as submitted but returned no transaction id. Check your wallet or account history before retrying.",
+          uncertain: true,
+        };
+      }
+    } catch (error) {
       return {
         success: false,
         txIds,
-        error: formatError(result ?? "Keychain rejected"),
+        error: formatError(error),
       };
     }
-
-    const txId =
-      (result.result as unknown as { id?: string })?.id ??
-      (result.result as unknown as { tx_id?: string })?.tx_id;
-    if (txId) txIds.push(txId);
 
     // Wait a full block before the next batch so all ops land in different blocks
     if (i < batches.length - 1) {
