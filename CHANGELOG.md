@@ -14,7 +14,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.31.0] - 2026-09-18
+## [v1.32.0] - 2026-09-18
 
 ### Added
 
@@ -33,7 +33,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.30.1] - 2026-09-17
+## [v1.31.1] - 2026-09-17
 
 ### Fixed
 
