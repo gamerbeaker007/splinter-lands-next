@@ -14,6 +14,33 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.33.0] - 2026-09-18
+
+### Security
+
+- **Removed GitHub OAuth / GitHub-display-name admin authorization.** GitHub login, the `GITHUB_ID`, `GITHUB_SECRET`, and `GITHUB_ALLOWED_USERS` environment variables, and all related configuration have been removed. Admin access was previously granted by matching a GitHub display name, which any GitHub user can change to match an allowed value. This mechanism was replaced entirely.
+
+- **Fixed forged-cookie / JWT player-impersonation vulnerability.** The server previously decoded the `jwt_token` cookie with `jwt.decode()` and trusted the `sub` claim without verifying that Splinterlands actually issued the token. An attacker could construct a JWT-shaped cookie containing `sub=<victim>` and have the server treat that sub as the authenticated player — with no cryptographic proof that Splinterlands issued the token. The vulnerable path led directly to the service-account on-behalf transaction signing (rent workers, market purchases). The root cause was treating decode + local expiry check as authentication. Token signature verification is now delegated to Splinterlands: before trusting the `sub` claim, the server calls `GET /players/balance_history?limit=1` with the bearer token. Splinterlands returns HTTP 401 for forged or revoked tokens; the server then rejects the cookie and returns unauthenticated. A 5-minute server-side cache (keyed by the SHA-256 of the token) limits repeated API calls. Fails closed: tokens that have never been upstream-verified are denied even during transient SPL API failures.
+
+- **Protected all on-behalf service-account transactions.** The rent-workers (`rentOnBehalfOf`) and market-purchase (`purchaseOnBehalfOf`) actions obtain player identity exclusively from the verified `getAuthStatus()`. No client-provided username, request body field, or decoded-but-unverified claim can reach the service-account broadcast path.
+
+- **Replaced GitHub admin authorization with ADMIN_ACCOUNT environment variable.** Admin access now requires an active Splinterlands/Keychain login whose upstream-verified identity matches the `ADMIN_ACCOUNT` env var. A missing or empty variable fails closed — no admin access. GitHub display-name impersonation is no longer possible because the identity is established through Splinterlands token validation before the admin check.
+
+- **Added regression tests** for the authentication security boundary: forged tokens, expired tokens, malformed tokens, missing cookies, impersonation attempts, admin authorization, and transient SPL API failure handling.
+
+### Removed
+
+- `next-auth` dependency and GitHub OAuth provider.
+- `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GITHUB_ID`, `GITHUB_SECRET`, `GITHUB_ALLOWED_USERS` environment variables.
+
+### Added
+
+- `ADMIN_ACCOUNT` environment variable — Splinterlands username of the admin account.
+- `verifySplJwt()` in `spl-base-api.ts` — upstream token verification via SPL `balance_history`.
+- `isAdminUser()` in `auth-actions.ts` — compares verified player identity against `ADMIN_ACCOUNT`.
+
+---
+
 ## [v1.32.0] - 2026-09-18
 
 ### Added

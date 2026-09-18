@@ -7,17 +7,21 @@ import LogSectionServer from "@/components/admin/LogSectionServer";
 import MemorySectionServer from "@/components/admin/MemorySectionServer";
 import SignOutButton from "@/components/admin/SingOutButton";
 import WorkerStatusSection from "@/components/admin/WorkerStatusSection";
-import { authOptions } from "@/lib/backend/auth/authOptions";
+import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
+import { isAdminUser } from "@/lib/backend/auth/adminAuth";
 import { CircularProgress, Container, Stack, Typography } from "@mui/material";
-import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
 async function AdminContent() {
-  const session = await getServerSession(authOptions);
+  const auth = await getAuthStatus();
 
-  if (!session) {
-    redirect("/signin");
+  if (!auth.authenticated || !auth.username) {
+    redirect("/");
+  }
+
+  if (!isAdminUser(auth.username)) {
+    redirect("/");
   }
 
   return (
@@ -29,7 +33,7 @@ async function AdminContent() {
         mb={2}
       >
         <Typography variant="h2">Admin Dashboard</Typography>
-        <Typography variant="body1">Welcome, {session.user?.name}!</Typography>
+        <Typography variant="body1">Welcome, {auth.username}!</Typography>
         <Typography variant="caption" color="text.secondary">
           Version: {process.env.APP_VERSION ?? "dev"}
         </Typography>

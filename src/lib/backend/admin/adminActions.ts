@@ -5,7 +5,6 @@ import {
   getLastWorkerRuns,
   type WorkerJobType,
 } from "@/lib/backend/api/internal/worker-run-data";
-import { authOptions } from "@/lib/backend/auth/authOptions";
 import { cache, dailyCache } from "@/lib/backend/cache/cache";
 import {
   runDailyJob,
@@ -13,13 +12,20 @@ import {
   runWeeklyJob,
 } from "@/lib/backend/services/dataJobs";
 import { prisma } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
 import { revalidatePath, unstable_noStore } from "next/cache";
+import { getAuthStatus } from "../actions/auth-actions";
+import { isAdminUser } from "../auth/adminAuth";
+
+async function requireAdmin(): Promise<void> {
+  const auth = await getAuthStatus();
+  if (!auth.authenticated || !auth.username || !isAdminUser(auth.username)) {
+    throw new Error("Unauthorized");
+  }
+}
 
 export async function getMemoryUsage() {
   unstable_noStore();
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   return {
     heapUsed: process.memoryUsage().heapUsed,
@@ -31,8 +37,7 @@ export async function getMemoryUsage() {
 
 export async function getCacheStatus() {
   unstable_noStore();
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   const keys = cache.keys();
   const dailyKeys = dailyCache.keys();
@@ -53,8 +58,7 @@ export async function getCacheStatus() {
 }
 
 export async function clearCache() {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   cache.flushAll();
   dailyCache.flushAll();
@@ -70,8 +74,7 @@ export async function getLogsAction(
   search?: string
 ) {
   unstable_noStore();
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   const safeLimit = Math.min(Math.max(1, limit), 1000);
   const safeSearch = search?.trim().slice(0, 200) || undefined;
@@ -94,8 +97,7 @@ export async function getLogsAction(
 
 export async function getWorkerRunStatus() {
   unstable_noStore();
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   return getLastWorkerRuns();
 }
@@ -103,8 +105,7 @@ export async function getWorkerRunStatus() {
 export async function triggerJobAction(
   jobType: WorkerJobType
 ): Promise<{ started: boolean; reason?: string }> {
-  const session = await getServerSession(authOptions);
-  if (!session) throw new Error("Unauthorized");
+  await requireAdmin();
 
   // Guard: don't start a second run if one is already active
   const activeRun = await prisma.workerRun.findFirst({

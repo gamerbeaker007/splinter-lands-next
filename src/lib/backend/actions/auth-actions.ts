@@ -1,9 +1,19 @@
 "use server";
 
-import { fetchSettings, splLogin } from "@/lib/backend/api/spl/spl-base-api";
+import {
+  fetchSettings,
+  splLogin,
+  verifySplJwt,
+} from "@/lib/backend/api/spl/spl-base-api";
+import {
+  getCachedVerification,
+  setCachedVerification,
+} from "@/lib/backend/cache/authVerificationCache";
 import { validateSplJwt } from "@/lib/backend/jwt/splJwtValidation";
 import { cookies } from "next/headers";
 import { invalidatePlayerCaches } from "../services/playerService";
+
+// ── Authentication ────────────────────────────────────────────────────────────
 
 /** Returns whether Splinterlands is currently in maintenance mode.
  *  Treats a failed /settings fetch as maintenance (API unreachable). */
@@ -18,6 +28,14 @@ export async function getSplMaintenanceStatus(): Promise<{
   }
 }
 
+/**
+ * Reads the jwt_token cookie, verifies it upstream with Splinterlands, and
+ * returns the authenticated player identity. Uses a 5-minute cache to limit
+ * SPL API calls. Fails closed on every error path.
+ *
+ * The player identity returned here is the ONLY trusted source for on-behalf
+ * transactions — never use a client-supplied username for that purpose.
+ */
 export async function getAuthStatus() {
   try {
     const cookieStore = await cookies();
@@ -27,18 +45,36 @@ export async function getAuthStatus() {
       return { authenticated: false, username: null };
     }
 
-    const validation = await validateSplJwt(jwtToken);
+    // Structural decode (format + local expiry only — does NOT verify signature).
+    const decoded = validateSplJwt(jwtToken);
+    if (!decoded.valid) {
+      cookieStore.delete("jwt_token");
+      return { authenticated: false, username: null };
+    }
+    const candidateUsername = decoded.username!;
 
-    if (!validation.valid) {
-      // Clear invalid token
+    // Fast path: recently upstream-verified.
+    const cached = getCachedVerification(jwtToken);
+    if (cached) {
+      return { authenticated: true, username: cached.username };
+    }
+
+    // Slow path: ask Splinterlands whether this token is genuine.
+    const result = await verifySplJwt(candidateUsername, jwtToken);
+
+    if (result === "valid") {
+      setCachedVerification(jwtToken, candidateUsername);
+      return { authenticated: true, username: candidateUsername };
+    }
+
+    if (result === "invalid") {
+      // Token is forged, expired, or revoked — purge it.
       cookieStore.delete("jwt_token");
       return { authenticated: false, username: null };
     }
 
-    return {
-      authenticated: true,
-      username: validation.username,
-    };
+    // "error": transient SPL API failure — fail closed for unverified tokens.
+    return { authenticated: false, username: null };
   } catch (error) {
     console.error("Error validating auth status:", error);
     return { authenticated: false, username: null };
