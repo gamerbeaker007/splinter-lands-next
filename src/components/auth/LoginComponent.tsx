@@ -347,7 +347,11 @@ export default function LoginComponent({
                 label="Hive Username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value.toLowerCase())}
-                onKeyDown={(e) => e.key === "Enter" && handleLogin()}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter") return;
+                  setKind("keychain");
+                  void handleLogin("keychain", getSigner("keychain"));
+                }}
                 disabled={signingInProgress}
                 fullWidth
                 autoFocus

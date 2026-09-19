@@ -12,6 +12,8 @@ import {
   recordTokenTransferDonation,
 } from "@/lib/backend/actions/support/support-actions";
 import { formatFixed } from "@/lib/formatters";
+import { useSigner } from "@/lib/frontend/signing";
+import { HIVEAUTH_PHONE_APPROVAL_MESSAGE } from "@/lib/frontend/signing/hiveAuthTxNotice";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -93,6 +95,7 @@ export default function DonationSection({
   authLoading,
   onMessage,
 }: Props) {
+  const { kind } = useSigner();
   const [balances, setBalances] = useState<Balances | null>(null);
   const [balancesError, setBalancesError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -155,6 +158,10 @@ export default function DonationSection({
     const qty = Number.parseFloat(amount);
     setConfirmOpen(false);
     setPending(true);
+
+    if (kind === "hiveauth") {
+      onMessage(HIVEAUTH_PHONE_APPROVAL_MESSAGE, "info");
+    }
 
     const isSplToken = currency === "DEC" || currency === "SPS";
 
@@ -398,6 +405,11 @@ export default function DonationSection({
               </strong>{" "}
               to <strong>{DONATION_ACCOUNT}</strong>?
             </DialogContentText>
+            {kind === "hiveauth" && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {HIVEAUTH_PHONE_APPROVAL_MESSAGE}
+              </Alert>
+            )}
           </DialogContent>
           <DialogActions>
             <Button onClick={() => setConfirmOpen(false)} disabled={pending}>

@@ -1,7 +1,7 @@
 import type { Operation } from "@hiveio/dhive";
 import HAS from "hive-auth-wrapper";
 import { formatError } from "@/lib/frontend/errorFormat";
-import type { Signer, SignerKeyType } from "./Signer";
+import type { Signer, SignerBroadcastOptions, SignerKeyType } from "./Signer";
 
 interface HiveAuthSession {
   username: string;
@@ -45,9 +45,45 @@ function detailOf(error: unknown): string {
   return "";
 }
 
+function messageOf(error: unknown): string {
+  return `${formatError(error)} ${detailOf(error)}`.trim();
+}
+
+function isSessionExpiredError(error: unknown): boolean {
+  const text = messageOf(error);
+  return /session expired|invalid session|invalid token|unknown token|token expired|auth not found|connect again/i.test(
+    text
+  );
+}
+
+function isRequestTimeoutError(error: unknown): boolean {
+  const command = commandOf(error);
+  const text = messageOf(error);
+  if (/sign_timeout|timed out|timeout/i.test(text)) return true;
+  if (/^expired$/i.test(text) || /request expired/i.test(text)) return true;
+  if (
+    (command === "sign_nack" ||
+      command === "challenge_nack" ||
+      command === "auth_nack") &&
+    /expired|timeout|timed out/i.test(text)
+  ) {
+    return true;
+  }
+  return false;
+}
+
 function authError(error: unknown): Error {
   const command = commandOf(error);
   const message = formatError(error).trim();
+
+  if (isSessionExpiredError(error)) {
+    return new Error("HiveAuth session expired. Connect again.");
+  }
+  if (isRequestTimeoutError(error)) {
+    return new Error(
+      "HiveAuth request timed out. Please approve/sign this transaction on your phone and retry."
+    );
+  }
 
   if (
     command === "auth_nack" ||
@@ -58,15 +94,6 @@ function authError(error: unknown): Error {
   }
   if (command?.endsWith("_err")) {
     return new Error(detailOf(error) || "HiveAuth request failed.");
-  }
-  if (/^expired$/i.test(message)) {
-    return new Error("Request expired. Try again.");
-  }
-  if (/HiveAuth session expired/i.test(message)) {
-    return new Error("HiveAuth session expired. Connect again.");
-  }
-  if (/expired/i.test(message)) {
-    return new Error("Request expired. Try again.");
   }
   if (
     /transport|not connected|failed to connect|network|websocket/i.test(message)
@@ -80,11 +107,13 @@ function authError(error: unknown): Error {
 }
 
 function shouldClearSession(error: unknown): boolean {
-  const command = commandOf(error);
-  if (command?.endsWith("_nack") || command?.endsWith("_err")) return true;
-  return /expired|transport|not connected|failed to connect|network|websocket|nack|reject|declin/i.test(
-    formatError(error)
-  );
+  return isSessionExpiredError(error);
+}
+
+function waitExpire(event: unknown): number | undefined {
+  if (!event || typeof event !== "object") return undefined;
+  const expire = (event as { expire?: unknown }).expire;
+  return typeof expire === "number" ? expire : undefined;
 }
 
 function challengeSignature(response: unknown): string | undefined {
@@ -240,7 +269,8 @@ export class HiveAuthSigner implements Signer {
   async broadcast(
     username: string,
     operations: Operation[],
-    keyType: SignerKeyType
+    keyType: SignerKeyType,
+    options?: SignerBroadcastOptions
   ): Promise<{ txId?: string; submitted: boolean }> {
     const account = username.toLowerCase();
     const session = { ...this.getSession(), username: account };
@@ -249,7 +279,10 @@ export class HiveAuthSigner implements Signer {
       const result = await HAS.broadcast(
         session,
         keyType,
-        operations as unknown[]
+        operations as unknown[],
+        (event) => {
+          options?.onWait?.({ expire: waitExpire(event) });
+        }
       );
       const command = commandOf(result);
       if (command && command !== "sign_ack") throw result;

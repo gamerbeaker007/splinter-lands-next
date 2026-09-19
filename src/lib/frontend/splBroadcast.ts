@@ -2,6 +2,12 @@ import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-a
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import { getCurrentSigner } from "@/lib/frontend/signing";
 import {
+  hideHiveAuthTxNotice,
+  notifyHiveAuthSessionExpired,
+  showHiveAuthTxNotice,
+  updateHiveAuthTxNotice,
+} from "@/lib/frontend/signing/hiveAuthTxNotice";
+import {
   HIVE_BLOCK_MS,
   MAX_OPS_PER_BROADCAST,
   TRX_VERIFY_POLL_MS,
@@ -89,39 +95,54 @@ export async function broadcastOperations(
   keyType: KeychainKeyTypes = KeychainKeyTypes.posting
 ): Promise<BroadcastResult> {
   const signer = getCurrentSigner();
+  const usingHiveAuth = signer.kind === "hiveauth";
   const txIds: string[] = [];
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
-  for (let i = 0; i < batches.length; i++) {
-    try {
-      const result = await signer.broadcast(
-        username,
-        batches[i] as unknown as Operation[],
-        keyType === KeychainKeyTypes.active ? "active" : "posting"
-      );
-      if (result.txId) txIds.push(result.txId);
-      if (result.submitted && !result.txId) {
+  if (usingHiveAuth) showHiveAuthTxNotice();
+  try {
+    for (let i = 0; i < batches.length; i++) {
+      try {
+        const result = await signer.broadcast(
+          username,
+          batches[i] as unknown as Operation[],
+          keyType === KeychainKeyTypes.active ? "active" : "posting",
+          usingHiveAuth
+            ? {
+                onWait: ({ expire }) => updateHiveAuthTxNotice(expire),
+              }
+            : undefined
+        );
+        if (result.txId) txIds.push(result.txId);
+        if (result.submitted && !result.txId) {
+          return {
+            success: false,
+            txIds,
+            error:
+              "The wallet reported the transaction as submitted but returned no transaction id. Check your wallet or account history before retrying.",
+            uncertain: true,
+          };
+        }
+      } catch (error) {
+        const message = formatError(error);
+        if (/HiveAuth session expired\. Connect again\./i.test(message)) {
+          notifyHiveAuthSessionExpired();
+        }
         return {
           success: false,
           txIds,
-          error:
-            "The wallet reported the transaction as submitted but returned no transaction id. Check your wallet or account history before retrying.",
-          uncertain: true,
+          error: message,
         };
       }
-    } catch (error) {
-      return {
-        success: false,
-        txIds,
-        error: formatError(error),
-      };
+
+      // Wait a full block before the next batch so all ops land in different blocks
+      if (i < batches.length - 1) {
+        await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
+      }
     }
 
-    // Wait a full block before the next batch so all ops land in different blocks
-    if (i < batches.length - 1) {
-      await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
-    }
+    return { success: true, txIds };
+  } finally {
+    if (usingHiveAuth) hideHiveAuthTxNotice();
   }
-
-  return { success: true, txIds };
 }

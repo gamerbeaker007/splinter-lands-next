@@ -7,6 +7,8 @@ import {
 } from "@/constants/support";
 import { getValidatorVotes } from "@/lib/backend/actions/support/support-actions";
 import type { ValidatorVote } from "@/lib/backend/api/spl/spl-validator-api";
+import { useSigner } from "@/lib/frontend/signing";
+import { HIVEAUTH_PHONE_APPROVAL_MESSAGE } from "@/lib/frontend/signing/hiveAuthTxNotice";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -51,6 +53,7 @@ export default function ValidatorSupport({
   authLoading,
   onMessage,
 }: Props) {
+  const { kind } = useSigner();
   const [votesState, setVotesState] = useState<VotesState>({ kind: "idle" });
   const [pendingVote, setPendingVote] = useState<string | null>(null);
 
@@ -108,6 +111,9 @@ export default function ValidatorSupport({
 
     setPendingVote(SUPPORT_VALIDATOR);
     try {
+      if (kind === "hiveauth") {
+        onMessage(HIVEAUTH_PHONE_APPROVAL_MESSAGE, "info");
+      }
       const result = await broadcastOperations(
         username,
         [buildApproveValidatorOp(username, SUPPORT_VALIDATOR)],
@@ -150,6 +156,9 @@ export default function ValidatorSupport({
 
     setPendingVote(validator);
     try {
+      if (kind === "hiveauth") {
+        onMessage(HIVEAUTH_PHONE_APPROVAL_MESSAGE, "info");
+      }
       const result = await broadcastOperations(
         username,
         [buildUnapproveValidatorOp(username, validator)],
@@ -264,6 +273,7 @@ function VotesContent({
   onVote,
   onUnvote,
 }: VotesContentProps) {
+  const { kind } = useSigner();
   const alreadyVoted = votes.some(
     (vote) => vote.validator.toLowerCase() === SUPPORT_VALIDATOR.toLowerCase()
   );
@@ -277,6 +287,14 @@ function VotesContent({
           validator voting.
         </Typography>
       </Box>
+    );
+  }
+
+  if (kind === "hiveauth") {
+    return (
+      <Alert severity="info" sx={{ mb: 2 }}>
+        {HIVEAUTH_PHONE_APPROVAL_MESSAGE}
+      </Alert>
     );
   }
 

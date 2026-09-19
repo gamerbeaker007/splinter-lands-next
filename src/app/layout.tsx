@@ -1,5 +1,6 @@
 // app/layout.tsx
 import FilterPanelHost from "@/components/filter/panel/FilterPanelHost";
+import HiveAuthTxNotice from "@/components/auth/HiveAuthTxNotice";
 import SideBar from "@/components/side-bar/SideBar";
 import TestModeChip from "@/components/test-mode/TestModeChip";
 import TopBar from "@/components/top-bar/TopBar";
@@ -26,6 +27,7 @@ export default function RootLayout({
               <AuthProvider>
                 <PageTitleProvider>
                   <PlayerProvider>
+                    <HiveAuthTxNotice />
                     <Box display="flex" height="100vh" overflow="hidden">
                       <SideBar />
                       <Box

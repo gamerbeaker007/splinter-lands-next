@@ -8,6 +8,7 @@ import {
 import logger from "@/lib/frontend/log/logger.client";
 import { getCurrentSigner } from "@/lib/frontend/signing";
 import { useRouter } from "next/navigation";
+import { HIVEAUTH_SESSION_EXPIRED_EVENT } from "@/lib/frontend/signing/hiveAuthTxNotice";
 import {
   createContext,
   ReactNode,
@@ -140,6 +141,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     checkAuthStatus();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onHiveAuthSessionExpired = () => {
+      void (async () => {
+        try {
+          await logoutAction();
+        } catch (error) {
+          logger.error("HiveAuth session-expired logout failed", error);
+        } finally {
+          setUser(null);
+          setError("HiveAuth session expired. Connect again.");
+          router.refresh();
+        }
+      })();
+    };
+
+    window.addEventListener(
+      HIVEAUTH_SESSION_EXPIRED_EVENT,
+      onHiveAuthSessionExpired
+    );
+    return () => {
+      window.removeEventListener(
+        HIVEAUTH_SESSION_EXPIRED_EVENT,
+        onHiveAuthSessionExpired
+      );
+    };
+  }, [router]);
 
   const contextValue: AuthContextType = {
     user,

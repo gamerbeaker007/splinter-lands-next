@@ -123,7 +123,10 @@ describe("HiveAuthSigner", () => {
 
   it.each([
     [{ cmd: "auth_nack" }, "Request rejected in the wallet."],
-    [new Error("expired"), "Request expired. Try again."],
+    [
+      new Error("expired"),
+      "HiveAuth request timed out. Please approve/sign this transaction on your phone and retry.",
+    ],
     [
       { cmd: "challenge_err", data: "Wallet unavailable" },
       "Wallet unavailable",
@@ -158,8 +161,36 @@ describe("HiveAuthSigner", () => {
     expect(has.broadcast).toHaveBeenLastCalledWith(
       expect.objectContaining({ username: "alice" }),
       "posting",
-      []
+      [],
+      expect.any(Function)
     );
     signer.clear();
+  });
+
+  it("does not clear a valid session when one request times out", async () => {
+    const expire = Date.now() + 60_000;
+    has.authenticate.mockImplementation(
+      async (auth: { token?: string; key?: string; expire?: number }) => {
+        auth.token = "token";
+        auth.key = "key";
+        auth.expire = expire;
+        return { data: { expire } };
+      }
+    );
+    const signer = new HiveAuthSigner();
+    await signer.connect("Alice", vi.fn());
+
+    has.broadcast.mockRejectedValueOnce({
+      cmd: "sign_nack",
+      message: "expired",
+    });
+    await expect(signer.broadcast("alice", [], "posting")).rejects.toThrow(
+      "HiveAuth request timed out. Please approve/sign this transaction on your phone and retry."
+    );
+
+    has.challenge.mockResolvedValueOnce({ data: { challenge: "ok" } });
+    await expect(signer.signBuffer("alice", "m", "posting")).resolves.toBe(
+      "ok"
+    );
   });
 });

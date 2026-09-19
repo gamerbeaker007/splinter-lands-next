@@ -1,7 +1,7 @@
 import type { Operation } from "@hiveio/dhive";
 import { formatError } from "@/lib/frontend/errorFormat";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
-import type { Signer, SignerKeyType } from "./Signer";
+import type { Signer, SignerBroadcastOptions, SignerKeyType } from "./Signer";
 
 interface HiveKeychainWindow extends Window {
   hive_keychain?: unknown;
@@ -81,7 +81,8 @@ export class KeychainSigner implements Signer {
   async broadcast(
     username: string,
     operations: Operation[],
-    keyType: SignerKeyType
+    keyType: SignerKeyType,
+    _options?: SignerBroadcastOptions
   ): Promise<{ txId?: string; submitted: boolean }> {
     const keychain = getKeychain();
     const result = await keychain.broadcast({
