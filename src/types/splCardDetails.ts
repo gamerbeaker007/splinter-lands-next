@@ -18,9 +18,7 @@ type LandAbilityWithBloodLine = ["BLOODLINE", number, CardBloodline];
 type LandAbilityBoolean = ["LL" | "ENERGIZED"];
 
 type LandAbility =
-  | LandAbilityWithValue
-  | LandAbilityWithBloodLine
-  | LandAbilityBoolean;
+  LandAbilityWithValue | LandAbilityWithBloodLine | LandAbilityBoolean;
 
 // Each level contains an array of abilities
 type LandAbilityLevel = LandAbility[];

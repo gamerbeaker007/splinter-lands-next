@@ -20,10 +20,7 @@ import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 import { useCallback, useState } from "react";
 
 export type ProductionActionKind =
-  | "powerOn"
-  | "unpower"
-  | "removeWorkers"
-  | "empty";
+  "powerOn" | "unpower" | "removeWorkers" | "empty";
 
 export interface ProductionSkip {
   deedUid: string;

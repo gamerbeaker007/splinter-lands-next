@@ -143,6 +143,7 @@ export async function getPlaygroundData(
         ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
         : null;
       const bcx = determineBcxCap(setName, rarity, card.foil, card.bcx);
+      const landBasePP = Number(card.land_base_pp);
       const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
       const landBoosts = determineLandBoosts(rarity, foil, bcx, splCard);
       return {
@@ -150,6 +151,7 @@ export async function getPlaygroundData(
         set: setName as CardSetNameLandValid,
         rarity,
         bcx,
+        land_base_pp: Number.isFinite(landBasePP) ? landBasePP : undefined,
         foil,
         element,
         secondaryElement,

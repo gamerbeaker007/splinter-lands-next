@@ -27,12 +27,7 @@ import { SplPlayerPoolPosition } from "@/types/spl/landPools";
 import { useCallback, useState } from "react";
 
 export type CoverGrainStatus =
-  | "idle"
-  | "planning"
-  | "ready"
-  | "covering"
-  | "done"
-  | "error";
+  "idle" | "planning" | "ready" | "covering" | "done" | "error";
 
 interface Params {
   username: string;

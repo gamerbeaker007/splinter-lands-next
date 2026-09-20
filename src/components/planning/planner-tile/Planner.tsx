@@ -188,6 +188,7 @@ export default function Planner({
       ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
       : null;
     const bcx = determineBcxCap(setName, rarity, foil, card.bcx);
+    const landBasePP = Number(card.land_base_pp);
     const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
 
     const landboost =
@@ -210,6 +211,7 @@ export default function Planner({
       isVerico: card.edition === VERICO_EDITION,
       rarity,
       bcx,
+      land_base_pp: Number.isFinite(landBasePP) ? landBasePP : undefined,
       foil: cardFoilOptions[foil],
       element,
       secondaryElement,

@@ -41,6 +41,12 @@ export interface SlotInput {
   isVerico?: boolean;
   rarity: CardRarity;
   bcx: number; // 0..400
+  /**
+   * Optional actual land base PP from collection/staking payloads.
+   * When provided, planner calculations should prefer this over BCX-derived PP
+   * to handle over-combined land cards correctly.
+   */
+  land_base_pp?: number;
   foil: CardFoil;
   element: CardElement;
   /** Secondary element for dual-element cards; used to take the best terrain boost. */

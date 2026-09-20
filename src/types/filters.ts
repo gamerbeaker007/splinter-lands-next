@@ -4,10 +4,7 @@ import { SortSelection } from "./sorting";
 
 export type PoweredFilter = "all" | "powered" | "unpowered";
 export type WorkerFilter =
-  | "all"
-  | "hasWorkers"
-  | "hasEmptySlots"
-  | "fullyEmpty";
+  "all" | "hasWorkers" | "hasEmptySlots" | "fullyEmpty";
 
 export type FilterInput = {
   filter_regions?: number[];

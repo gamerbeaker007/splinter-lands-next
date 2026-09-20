@@ -26,8 +26,7 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
 
     for (const d of sorted) {
       const val = d[col as keyof PlayerProductionSummaryEnriched] as
-        | number
-        | undefined;
+        number | undefined;
       positive.push(val && val > 0 ? val : 0);
       negative.push(val && val < 0 ? val : 0);
     }

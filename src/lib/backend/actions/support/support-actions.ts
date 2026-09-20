@@ -111,11 +111,7 @@ export type DonationRecordResult =
   | { status: "error"; error: string };
 
 export type SupportDonationSortBy =
-  | "created_at"
-  | "username"
-  | "currency"
-  | "amount"
-  | "usd_value";
+  "created_at" | "username" | "currency" | "amount" | "usd_value";
 
 export type SupportDonationSortDirection = "asc" | "desc";
 

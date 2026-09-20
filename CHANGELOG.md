@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.35.0] - 2026-09-20
+
+### Updated
+
+- **Planning:** `SlotInput` now supports optional `land_base_pp` from land collection/staked-card sources, and planner raw base PP prefers this value when present.
+- **Planning:** Protects over-combined land cards from BCX-cap underestimation by using provided land base PP in calculations.
+
+---
+
 ## [v1.34.0] - 2026-09-18
 
 ### Added

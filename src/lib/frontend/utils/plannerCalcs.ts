@@ -181,6 +181,12 @@ export function calcStakedDecNeeded(
 }
 
 function calcBasePP(slot: SlotInput) {
+  if (
+    typeof slot.land_base_pp === "number" &&
+    Number.isFinite(slot.land_base_pp)
+  ) {
+    return Math.max(0, slot.land_base_pp);
+  }
   return calcLandPpPerBcx(slot.set, slot.rarity, slot.foil) * slot.bcx;
 }
 

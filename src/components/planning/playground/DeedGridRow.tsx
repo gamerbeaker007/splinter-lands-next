@@ -152,6 +152,7 @@ export default function DeedGridRow({
       set: card.set,
       rarity: card.rarity,
       bcx: card.bcx,
+      land_base_pp: card.landBasePP,
       foil: card.foil,
       element: card.element,
       secondaryElement: card.subElement,
@@ -167,11 +168,7 @@ export default function DeedGridRow({
     setSelectedWorkers(newWorkers);
 
     const workerField = `worker${slotIndex + 1}` as
-      | "worker1"
-      | "worker2"
-      | "worker3"
-      | "worker4"
-      | "worker5";
+      "worker1" | "worker2" | "worker3" | "worker4" | "worker5";
 
     onChange({
       deed_uid: deed.deed_uid,

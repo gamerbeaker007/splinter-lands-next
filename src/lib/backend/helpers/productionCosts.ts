@@ -26,8 +26,7 @@ function getRegionSummary(deeds: DeedComplete[]) {
     const grainReqPerHour =
       deed.worksiteDetail?.grain_req_per_hour ?? undefined;
     const resourceRecipe = deed.worksiteDetail?.resource_recipe as unknown as
-      | ResourceRecipeItem[]
-      | undefined;
+      ResourceRecipeItem[] | undefined;
 
     if (resource != "TAX") {
       if (!summaryMap[region]) {

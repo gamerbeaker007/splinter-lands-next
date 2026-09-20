@@ -100,10 +100,7 @@ export const MAKE_HARVESTABLE_STRATEGY_LABELS: Record<
 // fallbacks. A strategy missing from the list is disabled and never used.
 
 export type TopUpPoolStrategy =
-  | "use_owned_dec"
-  | "swap_resource"
-  | "sell_resource"
-  | "buy_resources";
+  "use_owned_dec" | "swap_resource" | "sell_resource" | "buy_resources";
 
 /**
  * Safest-first ordering: spend nothing extra when the player already holds both
@@ -173,10 +170,7 @@ export const POOL_BUFFER_WEEKS = 5;
 // === Post-Harvest strategy ===
 
 export type PostHarvestStrategy =
-  | "accumulate"
-  | "sell_and_pool"
-  | "transfer_to_region"
-  | "custom_plan";
+  "accumulate" | "sell_and_pool" | "transfer_to_region" | "custom_plan";
 export const DEFAULT_POST_HARVEST_STRATEGY: PostHarvestStrategy = "accumulate";
 export const DEFAULT_POST_HARVEST_EXCLUDED_RESOURCES: string[] = [];
 export const DEFAULT_POST_HARVEST_SELL_PCT = 0;
@@ -237,13 +231,7 @@ export interface PostHarvestActionSummary {
 // === Custom Plan ===
 
 export type CustomPlanActionType =
-  | "transfer"
-  | "pool"
-  | "buy"
-  | "sell"
-  | "swap"
-  | "pool_withdraw"
-  | "stake_dec";
+  "transfer" | "pool" | "buy" | "sell" | "swap" | "pool_withdraw" | "stake_dec";
 export type CustomPlanAmountType = "pct" | "abs";
 
 export const CUSTOM_PLAN_ACTION_LABELS: Record<CustomPlanActionType, string> = {
@@ -334,11 +322,7 @@ export interface CustomPlanRowValidation {
 }
 
 export type CustomPlanStatus =
-  | "empty"
-  | "incomplete"
-  | "invalid"
-  | "valid"
-  | "executing";
+  "empty" | "incomplete" | "invalid" | "valid" | "executing";
 
 /** Full validation result for a plan. */
 export interface CustomPlanValidationResult {

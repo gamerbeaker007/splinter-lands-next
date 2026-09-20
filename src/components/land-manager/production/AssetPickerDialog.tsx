@@ -49,8 +49,7 @@ const ITEM_STAKE_TYPE: Record<string, string> = {
 export type PickerKind = StakeItemKind | "runi";
 
 export type PickerResult =
-  | { kind: "item"; item: SpotItemVM }
-  | { kind: "runi"; runi: SpotCardVM };
+  { kind: "item"; item: SpotItemVM } | { kind: "runi"; runi: SpotCardVM };
 
 const TITLE_FOR: Record<PickerKind, string> = {
   powerCore: "Select a Power Core",
