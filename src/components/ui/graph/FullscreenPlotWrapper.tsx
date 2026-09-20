@@ -48,7 +48,7 @@ const THEME_TOKENS: Record<AppTheme, ThemeTokens> = {
 };
 
 interface FullscreenPlotWrapperProps {
-  data: Partial<Plotly.PlotData>[] | Partial<Plotly.PieData>[];
+  data: Partial<Plotly.Data>[] | Partial<Plotly.PieData>[];
   layout?: Partial<Plotly.Layout>;
   config?: Partial<Plotly.Config>;
   style?: React.CSSProperties;

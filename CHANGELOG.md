@@ -14,6 +14,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.34.0] - 2026-09-18
+
+### Added
+
+- **Land Manager - Production** Add totem and title to table
+- **Land Manager - Production** Update loading screen after update
+- **Land Manager - Production** Confirm message when save change
+
+---
+
 ## [v1.33.0] - 2026-09-18
 
 ### Security

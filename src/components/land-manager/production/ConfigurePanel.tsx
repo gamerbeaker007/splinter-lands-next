@@ -356,6 +356,14 @@ export default function ConfigurePanel({
       if (!window.confirm(`${shortfallWarningMessage}\n\nSave anyway?`)) {
         return;
       }
+    } else {
+      if (
+        !window.confirm(
+          "Save will cause a auto harvest of this plot make sure you have enough resource for the harvest, continue?"
+        )
+      ) {
+        return;
+      }
     }
 
     const res = await actions.saveStakeChange(deed.deed_uid, input);

@@ -5,6 +5,7 @@ import { Resource } from "@/constants/resource/resource";
 import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
 import { formatInt, formatNumber } from "@/lib/formatters";
 import { getElementIconUrl } from "@/lib/frontend/utils/icons";
+import { titleIconMap, totemIconMap } from "@/lib/shared/statics";
 import {
   land_default_off_icon_url_placeholder,
   land_mythic_icon_url,
@@ -14,15 +15,21 @@ import {
 import { TAX_ESTIMATE_NOTE } from "@/lib/shared/taxProduction";
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import {
+  titleModifiers,
+  TitleTier,
+  totemModifiers,
+  TotemTier,
+} from "@/types/planner/primitives";
+import {
   ArrowDownward as ArrowDownwardIcon,
   Build as BuildIcon,
   DeleteSweep as DeleteSweepIcon,
-  Restaurant as RestaurantIcon,
-  SwapHoriz as SwapHorizIcon,
   MoreVert as MoreVertIcon,
   PersonRemove as PersonRemoveIcon,
   PowerOff as PowerOffIcon,
   PowerSettingsNew as PowerOnIcon,
+  Restaurant as RestaurantIcon,
+  SwapHoriz as SwapHorizIcon,
   Tune as TuneIcon,
   WarningAmber as WarningAmberIcon,
 } from "@mui/icons-material";
@@ -74,7 +81,9 @@ type ColumnId =
   | "boostedPP"
   | "powered"
   | "boosts"
-  | "workers";
+  | "workers"
+  | "totem"
+  | "title";
 
 interface HeadCell {
   id: ColumnId;
@@ -201,6 +210,22 @@ const HEAD_CELLS: HeadCell[] = [
     numeric: true,
     sortable: true,
     minWidth: 64,
+  },
+  {
+    id: "totem",
+    label: "Totem",
+    shortLabel: "T",
+    sortKey: "totem",
+    numeric: false,
+    sortable: true,
+  },
+  {
+    id: "title",
+    label: "Title",
+    shortLabel: "T",
+    sortKey: "title",
+    numeric: false,
+    sortable: true,
   },
 ];
 
@@ -391,6 +416,59 @@ function showPositiveTerrainBoosts(biomeModifiers: BiomeModifiers) {
     </Stack>
   );
 }
+
+function renderTotemBoost(totemBoost: number) {
+  const totemTier = Object.keys(totemModifiers).find(
+    (tier) => totemModifiers[tier as TotemTier] === totemBoost
+  ) as TotemTier;
+  const totemIconUrl = totemIconMap[totemTier];
+  return (
+    <Tooltip
+      title={`${capitalize(totemTier)} Totem: +${totemBoost * 100}%`}
+      placement="top"
+      followCursor
+    >
+      <Avatar
+        src={totemIconUrl}
+        alt={`${capitalize(totemTier)} Totem`}
+        variant="square"
+        sx={{
+          height: 18,
+          width: 18,
+        }}
+      />
+    </Tooltip>
+  );
+}
+
+const renderTitle = (title: number) => {
+  const titleTier = Object.keys(titleModifiers).find(
+    (tier) => titleModifiers[tier as TitleTier] === title
+  ) as TitleTier;
+  const titleIconUrl = titleIconMap[titleTier];
+  const borderColor: Record<TitleTier, string> = {
+    rare: "blue",
+    epic: "purple",
+    legendary: "orange",
+  };
+
+  return (
+    <Tooltip
+      title={`${capitalize(titleTier)} Title: +${title * 100}%`}
+      placement="top"
+      followCursor
+    >
+      <Avatar
+        src={titleIconUrl}
+        sx={{
+          border: `2px solid ${borderColor[titleTier] ?? "transparent"}`,
+          height: 22,
+          width: 22,
+        }}
+      />
+    </Tooltip>
+  );
+};
 
 export default function ProductionTable({
   rows,
@@ -661,6 +739,12 @@ export default function ProductionTable({
                   </TableCell>
                   <TableCell {...cellProps("workers")}>
                     {r.workerCount}/{r.maxWorkers}
+                  </TableCell>
+                  <TableCell {...cellProps("totem")}>
+                    {r.totemBoost > 0 ? renderTotemBoost(r.totemBoost) : "-"}
+                  </TableCell>
+                  <TableCell {...cellProps("title")}>
+                    {r.titleBoost > 0 ? renderTitle(r.titleBoost) : "-"}
                   </TableCell>
                 </TableRow>
                 <TableRow>

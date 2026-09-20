@@ -40,6 +40,8 @@ export interface ProductionRow {
   /** True when the plot has anything staked (gates the Empty action). */
   hasStakedItems: boolean;
   /** True when the deed is listed on the market (can't be reconfigured). */
+  totemBoost: number;
+  titleBoost: number;
   listed: boolean;
   /** Positive Terrain Boosts **/
   biomeModifiers: BiomeModifiers;
@@ -82,8 +84,9 @@ export type ProductionSortKey =
   | "basePP"
   | "boostedPP"
   | "powered"
-  | "workerCount";
-
+  | "workerCount"
+  | "totem"
+  | "title";
 export type SortDirection = "asc" | "desc";
 
 /** Display label for a worksite type ("" → "Undeveloped"). */
@@ -141,6 +144,8 @@ export function toProductionRow(
     maxWorkers: st?.max_workers_allowed ?? 0,
     hasStakedItems,
     listed: deed.listed ?? false,
+    totemBoost: st?.totem_boost ?? 0,
+    titleBoost: st?.title_boost ?? 0,
     construction: {
       isConstruction: plotState.isConstruction,
       isActivelyBuilding: plotState.isActivelyBuilding,
@@ -230,6 +235,17 @@ export function sortRows(
         break;
       case "workerCount":
         cmp = a.workerCount - b.workerCount;
+        break;
+      case "totem":
+        if (a.totemBoost === 0 && b.totemBoost !== 0) return 1;
+        if (b.totemBoost === 0 && a.totemBoost !== 0) return -1;
+        cmp = a.totemBoost - b.totemBoost;
+        break;
+
+      case "title":
+        if (a.titleBoost === 0 && b.titleBoost !== 0) return 1;
+        if (b.titleBoost === 0 && a.titleBoost !== 0) return -1;
+        cmp = a.titleBoost - b.titleBoost;
         break;
     }
     return cmp * mul;

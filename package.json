@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.33.0",
+  "version": "1.34.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -43,11 +43,11 @@
     "node-cache": "^5.1.2",
     "p-limit": "^7.2.0",
     "pg": "^8.16.3",
-    "plotly.js": "^3.3.0",
+    "plotly.js": "^4.1.1",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-icons": "^5.5.0",
-    "react-plotly.js": "^2.6.0",
+    "react-plotly.js": "^4.1.0",
     "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
@@ -62,7 +62,6 @@
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/react-plotly.js": "^2.6.3",
     "@vitest/browser": "4.1.10",
     "@vitest/browser-playwright": "4.1.10",
     "@vitest/coverage-v8": "4.1.10",

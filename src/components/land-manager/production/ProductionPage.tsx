@@ -18,6 +18,7 @@ import {
 } from "@/components/land-manager/production/productionTypes";
 import WorkerConfirmDialog from "@/components/land-manager/production/rental-actions/WorkerConfirmDialog";
 import WorkerActionsAccordions from "@/components/land-manager/production/worker-actions/WorkerActionsAccordions";
+import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
   ProductionActionKind,
@@ -56,7 +57,6 @@ import {
 } from "@mui/material";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 
 const PAGE_SIZE = 25;
 
@@ -476,6 +476,9 @@ function ProductionPageContent() {
 
   const result = actions.result;
   const decAnyBusy = stakeBusy || unstakeBusy;
+  const hasLoadedRows = allDeeds.length > 0;
+  const showInitialLoading = loading && !hasLoadedRows;
+  const showLoadingOverlay = loading && hasLoadedRows;
 
   return (
     <Box>
@@ -587,7 +590,7 @@ function ProductionPageContent() {
       )}
 
       {/* ── Table ─────────────────────────────────────────────────────────── */}
-      {loading ? (
+      {showInitialLoading ? (
         <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
           <CustomIconSpinner
             label={"Loading plots…"}
@@ -595,37 +598,62 @@ function ProductionPageContent() {
             size={200}
           />
         </Box>
-      ) : filteredRows.length === 0 ? (
-        <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
-          {allDeeds.length === 0
-            ? "No plot data found."
-            : "No plots match the current filters."}
-        </Typography>
-      ) : viewMode === "list" ? (
-        <>
-          <ProductionTable rows={pageRows} {...tableProps} />
-          {pageCount > 1 && (
-            <Stack direction="row" justifyContent="center" mt={1.5}>
-              <Pagination
-                count={pageCount}
-                page={page}
-                size="small"
-                onChange={(_, p) => setPage(p)}
-              />
-            </Stack>
-          )}
-        </>
       ) : (
-        <Box>
-          {[...groupedByRegion.entries()].map(([region, rows]) => (
-            <ProductionRegionGroup
-              key={region}
-              region={region}
-              rows={rows}
-              pageSize={PAGE_SIZE}
-              tableProps={tableProps}
-            />
-          ))}
+        <Box sx={{ position: "relative" }}>
+          {filteredRows.length === 0 ? (
+            <Typography color="text.secondary" align="center" sx={{ py: 4 }}>
+              {allDeeds.length === 0
+                ? "No plot data found."
+                : "No plots match the current filters."}
+            </Typography>
+          ) : viewMode === "list" ? (
+            <>
+              <ProductionTable rows={pageRows} {...tableProps} />
+              {pageCount > 1 && (
+                <Stack direction="row" justifyContent="center" mt={1.5}>
+                  <Pagination
+                    count={pageCount}
+                    page={page}
+                    size="small"
+                    onChange={(_, p) => setPage(p)}
+                  />
+                </Stack>
+              )}
+            </>
+          ) : (
+            <Box>
+              {[...groupedByRegion.entries()].map(([region, rows]) => (
+                <ProductionRegionGroup
+                  key={region}
+                  region={region}
+                  rows={rows}
+                  pageSize={PAGE_SIZE}
+                  tableProps={tableProps}
+                />
+              ))}
+            </Box>
+          )}
+
+          {showLoadingOverlay && (
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                bgcolor: "rgba(17, 24, 39, 0.28)",
+                backdropFilter: "blur(1px)",
+                zIndex: 2,
+              }}
+            >
+              <CustomIconSpinner
+                label={"Refreshing plots…"}
+                iconType={"Worksite"}
+                size={180}
+              />
+            </Box>
+          )}
         </Box>
       )}
 
