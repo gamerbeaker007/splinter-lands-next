@@ -2,7 +2,7 @@ import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapp
 import { ResourceHubMetrics } from "@/generated/prisma/client";
 import { paddedSMA, paddedEMA } from "@/lib/shared/priceUtils";
 import { Box } from "@mui/material";
-import { ScatterData } from "plotly.js";
+import { Data } from "plotly.js";
 import React from "react";
 
 interface Props {
@@ -39,7 +39,7 @@ const TradeHubCumulativeBurnChart: React.FC<Props> = ({ data }) => {
   const sma = paddedSMA(dailyBurns, 20);
   const ema = paddedEMA(dailyBurns, 20);
 
-  const traces: Partial<ScatterData>[] = [
+  const traces: Partial<Data>[] = [
     {
       x: dateList,
       y: dailyBurns,

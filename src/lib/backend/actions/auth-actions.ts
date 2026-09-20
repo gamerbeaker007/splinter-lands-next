@@ -37,14 +37,14 @@ export async function getSplMaintenanceStatus(): Promise<{
  * transactions — never use a client-supplied username for that purpose.
  */
 export async function getAuthStatus() {
+  const cookieStore = await cookies();
+  const jwtToken = cookieStore.get("jwt_token")?.value;
+
+  if (!jwtToken) {
+    return { authenticated: false, username: null };
+  }
+
   try {
-    const cookieStore = await cookies();
-    const jwtToken = cookieStore.get("jwt_token")?.value;
-
-    if (!jwtToken) {
-      return { authenticated: false, username: null };
-    }
-
     // Structural decode (format + local expiry only — does NOT verify signature).
     const decoded = validateSplJwt(jwtToken);
     if (!decoded.valid) {
