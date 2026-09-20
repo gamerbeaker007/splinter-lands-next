@@ -9,6 +9,7 @@ import {
   WorksiteType,
 } from "@/types/planner/primitives";
 import { DeedChange, PlayerLandCard, PlaygroundDeed } from "@/types/playground";
+import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,7 +25,6 @@ import { TitleIconSelector } from "./TitleIconSelector";
 import { TotemIconSelector } from "./TotemIconSelector";
 import WorkerSelector from "./WorkerSelector";
 import { WorksiteIconSelector } from "./WorksiteIconSelector";
-import { RegionTax } from "@/types/regionTax";
 
 type Props = {
   deed: PlaygroundDeed;
