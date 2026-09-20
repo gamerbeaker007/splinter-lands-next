@@ -11,7 +11,7 @@ export function CardSetPpPieChart({
 
   if (filtered.length === 0) return null;
 
-  const traces: Partial<Plotly.PlotData>[] = [
+  const traces: Partial<Plotly.Data>[] = [
     {
       type: "pie",
       labels: filtered.map((r) => r.card_set),

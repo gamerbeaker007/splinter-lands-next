@@ -17,7 +17,7 @@ export default function DECEarningCharts({ data, currentPlayer }: Props) {
 
   const players = sorted.map((d) => d.player);
 
-  const traces: Partial<Plotly.PlotData>[] = [];
+  const traces: Partial<Plotly.Data>[] = [];
 
   for (const res of PRODUCING_RESOURCES) {
     const col = `dec_${res.toLowerCase()}`;

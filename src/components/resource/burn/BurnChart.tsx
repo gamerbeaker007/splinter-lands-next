@@ -29,7 +29,7 @@ export default function BurnChart({ data }: BurnChartProps) {
 
   const tokens = ["GLINT", "DEC", "MERITS", "CINDER"];
 
-  const traces: Partial<Plotly.PlotData>[] = tokens.map((token) => {
+  const traces: Partial<Plotly.Data>[] = tokens.map((token) => {
     const tokenData = convertToPositiveData.filter((d) => d.token === token);
 
     // Create a map of date to balance for this token

@@ -36,7 +36,7 @@ export function CardSetOverviewChart({
     }
   }
 
-  const rarityTraces: Partial<Plotly.PlotData>[] = cardRarityOptions.map(
+  const rarityTraces: Partial<Plotly.Data>[] = cardRarityOptions.map(
     (rarity) => ({
       type: "bar",
       name: rarity.charAt(0).toUpperCase() + rarity.slice(1),
@@ -47,7 +47,7 @@ export function CardSetOverviewChart({
     })
   );
 
-  const ppTrace: Partial<Plotly.PlotData> = {
+  const ppTrace: Partial<Plotly.Data> = {
     type: "scatter",
     mode: "lines+markers",
     name: "Land Base PP",

@@ -34,15 +34,13 @@ export function CardsByRarityChart({
 
   if (rarityXLabels.length === 0) return null;
 
-  const traces: Partial<Plotly.PlotData>[] = cardFoilOptions.map(
-    (foilName) => ({
-      type: "bar",
-      name: foilName,
-      x: rarityXLabels,
-      y: rarityXLabels.map((r) => rarityTotals[r][foilName] ?? 0),
-      marker: { color: FOIL_PLOT_COLORS[foilName] },
-    })
-  );
+  const traces: Partial<Plotly.Data>[] = cardFoilOptions.map((foilName) => ({
+    type: "bar",
+    name: foilName,
+    x: rarityXLabels,
+    y: rarityXLabels.map((r) => rarityTotals[r][foilName] ?? 0),
+    marker: { color: FOIL_PLOT_COLORS[foilName] },
+  }));
 
   return (
     <Box>
