@@ -2,7 +2,7 @@
 
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
 import { Box } from "@mui/material";
-import { ScatterData, Shape } from "plotly.js";
+import { Data, Shape } from "plotly.js";
 import React from "react";
 import { FullscreenPlotWrapper } from "../ui/graph/FullscreenPlotWrapper";
 
@@ -93,7 +93,7 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
     );
   }
 
-  const traces: Partial<ScatterData>[] = [
+  const traces: Data[] = [
     {
       x: xValues,
       y: yValues,
@@ -104,7 +104,7 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
       marker: {
         size: sizeColumn,
         sizemode: "area",
-        sizeref: sizerefVal,
+        sizref: sizerefVal,
         sizemin: 4,
         color: fillColors,
         line: { width: 2, color: borderColors },
@@ -114,21 +114,24 @@ const RatioRankPlot: React.FC<RatioRankPlotProps> = ({
         `<br>Value: %{y}<br>Base PP: %{customdata[0]:,.0f}<extra></extra>`,
       name: "Players",
     },
-    ...[1_000_000, 5_000_000, 10_000_000].map((value) => ({
-      x: [null],
-      y: [null],
-      mode: "markers" as const,
-      type: "scatter" as const,
-      marker: {
-        size: value / 100_000,
-        color: "lightgray",
-        line: { width: 2, color: "white" },
-        sizemode: "area",
-        sizeref: sizerefVal,
-      },
-      name: `${value / 1_000_000}M PP`,
-      showlegend: true,
-    })),
+    // Gebruik een expliciet type op de map om type-mismatches in de array-spread te voorkomen
+    ...[1_000_000, 5_000_000, 10_000_000].map(
+      (value): Data => ({
+        x: [null],
+        y: [null],
+        mode: "markers",
+        type: "scatter",
+        marker: {
+          size: value / 100_000,
+          color: "lightgray",
+          line: { width: 2, color: "white" },
+          sizemode: "area",
+          sizref: sizerefVal,
+        },
+        name: `${value / 1_000_000}M PP`,
+        showlegend: true,
+      })
+    ),
   ];
 
   return (
