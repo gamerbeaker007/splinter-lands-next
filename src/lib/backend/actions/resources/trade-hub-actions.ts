@@ -1,6 +1,6 @@
 "use server";
 
-import { PlayerTradeHubPosition } from "@/generated/prisma/browser";
+import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { fetchLandResourcesPools } from "@/lib/backend/api/spl/spl-land-api";
 import { SplLandPool } from "@/types/spl/landPools";
 import { cacheLife } from "next/cache";
