@@ -7,7 +7,7 @@ import {
   RESOURCE_COLOR_MAP,
 } from "@/lib/shared/statics";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 type Props = {
   rewardsPerHour: Record<Resource, number>;
@@ -23,7 +23,7 @@ export default function ResourceRewardChart({ rewardsPerHour }: Props) {
       return indexA - indexB;
     }) as Resource[];
 
-  const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
+  const rawTraces: Partial<Data>[] = resourceLabels.map((resourceLabel) => {
     const rawPP = rewardsPerHour[resourceLabel];
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
     return {

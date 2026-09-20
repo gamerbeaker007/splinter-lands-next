@@ -8,7 +8,7 @@ import {
 } from "@/lib/shared/statics";
 import { ProductionPoints } from "@/types/productionPoints";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 type Props = {
   production: Record<Resource, ProductionPoints>;
@@ -24,7 +24,7 @@ export default function ResourcePPChart({ production }: Props) {
       return indexA - indexB;
     }) as Resource[];
 
-  const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
+  const rawTraces: Partial< Data>[] = resourceLabels.map((resourceLabel) => {
     const rawPP = production[resourceLabel].basePP;
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
     return {

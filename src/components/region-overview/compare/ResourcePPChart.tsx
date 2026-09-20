@@ -2,7 +2,7 @@ import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapp
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ProductionPoints } from "@/types/productionPoints";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 type ResourcePPChartProps = {
   method: string | null;
@@ -18,7 +18,7 @@ export const ResourcePPChart = ({
   if (!data || Object.keys(data).length === 0) return null;
 
   const locations = new Set<string>();
-  const traces: Partial<PlotData>[] = [];
+  const traces: Partial<Data>[] = [];
 
   const resources = resource ? [resource] : Object.keys(data);
 

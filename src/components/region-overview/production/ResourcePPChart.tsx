@@ -5,7 +5,7 @@ import { Resource } from "@/constants/resource/resource";
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { RegionResourcePP } from "@/types/regionProductionSummary";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 type Props = {
   data: Record<Resource, RegionResourcePP>;
@@ -16,7 +16,7 @@ export default function ResourcePPChart({ data }: Props) {
   const resourceLabels = Object.keys(data).filter(
     (r) => r !== ""
   ) as Resource[];
-  const rawTraces: Partial<PlotData>[] = resourceLabels.map((resourceLabel) => {
+  const rawTraces: Partial<Data>[] = resourceLabels.map((resourceLabel) => {
     const rawPP = data[resourceLabel].totalPP.basePP;
     const color = RESOURCE_COLOR_MAP[resourceLabel] || "black";
     return {

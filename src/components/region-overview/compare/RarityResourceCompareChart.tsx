@@ -6,7 +6,7 @@ import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { NATURAL_RESOURCES, PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import { plotRarityOptions, RarityColor } from "@/types/planner";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 export const RarityResourceCompareChart = () => {
   const { filters } = useFilters();
@@ -17,8 +17,8 @@ export const RarityResourceCompareChart = () => {
   if (error) return <ErrorComponent title="Failed to load rarity data." />;
 
   // Prepare traces for production and consumption, grouped by rarity
-  const productionTraces: Partial<PlotData>[] = [];
-  const consumptionTraces: Partial<PlotData>[] = [];
+  const productionTraces: Partial<Data>[] = [];
+  const consumptionTraces: Partial<Data>[] = [];
 
   // For each rarity, create a bar trace for production and one for consumption
   const rarityOptions = plotRarityOptions.filter(

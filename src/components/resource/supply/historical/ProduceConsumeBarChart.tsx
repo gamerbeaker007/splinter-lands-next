@@ -2,7 +2,7 @@ import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapp
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 import React from "react";
 
 interface Props {
@@ -24,7 +24,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
     }
   });
 
-  const traces: Partial<PlotData>[] = Object.entries(resourceMap).map(
+  const traces: Partial<Data>[] = Object.entries(resourceMap).map(
     ([resource, val]) => ({
       x: val.x,
       y: val.y,

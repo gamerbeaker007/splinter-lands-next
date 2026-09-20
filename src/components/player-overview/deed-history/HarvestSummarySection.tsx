@@ -4,7 +4,7 @@ import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapp
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { SplDeedHarvestAction } from "@/types/deedHarvest";
 import { Box, Paper, Typography } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 interface HarvestSummarySectionProps {
   harvests: SplDeedHarvestAction[];
@@ -30,7 +30,7 @@ export default function HarvestSummarySection({
   const sortedResources = Object.keys(resourceTotals).sort();
 
   // Create bar chart data
-  const chartData: Partial<PlotData>[] = [
+  const chartData: Partial<Data>[] = [
     {
       x: sortedResources,
       y: sortedResources.map((r) => resourceTotals[r]),

@@ -2,7 +2,7 @@ import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapp
 import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
 import { RegionTax } from "@/types/regionTax";
 import { Box } from "@mui/material";
-import { PlotData } from "plotly.js";
+import { Data } from "plotly.js";
 
 type TaxIncomeChartProps = {
   title: string;
@@ -19,7 +19,7 @@ export const TaxIncomeChart = ({
   income,
   resourceFilter,
 }: TaxIncomeChartProps) => {
-  const traces: Partial<PlotData>[] = resourceFilter
+  const traces: Partial<Data>[] = resourceFilter
     ? getSortedTracesByResource(data, type, income, resourceFilter)
     : getGroupedTracesByResourceSortedByTotalDEC(data, type, income);
 
@@ -66,7 +66,7 @@ function getSortedTracesByResource(
   type: "castle" | "keep",
   income: "resource" | "dec",
   resource: string
-): Partial<PlotData>[] {
+): Partial<Data>[] {
   const entries =
     type === "castle"
       ? data.map((region) => ({
@@ -103,7 +103,7 @@ function getGroupedTracesByResourceSortedByTotalDEC(
   data: RegionTax[],
   type: "castle" | "keep",
   income: "resource" | "dec"
-): Partial<PlotData>[] {
+): Partial<Data>[] {
   const grouped: Record<string, Record<string, number>> = {};
   const totalPerLocation: Record<string, number> = {};
 
