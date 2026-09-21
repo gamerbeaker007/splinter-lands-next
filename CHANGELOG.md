@@ -13,6 +13,13 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [Unreleased]
 
 ---
+
+## [v1.36.1] - 2026-09-21
+
+- Fix loading error (when clicking to fast or empty info on deed-history)
+
+---
+
 ## [v1.36.0] - 2026-09-21
 
 - **Planning:** `SlotInput` now supports optional `landBasePP` from land collection/staked-card sources, and planner raw base PP prefers this value when present.

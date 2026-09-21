@@ -2,7 +2,40 @@ import DeedHistoryDashboard from "@/components/player-overview/deed-history/Deed
 import DeedSelector from "@/components/player-overview/deed-history/DeedSelector";
 import { getDeedHistory } from "@/lib/backend/actions/deed/deed-history-actions";
 import { Alert, Box, Skeleton, Typography } from "@mui/material";
+import { notFound } from "next/navigation";
 import { Suspense } from "react";
+
+/**
+ * Placeholder slug that only exists to give this route one concrete param.
+ *
+ * Cache Components requires `generateStaticParams` to return at least one
+ * result, and a dynamic route built without it is emitted as a PPR *fallback
+ * shell* carrying a postponed state (see the build's prerender-manifest:
+ * `routeType: "shell"`). At request time the same route also carries fallback
+ * route params, and Next throws `InvariantError` E592 — "postponed state
+ * should not be provided when fallback params are provided" — when both meet
+ * on a resume. Giving the route one concrete param makes Next build it as a
+ * plain blocking page with no shell and no postponed state, so the two can
+ * never collide.
+ *
+ * The slug is not a valid deed uid, so it 404s before any data is fetched —
+ * the build never calls the Splinterlands API for it.
+ *
+ * Remove once vercel/next.js#98647 is fixed.
+ */
+const SHELL_PLACEHOLDER_SLUG = "__shell__";
+
+export function generateStaticParams(): { slug: string }[] {
+  return [{ slug: SHELL_PLACEHOLDER_SLUG }];
+}
+
+/**
+ * The deed uid is the whole content of this page, so there is nothing worth
+ * prerendering ahead of it. Reading `params` at the top level makes the route
+ * blocking, which — together with the concrete param above — is what makes
+ * Next emit it as a plain page instead of a postponed fallback shell.
+ */
+export const instant = false;
 
 interface PageProps {
   params: Promise<{ slug: string }>;
@@ -28,8 +61,10 @@ function DeedHistoryLoading() {
   );
 }
 
-async function PageContent({ params }: PageProps) {
+export default async function DeedHistoryPage({ params }: PageProps) {
   const { slug: deedUid } = await params;
+
+  if (deedUid === SHELL_PLACEHOLDER_SLUG) notFound();
 
   return (
     <Box>
@@ -59,13 +94,5 @@ async function PageContent({ params }: PageProps) {
         <DeedHistoryContent deedUid={deedUid} />
       </Suspense>
     </Box>
-  );
-}
-
-export default function DeedHistoryPage({ params }: PageProps) {
-  return (
-    <Suspense fallback={<DeedHistoryLoading />}>
-      <PageContent params={params} />
-    </Suspense>
   );
 }

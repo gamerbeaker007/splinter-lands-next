@@ -545,7 +545,12 @@ export async function fetchDeedProjects(
     throw new Error("Invalid response from Splinterlands API");
   }
 
-  return res.data as SplDeedProjectsResponse;
+  // For a deed uid it does not know (a stale or mistyped one) the API still
+  // answers `success`, but `data` is a scalar rather than a list — `-1` from
+  // this endpoint, `null` from the reward-actions one. Normalise anything
+  // that is not a list to an empty page so callers can always iterate.
+  const body = res.data as SplDeedProjectsResponse;
+  return { ...body, data: Array.isArray(body.data) ? body.data : [] };
 }
 
 /**
@@ -612,7 +617,10 @@ export async function fetchDeedHarvestActions(
     throw new Error("Invalid response from Splinterlands API");
   }
 
-  return res.data as SplDeedHarvestActionsResponse;
+  // See fetchDeedProjects: an unknown deed uid comes back as `success` with a
+  // non-list `data` (null here).
+  const body = res.data as SplDeedHarvestActionsResponse;
+  return { ...body, data: Array.isArray(body.data) ? body.data : [] };
 }
 
 /**
