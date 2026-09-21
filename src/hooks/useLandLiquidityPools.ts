@@ -1,58 +1,32 @@
 "use client";
+
 import { getLandLiquidityPools } from "@/lib/backend/actions/resources/trade-hub-actions";
 import { SplLandPool } from "@/types/spl/landPools";
-import { useCallback, useEffect, useState } from "react";
+import { useAsyncData } from "./useAsyncData";
 
-interface useLiquidityPoolsReturn {
+interface UseLiquidityPoolsReturn {
   landPoolData: SplLandPool[];
   timeStamp: string | null;
   loading: boolean;
   error: string | null;
-  refetch: () => Promise<void>;
+  /** Drops the current result and fetches again. */
+  refetch: () => void;
 }
 
-interface Props {
-  autoFetch?: boolean;
-}
+const POOLS_KEY = "land-liquidity-pools";
 
-export function useLandLiquidityPools(
-  options: Props = {}
-): useLiquidityPoolsReturn {
-  const { autoFetch = true } = options;
-  const [landPoolData, setLandPoolData] = useState<SplLandPool[]>([]);
-  const [timeStamp, setTimeStamp] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const landPoolResult = await getLandLiquidityPools();
-      setLandPoolData(landPoolResult.data);
-      setTimeStamp(landPoolResult.timeStamp);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to fetch data";
-      setError(errorMessage);
-      console.error("Card data fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (autoFetch) {
-      fetchData();
-    }
-  }, [fetchData, autoFetch]);
+export function useLandLiquidityPools(): UseLiquidityPoolsReturn {
+  const { data, loading, error, reload } = useAsyncData(
+    POOLS_KEY,
+    getLandLiquidityPools,
+    "Failed to fetch data"
+  );
 
   return {
-    landPoolData,
-    timeStamp: timeStamp,
+    landPoolData: data?.data ?? [],
+    timeStamp: data?.timeStamp ?? null,
     loading,
     error,
-    refetch: fetchData,
+    refetch: reload,
   };
 }

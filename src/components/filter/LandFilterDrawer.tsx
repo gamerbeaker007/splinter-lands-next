@@ -4,7 +4,8 @@ import { getAvailableFilterValues } from "@/lib/backend/actions/filter/filter-ac
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { countActiveFilters } from "@/lib/frontend/utils/activeFilterCount";
 import { EnableFilterOptions, FilterInput } from "@/types/filters";
-import { useEffect, useMemo, useState } from "react";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useMemo } from "react";
 import AttributeFilter from "./AttributeFilter";
 import LocationFilter from "./LocationFilter";
 import FilterPanelShell from "./panel/FilterPanelShell";
@@ -17,30 +18,18 @@ type Props = {
   filtersEnabled?: Partial<EnableFilterOptions>;
 };
 
+const loadFilterValues = (player: string) =>
+  getAvailableFilterValues(player || null);
+
 export default function LandFilterDrawer({ player, filtersEnabled }: Props) {
-  const [availableOptions, setAvailableOptions] = useState<FilterInput | null>(
-    null
-  );
-  const [loading, setLoading] = useState(true);
   const { filters, locationOverride } = useFilters();
 
-  useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      try {
-        const data = await getAvailableFilterValues(player ?? null);
-        if (!cancelled) setAvailableOptions(data);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [player]);
+  // "" keys the site-wide (player-less) option set.
+  const { data: availableOptions, loading } = useAsyncData(
+    player ?? "",
+    loadFilterValues,
+    "Failed to load filter options"
+  );
 
   // Merge any location override on top of the fetched (site-wide) options.
   // Categorical filters always use the fetched options.

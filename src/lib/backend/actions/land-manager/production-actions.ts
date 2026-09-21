@@ -365,10 +365,10 @@ export interface ConfigCard {
   foil: number;
   bcx: number;
   maxBcx: number;
+  landBasePP: number;
+  landBoostedPP: number;
   bloodline?: CardBloodline;
   landBoosts?: LandBoost;
-  basePP: number;
-  boostedPP: number;
   terrainBoost: number;
   /** Worker slot (1-5); 0/undefined for runi. */
   slot: number;
@@ -444,8 +444,8 @@ export async function getPlotConfigureData(
       maxBcx: determineCardMaxBCX(c.card_set, rarity, c.foil),
       bloodline: (splCard?.sub_type ?? "Unknown") as CardBloodline,
       landBoosts,
-      basePP: Number(c.base_pp_after_cap),
-      boostedPP: Number(c.total_harvest_pp),
+      landBasePP: Number(c.base_pp_after_cap),
+      landBoostedPP: Number(c.total_harvest_pp),
       terrainBoost: Number(c.terrain_boost),
       slot: c.slot,
       onWagon: false, // is on land so not on wagon

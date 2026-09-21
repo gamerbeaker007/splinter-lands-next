@@ -46,8 +46,8 @@ export interface SpotCardVM {
   lastUsedDate?: string | null;
   bloodline?: string;
   landBoosts?: LandBoost | null;
-  basePP: number;
-  boostedPP: number;
+  landBasePP: number;
+  landBoostedPP: number;
   terrainBoost: number;
   /** True when this is the currently-staked occupant (no change needed). */
   fromChain: boolean;

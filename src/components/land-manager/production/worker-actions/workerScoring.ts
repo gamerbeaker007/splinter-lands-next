@@ -40,6 +40,7 @@ export function landCardToSlotInput(card: PlayerLandCard): SlotInput {
     secondaryElement: card.subElement,
     bloodline: "Unknown" as CardBloodline,
     landBoosts: card.landBoost ?? undefined,
+    landBasePP: card.landBasePP,
   };
 }
 
@@ -70,8 +71,8 @@ export function scoreLandCard(
     lastUsedDate: card.lastUsedDate,
     bloodline: card.bloodline,
     landBoosts: card.landBoost,
-    basePP,
-    boostedPP,
+    landBasePP: basePP,
+    landBoostedPP: boostedPP,
     terrainBoost: bestTerrainBonusPct(
       plot.deedType,
       card.element,
@@ -96,6 +97,7 @@ type SlotCardLike = Pick<
   | "secondaryElement"
   | "bloodline"
   | "landBoosts"
+  | "landBasePP"
 >;
 
 function spotCardToSlotInput(card: SlotCardLike, id: number): SlotInput {
@@ -109,6 +111,7 @@ function spotCardToSlotInput(card: SlotCardLike, id: number): SlotInput {
     secondaryElement: card.secondaryElement,
     bloodline: (card.bloodline ?? "Unknown") as CardBloodline,
     landBoosts: card.landBoosts ?? undefined,
+    landBasePP: card.landBasePP,
   };
 }
 

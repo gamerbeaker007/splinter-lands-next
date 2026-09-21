@@ -17,7 +17,8 @@ import { PlaygroundSummary } from "@/types/playgroundOutput";
 import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Pagination, Typography } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { useSyncedState } from "@/hooks/useSyncedState";
+import { useMemo, useState } from "react";
 import ClearActionsPanel from "./ClearActionsPanel";
 import DeedGridHeader from "./DeedGridHeader";
 import DeedGridRow from "./DeedGridRow";
@@ -49,7 +50,8 @@ export default function PlaygroundDeedGrid({
   regionTax,
   spsRatio,
 }: PlaygroundDeedGridProps) {
-  const [updatedDeeds, setUpdatedDeeds] = useState<PlaygroundDeed[]>(deeds);
+  // Working copy of the deeds; resets whenever the prop changes.
+  const [updatedDeeds, setUpdatedDeeds] = useSyncedState(deeds);
   const [currentPage, setCurrentPage] = useState(0);
   const [filterOptions, setFilterOptions] = useState<DeedFilterOptions>({
     regions: [],
@@ -86,11 +88,6 @@ export default function PlaygroundDeedGrid({
     maxLevelOnly: false,
   });
   const { prices } = usePrices();
-
-  // Reset updatedDeeds when deeds prop changes
-  useEffect(() => {
-    setUpdatedDeeds(deeds);
-  }, [deeds]);
 
   const handleDeedChange = (change: DeedChange) => {
     setUpdatedDeeds((prev) =>

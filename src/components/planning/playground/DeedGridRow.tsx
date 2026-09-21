@@ -12,7 +12,8 @@ import { DeedChange, PlayerLandCard, PlaygroundDeed } from "@/types/playground";
 import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useDerivedState, useSyncedState } from "@/hooks/useSyncedState";
+import { useMemo, useRef } from "react";
 import GeographyColumn from "./columns/GeographyColumn";
 import LinkColumn from "./columns/LinkColumn";
 import RarityColumn from "./columns/RarityColumn";
@@ -54,36 +55,22 @@ export default function DeedGridRow({
   spsRatio,
   onChange,
 }: Props) {
-  const [selectedWorksite, setSelectedWorksite] = useState(
-    deed.worksiteType || ""
+  // Local working copies that reset whenever the deed prop changes
+  // (e.g. when clear all/filtered is clicked).
+  const [selectedWorksite, setSelectedWorksite] = useDerivedState(
+    deed.worksiteType,
+    (worksiteType) => worksiteType || ""
   );
-  const [selectedRuni, setSelectedRuni] = useState(deed.runi || "none");
-  const [selectedTitle, setSelectedTitle] = useState(deed.titleTier);
-  const [selectedTotem, setSelectedTotem] = useState(deed.totemTier);
-  const [selectedWorkers, setSelectedWorkers] = useState<(string | null)[]>(
-    () => getWorkerUids(deed)
+  const [selectedRuni, setSelectedRuni] = useDerivedState(
+    deed.runi,
+    (runi) => runi || "none"
   );
-
-  // Sync local state with deed prop changes (e.g., when clear all/filtered is clicked)
-  useEffect(() => {
-    setSelectedWorksite(deed.worksiteType || "");
-  }, [deed.worksiteType]);
-
-  useEffect(() => {
-    setSelectedRuni(deed.runi || "none");
-  }, [deed.runi]);
-
-  useEffect(() => {
-    setSelectedTitle(deed.titleTier);
-  }, [deed.titleTier]);
-
-  useEffect(() => {
-    setSelectedTotem(deed.totemTier);
-  }, [deed.totemTier]);
-
-  useEffect(() => {
-    setSelectedWorkers(getWorkerUids(deed));
-  }, [deed]);
+  const [selectedTitle, setSelectedTitle] = useSyncedState(deed.titleTier);
+  const [selectedTotem, setSelectedTotem] = useSyncedState(deed.totemTier);
+  const [selectedWorkers, setSelectedWorkers] = useDerivedState(
+    deed,
+    getWorkerUids
+  );
 
   const handleWorksiteChange = (newWorksite: string) => {
     setSelectedWorksite(newWorksite);
@@ -152,7 +139,7 @@ export default function DeedGridRow({
       set: card.set,
       rarity: card.rarity,
       bcx: card.bcx,
-      land_base_pp: card.landBasePP,
+      landBasePP: card.landBasePP,
       foil: card.foil,
       element: card.element,
       secondaryElement: card.subElement,

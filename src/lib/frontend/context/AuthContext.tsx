@@ -38,30 +38,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const AUTH_CHECK_ERROR = "Auth check error";
+
+/** Resolves the current session from the server, or throws. */
+async function readAuthUser(): Promise<AuthUser | null> {
+  const data = await getAuthStatus();
+  return data.authenticated && data.username
+    ? { username: data.username, isAuthenticated: true }
+    : null;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Check if user is logged in (from server)
+  // Re-check the session on demand (exposed as refreshAuth).
   const checkAuthStatus = async () => {
+    setLoading(true);
     try {
+      setUser(await readAuthUser());
       setError(null);
-      const data = await getAuthStatus();
-
-      if (data.authenticated && data.username) {
-        setUser({
-          username: data.username,
-          isAuthenticated: true,
-        });
-      } else {
-        setUser(null);
-      }
     } catch (error) {
-      const errorMsg = "Auth check error";
-      logger.error(errorMsg, error);
-      setError(errorMsg);
+      logger.error(AUTH_CHECK_ERROR, error);
+      setError(AUTH_CHECK_ERROR);
       setUser(null);
     } finally {
       setLoading(false);
@@ -183,9 +184,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   };
 
-  // Check auth status on mount
+  // Check auth status on mount. Written out rather than calling
+  // checkAuthStatus so nothing is set synchronously while the effect runs
+  // (react-hooks/set-state-in-effect) — `loading` already starts true.
   useEffect(() => {
-    checkAuthStatus();
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const nextUser = await readAuthUser();
+        if (cancelled) return;
+        setUser(nextUser);
+        setError(null);
+      } catch (error) {
+        if (cancelled) return;
+        logger.error(AUTH_CHECK_ERROR, error);
+        setError(AUTH_CHECK_ERROR);
+        setUser(null);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const contextValue: AuthContextType = {

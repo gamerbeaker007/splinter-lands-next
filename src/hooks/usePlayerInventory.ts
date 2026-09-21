@@ -1,37 +1,16 @@
+"use client";
+
 import { getPlayerInventory } from "@/lib/backend/actions/player/inventory-actions";
 import { SplInventory } from "@/types/spl/inventory";
-import { useEffect, useState } from "react";
+
+import { useAsyncData } from "./useAsyncData";
 
 export function usePlayerInventory(playerName: string | null) {
-  const [inventory, setInventory] = useState<SplInventory[]>([]);
-  const [loadingInventory, setLoadingInventory] = useState(false);
+  const { data, loading } = useAsyncData<SplInventory[]>(
+    playerName,
+    getPlayerInventory,
+    "Failed to load inventory"
+  );
 
-  useEffect(() => {
-    if (!playerName) {
-      setInventory([]);
-      return;
-    }
-
-    let cancelled = false;
-    const fetchInventory = async () => {
-      setLoadingInventory(true);
-      try {
-        const data = await getPlayerInventory(playerName);
-        if (cancelled) return;
-        setInventory(data);
-      } catch (err) {
-        if (cancelled) return;
-        console.error("Failed to load inventory:", err);
-        setInventory([]);
-      } finally {
-        if (!cancelled) setLoadingInventory(false);
-      }
-    };
-    fetchInventory();
-    return () => {
-      cancelled = true;
-    };
-  }, [playerName]);
-
-  return { inventory, loadingInventory };
+  return { inventory: data ?? [], loadingInventory: loading };
 }

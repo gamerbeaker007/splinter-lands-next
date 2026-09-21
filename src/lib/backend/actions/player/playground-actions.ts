@@ -151,7 +151,7 @@ export async function getPlaygroundData(
         set: setName as CardSetNameLandValid,
         rarity,
         bcx,
-        land_base_pp: Number.isFinite(landBasePP) ? landBasePP : undefined,
+        landBasePP: Number.isFinite(landBasePP) ? landBasePP : undefined,
         foil,
         element,
         secondaryElement,

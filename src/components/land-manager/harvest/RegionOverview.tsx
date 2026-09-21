@@ -45,7 +45,8 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { Fragment, useCallback, useMemo } from "react";
 import RegionAnalysisCell from "./RegionAnalysisCell";
 
 interface Props {
@@ -255,6 +256,29 @@ const EMPTY_BALANCE: Record<string, number> = {
   AURA: 0,
 };
 const NO_RESOURCES: SplHarvestableResource[] = [];
+const NO_HARVESTABLE: Record<string, SplHarvestableResource[]> = {};
+const NO_BALANCES: Record<string, Record<string, number>> = {};
+const NO_ERRORS: Record<string, string> = {};
+
+/**
+ * One bulk fetch for the whole table. Every row used to fetch its own
+ * harvestable list and balance, which cost two server round trips per region
+ * and skipped the 30s server cache that getBulkRegionData keeps.
+ *
+ * The key is `<refreshKey>|<comma-separated uids>`.
+ */
+async function loadBulkRegionData(key: string) {
+  const uidKey = key.slice(key.indexOf("|") + 1);
+  const uids = uidKey.split(",");
+  const data = await getBulkRegionData(uids);
+  return {
+    harvestable: data.harvestable,
+    balances: data.balances,
+    errors: data.error
+      ? Object.fromEntries(uids.map((u) => [u, data.error!]))
+      : (data.errors ?? {}),
+  };
+}
 
 export default function RegionOverview({
   username,
@@ -275,57 +299,32 @@ export default function RegionOverview({
   // One bulk fetch for the whole table. Every row used to fetch its own
   // harvestable list and balance, which cost two server round trips per region
   // and skipped the 30s server cache that getBulkRegionData keeps.
-  const [harvestable, setHarvestable] = useState<
-    Record<string, SplHarvestableResource[]>
-  >({});
-  const [balances, setBalances] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [loading, setLoading] = useState(true);
-  const [localRefreshKey, setLocalRefreshKey] = useState(0);
-
   const uids = visibleRegions.map((r) => r.region_uid);
   const uidKey = [...uids].sort().join(",");
 
-  useEffect(() => {
-    if (uidKey === "") {
-      setLoading(false);
-      return;
-    }
+  // refreshKey is part of the cache key so a parent-driven refresh refetches;
+  // `reload` covers the local one after a single-region harvest.
+  const {
+    data: bulk,
+    loading,
+    reload,
+  } = useAsyncData(
+    uidKey === "" ? null : `${refreshKey}|${uidKey}`,
+    loadBulkRegionData,
+    "Failed to load region data"
+  );
 
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const data = await getBulkRegionData(uidKey.split(","));
-        if (cancelled) return;
-        setHarvestable(data.harvestable);
-        setBalances(data.balances);
-        setErrors(
-          data.error
-            ? Object.fromEntries(uidKey.split(",").map((u) => [u, data.error!]))
-            : (data.errors ?? {})
-        );
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [uidKey, refreshKey, localRefreshKey]);
+  const harvestable = bulk?.harvestable ?? NO_HARVESTABLE;
+  const balances = bulk?.balances ?? NO_BALANCES;
+  const errors = bulk?.errors ?? NO_ERRORS;
 
   // A single-region harvest leaves the cached snapshot describing pre-harvest
   // state, so drop it before refetching — otherwise the table reads back the
   // numbers it had a moment ago and looks like it never refreshed.
   const handleHarvested = useCallback(async () => {
     await invalidatePlayerRegionCaches().catch(() => {});
-    setLocalRefreshKey((k) => k + 1);
-  }, []);
+    reload();
+  }, [reload]);
 
   if (visibleRegions.length === 0) {
     return (

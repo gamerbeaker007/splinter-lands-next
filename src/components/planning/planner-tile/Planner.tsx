@@ -211,7 +211,7 @@ export default function Planner({
       isVerico: card.edition === VERICO_EDITION,
       rarity,
       bcx,
-      land_base_pp: Number.isFinite(landBasePP) ? landBasePP : undefined,
+      landBasePP: Number.isFinite(landBasePP) ? landBasePP : undefined,
       foil: cardFoilOptions[foil],
       element,
       secondaryElement,

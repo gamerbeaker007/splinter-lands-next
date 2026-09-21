@@ -5,8 +5,8 @@ import {
   ReactNode,
   useCallback,
   useContext,
-  useEffect,
-  useState,
+  useMemo,
+  useSyncExternalStore,
 } from "react";
 
 const STORAGE_KEY = "selected-player";
@@ -16,6 +16,39 @@ type PlayerContextType = {
   setSelectedPlayer: (player: string) => void;
   clearPlayer: () => void;
 };
+
+// localStorage is the source of truth, read through useSyncExternalStore.
+// Reading it in an effect instead would mean a second render on every mount
+// (and a synchronous setState inside that effect); this way the server
+// snapshot is "" and the client renders the stored player straight away.
+const listeners = new Set<() => void>();
+
+function subscribe(onChange: () => void) {
+  listeners.add(onChange);
+  // Also picks up changes made in another tab.
+  window.addEventListener("storage", onChange);
+  return () => {
+    listeners.delete(onChange);
+    window.removeEventListener("storage", onChange);
+  };
+}
+
+function getSnapshot() {
+  return localStorage.getItem(STORAGE_KEY) ?? "";
+}
+
+function getServerSnapshot() {
+  return "";
+}
+
+function writePlayer(player: string) {
+  if (player) {
+    localStorage.setItem(STORAGE_KEY, player);
+  } else {
+    localStorage.removeItem(STORAGE_KEY);
+  }
+  listeners.forEach((onChange) => onChange());
+}
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
@@ -32,44 +65,26 @@ type PlayerProviderProps = {
 };
 
 export function PlayerProvider({ children }: PlayerProviderProps) {
-  const [selectedPlayer, setSelectedPlayerState] = useState<string>("");
-
-  // Restore from localStorage after mount (avoids SSR/client hydration mismatch)
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setSelectedPlayerState(stored);
-    }
-  }, []);
+  const selectedPlayer = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot
+  );
 
   const setSelectedPlayer = useCallback((player: string) => {
-    const trimmed = player.trim().toLowerCase();
-    setSelectedPlayerState(trimmed);
-
-    // Persist to localStorage (only in browser)
-    if (typeof window !== "undefined") {
-      if (trimmed) {
-        localStorage.setItem(STORAGE_KEY, trimmed);
-      } else {
-        localStorage.removeItem(STORAGE_KEY);
-      }
-    }
+    writePlayer(player.trim().toLowerCase());
   }, []);
 
   const clearPlayer = useCallback(() => {
-    setSelectedPlayerState("");
-    localStorage.removeItem(STORAGE_KEY);
+    writePlayer("");
   }, []);
 
+  const value = useMemo(
+    () => ({ selectedPlayer, setSelectedPlayer, clearPlayer }),
+    [selectedPlayer, setSelectedPlayer, clearPlayer]
+  );
+
   return (
-    <PlayerContext.Provider
-      value={{
-        selectedPlayer,
-        setSelectedPlayer,
-        clearPlayer,
-      }}
-    >
-      {children}
-    </PlayerContext.Provider>
+    <PlayerContext.Provider value={value}>{children}</PlayerContext.Provider>
   );
 }

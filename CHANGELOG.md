@@ -13,6 +13,11 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ## [Unreleased]
 
 ---
+## [v1.36.0] - 2026-09-21
+
+- **Planning:** `SlotInput` now supports optional `landBasePP` from land collection/staked-card sources, and planner raw base PP prefers this value when present.
+- **Land Manager:** Remove drift calculation from top up pool as in acurate when manual harvest is done on one plot
+
 
 ## [v1.35.0] - 2026-09-20
 

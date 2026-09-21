@@ -13,7 +13,9 @@ import {
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { POOL_BUFFER_WEEKS } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import { useEffect, useState } from "react";
+import { useAsyncData } from "./useAsyncData";
+
+const NO_ROWS: PoolBufferRow[] = [];
 
 export interface PoolBufferRow {
   symbol: string;
@@ -51,80 +53,51 @@ export function usePoolBufferAlerts(
   enabled: boolean,
   refreshKey = 0
 ): { rows: PoolBufferRow[]; loading: boolean } {
-  const [rows, setRows] = useState<PoolBufferRow[]>([]);
-  const [loading, setLoading] = useState(enabled);
-
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
   );
   const regionKey = visibleRegions.map((r) => r.region_uid).join(",");
+  const active = enabled && regionKey !== "";
 
-  useEffect(() => {
-    if (!enabled || regionKey === "") {
-      setRows([]);
-      setLoading(false);
-      return;
-    }
+  // `regions` is only read for the player name and per-uid lookup, both of
+  // which are pinned by regionKey, so it stays out of the cache key.
+  const { data, loading } = useAsyncData(
+    active ? `${refreshKey}|${regionKey}` : null,
+    async () => {
+      const uids = regionKey.split(",");
+      const player = regions[0]?.player ?? "";
 
-    let mounted = true;
-    const uids = regionKey.split(",");
-    const player = regions[0]?.player ?? "";
+      const [{ overviews }, { pools }, positions] = await Promise.all([
+        getBulkRegionData(uids),
+        getLandPools(),
+        getPlayerPoolPositions(player, NATURAL_RESOURCES),
+      ]);
 
-    (async () => {
-      setLoading(true);
-      try {
-        const [{ harvestable, overviews }, { pools }, positions] =
-          await Promise.all([
-            getBulkRegionData(uids),
-            getLandPools(),
-            getPlayerPoolPositions(player, NATURAL_RESOURCES),
-          ]);
-        if (!mounted) return;
+      const visible = regions.filter((r) => uids.includes(r.region_uid));
+      const regionBalances = Object.fromEntries(
+        visible.map((r) => [
+          r.region_uid,
+          computeRegionResourceBalance(r, overviews[r.region_uid] ?? null),
+        ])
+      );
+      const { perResource } = computeWeeklyPoolNeed(visible, regionBalances);
 
-        const visible = regions.filter((r) => uids.includes(r.region_uid));
-        const regionBalances = Object.fromEntries(
-          visible.map((r) => [
-            r.region_uid,
-            computeRegionResourceBalance(r, overviews[r.region_uid] ?? null),
-          ])
-        );
-        const { perResource } = computeWeeklyPoolNeed(
-          visible,
-          regionBalances,
-          undefined,
-          harvestable
-        );
+      return NATURAL_RESOURCES.map((symbol): PoolBufferRow => {
+        const holding = computePoolHolding(positions[symbol], pools);
+        const weekly = perResource[symbol] ?? 0;
+        const weeksCovered = weekly > 0 ? holding.resource / weekly : Infinity;
+        return {
+          symbol,
+          weeklyExternalNeed: weekly,
+          poolResource: holding.resource,
+          unlockedResource: holding.unlockedResource,
+          weeksCovered,
+          belowBuffer: weekly > 0 && weeksCovered < POOL_BUFFER_WEEKS,
+        };
+      });
+    },
+    "Failed to load pool buffer alerts"
+  );
 
-        setRows(
-          NATURAL_RESOURCES.map((symbol) => {
-            const holding = computePoolHolding(positions[symbol], pools);
-            const weekly = perResource[symbol] ?? 0;
-            const weeksCovered =
-              weekly > 0 ? holding.resource / weekly : Infinity;
-            return {
-              symbol,
-              weeklyExternalNeed: weekly,
-              poolResource: holding.resource,
-              unlockedResource: holding.unlockedResource,
-              weeksCovered,
-              belowBuffer: weekly > 0 && weeksCovered < POOL_BUFFER_WEEKS,
-            };
-          })
-        );
-      } catch {
-        if (mounted) setRows([]);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-    // `regions` is only read for the player name and per-uid lookup, both of
-    // which are pinned by regionKey.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regionKey, enabled, refreshKey]);
-
-  return { rows, loading };
+  return { rows: data ?? NO_ROWS, loading };
 }

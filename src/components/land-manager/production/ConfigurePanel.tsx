@@ -196,6 +196,7 @@ function toPlannerSlotInput(
     foil: number;
     element: SpotCardVM["element"];
     secondaryElement: SpotCardVM["secondaryElement"];
+    land_base_pp?: number;
     bloodline?: string;
     landBoosts?: SlotInput["landBoosts"] | null;
   },
@@ -206,6 +207,7 @@ function toPlannerSlotInput(
     set: card.set as SlotInput["set"],
     rarity: card.rarity,
     bcx: card.bcx,
+    landBasePP: card.land_base_pp,
     foil: cardFoilOptions[card.foil] ?? "regular",
     element: card.element,
     secondaryElement: card.secondaryElement,

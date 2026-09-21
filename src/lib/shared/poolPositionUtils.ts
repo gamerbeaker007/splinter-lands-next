@@ -1,7 +1,6 @@
-import { aggregateCosts, poolFor } from "@/lib/shared/landManagerUtils";
+import { poolFor } from "@/lib/shared/landManagerUtils";
 import { NATURAL_RESOURCES, PRODUCING_RESOURCES } from "@/lib/shared/statics";
 import {
-  SplHarvestableResource,
   SplProductionOverviewRegion,
   SplRegionOverviewData,
 } from "@/types/spl/landManager";
@@ -164,10 +163,6 @@ export function sharesFractionForResource(
 
 /** Production hours assumed in one week when no measured figure is supplied. */
 export const HOURS_PER_WEEK = 7 * 24;
-/** Cap on the accrual window: production stops accruing after 7 days. */
-const MAX_ACCRUAL_HOURS = HOURS_PER_WEEK;
-/** Below this, accrued totals are too small to cross-check a rate against. */
-const MIN_ACCRUAL_HOURS = 6;
 
 /**
  * Floor on the top-up window. A second run inside the same hour then sizes
@@ -326,9 +321,7 @@ export interface WeeklyConsumption {
  */
 export function computeWeeklyConsumption(
   regions: SplProductionOverviewRegion[],
-  consumptionPerHour: Record<string, Record<string, number>>,
-  harvestableMap: Record<string, SplHarvestableResource[]> = {},
-  now: Date = new Date()
+  consumptionPerHour: Record<string, Record<string, number>>
 ): WeeklyConsumption {
   const perResource: Record<string, number> = Object.fromEntries(
     NATURAL_RESOURCES.map((s) => [s, 0])
@@ -347,9 +340,6 @@ export function computeWeeklyConsumption(
     for (const symbol of NATURAL_RESOURCES) {
       perResource[symbol] += (rates[symbol] ?? 0) * HOURS_PER_WEEK;
     }
-
-    const drift = accrualDrift(region, rates, harvestableMap, now);
-    if (drift) warnings.push(`${region.name}: ${drift}`);
   }
 
   return { perResource, warnings };
@@ -389,9 +379,7 @@ export interface WeeklyPoolNeed {
 export function computeWeeklyPoolNeed(
   regions: SplProductionOverviewRegion[],
   balances: Record<string, RegionResourceBalance>,
-  productionHours: number = HOURS_PER_WEEK,
-  harvestableMap: Record<string, SplHarvestableResource[]> = {},
-  now: Date = new Date()
+  productionHours: number = HOURS_PER_WEEK
 ): WeeklyPoolNeed {
   const consumedPerHour = zeroedNaturals();
   const producedPerHour = zeroedNaturals();
@@ -415,14 +403,6 @@ export function computeWeeklyPoolNeed(
       externalNeedPerHour[symbol] += need;
       perResource[symbol] += need * productionHours;
     }
-
-    const drift = accrualDrift(
-      region,
-      balance.consumedPerHour,
-      harvestableMap,
-      now
-    );
-    if (drift) warnings.push(`${region.region_uid} (${region.name}): ${drift}`);
   }
 
   return {
@@ -433,47 +413,4 @@ export function computeWeeklyPoolNeed(
     productionHours,
     warnings,
   };
-}
-
-/**
- * Compare the rate against the cost actually accrued since the last claim.
- * Returns a message when they disagree by more than 20%, or null when they
- * agree / the sample is too short to judge.
- */
-function accrualDrift(
-  region: SplProductionOverviewRegion,
-  rates: Record<string, number>,
-  harvestableMap: Record<string, SplHarvestableResource[]>,
-  now: Date
-): string | null {
-  const costs = aggregateCosts(harvestableMap[region.region_uid] ?? []);
-  if (costs.length === 0) return null;
-
-  const lastClaimed = region.last_claimed
-    ? new Date(region.last_claimed)
-    : null;
-  if (!lastClaimed || Number.isNaN(lastClaimed.getTime())) return null;
-
-  const elapsedHours = (now.getTime() - lastClaimed.getTime()) / 3_600_000;
-
-  if (elapsedHours < MIN_ACCRUAL_HOURS) return null;
-  const maxExceeded =
-    elapsedHours >= MAX_ACCRUAL_HOURS
-      ? `\n Possibly inaccurate, as it has not been harvested for more than 7 days.`
-      : "";
-
-  for (const { symbol, amount } of costs) {
-    const measured = amount / elapsedHours;
-    const rate = rates[symbol] ?? 0;
-    if (measured <= 0 || rate <= 0) continue;
-    const ratio = measured / rate;
-    if (ratio > 1.2 || ratio < 0.8) {
-      return (
-        `${symbol} rate ${rate.toFixed(1)}/hr disagrees with the ${measured.toFixed(1)}/hr ` +
-        `accrued over the last ${elapsedHours.toFixed(0)}h — target may be off` +
-        maxExceeded
-      );
-    }
-  }
-  return null;
 }

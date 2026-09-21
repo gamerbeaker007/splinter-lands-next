@@ -46,7 +46,7 @@ export interface SlotInput {
    * When provided, planner calculations should prefer this over BCX-derived PP
    * to handle over-combined land cards correctly.
    */
-  land_base_pp?: number;
+  landBasePP?: number;
   foil: CardFoil;
   element: CardElement;
   /** Secondary element for dual-element cards; used to take the best terrain boost. */

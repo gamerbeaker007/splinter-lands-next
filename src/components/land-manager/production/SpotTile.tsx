@@ -119,8 +119,8 @@ export function FilledCardSpot({
           terrain_boost={card.terrainBoost}
           actual_bcx={card.bcx}
           max_bcx={card.maxBcx}
-          base_pp={card.basePP}
-          boosted_pp={card.boostedPP}
+          base_pp={card.landBasePP}
+          boosted_pp={card.landBoostedPP}
           uid={card.uid}
         />
         <ClearButton onClear={onClear} disabled={disabled} />

@@ -71,17 +71,10 @@ export function useAuthorityStatusCore({
   reload,
 }: Config): UseAuthorityStatus {
   const [status, setStatus] = useState<AuthorityCoreStatus | null>(null);
-  const [loading, setLoading] = useState(false);
+  // Starts true: the initial load is kicked off by the effect below, and
+  // flipping the flag there would be a synchronous write during the effect.
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-
-  const doLoad = useCallback(async () => {
-    setLoading(true);
-    try {
-      setStatus(await load());
-    } finally {
-      setLoading(false);
-    }
-  }, [load]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -93,8 +86,20 @@ export function useAuthorityStatusCore({
   }, [reload]);
 
   useEffect(() => {
-    doLoad();
-  }, [doLoad]);
+    let cancelled = false;
+    void (async () => {
+      try {
+        const next = await load();
+        if (!cancelled) setStatus(next);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [load]);
 
   const setAuthority = useCallback(
     async (next: string[]): Promise<AuthorityActionResult> => {

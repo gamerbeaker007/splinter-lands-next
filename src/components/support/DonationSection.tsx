@@ -50,7 +50,8 @@ import Select from "@mui/material/Select";
 import TextField from "@mui/material/TextField";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useState } from "react";
 
 interface Props {
   username: string | null;
@@ -93,9 +94,6 @@ export default function DonationSection({
   authLoading,
   onMessage,
 }: Props) {
-  const [balances, setBalances] = useState<Balances | null>(null);
-  const [balancesError, setBalancesError] = useState<string | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
   const [currency, setCurrency] = useState<DonationCurrency>(
     SUPPORTED_DONATION_CURRENCIES[0]
   );
@@ -104,30 +102,18 @@ export default function DonationSection({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const currencyConfig = CURRENCY_CONFIG[currency];
+
+  const {
+    data: balances,
+    loading: balancesLoading,
+    reload: refreshBalances,
+  } = useAsyncData(
+    authLoading || !username ? null : username,
+    getSupportBalances,
+    "Failed to load balances"
+  );
   const balanceValue = balances?.[currencyConfig.balanceKey] ?? null;
-
-  const balancesLoading =
-    refreshing || (!!username && !authLoading && balances === null);
-
-  // Memoised because the mount effect below depends on it.
-  const refreshBalances = useCallback(async () => {
-    if (!username) return;
-    setRefreshing(true);
-    const result = await getSupportBalances();
-    setBalances({
-      dec: result.dec,
-      sps: result.sps,
-      hive: result.hive,
-      hbd: result.hbd,
-    });
-    setBalancesError(result.error ?? null);
-    setRefreshing(false);
-  }, [username]);
-
-  useEffect(() => {
-    if (authLoading) return;
-    void refreshBalances();
-  }, [authLoading, refreshBalances]);
+  const balancesError = balances?.error ?? null;
 
   const validateAmount = (raw: string) => {
     const value = Number.parseFloat(raw);
@@ -210,13 +196,13 @@ export default function DonationSection({
           `Thank you. ${formatFixed(qty, currencyConfig.precision)} ${currency} was sent to ${DONATION_ACCOUNT}.`,
           "success"
         );
-        await refreshBalances();
+        refreshBalances();
         return;
       }
 
       if (recordResult.status === "pending") {
         onMessage(recordResult.message, "info");
-        await refreshBalances();
+        refreshBalances();
         return;
       }
 
@@ -252,7 +238,7 @@ export default function DonationSection({
               <span>
                 <IconButton
                   size="small"
-                  onClick={() => void refreshBalances()}
+                  onClick={refreshBalances}
                   disabled={balancesLoading}
                 >
                   {balancesLoading ? (

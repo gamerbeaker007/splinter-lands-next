@@ -108,9 +108,9 @@ function compareRows(a: SpotCardVM, b: SpotCardVM, key: WorkerSortKey): number {
     case "bcx":
       return a.bcx - b.bcx;
     case "basePP":
-      return a.basePP - b.basePP;
+      return a.landBasePP - b.landBasePP;
     case "boostedPP":
-      return a.boostedPP - b.boostedPP;
+      return a.landBoostedPP - b.landBoostedPP;
   }
 }
 
@@ -293,7 +293,7 @@ export default function WorkerSelectDialog({
       let bestValue = Number.POSITIVE_INFINITY;
 
       rows.forEach((row, index) => {
-        const value = row.boostedPP;
+        const value = row.landBoostedPP;
         const distance = Math.abs(value - target);
         if (
           distance < bestDistance ||
@@ -562,21 +562,21 @@ export default function WorkerSelectDialog({
                               {r.bcx}/{r.maxBcx}
                             </TableCell>
                             <TableCell align="right">
-                              {formatInt(r.basePP)}
+                              {formatInt(r.landBasePP)}
                             </TableCell>
                             <TableCell align="right">
                               <Typography
                                 variant="body2"
                                 fontWeight={600}
                                 color={
-                                  r.boostedPP > r.basePP
+                                  r.landBoostedPP > r.landBasePP
                                     ? "success.main"
-                                    : r.boostedPP < r.basePP
+                                    : r.landBoostedPP < r.landBasePP
                                       ? "error.main"
                                       : "text.primary"
                                 }
                               >
-                                {formatInt(r.boostedPP)}
+                                {formatInt(r.landBoostedPP)}
                               </Typography>
                             </TableCell>
                             <TableCell align="left">

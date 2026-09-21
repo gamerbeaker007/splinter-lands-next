@@ -81,15 +81,14 @@ async function planTopUp(
   topUpWindow: TopUpWindowInfo,
   force: boolean
 ): Promise<TopUpPoolPlan> {
-  const [{ harvestable, balances, overviews }, { pools }, decBalance] =
-    await Promise.all([
-      getBulkRegionData(
-        regions.map((r) => r.region_uid),
-        force
-      ),
-      getLandPools(),
-      getDecBalance(username),
-    ]);
+  const [{ balances, overviews }, { pools }, decBalance] = await Promise.all([
+    getBulkRegionData(
+      regions.map((r) => r.region_uid),
+      force
+    ),
+    getLandPools(),
+    getDecBalance(username),
+  ]);
 
   // Rate-based, so it stays valid immediately after a harvest — which is exactly
   // when this action runs (Make Harvestable → Harvest → Top Up Pools). Netted per
@@ -107,12 +106,7 @@ async function planTopUp(
     HOURS_PER_WEEK,
     Math.max(1, topUpWindow.hours)
   );
-  const need = computeWeeklyPoolNeed(
-    regions,
-    regionBalances,
-    productionHours,
-    harvestable
-  );
+  const need = computeWeeklyPoolNeed(regions, regionBalances);
 
   return buildTopUpPoolPlan({
     regions,

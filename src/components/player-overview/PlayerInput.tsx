@@ -3,16 +3,12 @@
 import { usePlayer } from "@/lib/frontend/context/PlayerContext";
 import SearchIcon from "@mui/icons-material/Search";
 import { IconButton, InputAdornment, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useSyncedState } from "@/hooks/useSyncedState";
 
 export default function PlayerInput() {
   const { selectedPlayer, setSelectedPlayer } = usePlayer();
-  const [inputValue, setInputValue] = useState("");
-
-  // Sync input value when context changes
-  useEffect(() => {
-    setInputValue(selectedPlayer);
-  }, [selectedPlayer]);
+  // Follows the context, but stays editable between searches.
+  const [inputValue, setInputValue] = useSyncedState(selectedPlayer);
 
   const handleLoad = () => {
     setSelectedPlayer(inputValue);

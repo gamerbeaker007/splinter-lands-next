@@ -98,35 +98,37 @@ export default function TopUpPoolsRow({
   }, [username]);
 
   const { openConfigDialog } = useLandManagerContext();
-  const action = useTopUpPoolsAction({
-    username,
-    visibleRegions,
-    strategies,
-    topUpWindow: windowInfo,
-    onSuccess,
-  });
 
-  useEffect(() => {
-    onBusyChange(action.busy);
-  }, [action.busy, onBusyChange]);
-
-  useEffect(() => {
-    if (!action.result?.success) return;
-
-    // Apply cooldown immediately in the UI after a successful broadcast, then
-    // refresh from DB so the persisted source of truth takes over.
-    const justCompletedAt = new Date().toISOString();
+  // Applying the cooldown is a reaction to the broadcast succeeding, not to a
+  // rendered value, so it hangs off the action's success callback rather than
+  // an effect watching `action.result`.
+  const handleSuccess = useCallback(() => {
+    // Show the cooldown immediately, then refresh from DB so the persisted
+    // source of truth takes over.
     setWindowInfo({
       hours: 1,
       disabled: true,
       source: "fallback",
       reason:
         "Top Up Pools just completed successfully. A 1-hour cooldown is now active.",
-      lastCompletedAt: justCompletedAt,
+      lastCompletedAt: new Date().toISOString(),
     });
     setWindowLoading(false);
     void reloadWindowInfo();
-  }, [action.result?.success, reloadWindowInfo]);
+    onSuccess();
+  }, [onSuccess, reloadWindowInfo]);
+
+  const action = useTopUpPoolsAction({
+    username,
+    visibleRegions,
+    strategies,
+    topUpWindow: windowInfo,
+    onSuccess: handleSuccess,
+  });
+
+  useEffect(() => {
+    onBusyChange(action.busy);
+  }, [action.busy, onBusyChange]);
 
   // Build the plan first and hand it to the confirm dialog; only the
   // dialog's Confirm actually broadcasts.

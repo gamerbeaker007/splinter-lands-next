@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.35.0",
+  "version": "1.36.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -78,7 +78,6 @@
     "storybook": "^10.5.6",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21",
     "vitest": "4.1.10"
   }
 }

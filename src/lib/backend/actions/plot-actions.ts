@@ -21,8 +21,7 @@ export async function getPlotById(id: number): Promise<DeedComplete> {
     throw new NotFoundError(`Plot ${id} not found`);
   }
 
-  const stakedAssets = await fetchStakedAssets(deed.deed_uid);
-  deed.stakedAssets = stakedAssets;
+  deed.stakedAssets = await fetchStakedAssets(deed.deed_uid);
 
   return deed;
 }
