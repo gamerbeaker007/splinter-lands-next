@@ -7,6 +7,7 @@ import {
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
+import { makeHarvestablePreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import { computePoolHolding } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { formatError } from "@/lib/frontend/errorFormat";
@@ -119,7 +120,11 @@ export function useMakeHarvestableAction({
         );
 
         if (planOnly) {
-          return { title: "Review plan — Make All Harvestable", log };
+          return {
+            title: "Review plan — Make All Harvestable",
+            log,
+            rows: makeHarvestablePreviewRows(actions),
+          };
         } else if (ops.length === 0) {
           setError(
             "All regions are already harvestable (or no strategies could help)."
