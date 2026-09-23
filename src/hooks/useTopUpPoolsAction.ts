@@ -11,6 +11,7 @@ import {
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatError } from "@/lib/frontend/errorFormat";
+import { topUpPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -165,7 +166,11 @@ export function useTopUpPoolsAction({
         );
 
         if (planOnly) {
-          return { title: "Review plan — Top Up Pools", log: plan.log };
+          return {
+            title: "Review plan — Top Up Pools",
+            log: plan.log,
+            rows: topUpPreviewRows(plan),
+          };
         }
 
         const ready = plan.resources.filter((r) => r.status === "READY");

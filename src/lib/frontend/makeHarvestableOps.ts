@@ -312,6 +312,7 @@ function tryPool(
     to_symbol: cost.symbol,
     in_amount: sharesOut,
     out_amount: Number.parseFloat(resourceOut.toFixed(3)),
+    dec_amount: Number.parseFloat(decOut.toFixed(3)),
   });
 
   if (resourceOut >= deficit) {

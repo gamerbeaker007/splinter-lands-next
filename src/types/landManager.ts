@@ -1,6 +1,7 @@
 // === Action plan (shared across bulk action hooks) ===
 
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
+import { ActionPreviewRow } from "@/types/actionPreview";
 import { DeedComplete } from "@/types/deed";
 import { CardRarity } from "./planner";
 
@@ -12,6 +13,12 @@ import { CardRarity } from "./planner";
 export interface ActionPlan {
   title: string;
   log: string[];
+  /**
+   * The same plan summed per strategy, for the visual summary at the top of the
+   * confirm dialog. Built from the planner's own structured output, never from
+   * the log lines, so the icons and the steps can never disagree.
+   */
+  rows?: ActionPreviewRow[];
 }
 
 export const MAX_ITEM_SIZE_IN_OPERATION = 100;
@@ -820,4 +827,11 @@ export interface ActionSummary {
   to_symbol: string;
   in_amount: number;
   out_amount: number;
+  /**
+   * `pool` only: the DEC side that comes back with the withdrawal. A liquidity
+   * position pays out in both resource AND DEC, and `out_amount` carries only
+   * the resource half. Optional because rows logged before this field existed
+   * do not have it.
+   */
+  dec_amount?: number;
 }

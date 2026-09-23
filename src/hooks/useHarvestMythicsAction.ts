@@ -13,6 +13,7 @@ import {
   planMythicDonations,
 } from "@/lib/frontend/donationPayment";
 import { formatError } from "@/lib/frontend/errorFormat";
+import { harvestPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -118,7 +119,18 @@ export function useHarvestMythicsAction({
             capped
           );
           log.push(...donationLog);
-          return { title: "Review plan — Harvest Mythics", log };
+          const collected: Record<string, number> = {};
+          for (const deed of mythicDeeds)
+            for (const tax of deed.taxes)
+              collected[tax.token] = (collected[tax.token] ?? 0) + tax.balance;
+          const donated: Record<string, number> = {};
+          for (const d of capped)
+            donated[d.symbol] = (donated[d.symbol] ?? 0) + d.amount;
+          return {
+            title: "Review plan — Harvest Mythics",
+            log,
+            rows: harvestPreviewRows(collected, donated, "Taxes"),
+          };
         }
 
         if (!mythicDeeds.some((d) => d.taxes.length > 0)) {

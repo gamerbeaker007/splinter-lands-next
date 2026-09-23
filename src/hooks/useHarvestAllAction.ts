@@ -23,6 +23,7 @@ import {
   buildRegionHarvestOnlyOp,
   summarizeHarvestedResources,
 } from "@/lib/frontend/harvestOps";
+import { harvestPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import {
   canHarvestRegion,
   effectiveBalance,
@@ -140,7 +141,26 @@ export function useHarvestAllAction({
             capped
           );
           log.push(...donationLog);
-          return { title: "Review plan — Harvest All", log };
+          // Only the eligible regions are harvested, so only their resources
+          // may be promised here.
+          const eligibleUids = new Set(
+            eligibleRegions.map((r) => r.region_uid)
+          );
+          const harvested = summarizeHarvestedResources(
+            Object.fromEntries(
+              Object.entries(harvestable).filter(([uid]) =>
+                eligibleUids.has(uid)
+              )
+            )
+          );
+          const donated: Record<string, number> = {};
+          for (const d of capped)
+            donated[d.symbol] = (donated[d.symbol] ?? 0) + d.amount;
+          return {
+            title: "Review plan — Harvest All",
+            log,
+            rows: harvestPreviewRows(harvested, donated),
+          };
         }
 
         if (eligibleRegions.length === 0) {

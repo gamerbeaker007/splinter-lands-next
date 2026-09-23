@@ -8,6 +8,7 @@ import {
 import { formatNumber } from "@/lib/formatters";
 import { formatError } from "@/lib/frontend/errorFormat";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
+import { processResourcesPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import {
   BroadcastResult,
   broadcastOperations,
@@ -325,7 +326,11 @@ export function useProcessResourcesAction({
         }
 
         if (planOnly) {
-          return { title: "Review plan — Process Resources", log };
+          return {
+            title: "Review plan — Process Resources",
+            log,
+            rows: processResourcesPreviewRows(actions),
+          };
         }
 
         if (

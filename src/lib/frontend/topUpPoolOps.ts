@@ -962,7 +962,12 @@ function planResource(
       ratio
     );
     if (typeof result === "string") {
-      attempts.push({ strategy, ok: false, covered: 0, reason: result });
+      attempts.push({
+        strategy,
+        ok: false,
+        covered: 0,
+        reason: result,
+      });
       continue;
     }
 

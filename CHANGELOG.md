@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.37.0] - 2026-09-22
+
+## Updated
+
+- **Land Manager - Harvest:** Harvest button now  the expected show result of the action where possible. (still includes the detail in seperate pane)
+
+---
+
 ## [v1.36.1] - 2026-09-21
 
 - Fix loading error (when clicking to fast or empty info on deed-history)
