@@ -247,15 +247,13 @@ export function topUpPreviewRows(plan: TopUpPoolPlan): ActionPreviewRow[] {
       (a) => a.strategy === "use_owned_dec" && a.ok
     );
     const owned = ownedAttempts.reduce((sum, a) => sum + a.covered, 0);
-    const ownedDec = ownedAttempts.reduce((sum, a) => sum + a.dec_used, 0);
-    if (owned > 0 || ownedDec > 0) {
+    if (owned > 0) {
       const row = rowFor(
         rows,
         "use_owned_dec",
         TOP_UP_ROW_LABELS.use_owned_dec
       );
       add(row.spend, resource.symbol, owned);
-      add(row.spend, "DEC", ownedDec);
     }
   }
 
@@ -264,7 +262,6 @@ export function topUpPreviewRows(plan: TopUpPoolPlan): ActionPreviewRow[] {
     label: "Into pools",
     spend: [],
     receive: [],
-    note: "locked 30 days",
   };
   for (const resource of ready) {
     add(deposit.spend, resource.symbol, resource.total_resource);

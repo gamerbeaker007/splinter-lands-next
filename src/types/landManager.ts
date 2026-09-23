@@ -723,10 +723,6 @@ export interface TopUpPoolStrategyAttempt {
   ok: boolean;
   /** Resource units this strategy contributed to the deposit (0 when it failed). */
   covered: number;
-  /**
-   * Used with strategy `use_owned_dec` to track wallet DEC usage.
-   */
-  dec_used: number;
   reason: string;
 }
 

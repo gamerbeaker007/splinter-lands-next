@@ -184,7 +184,6 @@ describe("topUpPreviewRows", () => {
               strategy: "use_owned_dec",
               ok: true,
               covered: 1000,
-              dec_used: 20,
               reason: "",
             },
           ],
@@ -210,14 +209,12 @@ describe("topUpPreviewRows", () => {
               strategy: "use_owned_dec",
               ok: true,
               covered: 600,
-              dec_used: 12,
               reason: "",
             },
             {
               strategy: "use_owned_dec",
               ok: true,
               covered: 400,
-              dec_used: 8,
               reason: "",
             },
           ],
@@ -227,10 +224,7 @@ describe("topUpPreviewRows", () => {
       ])
     );
     const owned = rows.find((r) => r.key === "use_owned_dec")!;
-    expect(owned.spend).toEqual([
-      { symbol: "GRAIN", amount: 1000 },
-      { symbol: "DEC", amount: 20 },
-    ]);
+    expect(owned.spend).toEqual([{ symbol: "GRAIN", amount: 1000 }]);
     expect(owned.receive).toEqual([]);
   });
 
@@ -245,7 +239,6 @@ describe("topUpPreviewRows", () => {
               strategy: "use_owned_dec",
               ok: false,
               covered: 0,
-              dec_used: 0,
               reason: "no wallet DEC",
             },
           ],

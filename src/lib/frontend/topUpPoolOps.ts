@@ -966,7 +966,6 @@ function planResource(
         strategy,
         ok: false,
         covered: 0,
-        dec_used: 0,
         reason: result,
       });
       continue;
@@ -976,7 +975,6 @@ function planResource(
       strategy,
       ok: true,
       covered: round3(result.contributed),
-      dec_used: round3(result.additions.reduce((s, a) => s + a.dec_amount, 0)),
       reason: result.note,
     });
     contributing.push(strategy);

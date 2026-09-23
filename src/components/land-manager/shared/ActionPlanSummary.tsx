@@ -75,49 +75,47 @@ function AmountTile({
 
 function SummaryRow({ row }: { row: ActionPreviewRow }) {
   return (
-    <Stack
-      direction="row"
-      alignItems="center"
-      flexWrap="wrap"
-      gap={0.75}
-      sx={{ py: 0.75 }}
-    >
-      {/* The strategy name is the row's key, not one of its values: uppercase,
-          muted and in its own fixed column so it never reads as an amount. */}
-      <Typography
-        variant="caption"
-        sx={{
-          minWidth: LABEL_WIDTH,
-          maxWidth: LABEL_WIDTH,
-          fontSize: FONT_SIZE,
-          fontWeight: 700,
-          letterSpacing: 0.5,
-          color: "text.secondary",
-          // borderLeft: 2,
-          borderColor: "divider",
-          pl: 1,
-        }}
+    <Stack direction="column">
+      {row.key === "deposit" && <Divider sx={{ mt: 1, mb: 1 }} />}
+
+      <Stack
+        direction="row"
+        alignItems="center"
+        flexWrap="wrap"
+        gap={0.75}
+        sx={{ py: 0.75 }}
       >
-        {row.label}
-      </Typography>
-
-      <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
-        {row.spend.map((a) => (
-          <AmountTile key={`spend-${a.symbol}`} amount={a} spent />
-        ))}
-        {row.spend.length > 0 && row.receive.length > 0 && (
-          <ArrowForwardIcon sx={{ fontSize: 20, color: "text.secondary" }} />
-        )}
-        {row.receive.map((a) => (
-          <AmountTile key={`receive-${a.symbol}`} amount={a} spent={false} />
-        ))}
-      </Stack>
-
-      {row.note && (
-        <Typography variant="caption" color="text.secondary">
-          {row.note}
+        {/* The strategy name is the row's key, not one of its values: uppercase,
+              muted and in its own fixed column so it never reads as an amount. */}
+        <Typography
+          variant="caption"
+          sx={{
+            minWidth: LABEL_WIDTH,
+            maxWidth: LABEL_WIDTH,
+            fontSize: FONT_SIZE,
+            fontWeight: 700,
+            letterSpacing: 0.5,
+            color: "text.secondary",
+            // borderLeft: 2,
+            borderColor: "divider",
+            pl: 1,
+          }}
+        >
+          {row.label}
         </Typography>
-      )}
+
+        <Stack direction="row" alignItems="center" flexWrap="wrap" gap={0.5}>
+          {row.spend.map((a) => (
+            <AmountTile key={`spend-${a.symbol}`} amount={a} spent />
+          ))}
+          {row.spend.length > 0 && row.receive.length > 0 && (
+            <ArrowForwardIcon sx={{ fontSize: 20, color: "text.secondary" }} />
+          )}
+          {row.receive.map((a) => (
+            <AmountTile key={`receive-${a.symbol}`} amount={a} spent={false} />
+          ))}
+        </Stack>
+      </Stack>
     </Stack>
   );
 }

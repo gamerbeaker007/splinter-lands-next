@@ -30,6 +30,4 @@ export interface ActionPreviewRow {
   label: string;
   spend: ActionPreviewAmount[];
   receive: ActionPreviewAmount[];
-  /** Extra context shown after the amounts, e.g. which regions took part. */
-  note?: string;
 }
