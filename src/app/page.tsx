@@ -6,9 +6,6 @@ import PlayerPageTile from "@/components/PlayerPageTile";
 import Box from "@mui/material/Box";
 import Container from "@mui/material/Container";
 
-const temp_image =
-  "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
-
 const spl_stats =
   "https://files.peakd.com/file/peakd-hive/beaker007/23tSKnFQVREdG5gFbEZFWqAYNMB6cREM9oMiy4asHybefQfoYw927KUivHGhGp3ycuiKD.png";
 
@@ -28,14 +25,14 @@ export default function Home() {
           <DefaultPageTile
             title="Resource"
             href="/resource"
-            image={temp_image}
+            image={"/images/home/resourcesOverview.png"}
           />
         </Box>
         <Box sx={defaultBoxStyle}>
           <DefaultPageTile
             title="Region Overview"
             href="/region-overview"
-            image={temp_image}
+            image={"/images/home/regionOverview.png"}
           />
         </Box>
         <Box sx={defaultBoxStyle}>
@@ -45,21 +42,21 @@ export default function Home() {
           <DefaultPageTile
             title="Player Efficiency"
             href="/player-efficiency"
-            image={temp_image}
+            image={"/images/home/playerEfficiency.png"}
           />
         </Box>
         <Box sx={defaultBoxStyle}>
           <DefaultPageTile
             title="Land Planning"
             href="/planning"
-            image={temp_image}
+            image={"/images/home/landPlanning.png"}
           />
         </Box>
         <Box sx={defaultBoxStyle}>
           <DefaultPageTile
             title="Land Manager"
             href="/land-manager"
-            image={temp_image}
+            image={"/images/home/landManager.png"}
           />
         </Box>
         <Box sx={defaultBoxStyle}>

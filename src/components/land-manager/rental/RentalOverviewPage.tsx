@@ -5,9 +5,18 @@ import RenewRentalsActionControl from "@/components/land-manager/production/rent
 import RentalOverview from "@/components/land-manager/rental/RentalOverview";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
-import { Box, Divider, Stack, Typography } from "@mui/material";
+import SettingsIcon from "@mui/icons-material/Settings";
+import {
+  Box,
+  Divider,
+  IconButton,
+  Stack,
+  Tooltip,
+  Typography,
+} from "@mui/material";
 
 function RentalOverviewPageContent() {
+  const { openConfigDialog } = useLandManagerContext();
   const { auth, refreshKey, triggerRefresh } = useLandManagerContext();
   const username = auth.username ?? "";
   const rentalAuthorityHook = useRentalAuthorityStatus();
@@ -33,6 +42,15 @@ function RentalOverviewPageContent() {
           username={username}
           onSuccess={triggerRefresh}
         />
+        <Tooltip title={`Rental settings`}>
+          <IconButton
+            size="small"
+            aria-label={`Rental settings`}
+            onClick={() => openConfigDialog("rental")}
+          >
+            <SettingsIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
       <Divider sx={{ my: 2 }} />

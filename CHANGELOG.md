@@ -16,6 +16,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [v1.37.0] - 2026-09-22
 
+## Added
+
+- Image to the home page
+- Add Settings icon to rental overview page (rental section)
+
+
+---
+
+## [v1.37.0] - 2026-09-22
+
 ## Updated
 
 - **Land Manager - Harvest:** Harvest button now  the expected show result of the action where possible. (still includes the detail in seperate pane)

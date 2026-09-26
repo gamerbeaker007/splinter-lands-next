@@ -43,7 +43,6 @@ export default function DefaultPageTile({ title, href, image, newTab }: Props) {
           inset: 0,
           backgroundImage: `url(${image})`,
           backgroundSize: "cover",
-          backgroundPosition: "center",
           opacity: 0.5,
           zIndex: 1,
         }}

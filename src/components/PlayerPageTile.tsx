@@ -39,9 +39,6 @@ export default function PlayerPageTile() {
     router.push("/player-overview/overview");
   };
 
-  const temp_image =
-    "https://files.peakd.com/file/peakd-hive/beaker007/23uFPdKf8W8ZX71NBX84EzrbuDWKc44PmSAcGwNRzkmS25BuzUm5ySwCMfrXsDdoAMTYK.png";
-
   return (
     <Card
       elevation={4}
@@ -52,7 +49,7 @@ export default function PlayerPageTile() {
         sx={{
           position: "absolute",
           inset: 0,
-          backgroundImage: `url(${temp_image})`,
+          backgroundImage: `url(/images/home/playerOverview.png)`,
           backgroundSize: "cover",
           backgroundPosition: "center",
           opacity: 0.5,
