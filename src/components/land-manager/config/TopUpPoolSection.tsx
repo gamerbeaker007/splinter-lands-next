@@ -60,7 +60,7 @@ export default function TopUpPoolSection({
         <Typography variant="caption">
           Run this once per week, preferably on about the same day. Running it
           more often adds more resource to the pools; running it less often
-          shrinks the tax-free buffer available to Make Harvestable.
+          shrinks the tax-free buffer available to Prepare Harvest.
         </Typography>
       </Alert>
     </>

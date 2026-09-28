@@ -15,7 +15,7 @@ import {
   Typography,
 } from "@mui/material";
 import { ReactNode } from "react";
-import { BroadcastResult } from "@/lib/frontend/splBroadcast";
+import type { BroadcastResult } from "@/lib/frontend/splBroadcast";
 
 /** Block explorer used for the transaction links on a success status. */
 export const HIVE_EXPLORER_TX_URL = "https://hivehub.dev/tx/";

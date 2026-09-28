@@ -547,7 +547,7 @@ export const LAND_MANAGER_CONFIG_SECTION_LABELS: Record<
   string
 > = {
   enabled_regions: "Enabled Regions",
-  make_harvestable: "Make Harvestable",
+  make_harvestable: "Prepare Harvest",
   donation: "Donation",
   post_harvest: "Post-Harvest",
   top_up_pools: "Top Up Pools",

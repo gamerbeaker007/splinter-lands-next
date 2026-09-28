@@ -3,6 +3,7 @@
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
 import ActiveTile from "./ActiveTile";
 import CacheStatusDot from "./CacheStatusDot";
+import DecStakedTile from "./DecStakedTile";
 import ThemeToggle from "./ThemeToggle";
 
 import AppBar from "@mui/material/AppBar";
@@ -50,6 +51,7 @@ export default function TopBar() {
         >
           <CacheStatusDot />
           <ActiveTile />
+          <DecStakedTile />
           <ThemeToggle />
           <Tooltip title="Support beaker007">
             <IconButton

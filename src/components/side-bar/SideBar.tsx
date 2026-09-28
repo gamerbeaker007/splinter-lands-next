@@ -10,6 +10,7 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
@@ -39,7 +40,7 @@ const links = [
   },
   {
     href: "/planning",
-    label: "Land  Planning",
+    label: "Land Planning",
     icon: <GrPlan />,
   },
   {
@@ -73,50 +74,64 @@ export default function SideBar() {
         },
       }}
     >
+      {/* Dense like the TopBar toolbar, so the divider lines up with the
+          bottom of the top bar. */}
       <Toolbar
+        variant="dense"
+        disableGutters
         sx={{
           display: "flex",
-          flexDirection: collapsed ? "column" : "row", // align vertically in collapsed mode
           alignItems: "center",
           justifyContent: collapsed ? "center" : "space-between",
-          minHeight: 64,
-          px: collapsed ? 1 : 2,
+          px: collapsed ? 0 : 2,
         }}
       >
         {!collapsed && (
-          <Typography variant="h6" noWrap>
+          <Typography variant="subtitle1" fontWeight="bold" noWrap>
             Land Stats
           </Typography>
         )}
-        <IconButton onClick={() => setCollapsed(!collapsed)}>
-          <FiMenu />
-        </IconButton>
+        <Tooltip
+          title={collapsed ? "Expand menu" : "Collapse menu"}
+          placement="right"
+        >
+          <IconButton
+            size="small"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand menu" : "Collapse menu"}
+          >
+            <FiMenu size={18} />
+          </IconButton>
+        </Tooltip>
       </Toolbar>
       <Divider />
       <List suppressHydrationWarning>
         {links.map(({ href, label, icon }) => (
           <ListItem key={href} disablePadding sx={{ display: "block" }}>
-            <ListItemButton
-              suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
-              component={Link}
-              href={href}
-              sx={{
-                minHeight: 48,
-                justifyContent: collapsed ? "center" : "flex-start",
-                px: 2,
-              }}
-            >
-              <ListItemIcon
+            {/* The label is hidden while collapsed, so the tooltip carries it. */}
+            <Tooltip title={collapsed ? label : ""} placement="right" arrow>
+              <ListItemButton
+                suppressHydrationWarning // To avoid hydration mismatch due to hive keychain sdk extension
+                component={Link}
+                href={href}
                 sx={{
-                  minWidth: 0,
-                  mr: collapsed ? 0 : 2,
-                  justifyContent: "center",
+                  minHeight: 48,
+                  justifyContent: collapsed ? "center" : "flex-start",
+                  px: 2,
                 }}
               >
-                {icon}
-              </ListItemIcon>
-              {!collapsed && <ListItemText primary={label} />}
-            </ListItemButton>
+                <ListItemIcon
+                  sx={{
+                    minWidth: 0,
+                    mr: collapsed ? 0 : 2,
+                    justifyContent: "center",
+                  }}
+                >
+                  {icon}
+                </ListItemIcon>
+                {!collapsed && <ListItemText primary={label} />}
+              </ListItemButton>
+            </Tooltip>
           </ListItem>
         ))}
       </List>

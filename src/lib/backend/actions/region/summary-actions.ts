@@ -1,21 +1,8 @@
 "use server";
 
 import { FilterInput } from "@/types/filters";
-import {
-  getActiveDeedCountByRegion as getActiveDeedCountByRegionService,
-  getRegionSummary as getRegionSummaryService,
-} from "@/lib/backend/services/regionService";
+import { getRegionSummary as getRegionSummaryService } from "@/lib/backend/services/regionService";
 import { RegionSummary } from "@/types/regionSummary";
-
-/**
- * Get active deed count by region.
- */
-export async function getActiveDeedCountByRegion(
-  filters: FilterInput = {}
-): Promise<Record<string, { active: number; inactive: number }>> {
-  const result = await getActiveDeedCountByRegionService(filters);
-  return result;
-}
 
 /**
  * Get region summary.
@@ -23,6 +10,29 @@ export async function getActiveDeedCountByRegion(
 export async function getRegionSummary(
   filters: FilterInput = {}
 ): Promise<RegionSummary | null> {
-  const result = await getRegionSummaryService(filters);
-  return result;
+  return await getRegionSummaryService(filters);
+}
+
+export interface LandDecStakeSummary {
+  totalDecStaked: number;
+  totalDecNeeded: number;
+  totalDecInUse: number;
+  totalDecSaved: number;
+  runiCount: number;
+}
+
+/**
+ * DEC staked on all land — only the DEC fields of the (unfiltered) region
+ * summary, so the top bar does not ship the whole summary to the browser.
+ */
+export async function getLandDecStakeSummary(): Promise<LandDecStakeSummary | null> {
+  const summary = await getRegionSummaryService({});
+  if (!summary) return null;
+  return {
+    totalDecStaked: summary.totalDecStaked,
+    totalDecNeeded: summary.totalDecNeeded,
+    totalDecInUse: summary.totalDecInUse,
+    totalDecSaved: summary.totalDecSaved,
+    runiCount: summary.runiCount,
+  };
 }

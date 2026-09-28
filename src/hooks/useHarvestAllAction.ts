@@ -24,6 +24,7 @@ import {
   summarizeHarvestedResources,
 } from "@/lib/frontend/harvestOps";
 import { harvestPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
+import { HarvestReward, harvestRewardsFrom } from "@/lib/shared/harvestRewards";
 import {
   canHarvestRegion,
   effectiveBalance,
@@ -55,6 +56,9 @@ export interface HarvestAllResult {
 interface UseHarvestAllAction {
   busy: boolean;
   result: HarvestAllResult | null;
+  /** Special drops (Labor's Luck cards) of the last confirmed run. */
+  rewards: HarvestReward[];
+  clearRewards: () => void;
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
@@ -77,6 +81,7 @@ export function useHarvestAllAction({
 }: Params): UseHarvestAllAction {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<HarvestAllResult | null>(null);
+  const [rewards, setRewards] = useState<HarvestReward[]>([]);
   const [error, setError] = useState<string | null>(null);
   const payDonations = usePayDonations(username);
 
@@ -89,6 +94,7 @@ export function useHarvestAllAction({
     async (planOnly: boolean): Promise<ActionPlan | null> => {
       setBusy(true);
       setResult(null);
+      setRewards([]);
       setError(null);
       try {
         const [{ harvestable, balances }, { pools }] = await Promise.all([
@@ -218,6 +224,8 @@ export function useHarvestAllAction({
             setError(donationOutcome.donationError);
         }
 
+        // Revealed once the whole flow (donations included) has finished.
+        setRewards(harvestRewardsFrom(harvestRes.results ?? []));
         setResult({
           success: donationOutcome.success,
           txIds: [...harvestRes.txIds, ...donationOutcome.txIds],
@@ -255,6 +263,8 @@ export function useHarvestAllAction({
   return {
     busy: busy || payDonations.busy,
     result,
+    rewards,
+    clearRewards: () => setRewards([]),
     error,
     clearResult: () => {
       setResult(null);

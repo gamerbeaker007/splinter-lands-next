@@ -58,6 +58,7 @@ import {
   type SxProps,
   type Theme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import Image from "next/image";
 import { Fragment, ReactNode, useState } from "react";
 import {
@@ -559,9 +560,17 @@ export default function ProductionTable({
             </TableRow>
           </TableHead>
           <TableBody>
-            {rows.map((r) => (
+            {rows.map((r, i) => (
               <Fragment key={r.deedUid}>
-                <TableRow hover>
+                <TableRow
+                  hover
+                  sx={(theme) => ({
+                    backgroundColor:
+                      i % 2 === 1
+                        ? alpha(theme.palette.primary.main, 0.08)
+                        : undefined,
+                  })}
+                >
                   <TableCell {...cellProps("actions")}>
                     <Stack direction="row" spacing={0}>
                       <Tooltip title="Plot actions">
