@@ -24,7 +24,6 @@ import {
   Typography,
 } from "@mui/material";
 import Image from "next/image";
-import { useState } from "react";
 
 /** One reveal, per item: from small to full size while spinning once. */
 export const REVEAL_DURATION_MS = 1100;
@@ -201,9 +200,6 @@ export default function HarvestRewardReveal({
   cardDetails,
   onClose,
 }: HarvestRewardRevealProps) {
-  // Bumped by "Replay" — a new key remounts the items and restarts the animation.
-  const [replay, setReplay] = useState(0);
-
   return (
     <Dialog
       open={open && rewards.length > 0}
@@ -232,7 +228,6 @@ export default function HarvestRewardReveal({
           {headline(rewards)}
         </Typography>
         <Stack
-          key={replay}
           direction="row"
           flexWrap="wrap"
           justifyContent="center"
@@ -250,13 +245,6 @@ export default function HarvestRewardReveal({
         </Stack>
       </DialogContent>
       <DialogActions sx={{ justifyContent: "center", pb: 2.5 }}>
-        <Button
-          size="small"
-          onClick={() => setReplay((n) => n + 1)}
-          sx={{ color: "rgba(255,255,255,0.75)" }}
-        >
-          Replay
-        </Button>
         <Button size="small" variant="contained" onClick={onClose} autoFocus>
           Nice!
         </Button>
