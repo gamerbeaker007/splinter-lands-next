@@ -6,7 +6,7 @@ import {
   parseCardUid,
   rarityName,
 } from "@/lib/utils/cardUtil";
-import { cardFoilOptions, CardRarity } from "@/types/planner";
+import { CardFoil, cardFoilOptions, CardRarity } from "@/types/planner";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Box, Tooltip, Typography } from "@mui/material";
 import Image from "next/image";
@@ -17,6 +17,37 @@ interface CardUidImageProps {
   cardDetails: SplCardDetails[] | null;
   /** Thumbnail width in px; height follows the 5:7 card ratio. */
   width?: number;
+}
+
+/**
+ * Artwork and name for a card uid, or null while card details are still
+ * loading or the card is unknown.
+ *
+ * A single card of an arcane/black foil is already max level, while regular and
+ * gold cards drop at 1 BCX — so anything above foil id 1 renders at max level.
+ */
+export function resolveCardUidArt(
+  uid: string | null | undefined,
+  cardDetails: SplCardDetails[] | null
+): { img: string; name: string; foil: CardFoil } | null {
+  const parsed = parseCardUid(uid);
+  const card = parsed
+    ? cardDetails?.find((cd) => cd.id === parsed.cardDetailId)
+    : undefined;
+  if (!parsed || !card) return null;
+
+  const level =
+    cardFoilOptions.indexOf(parsed.foil) > 1
+      ? determineMaxLevelFromRarityFoil(
+          rarityName(card.rarity) as CardRarity,
+          parsed.foil
+        )
+      : 1;
+  return {
+    img: getCardImgV2(card.name, parsed.edition, parsed.foil, level),
+    name: card.name,
+    foil: parsed.foil,
+  };
 }
 
 /**
@@ -31,12 +62,9 @@ export default function CardUidImage({
   cardDetails,
   width = 40,
 }: CardUidImageProps) {
-  const parsed = parseCardUid(uid);
-  const card = parsed
-    ? cardDetails?.find((cd) => cd.id === parsed.cardDetailId)
-    : undefined;
+  const art = resolveCardUidArt(uid, cardDetails);
 
-  if (!parsed || !card) {
+  if (!art) {
     return (
       <Typography
         variant="caption"
@@ -48,14 +76,7 @@ export default function CardUidImage({
     );
   }
 
-  const level =
-    cardFoilOptions.indexOf(parsed.foil) > 1
-      ? determineMaxLevelFromRarityFoil(
-          rarityName(card.rarity) as CardRarity,
-          parsed.foil
-        )
-      : 1;
-  const img = getCardImgV2(card.name, parsed.edition, parsed.foil, level);
+  const { img, name } = art;
   const height = Math.round((width * 7) / 5);
 
   return (
@@ -64,7 +85,7 @@ export default function CardUidImage({
         <Box width={220} height={300} position="relative">
           <Image
             src={img}
-            alt={card.name}
+            alt={name}
             fill
             sizes="220px"
             style={{
@@ -87,7 +108,7 @@ export default function CardUidImage({
       >
         <Image
           src={img}
-          alt={card.name}
+          alt={name}
           fill
           sizes={`${width}px`}
           style={{ objectFit: "cover", objectPosition: "top center" }}

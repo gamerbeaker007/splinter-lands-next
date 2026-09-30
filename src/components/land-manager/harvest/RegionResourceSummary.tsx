@@ -6,22 +6,27 @@ import {
   getBulkRegionData,
   getDecBalance,
 } from "@/lib/backend/actions/land-manager/overview-actions";
+import { saveLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { formatCompactNumber } from "@/lib/formatters";
 import { PRODUCING_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import SettingsIcon from "@mui/icons-material/Settings";
 import {
+  Alert,
   Box,
+  Button,
+  Checkbox,
   Chip,
   CircularProgress,
-  IconButton,
+  FormControlLabel,
+  Grow,
   Paper,
   Stack,
   Tooltip,
   Typography,
 } from "@mui/material";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Props {
@@ -36,6 +41,12 @@ interface Props {
 const SUMMARY_RESOURCES = PRODUCING_RESOURCES.filter((sym) => sym !== "SPS");
 const DEC_SYMBOL = "DEC";
 
+/** Slow enough that the Save / Reset buttons visibly ease in. */
+const DIRTY_ANIMATION_MS = 600;
+
+const sortedKey = (regions: number[]) =>
+  [...regions].sort((a, b) => a - b).join(",");
+
 interface RegionAmount {
   name: string;
   regionNumber: number;
@@ -47,10 +58,19 @@ export default function RegionResourceSummary({
   enabledRegions,
   refreshKey = 0,
 }: Props) {
-  const { auth, openConfigDialog } = useLandManagerContext();
+  const { auth, config, setConfig, triggerRefresh } = useLandManagerContext();
+  const router = useRouter();
   const username = auth.username ?? "";
 
-  const enabledKey = [...enabledRegions].sort((a, b) => a - b).join(",");
+  const enabledKey = sortedKey(enabledRegions);
+
+  // Local, unsaved region selection; null while it matches the saved config.
+  const [draft, setDraft] = useState<number[] | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const selection = draft ?? enabledRegions;
+  const selected = new Set(selection);
+  const dirty = draft !== null && sortedKey(draft) !== enabledKey;
 
   const [balances, setBalances] = useState<
     Record<string, Record<string, number>>
@@ -107,27 +127,100 @@ export default function RegionResourceSummary({
     (a, b) => a.region_number - b.region_number
   );
 
+  const selectedCount = regions.filter((r) =>
+    selected.has(r.region_number)
+  ).length;
+  const allSelected = regions.length > 0 && selectedCount === regions.length;
+
+  const toggleRegion = (regionNumber: number) =>
+    setDraft((prev) => {
+      const current = prev ?? enabledRegions;
+      return current.includes(regionNumber)
+        ? current.filter((n) => n !== regionNumber)
+        : [...current, regionNumber];
+    });
+
+  // Same behaviour as the config dialog: all selected → deselect all,
+  // otherwise (none or some) → select all.
+  const toggleAll = () =>
+    setDraft(allSelected ? [] : regions.map((r) => r.region_number));
+
+  const reset = () => {
+    setDraft(null);
+    setSaveError(null);
+  };
+
+  const save = async () => {
+    if (draft === null) return;
+    setSaving(true);
+    setSaveError(null);
+    const result = await saveLandManagerConfig(draft);
+    setSaving(false);
+    if (!result.success) {
+      setSaveError(result.error ?? "Save failed");
+      return;
+    }
+    setConfig({ ...config, enabled_regions: draft });
+    setDraft(null);
+    triggerRefresh();
+    // Refresh server components so derived panels re-fetch with the new
+    // enabled regions — same as saving from the config dialog.
+    router.refresh();
+  };
+
   return (
     <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
       <Stack
         direction="row"
         alignItems="center"
         justifyContent="space-between"
+        flexWrap="wrap"
+        gap={1}
         mb={1}
       >
-        <Typography variant="h6" fontWeight="bold">
-          Regions
-        </Typography>
-        <Tooltip title="Configure which regions are managed">
-          <IconButton
-            size="small"
-            aria-label="Configure managed regions"
-            onClick={() => openConfigDialog("enabled_regions")}
-          >
-            <SettingsIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
+        <Stack direction="row" alignItems="center" gap={2} flexWrap="wrap">
+          <Typography variant="h6" fontWeight="bold">
+            Regions
+          </Typography>
+          {regions.length > 0 && (
+            <FormControlLabel
+              control={
+                <Checkbox
+                  size="small"
+                  checked={allSelected}
+                  indeterminate={selectedCount > 0 && !allSelected}
+                  onChange={toggleAll}
+                  disabled={saving}
+                />
+              }
+              label={
+                <Typography variant="body2" fontWeight="bold">
+                  {allSelected ? "Deselect all" : "Select all"}
+                  <Typography
+                    variant="caption"
+                    component="span"
+                    color="text.secondary"
+                    sx={{ ml: 1 }}
+                  >
+                    {selectedCount} of {regions.length} selected
+                  </Typography>
+                </Typography>
+              }
+              sx={{ m: 0 }}
+            />
+          )}
+        </Stack>
       </Stack>
+
+      {saveError && (
+        <Alert
+          severity="error"
+          sx={{ mb: 1 }}
+          onClose={() => setSaveError(null)}
+        >
+          {saveError}
+        </Alert>
+      )}
 
       <Stack direction="row" gap={0.75} flexWrap="wrap" mb={2}>
         {sortedRegions.length === 0 ? (
@@ -136,15 +229,29 @@ export default function RegionResourceSummary({
           </Typography>
         ) : (
           sortedRegions.map((region) => {
-            const enabled = enabledRegions.includes(region.region_number);
+            const enabled = selected.has(region.region_number);
             return (
               <Tooltip
                 key={region.region_uid}
-                title={`Region #${region.region_number} — ${enabled ? "enabled" : "disabled"}`}
+                title={
+                  <>
+                    Region #{region.region_number} -{" "}
+                    <strong>{enabled ? "enabled" : "disabled"}</strong>,
+                    {enabled ? " click to disable" : " click to enable"}
+                  </>
+                }
+                placement="top"
+                followCursor
               >
                 <Chip
                   size="small"
                   label={region.name}
+                  clickable={!saving}
+                  onClick={
+                    saving
+                      ? undefined
+                      : () => toggleRegion(region.region_number)
+                  }
                   color={enabled ? "primary" : "default"}
                   variant={enabled ? "filled" : "outlined"}
                   sx={{
@@ -159,6 +266,35 @@ export default function RegionResourceSummary({
           })
         )}
       </Stack>
+
+      <Grow
+        in={dirty}
+        timeout={DIRTY_ANIMATION_MS}
+        style={{ transformOrigin: "left top" }}
+        unmountOnExit
+      >
+        <Stack direction="row" gap={1} mb={1}>
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={reset}
+            disabled={saving}
+          >
+            Reset
+          </Button>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={save}
+            disabled={saving}
+            startIcon={
+              saving ? <CircularProgress size={12} color="inherit" /> : null
+            }
+          >
+            Save
+          </Button>
+        </Stack>
+      </Grow>
 
       <Stack direction="row" gap={1} flexWrap="wrap">
         {loading ? (

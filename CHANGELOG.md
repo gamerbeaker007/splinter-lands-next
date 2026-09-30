@@ -24,6 +24,26 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.38.0] - 2026-09-28
+
+### Added
+
+- **Top bar:** New DEC chip showing the total DEC staked on land; hover for the breakdown (needed, in use, saved by discount, reduced by Runi, max possible and the surplus/shortfall).
+- **Land Manager - Alerts tab:** Alerts moved from the main panel into their own tab. The tab title shows the number of alerts per severity (high / medium / low) and a spinner while loading.
+- **Land Manager - Alerts:** The player dashboard alerts (no power, missing/no workers, negative DEC, terrain boosts, bloodline, base PP cap, Rationing Lite, finished/full, power cores) are now included alongside the Land Manager checks.
+- **Land Manager - Harvest:** Harvest All and Harvest Mythics now read the confirmed SPL results and celebrate special drops — each Labor's Luck card or totem fragment grows from small to full size while spinning once into place (with replay). Storybook stories simulate both actions.
+- **Land Manager - Alerts:** Every alert is categorised as high (error), medium (warning) or low (info), and offers its direct action (feed workers, fix grain deficit) or a link to where it can be resolved, plus an expandable details view.
+
+### Updated
+
+- **Side bar:** Tooltips on the menu items while collapsed; the menu button is smaller and the header now lines up with the top bar height.
+- **Land Manager:** Page title moved to the top bar; the experimental notice is now a warning chip with the message on hover.
+- **Land Manager - Harvest:** Regions can be enabled/disabled directly in the Regions summary — click a region chip or use Select all / Deselect all; Save and Reset fade in once there is an unsaved change. The settings icon there is removed.
+- **Land Manager - Harvest:** "1. Make Harvestable" is shown as "1. Prepare Harvest" (display only).
+- **Land Manager - Harvest:** Today's results and the detailed harvest overview (mythic + regions) moved under the action buttons in collapsible panes, closed by default.
+
+---
+
 ## [v1.37.0] - 2026-09-22
 
 ## Updated

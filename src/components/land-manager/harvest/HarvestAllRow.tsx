@@ -5,6 +5,7 @@ import ActionCard, {
   buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
+import HarvestRewardDialog from "@/components/land-manager/harvest/HarvestRewardDialog";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { land_worksite_select_grain_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, DonationConfig } from "@/types/landManager";
@@ -94,6 +95,15 @@ export default function HarvestAllRow({
           </>
         }
       />
+
+      {/* Special drops (Labor's Luck cards / totem fragments) read from the
+          confirmed transactions once the run has finished. */}
+      {action.rewards.length > 0 && (
+        <HarvestRewardDialog
+          rewards={action.rewards}
+          onClose={action.clearRewards}
+        />
+      )}
     </ActionCardColumn>
   );
 }

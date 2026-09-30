@@ -19,6 +19,11 @@ import {
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
+import {
+  fragmentsIn,
+  HarvestReward,
+  harvestRewardsFrom,
+} from "@/lib/shared/harvestRewards";
 import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
   ActionPlan,
@@ -41,6 +46,9 @@ interface UseHarvestMythicsAction {
   busy: boolean;
   isVerifying: boolean;
   result: BroadcastResult | null;
+  /** Special drops (totem fragments) of the last confirmed run. */
+  rewards: HarvestReward[];
+  clearRewards: () => void;
   error: string | null;
   clearResult: () => void;
   clearError: () => void;
@@ -57,6 +65,7 @@ export function useHarvestMythicsAction({
 }: Params): UseHarvestMythicsAction {
   const [internalBusy, setInternalBusy] = useState<InternalBusy>(null);
   const [result, setResult] = useState<BroadcastResult | null>(null);
+  const [rewards, setRewards] = useState<HarvestReward[]>([]);
   const [error, setError] = useState<string | null>(null);
   const payDonations = usePayDonations(username);
 
@@ -69,6 +78,7 @@ export function useHarvestMythicsAction({
     async (planOnly: boolean): Promise<ActionPlan | null> => {
       setInternalBusy("running");
       setResult(null);
+      setRewards([]);
       setError(null);
       try {
         const enabledUids = new Set(visibleRegions.map((r) => r.region_uid));
@@ -154,7 +164,10 @@ export function useHarvestMythicsAction({
         }
 
         setInternalBusy("verifying");
-        await waitForTransactions(res.txIds);
+        const confirmed = await waitForTransactions(res.txIds);
+        // The confirmed tax_collection payloads decide which deeds dropped a
+        // fragment — the plan can only estimate the chance.
+        const fragments = fragmentsIn(confirmed);
 
         const harvestResults: MythicHarvestResult[] = mythicDeeds.map((d) => ({
           deed_uid: d.deed_uid,
@@ -166,7 +179,7 @@ export function useHarvestMythicsAction({
             token: t.token,
             received: t.balance,
           })),
-          fragment_found: false,
+          fragment_found: fragments.has(d.deed_uid),
           fragment_chance: d.estimated_totem_chance ?? 0,
         }));
 
@@ -205,6 +218,8 @@ export function useHarvestMythicsAction({
           donationError: donationOutcome.donationError,
           donationTxIds: donationOutcome.txIds,
         }).catch(() => {});
+        // Revealed once the whole flow (donations included) has finished.
+        setRewards(harvestRewardsFrom(confirmed));
         setResult(res);
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.
@@ -237,6 +252,8 @@ export function useHarvestMythicsAction({
     busy: internalBusy !== null,
     isVerifying: internalBusy === "verifying",
     result,
+    rewards,
+    clearRewards: () => setRewards([]),
     error,
     clearResult: () => setResult(null),
     clearError: () => setError(null),

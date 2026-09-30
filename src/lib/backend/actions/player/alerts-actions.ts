@@ -12,6 +12,7 @@ import {
   TerrainCardInfo,
 } from "@/types/cardAlerts";
 import { DeedComplete } from "@/types/deed";
+import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import {
   bestTerrainBonusPct,
   CardElement,
@@ -25,7 +26,11 @@ import { fetchPlayerBalances } from "../../api/spl/spl-base-api";
 import { getResourceDECPrices } from "../../helpers/resourcePrices";
 import { getCachedCardDetailsData } from "../../services/cardService";
 import { getCachedPlayerCardCollection } from "../../services/playerService";
-import { enrichWithProductionInfo } from "../../services/regionService";
+import {
+  enrichWithProductionInfo,
+  enrichWithProgressInfo,
+  getDeedsAlerts,
+} from "../../services/regionService";
 
 /**
  * Helper to create DeedInfo from a deed
@@ -132,6 +137,31 @@ export async function getPlayerCardAlerts(
     logger.error(`Failed to get card alerts for ${trimmed}:`, error);
     throw new Error(
       error instanceof Error ? error.message : "Failed to fetch alerts"
+    );
+  }
+}
+
+/**
+ * Server action for the "Finished building / Full store" deed alerts shown on
+ * the player dashboard — without building the rest of the player overview.
+ */
+export async function getPlayerDeedAlerts(
+  player: string,
+  force: boolean = false
+): Promise<DeedAlertsInfo[]> {
+  if (!player || typeof player !== "string") {
+    throw new Error("Player name is required");
+  }
+
+  const trimmed = player.trim().toLowerCase();
+
+  try {
+    const deeds = await getPlayerData(trimmed, {}, force);
+    return getDeedsAlerts(await enrichWithProgressInfo(deeds));
+  } catch (error) {
+    logger.error(`Failed to get deed alerts for ${trimmed}:`, error);
+    throw new Error(
+      error instanceof Error ? error.message : "Failed to fetch deed alerts"
     );
   }
 }

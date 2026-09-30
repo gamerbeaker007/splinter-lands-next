@@ -68,7 +68,7 @@ export default function MakeHarvestableRow({
   return (
     <ActionCardColumn>
       <ActionCard
-        title="1. Make Harvestable"
+        title="1. Prepare Harvest"
         tooltip="Cover every region's harvest shortfall — shows the plan for confirmation first"
         backgroundImage={land_worksite_select_stone_icon_url}
         icon={<PlaylistAddCheck />}
@@ -82,7 +82,7 @@ export default function MakeHarvestableRow({
         })}
         onClick={run}
         onSettings={() => openConfigDialog("make_harvestable")}
-        settingsLabel="Make Harvestable settings"
+        settingsLabel="Prepare Harvest settings"
         strategy={strategies.map((s, i) => (
           <Chip
             key={s}

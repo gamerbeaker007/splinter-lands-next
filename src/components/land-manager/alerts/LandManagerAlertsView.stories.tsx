@@ -3,23 +3,31 @@
 import type { PoolBufferRow } from "@/hooks/usePoolBufferAlerts";
 import type { WorksiteAlertsData } from "@/hooks/useWorksiteAlerts";
 import type { RegionDECInfo } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import {
+  buildLandManagerAlerts,
+  countAlertsBySeverity,
+  type LandManagerAlertsInput,
+} from "@/lib/frontend/landManagerAlerts";
+import type { CardAlerts, DeedInfo } from "@/types/cardAlerts";
 import type { BiomeModifiers } from "@/lib/utils/cardUtil";
 import type { DeedComplete } from "@/types/deed";
 import type { WorkerEligiblePlot } from "@/types/landManager";
 import { Meta, StoryObj } from "@storybook/react";
-import AlertsPanelView, { type AlertsPanelViewProps } from "./AlertsPanelView";
+import LandManagerAlertsView, {
+  type LandManagerAlertsViewProps,
+} from "./LandManagerAlertsView";
 
-const meta: Meta<typeof AlertsPanelView> = {
-  title: "Land Manager/Components/LandManager/Shared/AlertsPanelView",
-  component: AlertsPanelView,
+const meta: Meta<typeof LandManagerAlertsView> = {
+  title: "Land Manager/Components/LandManager/Alerts/LandManagerAlertsView",
+  component: LandManagerAlertsView,
 };
 
 export default meta;
-type Story = StoryObj<typeof AlertsPanelView>;
+type Story = StoryObj<typeof LandManagerAlertsView>;
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 //
-// Everything here is static: AlertsPanelView takes pure props, so no server
+// Everything here is static: LandManagerAlertsView takes pure props, so no server
 // action, hook or context is exercised. Only the fields the panel actually
 // reads carry meaningful values; the rest exists to satisfy the Prisma types.
 
@@ -329,8 +337,7 @@ const ELIGIBILITY = {
   unpoweredSkipped: [makeEligiblePlot(43, 5, false)],
 };
 
-const BASE_PROPS: AlertsPanelViewProps = {
-  loading: false,
+const BASE_INPUT: LandManagerAlertsInput = {
   poolBufferRows: HEALTHY_POOLS,
   eligibility: { eligible: [], unpoweredSkipped: [] },
   stakedDEC: DEC_BALANCED,
@@ -339,57 +346,99 @@ const BASE_PROPS: AlertsPanelViewProps = {
   globalShortfall: 0,
   globalExcess: 0,
   worksiteAlerts: NO_WORKSITE_ALERTS,
-  onFeedWorkers: () => {},
-  onFixGrainDeficit: () => {},
+  cardAlerts: null,
+  deedAlerts: [],
 };
+
+const DEED_INFO: DeedInfo = {
+  plotId: 144182,
+  plotNumber: 82,
+  regionNumber: 92,
+  regionName: "Zilac",
+  tractNumber: 10,
+  territory: "Wild Northeast",
+  deedType: "plains",
+  magicType: "",
+  plotStatus: "occupied",
+  rarity: "rare",
+  basePP: 7500,
+  boostPP: 1650,
+  worksiteType: "Grain Farm",
+  rationingLite: -0.1,
+};
+
+/** A few player dashboard checks firing, across all three severities. */
+const CARD_ALERTS: CardAlerts = {
+  assignedWorkersAlerts: [{ deedInfo: DEED_INFO, assignedCards: 3 }],
+  noWorkersAlerts: [{ ...DEED_INFO, plotNumber: 83 }],
+  terrainBoostAlerts: { negative: [], zeroNeutral: [], zeroNonNeutral: [] },
+  negativeDECNaturalResourceDeeds: [
+    { deedInfo: DEED_INFO, negativeDecPerHour: -1.25 },
+  ],
+  negativeDECOtherResourceDeeds: [],
+  tooMuchBasePP: [],
+  unusedPowerSource: 2,
+  noPowerSource: [{ ...DEED_INFO, plotNumber: 84 }],
+  powerCoreWhileEnergized: [],
+  missingBloodLineBoost: [],
+  rationingLiteAlerts: [],
+};
+
+/** Derive alerts and counts exactly the way the provider does. */
+function viewProps(
+  overrides: Partial<LandManagerAlertsInput> = {},
+  loading = false
+): LandManagerAlertsViewProps {
+  const input = { ...BASE_INPUT, ...overrides };
+  const alerts = buildLandManagerAlerts(input);
+  return {
+    loading,
+    input,
+    alerts,
+    counts: countAlertsBySeverity(alerts),
+    onFeedWorkers: () => {},
+    onFixGrainDeficit: () => {},
+  };
+}
 
 // ── stories ───────────────────────────────────────────────────────────────────
 
-/** Nothing needs attention — the panel renders nothing at all. */
+/** Nothing needs attention — a single success line. */
 export const NothingToReport: Story = {
-  args: { ...BASE_PROPS },
+  args: viewProps(),
 };
 
-/** DEC/eligibility data still loading: the panel shows its skeleton. */
+/** Sources still loading: spinner next to the (partial) counts. */
 export const Loading: Story = {
-  args: {
-    ...BASE_PROPS,
-    loading: true,
-  },
+  args: viewProps({}, true),
 };
 
 /**
- * The worksite rows added for the Worksite alerts feature: finished
- * construction waiting to be fed, ready plots starved of grain, and plots with
- * no building at all.
+ * Worksite states: finished construction waiting to be fed, ready plots
+ * starved of grain, and plots with no building at all.
  */
 export const WorksiteActionsPending: Story = {
-  args: {
-    ...BASE_PROPS,
-    worksiteAlerts: WORKSITE_ALERTS,
-  },
+  args: viewProps({ worksiteAlerts: WORKSITE_ALERTS }),
 };
 
 /** Not enough DEC staked globally, with the per-region gaps listed. */
 export const DecShortfall: Story = {
-  args: {
-    ...BASE_PROPS,
+  args: viewProps({
     stakedDEC: [decRegion(92, 250000, 190000), decRegion(58, 180000, 180000)],
     totalStaked: 370000,
     totalRequired: 430000,
     globalShortfall: 60000,
-  },
+  }),
 };
 
 /** More DEC staked than required — the unstake suggestion. */
 export const DecOverStaked: Story = {
-  args: {
-    ...BASE_PROPS,
+  args: viewProps({
     stakedDEC: [decRegion(92, 250000, 300000), decRegion(58, 180000, 180000)],
     totalStaked: 480000,
     totalRequired: 430000,
     globalExcess: 50000,
-  },
+  }),
 };
 
 /**
@@ -397,34 +446,29 @@ export const DecOverStaked: Story = {
  * between them rather than be staked or unstaked.
  */
 export const RegionalImbalance: Story = {
-  args: {
-    ...BASE_PROPS,
+  args: viewProps({
     stakedDEC: [decRegion(92, 250000, 190000), decRegion(58, 180000, 240000)],
-    totalStaked: 430000,
-    totalRequired: 430000,
-  },
+  }),
 };
 
 /** Pool reserves below the recommended buffer, with the per-resource table. */
 export const LowPoolBuffers: Story = {
-  args: {
-    ...BASE_PROPS,
-    poolBufferRows: LOW_POOLS,
-  },
+  args: viewProps({ poolBufferRows: LOW_POOLS }),
 };
 
-/** Powered plots with empty worker slots, plus unpowered plots. */
+/** Powered plots with empty worker slots. */
 export const WorkerSlots: Story = {
-  args: {
-    ...BASE_PROPS,
-    eligibility: ELIGIBILITY,
-  },
+  args: viewProps({ eligibility: ELIGIBILITY }),
+};
+
+/** Player dashboard checks included in the Land Manager alerts. */
+export const PlayerDashboardAlerts: Story = {
+  args: viewProps({ cardAlerts: CARD_ALERTS }),
 };
 
 /** Everything at once — the worst-case layout. */
 export const AllAlerts: Story = {
-  args: {
-    ...BASE_PROPS,
+  args: viewProps({
     poolBufferRows: LOW_POOLS,
     eligibility: ELIGIBILITY,
     stakedDEC: [decRegion(92, 250000, 190000), decRegion(58, 180000, 180000)],
@@ -432,5 +476,6 @@ export const AllAlerts: Story = {
     totalRequired: 430000,
     globalShortfall: 60000,
     worksiteAlerts: WORKSITE_ALERTS,
-  },
+    cardAlerts: CARD_ALERTS,
+  }),
 };

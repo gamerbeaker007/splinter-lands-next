@@ -57,7 +57,7 @@ export default function MakeHarvestableSection({
     return (
       <Box>
         <Typography variant="subtitle2" sx={{ mb: 1 }}>
-          Make Harvestable - Strategy Order
+          Prepare Harvest - Strategy Order
         </Typography>
         {content}
       </Box>
@@ -68,7 +68,7 @@ export default function MakeHarvestableSection({
     <Accordion defaultExpanded={false} disableGutters elevation={0}>
       <AccordionSummary expandIcon={<ExpandMoreIcon />}>
         <Typography variant="subtitle2">
-          Make Harvestable — Strategy Order
+          Prepare Harvest — Strategy Order
         </Typography>
       </AccordionSummary>
       <AccordionDetails>{content}</AccordionDetails>

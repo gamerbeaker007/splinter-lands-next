@@ -4,6 +4,7 @@ import ActionCard, {
   ActionCardColumn,
   buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
+import HarvestRewardDialog from "@/components/land-manager/harvest/HarvestRewardDialog";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
 import { land_castle_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, DonationConfig } from "@/types/landManager";
@@ -95,6 +96,15 @@ export default function HarvestMythicsRow({
           </>
         }
       />
+
+      {/* Special drops (Labor's Luck cards / totem fragments) read from the
+          confirmed transactions once the run has finished. */}
+      {action.rewards.length > 0 && (
+        <HarvestRewardDialog
+          rewards={action.rewards}
+          onClose={action.clearRewards}
+        />
+      )}
 
       {action.isVerifying && (
         <Alert severity="info" icon={<CircularProgress size={16} />}>

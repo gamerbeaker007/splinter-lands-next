@@ -4,13 +4,19 @@ import BulkActionPanel from "@/components/land-manager/harvest/BulkActionPanel";
 import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
 import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/harvest/RegionResourceSummary";
+import TodayPanel from "@/components/land-manager/shared/TodayPanel";
 import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatNumber } from "@/lib/formatters";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
 import { MythicDeed } from "@/types/landManager";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
+  Alert,
   Box,
   Chip,
   IconButton,
@@ -55,104 +61,140 @@ export default function HarvestPage() {
         refreshKey={refreshKey}
       />
 
-      <Stack direction="row" alignItems="center" mb={1.5}>
-        {donationEnabled ? (
-          <Tooltip
-            title={
-              <Stack spacing={1} sx={{ py: 0.5 }}>
-                <Typography variant="body2" fontWeight={700}>
-                  Donation {donation.pct}%
-                </Typography>
-                <Typography variant="caption" fontWeight={700}>
-                  Daily caps
-                </Typography>
-                <Stack spacing={0.5}>
-                  {NATURAL_RESOURCES.map((symbol) => {
-                    const cap = Number(donation.daily_caps?.[symbol] ?? 0);
-                    return (
-                      <Stack
-                        key={symbol}
-                        direction="row"
-                        alignItems="center"
-                        spacing={0.75}
-                      >
-                        <Box
-                          component="img"
-                          src={RESOURCE_ICON_MAP[symbol]}
-                          alt={symbol}
-                          sx={{ width: 16, height: 16 }}
-                        />
-                        <Typography variant="caption">
-                          {formatNumber(cap)}
-                        </Typography>
-                      </Stack>
-                    );
-                  })}
-                </Stack>
-                <Typography variant="caption" color="text.secondary">
-                  Donation applies to all harvest operations and can be adjusted
-                  in the config.
-                </Typography>
-              </Stack>
-            }
-          >
-            <Chip
+      {config.enabled_regions.length <= 0 && (
+        <Alert severity="error">
+          No regions enabled. Please select regions first.
+        </Alert>
+      )}
+
+      {config.enabled_regions.length > 0 && (
+        <>
+          <Stack direction="row" alignItems="center" mb={1.5}>
+            {donationEnabled ? (
+              <Tooltip
+                title={
+                  <Stack spacing={1} sx={{ py: 0.5 }}>
+                    <Typography variant="body2" fontWeight={700}>
+                      Donation {donation.pct}%
+                    </Typography>
+                    <Typography variant="caption" fontWeight={700}>
+                      Daily caps
+                    </Typography>
+                    <Stack spacing={0.5}>
+                      {NATURAL_RESOURCES.map((symbol) => {
+                        const cap = Number(donation.daily_caps?.[symbol] ?? 0);
+                        return (
+                          <Stack
+                            key={symbol}
+                            direction="row"
+                            alignItems="center"
+                            spacing={0.75}
+                          >
+                            <Box
+                              component="img"
+                              src={RESOURCE_ICON_MAP[symbol]}
+                              alt={symbol}
+                              sx={{ width: 16, height: 16 }}
+                            />
+                            <Typography variant="caption">
+                              {formatNumber(cap)}
+                            </Typography>
+                          </Stack>
+                        );
+                      })}
+                    </Stack>
+                    <Typography variant="caption" color="text.secondary">
+                      Donation applies to all harvest operations and can be
+                      adjusted in the config.
+                    </Typography>
+                  </Stack>
+                }
+              >
+                <Chip
+                  size="small"
+                  label="Donation Enabled"
+                  sx={{
+                    fontWeight: 600,
+                    bgcolor: "success.main",
+                    color: "common.white",
+                  }}
+                />
+              </Tooltip>
+            ) : (
+              <Chip
+                size="small"
+                label="Donation Disabled"
+                sx={{
+                  fontWeight: 600,
+                  bgcolor: "warning.main",
+                  color: "common.white",
+                }}
+              />
+            )}
+            <IconButton
               size="small"
-              label="Donation Enabled"
-              sx={{
-                fontWeight: 600,
-                bgcolor: "success.main",
-                color: "common.white",
-              }}
-            />
-          </Tooltip>
-        ) : (
-          <Chip
-            size="small"
-            label="Donation Disabled"
-            sx={{
-              fontWeight: 600,
-              bgcolor: "warning.main",
-              color: "common.white",
-            }}
+              sx={{ ml: 1, textTransform: "none" }}
+              onClick={() => openConfigDialog("donation")}
+            >
+              <SettingsIcon fontSize="small" />
+            </IconButton>
+          </Stack>
+
+          <BulkActionPanel
+            username={username}
+            regions={allRegions}
+            enabledRegions={config.enabled_regions}
+            strategies={config.make_harvestable_strategies}
+            donation={config.donation}
+            postHarvestStrategy={config.post_harvest_strategy}
+            postHarvestExcludedResources={
+              config.post_harvest_excluded_resources
+            }
+            postHarvestSellPct={config.post_harvest_sell_pct}
+            postHarvestPoolPct={config.post_harvest_pool_pct}
+            postHarvestTransferRegionUid={
+              config.post_harvest_transfer_region_uid
+            }
+            topUpPoolStrategies={config.top_up_pool_strategies}
+            hasMythics={
+              enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
+            }
+            onSuccess={triggerRefresh}
           />
-        )}
-        <IconButton
-          size="small"
-          sx={{ ml: 1, textTransform: "none" }}
-          onClick={() => openConfigDialog("donation")}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-      </Stack>
 
-      <BulkActionPanel
-        username={username}
-        regions={allRegions}
-        enabledRegions={config.enabled_regions}
-        strategies={config.make_harvestable_strategies}
-        donation={config.donation}
-        postHarvestStrategy={config.post_harvest_strategy}
-        postHarvestExcludedResources={config.post_harvest_excluded_resources}
-        postHarvestSellPct={config.post_harvest_sell_pct}
-        postHarvestPoolPct={config.post_harvest_pool_pct}
-        postHarvestTransferRegionUid={config.post_harvest_transfer_region_uid}
-        topUpPoolStrategies={config.top_up_pool_strategies}
-        hasMythics={
-          enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
-        }
-        onSuccess={triggerRefresh}
-      />
+          {/* Both panes start closed. Their content stays mounted, so the data is
+          already loaded (and kept fresh on refresh) when one is opened. */}
+          <Accordion sx={{ mt: 2 }} disableGutters>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography fontWeight={600}>
+                View today&apos;s processed action results
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <TodayPanel refreshKey={refreshKey} />
+            </AccordionDetails>
+          </Accordion>
 
-      <MythicOverview deeds={enabledMythicDeeds} />
+          <Accordion sx={{ mt: 1 }} disableGutters>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography fontWeight={600}>
+                View detailed harvest overview
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <MythicOverview deeds={enabledMythicDeeds} />
 
-      <RegionOverview
-        username={username}
-        regions={allRegions}
-        enabledRegions={config.enabled_regions}
-        donation={config.donation}
-        refreshKey={refreshKey}
-      />
+              <RegionOverview
+                username={username}
+                regions={allRegions}
+                enabledRegions={config.enabled_regions}
+                donation={config.donation}
+                refreshKey={refreshKey}
+              />
+            </AccordionDetails>
+          </Accordion>
+        </>
+      )}
     </>
   );
 }

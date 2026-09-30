@@ -1,6 +1,7 @@
 "use client";
 
-import { LaborsLuckTreasure, SplTrxResult } from "@/types/spl/trx";
+import { fragmentsIn, laborsLuckIn } from "@/lib/shared/harvestRewards";
+import { SplTrxResult } from "@/types/spl/trx";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { createContext, ReactNode, useContext, useMemo } from "react";
 
@@ -45,46 +46,12 @@ export function TodayTxProvider({
   );
 }
 
-/**
- * Labor's Luck cards awarded by the given transactions. Both harvest_all and
- * the DEC power-up/down auto-harvest carry per-deed harvest results, so both
- * can drop a treasure.
- */
-function laborsLuckIn(
+/** The confirmed payloads of the given tx ids (unknown ones are skipped). */
+function resultsOf(
   txResults: Map<string, SplTrxResult>,
   txIds: string[]
-): LaborsLuckTreasure[] {
-  const treasures: LaborsLuckTreasure[] = [];
-  for (const txId of txIds) {
-    const parsed = txResults.get(txId);
-    if (!parsed) continue;
-    const deedResults =
-      parsed.op === "harvest_all"
-        ? parsed.result.results
-        : parsed.op === "dec_powerup_region" ||
-            parsed.op === "dec_powerdown_region"
-          ? parsed.result.harvest_results
-          : [];
-    for (const deed of deedResults) {
-      if (deed.labors_luck_treasure) treasures.push(deed.labors_luck_treasure);
-    }
-  }
-  return treasures;
-}
-
-/** deed_uid → fragment code, from the confirmed tax_collection results. */
-function fragmentsIn(
-  txResults: Map<string, SplTrxResult>,
-  txIds: string[]
-): Map<string, string> {
-  const found = new Map<string, string>();
-  for (const txId of txIds) {
-    const parsed = txResults.get(txId);
-    if (parsed?.op !== "tax_collection") continue;
-    const { deed_uid, fragment_found, fragment_type } = parsed.result;
-    if (fragment_found && fragment_type) found.set(deed_uid, fragment_type);
-  }
-  return found;
+): (SplTrxResult | undefined)[] {
+  return txIds.map((id) => txResults.get(id));
 }
 
 export function useTodayTx() {
@@ -96,8 +63,10 @@ export function useTodayTx() {
         txIds.length > 0 && txIds.every((id) => state.verifiedTxIds.has(id)),
       anyFailed: (txIds: string[]) =>
         txIds.some((id) => state.failedTxIds.has(id)),
-      laborsLuckFrom: (txIds: string[]) => laborsLuckIn(state.txResults, txIds),
-      fragmentsByDeed: (txIds: string[]) => fragmentsIn(state.txResults, txIds),
+      laborsLuckFrom: (txIds: string[]) =>
+        laborsLuckIn(resultsOf(state.txResults, txIds)),
+      fragmentsByDeed: (txIds: string[]) =>
+        fragmentsIn(resultsOf(state.txResults, txIds)),
     }),
     [state]
   );

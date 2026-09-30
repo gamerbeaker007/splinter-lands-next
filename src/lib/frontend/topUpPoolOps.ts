@@ -1132,7 +1132,7 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
     "Run this after Harvest, roughly once per week.",
     `Top-up window: ${formatNumber(plan.production_window_hours)}h (${plan.production_window_source === "db" ? "from last successful Top Up" : "fallback default"}).`,
     plan.production_window_reason,
-    "Skipping runs can shrink the tax-free buffer available to Make Harvestable.",
+    "Skipping runs can shrink the tax-free buffer available to Prepare Harvest.",
     `\nAccount DEC available: ${formatNumber(plan.dec_balance)} DEC`
   );
 

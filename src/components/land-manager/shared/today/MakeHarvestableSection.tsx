@@ -72,7 +72,7 @@ export default function MakeHarvestableSection({
 }) {
   return (
     <TodaySection
-      title="Make Harvestable"
+      title="Prepare Harvest"
       runs={log.runs}
       txIds={log.transactions}
     >

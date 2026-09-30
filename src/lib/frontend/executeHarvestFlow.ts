@@ -3,6 +3,7 @@ import {
   broadcastOperations,
   waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
+import type { SplTrxResult } from "@/types/spl/trx";
 
 export interface HarvestBroadcastRegion {
   region_uid: string;
@@ -15,6 +16,11 @@ export interface HarvestBroadcastResult {
   txIds: string[];
   log: string[];
   error?: string;
+  /**
+   * Parsed payload of each confirmed harvest tx (same order as `txIds`) — the
+   * only source for what the engine awarded, e.g. Labor's Luck cards.
+   */
+  results?: (SplTrxResult | null)[];
 }
 
 /**
@@ -55,9 +61,9 @@ export async function broadcastHarvest(
         error: res.error ?? "Harvest broadcast rejected",
       };
     }
-    await waitForTransactions(res.txIds);
+    const results = await waitForTransactions(res.txIds);
     log.push(`✓ Harvest confirmed (${res.txIds.length} tx)`);
-    return { success: true, txIds: res.txIds, log };
+    return { success: true, txIds: res.txIds, log, results };
   } catch (err) {
     return {
       success: false,
