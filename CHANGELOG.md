@@ -14,16 +14,6 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
-## [v1.37.1] - 2026-09-22
-
-## Added
-
-- Image to the home page
-- Add Settings icon to rental overview page (rental section)
-
-
----
-
 ## [v1.38.0] - 2026-09-28
 
 ### Added
@@ -41,6 +31,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 - **Land Manager - Harvest:** Regions can be enabled/disabled directly in the Regions summary — click a region chip or use Select all / Deselect all; Save and Reset fade in once there is an unsaved change. The settings icon there is removed.
 - **Land Manager - Harvest:** "1. Make Harvestable" is shown as "1. Prepare Harvest" (display only).
 - **Land Manager - Harvest:** Today's results and the detailed harvest overview (mythic + regions) moved under the action buttons in collapsible panes, closed by default.
+
+---
+
+## [v1.37.1] - 2026-09-22
+
+## Added
+
+- Image to the home page
+- Add Settings icon to rental overview page (rental section)
 
 ---
 

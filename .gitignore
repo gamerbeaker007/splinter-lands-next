@@ -50,3 +50,6 @@ storybook-static
 
 # logs
 /logs/
+
+#local mcp
+.mcp.json
