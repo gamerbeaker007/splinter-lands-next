@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.38.1] - 2026-10-01
+
+### Fixed
+
+- **Land Manager - Harvest (Custom Plan):** Multi-batch custom plans now use a 3.5s batch delay to better separate batches by block and avoid occasional same-block collisions that can trigger `Account ... already submitted ... custom json operation(s) this block` on larger plans.
+
+---
+
 ## [v1.38.0] - 2026-09-28
 
 ### Added

@@ -25,9 +25,10 @@ export const MAX_ITEM_SIZE_IN_OPERATION = 100;
 // Hive blocks allow at most 5 custom_json ops per account per block.
 // 4 keeps us safely under that limit.
 export const MAX_OPS_PER_BROADCAST = 4;
-// Hive produces a new block every ~3 seconds. Waiting this long between
-// consecutive broadcast batches guarantees they land in different blocks.
-export const HIVE_BLOCK_MS = 3_000;
+// Hive targets a ~3 second block interval. This is used as a timing baseline,
+// but callers that require deterministic block separation should confirm tx
+// inclusion before sending the next batch.
+export const HIVE_BLOCK_MS = 3_500;
 // How a broadcast transaction is waited on before it counts as confirmed.
 // Shared by every verify path — the client-side SPL poll in splBroadcast and
 // the server-side donation lookups — so one flow can never quietly use a
