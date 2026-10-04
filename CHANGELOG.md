@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.39.0] - 2026-10-04
+
+### Added
+
+- **Terms of Service:** Login dialog now shows "By continuing, you agree to our Terms of Service." linking to the canonical Terms of Service page hosted at `https://spl-stats.com/terms`. The Terms cover both SPL Stats and SPL Land Manager and address third-party nature, use-at-your-own-risk principles, authentication and credential handling, data storage, blockchain/marketplace risks, security, and limitation of liability.
+
+---
+
 ## [v1.38.1] - 2026-10-01
 
 ### Fixed
