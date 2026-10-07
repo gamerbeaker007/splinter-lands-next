@@ -1,5 +1,7 @@
 "use client";
 
+import CustomPlanActionsToolbar from "@/components/land-manager/harvest/custom-plan/CustomPlanActionsToolbar";
+import { rowMatchesSearch } from "@/components/land-manager/harvest/custom-plan/customPlanRowUtils";
 import CustomPlanRow from "@/components/land-manager/harvest/CustomPlanRow";
 import {
   isRowEmpty,
@@ -10,11 +12,10 @@ import {
   CustomPlanRowDraft,
   CustomPlanRowValidation,
   CustomPlanValidationResult,
-  MAX_OPS_PER_BROADCAST,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { SplLandPool, SplPlayerPoolPosition } from "@/types/spl/landPools";
-import { Alert, Box, Typography } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 let draftCounter = 0;
@@ -75,7 +76,9 @@ interface Props {
   multiplier: number;
   onValidationChange: (
     result: CustomPlanValidationResult,
-    rows: CustomPlanRowDraft[]
+    rows: CustomPlanRowDraft[],
+    /** Validation for each entry of `rows` (same order, empty rows excluded). */
+    rowValidations: CustomPlanRowValidation[]
   ) => void;
   onDirtyChange: (dirty: boolean) => void;
 }
@@ -109,8 +112,27 @@ export default function CustomPlanEditor({
 
   useEffect(() => {
     const configuredRows = rows.filter((r) => !isRowEmpty(r));
-    onValidationChange(validation, configuredRows);
+    const configuredValidations = validation.rows.filter(
+      (_, i) => rows[i] && !isRowEmpty(rows[i])
+    );
+    onValidationChange(validation, configuredRows, configuredValidations);
   }, [validation, rows, onValidationChange]);
+
+  // ── Presentation-only state (not part of the plan) ─────────────────────────
+  // Rows start collapsed; the trailing empty row is always shown expanded.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  const [search, setSearch] = useState("");
+  const emptyRowRef = useRef<HTMLDivElement | null>(null);
+
+  function setExpanded(draftId: string, expanded: boolean) {
+    setExpandedIds((prev) => {
+      if (prev.has(draftId) === expanded) return prev;
+      const next = new Set(prev);
+      if (expanded) next.add(draftId);
+      else next.delete(draftId);
+      return next;
+    });
+  }
 
   const markDirty = useCallback(() => {
     if (!isDirtyRef.current) {
@@ -120,6 +142,10 @@ export default function CustomPlanEditor({
   }, [onDirtyChange]);
 
   function updateRow(index: number, patch: Partial<CustomPlanRowDraft>) {
+    // A row being filled in from the trailing empty row stays open for editing
+    // once a fresh empty row is appended below it.
+    const target = rows[index];
+    if (target && isRowEmpty(target)) setExpanded(target.draftId, true);
     setRows((prev) => {
       const next = prev.map((r, i) => (i === index ? { ...r, ...patch } : r));
       const last = next[next.length - 1];
@@ -140,8 +166,10 @@ export default function CustomPlanEditor({
   }
 
   function duplicateRow(index: number) {
+    const copyId = newDraftId();
+    setExpanded(copyId, true);
     setRows((prev) => {
-      const copy = { ...prev[index], draftId: newDraftId() };
+      const copy = { ...prev[index], draftId: copyId };
       const next = [...prev];
       next.splice(index + 1, 0, copy);
       return next;
@@ -172,56 +200,130 @@ export default function CustomPlanEditor({
   }
 
   const configuredRowCount = rows.filter((r) => !isRowEmpty(r)).length;
-  const broadcastCount = Math.ceil(configuredRowCount / MAX_OPS_PER_BROADCAST);
+
+  const query = search.trim().toLowerCase();
+  const isFiltering = query.length > 0;
+
+  const matchesSearch = (row: CustomPlanRowDraft) =>
+    rowMatchesSearch(row, regions, query);
+
+  const configuredIds = rows
+    .filter((r) => !isRowEmpty(r))
+    .map((r) => r.draftId);
+  const allExpanded =
+    configuredIds.length > 0 &&
+    configuredIds.every((id) => expandedIds.has(id));
+
+  function toggleAll() {
+    setExpandedIds(allExpanded ? new Set() : new Set(configuredIds));
+  }
+
+  function focusNewRow() {
+    setSearch("");
+    // Wait for the (possibly filtered-out) empty row to render again.
+    requestAnimationFrame(() => {
+      emptyRowRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      emptyRowRef.current
+        ?.querySelector<HTMLElement>("[role='combobox']")
+        ?.focus();
+    });
+  }
+
+  const visibleCount = rows.filter(
+    (r, i) => !(i === rows.length - 1 && isRowEmpty(r)) && matchesSearch(r)
+  ).length;
 
   return (
-    <Box>
-      {broadcastCount > 2 && (
-        <Alert severity="warning" sx={{ mb: 1 }}>
-          This plan has {configuredRowCount} rows and will require{" "}
-          {broadcastCount} Keychain signature prompts.
-        </Alert>
-      )}
+    // The toolbar stays in place; only the row list scrolls, so
+    // "Add action" stays reachable on long plans.
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        // On small screens the whole dialog scrolls instead.
+        minHeight: { xs: "auto", md: 0 },
+        flex: 1,
+        gap: 1.5,
+      }}
+    >
+      <CustomPlanActionsToolbar
+        actionCount={configuredRowCount}
+        search={search}
+        onSearchChange={setSearch}
+        allExpanded={allExpanded}
+        onToggleAll={toggleAll}
+        onAddAction={focusNewRow}
+      />
 
-      {rows.map((row, index) => {
-        const isLast = index === rows.length - 1;
-        const empty = isLast && isRowEmpty(row);
-        const rowValidation: CustomPlanRowValidation | null =
-          !empty && validation.rows[index] ? validation.rows[index] : null;
+      <Box
+        sx={{
+          flex: 1,
+          // Never squeezed away by a tall header; the dialog scrolls instead.
+          minHeight: { xs: "auto", md: 240 },
+          overflowY: { md: "auto" },
+          // Room for the scrollbar so it doesn't sit on the row borders.
+          pr: { md: 0.5 },
+        }}
+      >
+        {rows.map((row, index) => {
+          const isLast = index === rows.length - 1;
+          const empty = isLast && isRowEmpty(row);
+          const rowValidation: CustomPlanRowValidation | null =
+            !empty && validation.rows[index] ? validation.rows[index] : null;
+          if (!empty && !matchesSearch(row)) return null;
+          // Reordering is disabled while filtered so a drop can't jump over
+          // rows the user can't see.
+          const canDrag = !empty && !isFiltering;
 
-        return (
-          <Box
-            key={row.draftId}
-            draggable={!empty}
-            onDragStart={!empty ? () => onDragStart(index) : undefined}
-            onDragOver={
-              !empty
-                ? (e) => {
-                    e.preventDefault();
-                    onDragOver(index);
-                  }
-                : undefined
-            }
-            onDragEnd={onDragEnd}
-          >
-            <CustomPlanRow
-              draft={row}
-              validation={rowValidation}
-              regions={regions}
-              onChange={(patch) => updateRow(index, patch)}
-              onDelete={!empty ? () => deleteRow(index) : undefined}
-              onDuplicate={!empty ? () => duplicateRow(index) : undefined}
-              isEmptyRow={empty}
-            />
-          </Box>
-        );
-      })}
+          return (
+            <Box
+              key={row.draftId}
+              ref={empty ? emptyRowRef : undefined}
+              draggable={canDrag}
+              onDragStart={canDrag ? () => onDragStart(index) : undefined}
+              onDragOver={
+                canDrag
+                  ? (e) => {
+                      e.preventDefault();
+                      onDragOver(index);
+                    }
+                  : undefined
+              }
+              onDragEnd={onDragEnd}
+            >
+              <CustomPlanRow
+                draft={row}
+                validation={rowValidation}
+                regions={regions}
+                onChange={(patch) => updateRow(index, patch)}
+                onDelete={!empty ? () => deleteRow(index) : undefined}
+                onDuplicate={!empty ? () => duplicateRow(index) : undefined}
+                isEmptyRow={empty}
+                expanded={expandedIds.has(row.draftId)}
+                onToggleExpanded={() =>
+                  setExpanded(row.draftId, !expandedIds.has(row.draftId))
+                }
+                dragEnabled={!isFiltering}
+              />
+            </Box>
+          );
+        })}
 
-      {configuredRowCount === 0 && (
-        <Typography variant="caption" color="text.secondary">
-          Add rows above to build your plan.
-        </Typography>
-      )}
+        {isFiltering && visibleCount === 0 && configuredRowCount > 0 && (
+          <Typography variant="caption" color="text.secondary" component="p">
+            No actions match &ldquo;{search.trim()}&rdquo;.
+          </Typography>
+        )}
+
+        {configuredRowCount === 0 && (
+          <Typography variant="caption" color="text.secondary">
+            Choose an action above to start building your plan.
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 }

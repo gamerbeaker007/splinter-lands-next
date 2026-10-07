@@ -14,6 +14,18 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.39.1] - 2026-10-05
+
+### Changed
+
+- **Land Manager - Harvest (Custom Plan):** Redesigned dialog: plan overview with saved-plan picker, inline rename, ready/skipped/signature counts, multiplier and Execute. Actions are compact rows (e.g. "Pool 100% of WOOD from Quegmoor", input → estimate) that expand into the existing editor, with search and expand/collapse all. Only the action list scrolls, so "Add action" stays in view. Calculations, plan format and transactions are unchanged.
+
+### Fixed
+
+- **Land Manager - Harvest (Process Resources):** The card now shows the tx status (with transaction links) after running a Custom Plan, like the other action cards.
+
+---
+
 ## [v1.39.0] - 2026-10-04
 
 ### Added

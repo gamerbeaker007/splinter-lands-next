@@ -1,38 +1,31 @@
 "use client";
 
-import { renderResourceChip } from "@/components/ui/resource/Resource";
-import { Resource } from "@/constants/resource/resource";
-import { formatNumber } from "@/lib/formatters";
-import { SHARES_OUT_DECIMALS } from "@/lib/shared/poolPositionUtils";
-import { NATURAL_RESOURCES } from "@/lib/shared/statics";
+import CustomPlanRowFields from "@/components/land-manager/harvest/custom-plan/CustomPlanRowFields";
+import CustomPlanRowFlow, {
+  CustomPlanRowSummaryFlow,
+} from "@/components/land-manager/harvest/custom-plan/CustomPlanRowFlow";
+import CustomPlanRowMenu from "@/components/land-manager/harvest/custom-plan/CustomPlanRowMenu";
+import CustomPlanRowStatusIcon from "@/components/land-manager/harvest/custom-plan/CustomPlanRowStatusIcon";
 import {
-  CUSTOM_PLAN_ACTION_LABELS,
-  CustomPlanActionType,
-  CustomPlanAmountType,
+  CustomPlanRowStatus,
+  describeCustomPlanRow,
+  getCustomPlanRowStatus,
+  rowResourceSymbol,
+} from "@/components/land-manager/harvest/custom-plan/customPlanRowUtils";
+import { renderResourceIcon } from "@/components/ui/resource/Resource";
+import { Resource } from "@/constants/resource/resource";
+import {
   CustomPlanRowDraft,
   CustomPlanRowValidation,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
-import {
-  ArrowForward,
-  CheckCircle,
-  ContentCopy,
-  Delete,
-  DragIndicator,
-  SkipNext,
-} from "@mui/icons-material";
+import { DragIndicator, ExpandMore } from "@mui/icons-material";
 import {
   Alert,
   Box,
-  FormControl,
+  Collapse,
   IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from "@mui/material";
@@ -45,135 +38,45 @@ interface Props {
   onDelete?: () => void;
   onDuplicate?: () => void;
   isEmptyRow?: boolean;
+  /** Whether the editing controls are shown. The trailing empty row is always expanded. */
+  expanded: boolean;
+  onToggleExpanded: () => void;
+  /** False while the row list is filtered, so reordering can't skip hidden rows. */
+  dragEnabled?: boolean;
 }
 
-function RegionSelect({
-  label,
-  value,
-  regions,
-  onChange,
-  disabled,
+function borderColor(status: CustomPlanRowStatus, open: boolean): string {
+  if (status === "error") return "error.main";
+  if (status === "skipped") return "warning.main";
+  if (status === "valid" && open) return "success.main";
+  return "divider";
+}
+
+function RowSubtitle({
+  status,
+  validation,
 }: {
-  label: string;
-  value: string;
-  regions: SplProductionOverviewRegion[];
-  onChange: (v: string) => void;
-  disabled?: boolean;
+  status: CustomPlanRowStatus;
+  validation: CustomPlanRowValidation | null;
 }) {
+  const [color, text] =
+    status === "error"
+      ? ["error.main", validation?.error]
+      : status === "skipped"
+        ? [
+            "warning.main",
+            `Skipped${validation?.skipReason ? ` – ${validation.skipReason}` : ""}`,
+          ]
+        : status === "incomplete"
+          ? ["text.secondary", "Incomplete – fill in the remaining fields"]
+          : status === "new"
+            ? ["text.secondary", "Choose an action to add it to the plan"]
+            : [null, null];
+  if (!text) return null;
   return (
-    <FormControl size="small" sx={{ minWidth: 140 }} disabled={disabled}>
-      <InputLabel>{label}</InputLabel>
-      <Select
-        value={value}
-        label={label}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {regions.map((r) => (
-          <MenuItem key={r.region_uid} value={r.region_uid}>
-            {r.name || r.region_uid}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-}
-
-function ResourceSelect({
-  label,
-  value,
-  exclude,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  value: string;
-  exclude?: string;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-}) {
-  const options = NATURAL_RESOURCES.filter((r) => r !== exclude);
-  return (
-    <FormControl size="small" sx={{ minWidth: 120 }} disabled={disabled}>
-      <InputLabel>{label}</InputLabel>
-      <Select
-        value={value}
-        label={label}
-        onChange={(e) => onChange(e.target.value)}
-      >
-        {options.map((sym) => (
-          <MenuItem key={sym} value={sym}>
-            {sym}
-          </MenuItem>
-        ))}
-      </Select>
-    </FormControl>
-  );
-}
-
-function AmountToggle({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: CustomPlanAmountType;
-  onChange: (v: CustomPlanAmountType) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <ToggleButtonGroup
-      size="small"
-      value={value}
-      exclusive
-      onChange={(_, v) => v && onChange(v)}
-      disabled={disabled}
-    >
-      <ToggleButton value="abs" sx={{ px: 1, py: 0.3, fontSize: "0.7rem" }}>
-        Abs
-      </ToggleButton>
-      <ToggleButton value="pct" sx={{ px: 1, py: 0.3, fontSize: "0.7rem" }}>
-        %
-      </ToggleButton>
-    </ToggleButtonGroup>
-  );
-}
-
-function renderOutput(validation: CustomPlanRowValidation | null) {
-  if (!validation || !validation.estimatedOutputSymbol) return null;
-
-  // `poolSharesOut` is the `shares_out` fraction of the player's own liquidity
-  // position, so it doubles as "how much of the position this row withdraws".
-  // It is only set on a valid pool withdrawal, which already rules out an empty
-  // or fully locked position.
-  const poolPct = validation.poolSharesOut
-    ? validation.poolSharesOut * 100
-    : null;
-
-  return (
-    <Stack direction="row" alignItems="center" gap={0.75}>
-      {renderResourceChip(
-        validation.estimatedOutputSymbol as Resource,
-        validation.estimatedOutputAmount,
-        true
-      )}
-      {validation.estimatedOutputSymbol2 &&
-        validation.estimatedOutputAmount2 != null &&
-        renderResourceChip(
-          validation.estimatedOutputSymbol2 as Resource,
-          validation.estimatedOutputAmount2,
-          true
-        )}
-      {poolPct !== null && (
-        <Typography variant="caption" color="text.secondary">
-          (
-          {formatNumber(poolPct, {
-            // A percentage has two fewer decimals than the fraction it came
-            // from, so this always shows the full precision actually broadcast.
-            maximumFractionDigits: Math.max(0, SHARES_OUT_DECIMALS - 2),
-          })}
-          % of pool position)
-        </Typography>
-      )}
-    </Stack>
+    <Typography variant="caption" color={color ?? undefined} component="div">
+      {text}
+    </Typography>
   );
 }
 
@@ -185,346 +88,125 @@ export default function CustomPlanRow({
   onDelete,
   onDuplicate,
   isEmptyRow,
+  expanded,
+  onToggleExpanded,
+  dragEnabled = true,
 }: Props) {
-  const actionType = draft.action_type as CustomPlanActionType | "";
-  const hasAction = !!actionType;
-
-  const borderColor = validation?.error
-    ? "error.main"
-    : validation?.skipped
-      ? "warning.main"
-      : validation?.valid
-        ? "success.main"
-        : "divider";
-
-  const toRegionOptions =
-    actionType === "transfer"
-      ? regions.filter((r) => r.region_uid !== draft.from_region_uid)
-      : regions;
+  const hasAction = !!draft.action_type;
+  const status = getCustomPlanRowStatus(draft, validation, isEmptyRow);
+  const isOpen = !!isEmptyRow || expanded;
+  const symbol = rowResourceSymbol(draft);
+  const canDrag = !isEmptyRow && dragEnabled;
+  const isPoolAdd = draft.action_type === "pool";
 
   return (
     <Box
       sx={{
         border: "1px solid",
-        borderColor,
-        borderRadius: 1,
-        p: 1,
-        mb: 0.6,
+        borderColor: borderColor(status, isOpen),
+        borderStyle: isEmptyRow ? "dashed" : "solid",
+        borderRadius: 1.5,
+        mb: 0.75,
         bgcolor: "background.paper",
-        opacity: isEmptyRow ? 0.55 : 1,
+        opacity: isEmptyRow ? 0.8 : 1,
+        overflow: "hidden",
       }}
     >
-      <Stack gap={1}>
-        <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-          <Box
-            sx={{
-              cursor: isEmptyRow ? "default" : "grab",
-              color: "text.disabled",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <DragIndicator fontSize="small" />
-          </Box>
+      {/* Header: the collapsed summary */}
+      <Stack
+        direction="row"
+        alignItems="center"
+        gap={1}
+        sx={{ px: 1, py: 0.75, flexWrap: { xs: "wrap", md: "nowrap" } }}
+      >
+        <DragIndicator
+          fontSize="small"
+          sx={{
+            cursor: canDrag ? "grab" : "default",
+            color: canDrag ? "text.secondary" : "text.disabled",
+            visibility: isEmptyRow ? "hidden" : "visible",
+          }}
+        />
+        <CustomPlanRowStatusIcon status={status} />
+        {symbol && renderResourceIcon(symbol as Resource, 22)}
 
-          <FormControl size="small" sx={{ minWidth: 115 }}>
-            <InputLabel>Action</InputLabel>
-            <Select
-              value={draft.action_type}
-              label="Action"
-              onChange={(e) =>
-                onChange({
-                  action_type: e.target.value as CustomPlanActionType | "",
-                  from_region_uid: "",
-                  to_region_uid: "",
-                  from_resource: "",
-                  to_resource: "",
-                  amount_type: "abs",
-                  amount: "",
-                })
-              }
-            >
-              <MenuItem value="">
-                <em>Select...</em>
-              </MenuItem>
-              {(
-                Object.keys(CUSTOM_PLAN_ACTION_LABELS) as CustomPlanActionType[]
-              ).map((k) => (
-                <MenuItem key={k} value={k}>
-                  {CUSTOM_PLAN_ACTION_LABELS[k]}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {actionType === "transfer" && (
-            <>
-              <RegionSelect
-                label="From"
-                value={draft.from_region_uid}
-                regions={regions}
-                onChange={(v) => onChange({ from_region_uid: v })}
-              />
-              <ResourceSelect
-                label="Resource"
-                value={draft.from_resource}
-                onChange={(v) => onChange({ from_resource: v })}
-                disabled={!draft.from_region_uid}
-              />
-              <RegionSelect
-                label="To"
-                value={draft.to_region_uid}
-                regions={toRegionOptions}
-                onChange={(v) => onChange({ to_region_uid: v })}
-                disabled={!draft.from_resource}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.to_region_uid}
-              />
-            </>
+        <Box
+          onClick={isEmptyRow ? undefined : onToggleExpanded}
+          sx={{
+            flex: "1 1 220px",
+            minWidth: 0,
+            cursor: isEmptyRow ? "default" : "pointer",
+          }}
+        >
+          <Typography variant="body2" fontWeight={500} noWrap>
+            {describeCustomPlanRow(draft, regions)}
+          </Typography>
+          {(hasAction || isEmptyRow) && (
+            <RowSubtitle status={status} validation={validation} />
           )}
+        </Box>
 
-          {actionType === "pool" && (
-            <>
-              <RegionSelect
-                label="From"
-                value={draft.from_region_uid}
-                regions={regions}
-                onChange={(v) => onChange({ from_region_uid: v })}
-              />
-              <ResourceSelect
-                label="Resource"
-                value={draft.from_resource}
-                onChange={(v) => onChange({ from_resource: v })}
-                disabled={!draft.from_region_uid}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.from_resource}
-              />
-            </>
-          )}
-
-          {actionType === "buy" && (
-            <>
-              <RegionSelect
-                label="To"
-                value={draft.to_region_uid}
-                regions={toRegionOptions}
-                onChange={(v) => onChange({ to_region_uid: v })}
-              />
-              <ResourceSelect
-                label="Resource"
-                value={draft.from_resource}
-                onChange={(v) => onChange({ from_resource: v })}
-                disabled={!draft.to_region_uid}
-              />
-            </>
-          )}
-
-          {actionType === "sell" && (
-            <>
-              <RegionSelect
-                label="From"
-                value={draft.from_region_uid}
-                regions={regions}
-                onChange={(v) => onChange({ from_region_uid: v })}
-              />
-              <ResourceSelect
-                label="Resource"
-                value={draft.from_resource}
-                onChange={(v) => onChange({ from_resource: v })}
-                disabled={!draft.from_region_uid}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.from_resource}
-              />
-            </>
-          )}
-
-          {actionType === "swap" && (
-            <>
-              <RegionSelect
-                label="From"
-                value={draft.from_region_uid}
-                regions={regions}
-                onChange={(v) => onChange({ from_region_uid: v })}
-              />
-              <ResourceSelect
-                label="From Res"
-                value={draft.from_resource}
-                onChange={(v) =>
-                  onChange({ from_resource: v, to_resource: "" })
-                }
-                disabled={!draft.from_region_uid}
-              />
-              <ResourceSelect
-                label="To Res"
-                value={draft.to_resource}
-                exclude={draft.from_resource}
-                onChange={(v) => onChange({ to_resource: v })}
-                disabled={!draft.from_resource}
-              />
-              <RegionSelect
-                label="To"
-                value={draft.to_region_uid}
-                regions={toRegionOptions}
-                onChange={(v) => onChange({ to_region_uid: v })}
-                disabled={!draft.to_resource}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.to_region_uid}
-              />
-            </>
-          )}
-
-          {actionType === "pool_withdraw" && (
-            <>
-              <RegionSelect
-                label="To"
-                value={draft.to_region_uid}
-                regions={toRegionOptions}
-                onChange={(v) => onChange({ to_region_uid: v })}
-              />
-              <ResourceSelect
-                label="Resource"
-                value={draft.from_resource}
-                onChange={(v) => onChange({ from_resource: v })}
-                disabled={!draft.to_region_uid}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.from_resource}
-              />
-            </>
-          )}
-
-          {actionType === "stake_dec" && (
-            <>
-              <RegionSelect
-                label="To"
-                value={draft.to_region_uid}
-                regions={toRegionOptions}
-                onChange={(v) => onChange({ to_region_uid: v })}
-              />
-              <AmountToggle
-                value={draft.amount_type}
-                onChange={(v) => onChange({ amount_type: v })}
-                disabled={!draft.to_region_uid}
-              />
-            </>
-          )}
-
-          {hasAction && (
-            <TextField
-              size="small"
-              label={
-                actionType === "buy"
-                  ? "Receive"
-                  : draft.amount_type === "pct"
-                    ? "Input %"
-                    : "Input"
-              }
-              value={draft.amount}
-              onChange={(e) => onChange({ amount: e.target.value })}
-              sx={{ width: actionType === "buy" ? 110 : 95 }}
-              inputProps={{ inputMode: "numeric" }}
+        {!isOpen && (
+          <Box sx={{ ml: { md: "auto" }, flexShrink: 0 }}>
+            <CustomPlanRowSummaryFlow
+              validation={validation}
+              isPoolAdd={isPoolAdd}
             />
-          )}
-
-          {validation?.skipped ? (
-            <Tooltip title={validation.skipReason ?? "Skipped"}>
-              <SkipNext color="warning" fontSize="small" />
-            </Tooltip>
-          ) : validation?.valid ? (
-            <Tooltip title="Valid">
-              <CheckCircle color="success" fontSize="small" />
-            </Tooltip>
-          ) : null}
-        </Stack>
-
-        <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
-          <Typography variant="caption" color="text.secondary">
-            Balance (Before):
-          </Typography>
-          {validation?.balanceSymbol
-            ? renderResourceChip(
-                validation.balanceSymbol as Resource,
-                validation.currentBalance,
-                true
-              )
-            : null}
-
-          <Typography variant="caption" color="text.secondary">
-            Balance (After):
-          </Typography>
-          {validation?.balanceSymbol
-            ? renderResourceChip(
-                validation.balanceSymbol as Resource,
-                validation.inputBalance,
-                true
-              )
-            : null}
-
-          {validation && validation.inputAmountAbsolute > 0 && (
-            <Typography variant="caption" color="text.secondary">
-              Input{" "}
-              {renderResourceChip(
-                validation.balanceSymbol as Resource,
-                validation.inputAmountAbsolute,
-                true
-              )}
-            </Typography>
-          )}
-
-          <ArrowForward sx={{ fontSize: 16, color: "text.secondary" }} />
-
-          <Typography variant="caption" color="text.secondary">
-            Estimated:
-          </Typography>
-          {renderOutput(validation)}
-
-          <Box sx={{ ml: "auto", display: "flex", alignItems: "center" }}>
-            {!isEmptyRow && (
-              <>
-                {onDuplicate && (
-                  <Tooltip title="Duplicate row">
-                    <IconButton size="small" onClick={onDuplicate}>
-                      <ContentCopy fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {onDelete && (
-                  <Tooltip title="Delete row">
-                    <IconButton size="small" onClick={onDelete} color="error">
-                      <Delete fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </>
-            )}
           </Box>
-        </Stack>
+        )}
+
+        {!isEmptyRow && (
+          <Stack direction="row" alignItems="center" sx={{ ml: "auto" }}>
+            <Tooltip title={expanded ? "Collapse" : "Edit"}>
+              <IconButton
+                size="small"
+                onClick={onToggleExpanded}
+                aria-expanded={expanded}
+                aria-label={expanded ? "Collapse row" : "Expand row"}
+              >
+                <ExpandMore
+                  fontSize="small"
+                  sx={{
+                    transition: "transform 150ms",
+                    transform: expanded ? "rotate(180deg)" : "none",
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+            <CustomPlanRowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
+          </Stack>
+        )}
       </Stack>
 
-      {validation?.error && hasAction && (
-        <Alert severity="error" sx={{ mt: 0.8, py: 0.25 }} icon={false}>
-          <Typography variant="caption">{validation.error}</Typography>
-        </Alert>
-      )}
-      {!validation?.error && validation?.skipped && validation.skipReason && (
-        <Alert severity="warning" sx={{ mt: 0.8, py: 0.25 }} icon={false}>
-          <Typography variant="caption">{validation.skipReason}</Typography>
-        </Alert>
-      )}
+      {/* Body: the editing controls */}
+      <Collapse in={isOpen} unmountOnExit>
+        <Box sx={{ px: 1.5, pb: 1.5 }}>
+          <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: "action.hover" }}>
+            <CustomPlanRowFields
+              draft={draft}
+              regions={regions}
+              onChange={onChange}
+            />
+
+            {validation?.error && hasAction && (
+              <Alert severity="error" sx={{ mt: 1.25, py: 0.25 }}>
+                <Typography variant="caption">{validation.error}</Typography>
+              </Alert>
+            )}
+            {!validation?.error &&
+              validation?.skipped &&
+              validation.skipReason && (
+                <Alert severity="warning" sx={{ mt: 1.25, py: 0.25 }}>
+                  <Typography variant="caption">
+                    {validation.skipReason}
+                  </Typography>
+                </Alert>
+              )}
+
+            {hasAction && <CustomPlanRowFlow validation={validation} />}
+          </Box>
+        </Box>
+      </Collapse>
     </Box>
   );
 }

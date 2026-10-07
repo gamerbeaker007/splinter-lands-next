@@ -4,7 +4,9 @@ import ActionCard, {
   ActionCardColumn,
   buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
-import CustomPlanDialog from "@/components/land-manager/harvest/CustomPlanDialog";
+import CustomPlanDialog, {
+  CustomPlanExecutionStatus,
+} from "@/components/land-manager/harvest/CustomPlanDialog";
 import { renderResourceIcon } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
@@ -53,6 +55,10 @@ export default function ProcessResourcesRow({
   const { openConfigDialog } = useLandManagerContext();
   const [customPlanOpen, setCustomPlanOpen] = useState(false);
   const [defaultPlanName, setDefaultPlanName] = useState<string | null>(null);
+  // The Custom Plan broadcasts from its own dialog, so its tx status is kept
+  // here to show on the card once the dialog has closed.
+  const [customPlanStatus, setCustomPlanStatus] =
+    useState<CustomPlanExecutionStatus>({ result: null, error: null });
 
   const action = useProcessResourcesAction({
     username,
@@ -140,11 +146,22 @@ export default function ProcessResourcesRow({
           // Transfer needs somewhere to transfer TO before it can plan anything.
           (postHarvestStrategy === "transfer_to_region" && !transferRegionUid)
         }
-        statuses={buildActionStatuses({
-          result: action.result,
-          error: action.error,
-          warning: action.warning,
-        })}
+        statuses={
+          postHarvestStrategy === "custom_plan"
+            ? buildActionStatuses({
+                result: customPlanStatus.result,
+                error:
+                  customPlanStatus.error ??
+                  (customPlanStatus.result && !customPlanStatus.result.success
+                    ? (customPlanStatus.result.error ?? "Broadcast failed")
+                    : null),
+              })
+            : buildActionStatuses({
+                result: action.result,
+                error: action.error,
+                warning: action.warning,
+              })
+        }
         onClick={run}
         onSettings={() => openConfigDialog("post_harvest")}
         settingsLabel="Process Resources settings"
@@ -198,6 +215,7 @@ export default function ProcessResourcesRow({
           visibleRegions={visibleRegions}
           open={customPlanOpen}
           onClose={() => setCustomPlanOpen(false)}
+          onStatusChange={setCustomPlanStatus}
           onSuccess={() => {
             setCustomPlanOpen(false);
             onSuccess();

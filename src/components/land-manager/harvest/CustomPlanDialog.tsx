@@ -1,9 +1,18 @@
 "use client";
 
+import {
+  DeletePlanDialog,
+  UnsavedChangesDialog,
+  UnsavedChoice,
+} from "@/components/land-manager/harvest/custom-plan/CustomPlanConfirmDialogs";
+import CustomPlanSelector from "@/components/land-manager/harvest/custom-plan/CustomPlanSelector";
+import CustomPlanStatusAlerts from "@/components/land-manager/harvest/custom-plan/CustomPlanStatusAlerts";
+import CustomPlanSummary from "@/components/land-manager/harvest/custom-plan/CustomPlanSummary";
 import CustomPlanEditor, {
   draftsToItems,
 } from "@/components/land-manager/harvest/CustomPlanEditor";
 import { useCustomPlanAction } from "@/hooks/useCustomPlanAction";
+import { BroadcastResult } from "@/lib/frontend/splBroadcast";
 import {
   deleteCustomPlan,
   getCustomPlans,
@@ -21,21 +30,12 @@ import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   CustomPlan,
   CustomPlanRowDraft,
+  CustomPlanRowValidation,
   CustomPlanValidationResult,
-  MAX_CUSTOM_PLAN_NAME_LENGTH,
-  MAX_CUSTOM_PLANS_PER_PLAYER,
-  MAX_OPS_PER_BROADCAST,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { SplLandPool, SplPlayerPoolPosition } from "@/types/spl/landPools";
-import {
-  Add,
-  Delete,
-  DriveFileRenameOutline,
-  Save,
-  Star,
-  StarBorder,
-} from "@mui/icons-material";
+import { Save } from "@mui/icons-material";
 import {
   Alert,
   Box,
@@ -44,17 +44,7 @@ import {
   Dialog,
   DialogActions,
   DialogContent,
-  DialogContentText,
   DialogTitle,
-  Divider,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-  TextField,
-  Tooltip,
 } from "@mui/material";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -64,6 +54,13 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  /** Latest execution outcome, so the action card can show it after closing. */
+  onStatusChange?: (status: CustomPlanExecutionStatus) => void;
+}
+
+export interface CustomPlanExecutionStatus {
+  result: BroadcastResult | null;
+  error: string | null;
 }
 
 export default function CustomPlanDialog({
@@ -72,6 +69,7 @@ export default function CustomPlanDialog({
   open,
   onClose,
   onSuccess,
+  onStatusChange,
 }: Props) {
   // ── Data state ──────────────────────────────────────────────────────────────
   const [loading, setLoading] = useState(open);
@@ -94,19 +92,30 @@ export default function CustomPlanDialog({
   const [validationResult, setValidationResult] =
     useState<CustomPlanValidationResult>({ rows: [], status: "empty" });
   const currentRowsRef = useRef<CustomPlanRowDraft[]>([]);
+  const [rowValidations, setRowValidations] = useState<
+    CustomPlanRowValidation[]
+  >([]);
   const [multiplierText, setMultiplierText] = useState("1");
 
   // ── UI state ─────────────────────────────────────────────────────────────────
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveBusy, setSaveBusy] = useState(false);
-  const [renameMode, setRenameMode] = useState(false);
-  const [renameValue, setRenameValue] = useState("");
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
 
   // ── Action hook ───────────────────────────────────────────────────────────────
   const action = useCustomPlanAction({ username, visibleRegions, onSuccess });
+
+  // Report execution outcomes upward. The untouched initial state isn't
+  // reported, so reopening the dialog keeps the card's last tx status.
+  const hasReportedRef = useRef(false);
+  useEffect(() => {
+    if (!onStatusChange) return;
+    if (!hasReportedRef.current && !action.result && !action.error) return;
+    hasReportedRef.current = true;
+    onStatusChange({ result: action.result, error: action.error });
+  }, [action.result, action.error, onStatusChange]);
 
   // ── Load data on open ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -167,9 +176,14 @@ export default function CustomPlanDialog({
 
   // ── Editor callbacks ──────────────────────────────────────────────────────────
   const handleValidationChange = useCallback(
-    (result: CustomPlanValidationResult, rows: CustomPlanRowDraft[]) => {
+    (
+      result: CustomPlanValidationResult,
+      rows: CustomPlanRowDraft[],
+      configuredValidations: CustomPlanRowValidation[]
+    ) => {
       setValidationResult(result);
       currentRowsRef.current = rows;
+      setRowValidations(configuredValidations);
     },
     []
   );
@@ -219,21 +233,18 @@ export default function CustomPlanDialog({
   }
 
   // ── Rename ────────────────────────────────────────────────────────────────────
-  async function doRename() {
-    if (!selectedPlanId) return;
-    const trimmed = renameValue.trim();
-    if (!trimmed) return;
+  async function doRename(trimmed: string): Promise<boolean> {
+    if (!selectedPlanId) return false;
     const res = await renameCustomPlan(selectedPlanId, trimmed);
     if (res.error) {
       setSaveError(res.error);
-      return;
+      return false;
     }
     setSavedPlans((prev) =>
       prev.map((p) => (p.id === selectedPlanId ? { ...p, name: trimmed } : p))
     );
     setPlanName(trimmed);
-    setRenameMode(false);
-    setRenameValue("");
+    return true;
   }
 
   // ── Default plan ──────────────────────────────────────────────────────────────
@@ -294,9 +305,7 @@ export default function CustomPlanDialog({
     doExecute(false);
   }
 
-  async function handleUnsavedChoice(
-    choice: "cancel" | "save_only" | "execute" | "save_execute"
-  ) {
+  async function handleUnsavedChoice(choice: UnsavedChoice) {
     setUnsavedDialogOpen(false);
     if (choice === "cancel") return;
     if (choice === "save_only") {
@@ -329,6 +338,18 @@ export default function CustomPlanDialog({
 
   const selectedPlan = savedPlans.find((p) => p.id === selectedPlanId) ?? null;
 
+  const executeDisabledReason = !effectiveCanExecute
+    ? validationResult.status === "incomplete"
+      ? "Complete all rows first"
+      : validationResult.status === "invalid"
+        ? "Fix row errors first"
+        : validationResult.status === "empty"
+          ? "Add at least one row"
+          : !multiplierValid
+            ? "Set a positive multiplier"
+            : ""
+    : "";
+
   return (
     <>
       <Dialog
@@ -337,9 +358,17 @@ export default function CustomPlanDialog({
         maxWidth="lg"
         fullWidth
       >
-        <DialogTitle>Custom Plan</DialogTitle>
+        <DialogTitle sx={{ px: 2, py: 1 }}>Custom Plan</DialogTitle>
 
-        <DialogContent dividers>
+        <DialogContent
+          dividers
+          sx={{
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            gap: 1,
+          }}
+        >
           {loading && (
             <Box display="flex" justifyContent="center" py={4}>
               <CircularProgress />
@@ -348,165 +377,44 @@ export default function CustomPlanDialog({
 
           {!loading && (
             <>
-              {loadError && (
-                <Alert severity="error" sx={{ mb: 1.5 }}>
-                  {loadError}
-                </Alert>
-              )}
+              {loadError && <Alert severity="error">{loadError}</Alert>}
 
-              {/* Plan selector bar */}
-              <Stack
-                direction="row"
-                gap={1}
-                alignItems="center"
-                flexWrap="wrap"
-                mb={2}
-              >
-                {savedPlans.length > 0 && (
-                  <FormControl size="small" sx={{ minWidth: 200 }}>
-                    <InputLabel>Saved plan</InputLabel>
-                    <Select
-                      value={selectedPlanId ?? ""}
-                      label="Saved plan"
-                      onChange={(e) => selectPlan(e.target.value || null)}
-                    >
-                      {savedPlans.map((p) => (
-                        <MenuItem key={p.id} value={p.id}>
-                          <Stack direction="row" gap={0.5} alignItems="center">
-                            {p.is_default && (
-                              <Star
-                                fontSize="inherit"
-                                sx={{ color: "warning.main" }}
-                              />
-                            )}
-                            {p.name}
-                          </Stack>
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                )}
-
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<Add />}
-                  onClick={newPlan}
-                  disabled={savedPlans.length >= MAX_CUSTOM_PLANS_PER_PLAYER}
-                >
-                  New Plan
-                </Button>
-
-                {selectedPlanId && (
-                  <>
-                    <Tooltip
-                      title={
-                        selectedPlan?.is_default
-                          ? "Default plan — click to unset"
-                          : "Make this the default plan (preselected when this dialog opens)"
-                      }
-                    >
-                      <IconButton
-                        size="small"
-                        color={selectedPlan?.is_default ? "warning" : "default"}
-                        onClick={toggleDefault}
-                        aria-label={
-                          selectedPlan?.is_default
-                            ? "Unset default plan"
-                            : "Set as default plan"
-                        }
-                      >
-                        {selectedPlan?.is_default ? (
-                          <Star fontSize="small" />
-                        ) : (
-                          <StarBorder fontSize="small" />
-                        )}
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Rename plan">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setRenameValue(planName);
-                          setRenameMode(true);
-                        }}
-                      >
-                        <DriveFileRenameOutline fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete plan">
-                      <IconButton
-                        size="small"
-                        color="error"
-                        onClick={() => setDeleteConfirmOpen(true)}
-                      >
-                        <Delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </>
-                )}
-              </Stack>
-
-              {/* Rename inline */}
-              {renameMode && (
-                <Stack direction="row" gap={1} mb={2} alignItems="center">
-                  <TextField
-                    size="small"
-                    label="New name"
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    inputProps={{ maxLength: MAX_CUSTOM_PLAN_NAME_LENGTH }}
-                    sx={{ width: 240 }}
+              <CustomPlanSummary
+                planControl={
+                  <CustomPlanSelector
+                    savedPlans={savedPlans}
+                    selectedPlan={selectedPlan}
+                    planName={planName}
+                    nameError={nameError}
+                    onPlanNameChange={(name) => {
+                      setPlanName(name);
+                      setNameError(null);
+                    }}
+                    onSelect={selectPlan}
+                    onNew={newPlan}
+                    onToggleDefault={toggleDefault}
+                    onRename={doRename}
+                    onDelete={() => setDeleteConfirmOpen(true)}
                   />
-                  <Button
-                    size="small"
-                    onClick={doRename}
-                    variant="contained"
-                    disabled={!renameValue.trim()}
-                  >
-                    Rename
-                  </Button>
-                  <Button size="small" onClick={() => setRenameMode(false)}>
-                    Cancel
-                  </Button>
-                </Stack>
-              )}
+                }
+                isDirty={isDirty}
+                rowValidations={rowValidations}
+                multiplierText={multiplierText}
+                multiplierValid={multiplierValid}
+                onMultiplierChange={setMultiplierText}
+                canExecute={effectiveCanExecute}
+                executeDisabledReason={executeDisabledReason}
+                executing={action.busy}
+                onExecute={tryExecute}
+              />
 
-              {/* Plan name field (for new/unsaved plans) */}
-              {!selectedPlanId && (
-                <TextField
-                  size="small"
-                  label="Plan name"
-                  value={planName}
-                  onChange={(e) => {
-                    setPlanName(e.target.value);
-                    setNameError(null);
-                  }}
-                  error={!!nameError}
-                  helperText={nameError}
-                  inputProps={{ maxLength: MAX_CUSTOM_PLAN_NAME_LENGTH }}
-                  sx={{ mb: 2, width: 280 }}
-                />
-              )}
+              <CustomPlanStatusAlerts
+                status={validationResult.status}
+                multiplierValid={multiplierValid}
+                error={saveError ?? action.error}
+                result={action.result}
+              />
 
-              <Divider sx={{ mb: 2 }} />
-
-              <Stack direction="row" alignItems="center" gap={1} mb={2}>
-                <TextField
-                  size="small"
-                  label="Multiplier"
-                  value={multiplierText}
-                  onChange={(e) => setMultiplierText(e.target.value)}
-                  sx={{ width: 130 }}
-                  inputProps={{ inputMode: "decimal" }}
-                  error={!multiplierValid}
-                  helperText={
-                    !multiplierValid ? "Must be > 0" : "Scales row inputs"
-                  }
-                />
-              </Stack>
-
-              {/* Editor */}
               <CustomPlanEditor
                 key={editorKey}
                 initialItems={selectedPlan?.items}
@@ -519,51 +427,6 @@ export default function CustomPlanDialog({
                 onValidationChange={handleValidationChange}
                 onDirtyChange={handleDirtyChange}
               />
-
-              {/* Plan status */}
-              {validationResult.status === "incomplete" && (
-                <Alert severity="warning" sx={{ mt: 1.5 }}>
-                  Some rows are incomplete. Complete or delete them to save or
-                  execute.
-                </Alert>
-              )}
-              {validationResult.status === "invalid" && (
-                <Alert severity="error" sx={{ mt: 1.5 }}>
-                  Some rows are invalid. Fix errors before executing. You may
-                  still save the plan.
-                </Alert>
-              )}
-              {!multiplierValid && (
-                <Alert severity="warning" sx={{ mt: 1.5 }}>
-                  Multiplier must be a positive number.
-                </Alert>
-              )}
-
-              {/* Signature hint */}
-              {canExecute &&
-                validationResult.rows.filter((r) => r.resolvedAmount > 0)
-                  .length > MAX_OPS_PER_BROADCAST && (
-                  <Alert severity="info" sx={{ mt: 1.5 }}>
-                    This plan will spread across multiple transactions.
-                  </Alert>
-                )}
-
-              {/* Action errors */}
-              {(saveError || action.error) && (
-                <Alert severity="error" sx={{ mt: 1.5 }}>
-                  {saveError ?? action.error}
-                </Alert>
-              )}
-              {action.result && !action.result.success && (
-                <Alert severity="error" sx={{ mt: 1.5 }}>
-                  {action.result.error ?? "Broadcast failed"}
-                </Alert>
-              )}
-              {action.result?.success && (
-                <Alert severity="success" sx={{ mt: 1.5 }}>
-                  Plan executed successfully.
-                </Alert>
-              )}
             </>
           )}
         </DialogContent>
@@ -583,101 +446,22 @@ export default function CustomPlanDialog({
               Save Only
             </Button>
           )}
-
-          <Tooltip
-            title={
-              !effectiveCanExecute
-                ? validationResult.status === "incomplete"
-                  ? "Complete all rows first"
-                  : validationResult.status === "invalid"
-                    ? "Fix row errors first"
-                    : validationResult.status === "empty"
-                      ? "Add at least one row"
-                      : !multiplierValid
-                        ? "Set a positive multiplier"
-                        : ""
-                : ""
-            }
-          >
-            <span>
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={tryExecute}
-                disabled={!effectiveCanExecute}
-                startIcon={
-                  action.busy ? (
-                    <CircularProgress size={14} color="inherit" />
-                  ) : undefined
-                }
-              >
-                {action.busy ? "Executing…" : "Execute"}
-              </Button>
-            </span>
-          </Tooltip>
         </DialogActions>
       </Dialog>
 
-      {/* Delete confirmation */}
-      <Dialog
+      <DeletePlanDialog
         open={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-      >
-        <DialogTitle>Delete plan?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Delete &ldquo;{selectedPlan?.name}&rdquo;? This cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
-          <Button color="error" variant="contained" onClick={doDelete}>
-            Delete
-          </Button>
-        </DialogActions>
-      </Dialog>
+        planName={selectedPlan?.name}
+        onCancel={() => setDeleteConfirmOpen(false)}
+        onConfirm={doDelete}
+      />
 
-      {/* Unsaved changes dialog */}
-      <Dialog
+      <UnsavedChangesDialog
         open={unsavedDialogOpen}
-        onClose={() => setUnsavedDialogOpen(false)}
-      >
-        <DialogTitle>Unsaved changes</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            This plan has unsaved changes. What would you like to do?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions sx={{ gap: 0.5, flexWrap: "wrap" }}>
-          <Button onClick={() => handleUnsavedChoice("cancel")}>Cancel</Button>
-          {canSave && (
-            <Button
-              variant="outlined"
-              onClick={() => handleUnsavedChoice("save_only")}
-            >
-              Save Only
-            </Button>
-          )}
-          <Button
-            variant="outlined"
-            color="secondary"
-            disabled={!effectiveCanExecute}
-            onClick={() => handleUnsavedChoice("execute")}
-          >
-            Execute without saving
-          </Button>
-          {canSave && (
-            <Button
-              variant="contained"
-              color="secondary"
-              disabled={!effectiveCanExecute}
-              onClick={() => handleUnsavedChoice("save_execute")}
-            >
-              Save &amp; Execute
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+        canSave={canSave}
+        canExecute={effectiveCanExecute}
+        onChoice={handleUnsavedChoice}
+      />
     </>
   );
 }
