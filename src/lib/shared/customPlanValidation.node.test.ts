@@ -204,6 +204,25 @@ describe("validateCustomPlan — pool withdrawals", () => {
     expect(result.rows[1].valid).toBe(true);
   });
 
+  it("tracks the destination region balance across pool withdrawals", () => {
+    const result = validateCustomPlan(
+      [withdrawRow("10000"), withdrawRow("10000")],
+      { "region-a": { GRAIN: 250 } },
+      0,
+      [GRAIN_POOL],
+      {
+        poolPositions: { GRAIN: grainPosition(0) },
+      }
+    );
+
+    expect(result.rows[0].valid).toBe(true);
+    expect(result.rows[0].currentBalance).toBe(250);
+    expect(result.rows[0].inputBalance).toBeCloseTo(10_250, 6);
+    expect(result.rows[1].valid).toBe(true);
+    expect(result.rows[1].currentBalance).toBeCloseTo(10_250, 6);
+    expect(result.rows[1].inputBalance).toBeCloseTo(20_250, 6);
+  });
+
   it("uses aggregate DEC balance across pool and buy rows", () => {
     const invalidPool = validateCustomPlan(
       [poolRow("3000")],

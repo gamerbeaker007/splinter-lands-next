@@ -305,9 +305,9 @@ export interface CustomPlanRowValidation {
   resolvedAmount: number;
   /** Estimated received amount (for transfer, swap) or DEC cost (for pool, buy). */
   estimatedValue: number;
-  /** Balance BEFORE this row consumes input (already accounting for previous rows). */
+  /** Relevant balance before this row's action, after all previous plan rows. */
   currentBalance: number;
-  /** Balance AFTER this row input is applied. */
+  /** Relevant balance after this row's effects are applied. */
   inputBalance: number;
   /** Symbol used for current/input balance chips. */
   balanceSymbol: string;

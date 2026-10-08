@@ -25,6 +25,8 @@ export function CustomPlanRowOutput({
     ? validation.poolSharesOut * 100
     : null;
 
+  console.log("validation", validation);
+
   return (
     <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
       {renderResourceChip(
@@ -131,7 +133,7 @@ const FlowArrow = () => (
   />
 );
 
-/** Expanded row strip: balance before → input → balance after | estimate. */
+/** Expanded row strip: balance before → balance after → input → estimate. */
 export default function CustomPlanRowFlow({
   validation,
 }: {
@@ -161,14 +163,13 @@ export default function CustomPlanRowFlow({
         {balanceChip(validation?.currentBalance)}
       </FlowItem>
       <FlowArrow />
+      <FlowItem label="Balance after">
+        {balanceChip(validation?.inputBalance)}
+      </FlowItem>
       <FlowItem label="Input">
         {validation && validation.inputAmountAbsolute > 0
           ? balanceChip(validation.inputAmountAbsolute)
           : null}
-      </FlowItem>
-      <FlowArrow />
-      <FlowItem label="Balance after">
-        {balanceChip(validation?.inputBalance)}
       </FlowItem>
       <Divider
         orientation="vertical"

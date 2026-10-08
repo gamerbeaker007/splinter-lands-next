@@ -14,6 +14,17 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.39.2] - 2026-10-05
+
+### Changed
+- **Land Manager - Harvest (Custom Plan):** layout swap now balance before -> after then input and estimated result.
+
+### Fixed
+
+- **Land Manager - Harvest (Custom Plan):** Pool withdraw did not share balanced
+
+---
+
 ## [v1.39.1] - 2026-10-05
 
 ### Changed

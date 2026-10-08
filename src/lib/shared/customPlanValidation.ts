@@ -595,24 +595,25 @@ export function validateCustomPlan(
           usedFraction: 0,
         };
         const holding = computePoolHolding(poolPositions[symbol], pools);
-        const current = entry.unlockedResource;
-        if (isPctTooSmall(draft, current, multiplier)) {
+        const regionBalance = ledgerGet(ledger, draft.to_region_uid, symbol);
+        const poolBalance = entry.unlockedResource;
+        if (isPctTooSmall(draft, poolBalance, multiplier)) {
           return skippedRowValidation(
             `${draft.amount}% of unlocked ${symbol} resolves below 1 and is skipped`,
-            current,
+            regionBalance,
             symbol
           );
         }
-        const resolved = parseAndScaleInput(draft, current, multiplier);
+        const resolved = parseAndScaleInput(draft, poolBalance, multiplier);
         if (resolved <= 0)
           return emptyRowValidation("Amount must resolve to at least 1");
-        if (resolved > current) {
+        if (resolved > poolBalance) {
           const invalid = emptyRowValidation(
-            `Insufficient unlocked ${symbol} in pool position (need ${resolved}, have ${current.toFixed(3)})`
+            `Insufficient unlocked ${symbol} in pool position (need ${resolved}, have ${poolBalance.toFixed(3)})`
           );
           invalid.resolvedAmount = resolved;
-          invalid.currentBalance = current;
-          invalid.inputBalance = current;
+          invalid.currentBalance = regionBalance;
+          invalid.inputBalance = regionBalance;
           invalid.balanceSymbol = symbol;
           invalid.inputAmountAbsolute = resolved;
           invalid.estimatedOutputSymbol = symbol;
@@ -640,7 +641,7 @@ export function validateCustomPlan(
         const resourceOut = holding.resource * sharesOut;
         const decOut = holding.dec * sharesOut;
         poolLedger.set(symbol, {
-          unlockedResource: Math.max(0, current - resourceOut),
+          unlockedResource: Math.max(0, poolBalance - resourceOut),
           usedFraction: entry.usedFraction + sharesOut,
         });
         ledgerCredit(ledger, draft.to_region_uid, symbol, resourceOut);
@@ -650,8 +651,8 @@ export function validateCustomPlan(
           valid: true,
           resolvedAmount: resolved,
           estimatedValue: resourceOut,
-          currentBalance: current,
-          inputBalance: Math.max(0, current + resourceOut),
+          currentBalance: regionBalance,
+          inputBalance: regionBalance + resourceOut,
           balanceSymbol: symbol,
           inputAmountAbsolute: resolved,
           estimatedOutputSymbol: symbol,
