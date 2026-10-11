@@ -1,7 +1,7 @@
 "use client";
 
 import { resolveCardUidArt } from "@/components/ui/CardUidImage";
-import type { HarvestReward } from "@/lib/shared/harvestRewards";
+import { HarvestReward, revealOrder } from "@/lib/shared/harvestRewards";
 import {
   labors_luck_icon_url,
   totem_fragment_icon_url,
@@ -42,8 +42,8 @@ const fadeIn = keyframes`
   to   { opacity: 1; }
 `;
 
-const CARD_WIDTH = 170;
-const FRAGMENT_SIZE = 130;
+const CARD_WIDTH = 100;
+const FRAGMENT_SIZE = 75;
 
 const FOIL_GLOW: Record<CardFoil, string> = {
   regular: "rgba(255,255,255,0.35)",
@@ -166,7 +166,7 @@ function RewardItem({
         />
       </Box>
       <Box textAlign="center" sx={captionSx(index)}>
-        <Typography variant="subtitle2" fontWeight={700} color="common.white">
+        <Typography variant="subtitle2" fontWeight={400} color="common.white">
           {label}
         </Typography>
         <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)" }}>
@@ -234,7 +234,7 @@ export default function HarvestRewardReveal({
           gap={4}
           sx={{ minHeight: CARD_WIDTH, py: 1 }}
         >
-          {rewards.map((reward, i) => (
+          {revealOrder(rewards).map((reward, i) => (
             <RewardItem
               key={reward.key}
               reward={reward}

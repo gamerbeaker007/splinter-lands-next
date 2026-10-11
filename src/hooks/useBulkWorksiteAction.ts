@@ -135,7 +135,10 @@ export function useBulkWorksiteAction(): UseBulkWorksiteActionReturn {
         setPhase("confirming");
         setProgress({ done: 0, total: res.txIds.length });
         for (let i = 0; i < res.txIds.length; i++) {
-          await waitForTransactions([res.txIds[i]]);
+          const txId = res.txIds[i];
+          await waitForTransactions(
+            res.opTxIds.filter((id) => id === txId || id.startsWith(`${txId}-`))
+          );
           setProgress({ done: i + 1, total: res.txIds.length });
         }
         const r: BulkWorksiteActionResult = {

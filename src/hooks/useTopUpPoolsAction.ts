@@ -35,6 +35,7 @@ import {
   TopUpWindowInfo,
 } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
+import { hiveTxIdsOf } from "@/lib/shared/splTrxIds";
 import { useCallback, useState } from "react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,7 +182,8 @@ export function useTopUpPoolsAction({
           return null;
         }
 
-        let allTxIds: string[] = [];
+        // SPL op ids of every phase — what the log stores and verifies.
+        let allOpTxIds: string[] = [];
         const allActions: PostHarvestActionSummary[] = [];
         const warnings: string[] = [];
 
@@ -194,9 +196,9 @@ export function useTopUpPoolsAction({
             setError(res.error ?? "Broadcast failed (sell/buy phase)");
             return null;
           }
-          await waitForTransactions(res.txIds);
+          await waitForTransactions(res.opTxIds);
           fundingSettled = true;
-          allTxIds = res.txIds;
+          allOpTxIds = res.opTxIds;
           allActions.push(...funding.actions);
         }
 
@@ -245,18 +247,18 @@ export function useTopUpPoolsAction({
             setError(res.error ?? "Broadcast failed (add liquidity phase)");
             // Phase 1 already settled — record it so the funding isn't lost
             // from the log even though the deposit failed.
-            await recordPostHarvestLog(username, allActions, allTxIds).catch(
+            await recordPostHarvestLog(username, allActions, allOpTxIds).catch(
               () => {}
             );
             return null;
           }
-          await waitForTransactions(res.txIds);
-          allTxIds = [...allTxIds, ...res.txIds];
+          await waitForTransactions(res.opTxIds);
+          allOpTxIds = [...allOpTxIds, ...res.opTxIds];
           allActions.push(...deposits.actions);
           const recordRunResult = await recordTopUpPoolRun(
             username,
             topUpWindow.hours,
-            res.txIds
+            res.opTxIds
           );
 
           if (!recordRunResult.ok) {
@@ -266,10 +268,14 @@ export function useTopUpPoolsAction({
           }
         }
 
-        await recordPostHarvestLog(username, allActions, allTxIds).catch(
+        await recordPostHarvestLog(username, allActions, allOpTxIds).catch(
           () => {}
         );
-        setResult({ success: true, txIds: allTxIds });
+        setResult({
+          success: true,
+          txIds: hiveTxIdsOf(allOpTxIds),
+          opTxIds: allOpTxIds,
+        });
         if (warnings.length > 0) setWarning(warnings.join(" · "));
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.

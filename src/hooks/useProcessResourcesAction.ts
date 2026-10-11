@@ -6,6 +6,7 @@ import {
   invalidatePlayerRegionCaches,
 } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatNumber } from "@/lib/formatters";
+import { hiveTxIdsOf } from "@/lib/shared/splTrxIds";
 import { formatError } from "@/lib/frontend/errorFormat";
 import { buildPostHarvestOps } from "@/lib/frontend/postHarvestOps";
 import { processResourcesPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
@@ -137,15 +138,15 @@ async function appendDecBalanceInfo(
 async function broadcastSellPhase(
   username: string,
   sellOps: [string, object][]
-): Promise<{ txIds: string[] } | { error: string }> {
-  if (sellOps.length === 0) return { txIds: [] };
+): Promise<{ opTxIds: string[] } | { error: string }> {
+  if (sellOps.length === 0) return { opTxIds: [] };
 
   const res = await broadcastOperations(username, sellOps);
   if (!res.success) {
     return { error: res.error ?? "Broadcast failed (sell phase)" };
   }
-  await waitForTransactions(res.txIds);
-  return { txIds: res.txIds };
+  await waitForTransactions(res.opTxIds);
+  return { opTxIds: res.opTxIds };
 }
 
 /**
@@ -205,7 +206,7 @@ async function broadcastLiquidityPhase(
   sellPct: number,
   poolPct: number
 ): Promise<{
-  txIds: string[];
+  opTxIds: string[];
   warning: string | null;
   error: string | null;
 }> {
@@ -218,7 +219,7 @@ async function broadcastLiquidityPhase(
   ]);
 
   const rawOps = buildFreshLiquidityOps(plannedLiqOps, freshPools);
-  if (rawOps.length === 0) return { txIds: [], warning: null, error: null };
+  if (rawOps.length === 0) return { opTxIds: [], warning: null, error: null };
 
   // Scale down if insufficient DEC
   const totalDecNeeded = rawOps.reduce((sum, op) => sum + op.decAmount, 0);
@@ -252,18 +253,18 @@ async function broadcastLiquidityPhase(
     );
   }
 
-  if (liquidityOps.length === 0) return { txIds: [], warning, error: null };
+  if (liquidityOps.length === 0) return { opTxIds: [], warning, error: null };
 
   const res = await broadcastOperations(username, liquidityOps);
   if (!res.success) {
     return {
-      txIds: [],
+      opTxIds: [],
       warning,
       error: res.error ?? "Broadcast failed (add liquidity phase)",
     };
   }
-  await waitForTransactions(res.txIds);
-  return { txIds: res.txIds, warning, error: null };
+  await waitForTransactions(res.opTxIds);
+  return { opTxIds: res.opTxIds, warning, error: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -346,7 +347,8 @@ export function useProcessResourcesAction({
           return null;
         }
 
-        let allTxIds: string[] = [];
+        // SPL op ids of every phase — what the log stores and verifies.
+        let allOpTxIds: string[] = [];
 
         // Phase 1: sell resources for DEC
         if (postHarvestStrategy === "sell_and_pool" && sellPct > 0) {
@@ -355,7 +357,7 @@ export function useProcessResourcesAction({
             setError(sellResult.error);
             return null;
           }
-          allTxIds = sellResult.txIds;
+          allOpTxIds = sellResult.opTxIds;
         }
 
         // Phase 2: add liquidity (sell_and_pool with poolPct > 0)
@@ -372,7 +374,7 @@ export function useProcessResourcesAction({
             setError(liqResult.error);
             return null;
           }
-          allTxIds = [...allTxIds, ...liqResult.txIds];
+          allOpTxIds = [...allOpTxIds, ...liqResult.opTxIds];
         }
 
         // Transfers stand alone: nothing funds them and nothing depends on
@@ -383,8 +385,8 @@ export function useProcessResourcesAction({
             setError(res.error ?? "Broadcast failed (transfer phase)");
             return null;
           }
-          await waitForTransactions(res.txIds);
-          allTxIds = [...allTxIds, ...res.txIds];
+          await waitForTransactions(res.opTxIds);
+          allOpTxIds = [...allOpTxIds, ...res.opTxIds];
         }
 
         // Record results. The chain work is already done at this point, so a
@@ -393,7 +395,7 @@ export function useProcessResourcesAction({
         const recorded = await recordPostHarvestLog(
           username,
           actions,
-          allTxIds
+          allOpTxIds
         ).then(
           () => null,
           (err: unknown) => formatError(err)
@@ -403,7 +405,11 @@ export function useProcessResourcesAction({
             `Resources were processed on-chain, but the run could not be saved to the log (${recorded}).`
           );
         }
-        setResult({ success: true, txIds: allTxIds });
+        setResult({
+          success: true,
+          txIds: hiveTxIdsOf(allOpTxIds),
+          opTxIds: allOpTxIds,
+        });
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.
         await invalidatePlayerRegionCaches().catch(() => {});

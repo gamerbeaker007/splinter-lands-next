@@ -14,6 +14,21 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.40.0] - 2026-10-11
+
+### Changed
+
+- **Land Manager - Harvest reveal:** Rewards are now shown in rarity order: Labor's Luck cards first, then totem fragments from common to rare, epic and legendary.
+- **Land Manager - Harvest Mythics:** Keeps and castles are now harvested in two separate steps. All keeps are collected and confirmed on-chain before any castle is collected, so a batch never mixes keeps and castles. This can mean one extra Keychain popup.
+
+### Fixed
+
+- **Land Manager - Harvest Mythics / Harvest All:** The reward reveal only showed drops from the first operation of each batched transaction (up to 4 operations are combined per transaction). Every operation is now looked up by its own Splinterlands transaction id (`<txId>-N`), so all totem fragments and Labor's Luck cards are revealed and recorded. Rewards on-chain were never affected; only the reveal and the stored harvest log were incomplete.
+- **Land Manager - all batched actions:** Transaction verification (the green checkmarks) now checks every operation in a batch, not just the first one. A failed second, third or fourth operation is now reported instead of shown as confirmed. This covers harvest, donations, pool top-ups, process resources, custom plans, DEC stake, worksites, workers and rentals. It also fixes undercounted DEC totals for large worker purchases.
+- **Land Manager - Today panel:** The day logs now store the Splinterlands id of every operation instead of only the Hive transaction id, so the Today panel checks and shows the rewards of every operation. Transaction links still point to the Hive transaction on hivehub. Runs logged before this version only show what the first operation of each transaction returned.
+
+---
+
 ## [v1.39.2] - 2026-10-05
 
 ### Changed

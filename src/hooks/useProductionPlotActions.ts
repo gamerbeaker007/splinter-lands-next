@@ -210,7 +210,7 @@ export function useProductionPlotActions({
 
         if (broadcast.txIds.length > 0) {
           try {
-            await waitForTransactions(broadcast.txIds);
+            await waitForTransactions(broadcast.opTxIds);
           } catch (verifyErr) {
             phaseError =
               verifyErr instanceof Error
@@ -263,7 +263,7 @@ export function useProductionPlotActions({
           return { success: false, error: msg };
         }
         try {
-          await waitForTransactions(broadcast.txIds);
+          await waitForTransactions(broadcast.opTxIds);
         } catch (verifyErr) {
           const msg =
             verifyErr instanceof Error

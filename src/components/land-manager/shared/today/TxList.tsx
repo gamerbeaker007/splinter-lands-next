@@ -2,6 +2,7 @@
 
 import { Cancel, CheckCircle, RadioButtonUnchecked } from "@mui/icons-material";
 import { ButtonBase, Link, Popover, Stack, Typography } from "@mui/material";
+import { hiveTxIdOf, hiveTxIdsOf } from "@/lib/shared/splTrxIds";
 import { useState } from "react";
 import { useTodayTx } from "./TodayTxContext";
 
@@ -9,15 +10,30 @@ function txLink(txId: string): string {
   return `https://hivehub.dev/tx/${encodeURIComponent(txId)}`;
 }
 
-/** The tx ids behind a section, each with its on-chain outcome. */
-export default function TxList({ txIds }: { txIds: string[] }) {
+/**
+ * The transactions behind a section, each with its on-chain outcome. The log
+ * stores SPL op ids (`<hiveTxId>-N`); they are shown per Hive transaction —
+ * the id hivehub knows — which fails if any of its ops failed and is verified
+ * once all of them are.
+ */
+export default function TxList({ txIds: opTxIds }: { txIds: string[] }) {
   const { verifiedTxIds, failedTxIds } = useTodayTx();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
-  if (txIds.length === 0) return null;
+  if (opTxIds.length === 0) return null;
 
-  const hasFailed = txIds.some((txId) => failedTxIds.has(txId));
-  const allVerified = txIds.every((txId) => verifiedTxIds.has(txId));
+  const txIds = hiveTxIdsOf(opTxIds);
+  const opsOf = (txId: string) =>
+    opTxIds.filter((opId) => hiveTxIdOf(opId) === txId);
+  const failureOf = (txId: string) =>
+    opsOf(txId)
+      .map((opId) => failedTxIds.get(opId))
+      .find((error) => error !== undefined);
+  const isVerified = (txId: string) =>
+    opsOf(txId).every((opId) => verifiedTxIds.has(opId));
+
+  const hasFailed = txIds.some((txId) => failureOf(txId) !== undefined);
+  const allVerified = txIds.every(isVerified);
 
   const summaryIcon = hasFailed ? (
     <Cancel sx={{ fontSize: 14, color: "error.main" }} />
@@ -50,8 +66,9 @@ export default function TxList({ txIds }: { txIds: string[] }) {
       >
         <Stack gap={0.5} p={1}>
           {txIds.map((txId) => {
-            const failed = failedTxIds.has(txId);
-            const verified = verifiedTxIds.has(txId);
+            const failure = failureOf(txId);
+            const failed = failure !== undefined;
+            const verified = isVerified(txId);
 
             return (
               <Stack key={txId} direction="row" alignItems="center" gap={0.5}>
@@ -79,7 +96,7 @@ export default function TxList({ txIds }: { txIds: string[] }) {
 
                 {failed && (
                   <Typography variant="caption" color="error.main">
-                    — {failedTxIds.get(txId)}
+                    — {failure}
                   </Typography>
                 )}
               </Stack>

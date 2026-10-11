@@ -48,6 +48,7 @@ interface Params {
 export interface HarvestAllResult {
   success: boolean;
   txIds: string[];
+  opTxIds: string[];
   harvestTxIds: string[];
   donations: PayDonationsResult | null;
   log: string[];
@@ -187,7 +188,7 @@ export function useHarvestAllAction({
         await recordHarvestLog({
           player: username,
           resources: harvestedSummary,
-          txIds: harvestRes.txIds,
+          txIds: harvestRes.opTxIds,
         }).catch(() => {});
 
         // ── Phase 2: donations ──
@@ -205,6 +206,7 @@ export function useHarvestAllAction({
             unpaidDonations: {},
             donationError: null,
             txIds: [],
+            opTxIds: [],
             log: ["No transferrable donations to pay this run."],
           };
         } else {
@@ -218,7 +220,7 @@ export function useHarvestAllAction({
             paidDonations: donationOutcome.paidDonations,
             unpaidDonations: donationOutcome.unpaidDonations,
             donationError: donationOutcome.donationError,
-            txIds: donationOutcome.txIds,
+            txIds: donationOutcome.opTxIds,
           }).catch(() => {});
           if (donationOutcome.donationError)
             setError(donationOutcome.donationError);
@@ -229,6 +231,7 @@ export function useHarvestAllAction({
         setResult({
           success: donationOutcome.success,
           txIds: [...harvestRes.txIds, ...donationOutcome.txIds],
+          opTxIds: [...harvestRes.opTxIds, ...donationOutcome.opTxIds],
           harvestTxIds: harvestRes.txIds,
           donations: donationOutcome,
           log: [...harvestRes.log, ...donationOutcome.log],

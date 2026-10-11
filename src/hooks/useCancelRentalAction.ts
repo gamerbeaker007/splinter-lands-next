@@ -47,7 +47,7 @@ export function useCancelRentalAction({
           setError(result.error ?? "Broadcast failed");
           return;
         }
-        await waitForTransactions(result.txIds);
+        await waitForTransactions(result.opTxIds);
         await refreshCardCollection();
         onSuccess?.();
       } catch (err) {

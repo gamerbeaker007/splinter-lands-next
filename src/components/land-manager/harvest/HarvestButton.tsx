@@ -89,7 +89,7 @@ export default function HarvestButton({
       await recordHarvestLog({
         player: username,
         resources: summarizeHarvestedResources(harvestableMap),
-        txIds: harvestRes.txIds,
+        txIds: harvestRes.opTxIds,
       }).catch(() => {});
 
       // ── Phase 2: donations ──
@@ -114,7 +114,7 @@ export default function HarvestButton({
           paidDonations: donationResult.paidDonations,
           unpaidDonations: donationResult.unpaidDonations,
           donationError: donationResult.donationError,
-          txIds: donationResult.txIds,
+          txIds: donationResult.opTxIds,
         }).catch(() => {});
       }
 

@@ -290,7 +290,9 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         return;
       }
 
-      const actionResults = await waitForTransactions(actionRes.txIds);
+      const actionResults = await waitForTransactions(
+        actionRes.opTxIds ?? actionRes.txIds
+      );
 
       // Prefer actual DEC/USD from confirmed purchase results; fall back to the
       // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
@@ -324,10 +326,14 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         stakeOps.push(buildStakeWorkersOp(username, item.plot.deed_uid, cards));
       }
 
+      // Hive ids for the result card; SPL op ids for the day log.
+      const actionOpTxIds = actionRes.opTxIds ?? actionRes.txIds;
       let stakeTxIds: string[] = [];
+      let stakeOpTxIds: string[] = [];
       if (stakeOps.length > 0) {
         const stakeRes = await broadcastOperations(username, stakeOps);
         stakeTxIds = stakeRes.txIds;
+        stakeOpTxIds = stakeRes.opTxIds;
         if (!stakeRes.success) {
           setResult({
             success: false,
@@ -345,8 +351,8 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
             0,
             totalDec,
             totalUsd,
-            actionRes.txIds,
-            stakeTxIds
+            actionOpTxIds,
+            stakeOpTxIds
           ).catch(() => {});
           setError(
             `Cards were ${s.label === "rent" ? "rented" : "bought"} but staking failed: ${stakeRes.error}. You can manually stake them from Splinterlands.`
@@ -354,7 +360,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
           setBusy(false);
           return;
         }
-        await waitForTransactions(stakeRes.txIds);
+        await waitForTransactions(stakeRes.opTxIds);
       }
 
       await refreshCardCollection();
@@ -385,8 +391,8 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         stakedCount,
         totalDec,
         totalUsd,
-        actionRes.txIds,
-        stakeTxIds
+        actionOpTxIds,
+        stakeOpTxIds
       ).catch(() => {});
       if (skippedDeeds > 0) {
         setError(

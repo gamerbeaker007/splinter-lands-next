@@ -136,6 +136,8 @@ export function useDecPowerAction({
     const succeededByRegion: Record<string, number> = {};
     const failedByRegion: Record<string, number> = {};
     const txIds: string[] = [];
+    // SPL op ids — one per region op; what the day log stores and verifies.
+    const opTxIds: string[] = [];
     let phaseError: string | null = null;
 
     try {
@@ -151,6 +153,7 @@ export function useDecPowerAction({
         KeychainKeyTypes.posting
       );
       txIds.push(...res.txIds);
+      opTxIds.push(...res.opTxIds);
 
       // Mirror the operation order: each tx id corresponds to a successful
       // batch, not a single op. Mark all ops in successful batches as landed,
@@ -171,7 +174,7 @@ export function useDecPowerAction({
       }
 
       if (res.txIds.length > 0) {
-        await waitForTransactions(res.txIds);
+        await waitForTransactions(res.opTxIds);
       }
 
       const totalSucceeded = Object.values(succeededByRegion).reduce(
@@ -200,7 +203,7 @@ export function useDecPowerAction({
         succeeded: succeededByRegion,
         failed: failedByRegion,
         error: phaseError,
-        txIds,
+        txIds: opTxIds,
       }).catch(() => {});
 
       if (!phaseError) {
@@ -213,7 +216,7 @@ export function useDecPowerAction({
       // Mark anything we didn't get a tx id for as failed and log it.
       for (let i = 0; i < plan.items.length; i++) {
         const it = plan.items[i];
-        if (i < txIds.length) continue;
+        if (i < opTxIds.length) continue;
         failedByRegion[it.region_uid] =
           (failedByRegion[it.region_uid] ?? 0) + it.amount;
       }
@@ -222,7 +225,7 @@ export function useDecPowerAction({
         succeeded: succeededByRegion,
         failed: failedByRegion,
         error: msg,
-        txIds,
+        txIds: opTxIds,
       }).catch(() => {});
     } finally {
       setBusy(false);

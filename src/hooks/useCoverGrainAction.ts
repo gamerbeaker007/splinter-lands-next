@@ -171,12 +171,12 @@ export function useCoverGrainAction({
         return;
       }
       setPhase("confirming");
-      await waitForTransactions(res.txIds);
+      await waitForTransactions(res.opTxIds);
       setPhase("idle");
       // Record into the make-harvestable log (shows under "Make Harvestable" in
       // the Today panel). Don't fail the whole action if logging hiccups, but do
       // surface it — a silent miss is what makes "nothing in Today" hard to debug.
-      await recordMakeHarvestableLog(username, plan.actions, res.txIds).catch(
+      await recordMakeHarvestableLog(username, plan.actions, res.opTxIds).catch(
         (err) => console.error("Failed to record make-harvestable log", err)
       );
       // Clear the cached pre-action snapshot so the refresh below reads

@@ -1,3 +1,4 @@
+import { totemFragmentRarity } from "@/lib/utils/totemFragmentUtil";
 import type { LaborsLuckTreasure, SplTrxResult } from "@/types/spl/trx";
 
 /**
@@ -69,4 +70,18 @@ export function harvestRewardsFrom(results: MaybeResult[]): HarvestReward[] {
       })
     ),
   ];
+}
+
+const RARITY_ORDER = ["common", "rare", "epic", "legendary"];
+
+/**
+ * Reveal order: Labor's Luck cards first, then fragments from common up to
+ * legendary. The sort is stable, so equal rarities keep their harvest order.
+ */
+export function revealOrder(rewards: HarvestReward[]): HarvestReward[] {
+  const rank = (r: HarvestReward) =>
+    r.kind === "card"
+      ? -1
+      : RARITY_ORDER.indexOf(totemFragmentRarity(r.fragmentType) ?? "common");
+  return [...rewards].sort((a, b) => rank(a) - rank(b));
 }

@@ -80,7 +80,7 @@ export function useStakePowerCoreAction({
           setError(result.error ?? "Broadcast failed");
           return;
         }
-        await waitForTransactions(result.txIds);
+        await waitForTransactions(result.opTxIds);
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Staking failed");

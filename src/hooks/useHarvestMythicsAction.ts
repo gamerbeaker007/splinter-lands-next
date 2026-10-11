@@ -14,17 +14,13 @@ import {
 } from "@/lib/frontend/donationPayment";
 import { formatError } from "@/lib/frontend/errorFormat";
 import { harvestPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
-import {
-  BroadcastResult,
-  broadcastOperations,
-  waitForTransactions,
-} from "@/lib/frontend/splBroadcast";
+import { broadcastKeepsThenCastles } from "@/lib/frontend/broadcastMythicHarvest";
+import { BroadcastResult } from "@/lib/frontend/splBroadcast";
 import {
   fragmentsIn,
   HarvestReward,
   harvestRewardsFrom,
 } from "@/lib/shared/harvestRewards";
-import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import {
   ActionPlan,
   DEFAULT_DONATION_RECIPIENT,
@@ -148,23 +144,17 @@ export function useHarvestMythicsAction({
           return null;
         }
 
-        const ops: [string, object][] = mythicDeeds.map((deed) =>
-          buildTaxCollectionOp(username, deed.region_uid, deed.deed_uid)
+        // ── Phase 1: harvest — every keep confirmed before any castle ──
+        const res = await broadcastKeepsThenCastles(
+          username,
+          mythicDeeds,
+          setInternalBusy
         );
-        if (ops.length === 0) {
-          setError("No mythic deeds found.");
-          return null;
-        }
-
-        // ── Phase 1: harvest ──
-        const res = await broadcastOperations(username, ops);
         if (!res.success) {
           setError(res.error ?? "Broadcast failed");
           return null;
         }
-
-        setInternalBusy("verifying");
-        const confirmed = await waitForTransactions(res.txIds);
+        const { confirmed } = res;
         // The confirmed tax_collection payloads decide which deeds dropped a
         // fragment — the plan can only estimate the chance.
         const fragments = fragmentsIn(confirmed);
@@ -200,6 +190,7 @@ export function useHarvestMythicsAction({
             unpaidDonations: {},
             donationError: null,
             txIds: [],
+            opTxIds: [],
             log: ["No transferrable donations to pay."],
           };
         } else {
@@ -212,15 +203,15 @@ export function useHarvestMythicsAction({
             setError(donationOutcome.donationError);
         }
 
-        await recordMythicHarvestLog(username, harvestResults, res.txIds, {
+        await recordMythicHarvestLog(username, harvestResults, res.opTxIds, {
           paidDonations: donationOutcome.paidDonations,
           unpaidDonations: donationOutcome.unpaidDonations,
           donationError: donationOutcome.donationError,
-          donationTxIds: donationOutcome.txIds,
+          donationTxIds: donationOutcome.opTxIds,
         }).catch(() => {});
         // Revealed once the whole flow (donations included) has finished.
         setRewards(harvestRewardsFrom(confirmed));
-        setResult(res);
+        setResult({ success: true, txIds: res.txIds, opTxIds: res.opTxIds });
         // Clear the cached pre-action snapshot so the refresh below reads
         // post-action balances rather than winning a cache hit on stale data.
         await invalidatePlayerRegionCaches().catch(() => {});

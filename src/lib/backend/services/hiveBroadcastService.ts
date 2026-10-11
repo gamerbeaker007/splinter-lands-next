@@ -11,6 +11,7 @@ import {
   SignedTransaction,
   Transaction,
 } from "@hiveio/dhive";
+import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import { HIVE_BLOCK_MS, MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 
 const DEFAULT_RPC_NODES = [
@@ -69,7 +70,13 @@ export interface BroadcastOpts {
 
 export interface ServerBroadcastResult {
   success: boolean;
+  /** Hive transaction ids — one per broadcast batch. */
   txIds: string[];
+  /**
+   * SPL transaction id of every op that landed, in op order. A Hive tx id only
+   * resolves the batch's first op — see `splOpTxIds`.
+   */
+  opTxIds?: string[];
   error?: string;
   /**
    * Tx ids that were signed and sent but whose broadcast call threw and could
@@ -166,7 +173,7 @@ export async function broadcastOpsAsService(
   operations: Operation[],
   opts?: BroadcastOpts
 ): Promise<ServerBroadcastResult> {
-  if (operations.length === 0) return { success: true, txIds: [] };
+  if (operations.length === 0) return { success: true, txIds: [], opTxIds: [] };
   const client = getClient();
   let key: PrivateKey;
   try {
@@ -180,6 +187,7 @@ export async function broadcastOpsAsService(
   }
 
   const txIds: string[] = [];
+  const opTxIds: string[] = [];
   const prefixed = applyDevPrefixToOps(
     operations as unknown as LooseOp[]
   ) as unknown as Operation[];
@@ -195,12 +203,13 @@ export async function broadcastOpsAsService(
       logger.error(
         `broadcastOpsAsService batch ${i} prepare failed: ${message}`
       );
-      return { success: false, txIds, error: message };
+      return { success: false, txIds, opTxIds, error: message };
     }
 
     try {
       await client.broadcast.send(signed);
       txIds.push(trxId);
+      opTxIds.push(...splOpTxIds(trxId, batches[i].length));
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       logger.error(
@@ -213,10 +222,12 @@ export async function broadcastOpsAsService(
           `broadcastOpsAsService batch ${i} recovered: tx ${trxId} confirmed on-chain despite RPC error`
         );
         txIds.push(trxId);
+        opTxIds.push(...splOpTxIds(trxId, batches[i].length));
       } else {
         return {
           success: false,
           txIds,
+          opTxIds,
           attemptedTxIds: [trxId],
           error: message,
         };
@@ -227,5 +238,5 @@ export async function broadcastOpsAsService(
       await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
     }
   }
-  return { success: true, txIds };
+  return { success: true, txIds, opTxIds };
 }

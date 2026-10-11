@@ -2,6 +2,7 @@ import {
   fragmentsIn,
   harvestRewardsFrom,
   laborsLuckIn,
+  revealOrder,
 } from "@/lib/shared/harvestRewards";
 import type {
   HarvestAllDeedResult,
@@ -97,5 +98,24 @@ describe("harvestRewards", () => {
     expect(
       harvestRewardsFrom([harvestAll(null), taxCollection("a", false, null)])
     ).toEqual([]);
+  });
+
+  it("reveals cards first, then fragments common → legendary", () => {
+    const rewards = harvestRewardsFrom([
+      taxCollection("a", true, "TOTEMFL"),
+      taxCollection("b", true, "TOTEMFE"),
+      taxCollection("c", true, "TOTEMFR"),
+      taxCollection("d", true, "TOTEMFC"),
+      taxCollection("e", true, "TOTEMFR"),
+      harvestAll(CARD),
+    ]);
+    expect(revealOrder(rewards).map((r) => r.key)).toEqual([
+      "card:G19-866-2632A608C0",
+      "fragment:d",
+      "fragment:c",
+      "fragment:e",
+      "fragment:b",
+      "fragment:a",
+    ]);
   });
 });

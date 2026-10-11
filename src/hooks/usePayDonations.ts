@@ -25,7 +25,10 @@ export interface PayDonationsResult {
   paidDonations: Record<string, number>;
   unpaidDonations: Record<string, number>;
   donationError: string | null;
+  /** Hive tx ids, for explorer links. */
   txIds: string[];
+  /** SPL op ids — what the day log stores and verifies. */
+  opTxIds: string[];
   log: string[];
 }
 
@@ -46,6 +49,7 @@ const EMPTY_RESULT: PayDonationsResult = {
   unpaidDonations: {},
   donationError: null,
   txIds: [],
+  opTxIds: [],
   log: [],
 };
 
@@ -122,6 +126,7 @@ export function usePayDonations(username: string): UsePayDonations {
           unpaidDonations: desiredTotals,
           donationError: message,
           txIds: [],
+          opTxIds: [],
           log,
         };
         setResult(r);
@@ -149,6 +154,7 @@ export function usePayDonations(username: string): UsePayDonations {
           donationError:
             "All donations capped to zero (insufficient region balances)",
           txIds: [],
+          opTxIds: [],
           log,
         };
         setResult(r);
@@ -164,6 +170,7 @@ export function usePayDonations(username: string): UsePayDonations {
       log.push(...donationLog);
 
       const txIds: string[] = [];
+      const opTxIds: string[] = [];
       let donationError: string | null = null;
 
       if (postingOps.length > 0) {
@@ -175,7 +182,8 @@ export function usePayDonations(username: string): UsePayDonations {
           );
           if (res.success) {
             txIds.push(...res.txIds);
-            await waitForTransactions(res.txIds);
+            opTxIds.push(...res.opTxIds);
+            await waitForTransactions(res.opTxIds);
           } else {
             donationError = res.error ?? "Resource donation broadcast rejected";
           }
@@ -198,6 +206,7 @@ export function usePayDonations(username: string): UsePayDonations {
         unpaidDonations,
         donationError,
         txIds,
+        opTxIds,
         log,
       };
       setResult(r);

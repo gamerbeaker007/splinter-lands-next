@@ -14,6 +14,8 @@ export interface HarvestBroadcastRegion {
 export interface HarvestBroadcastResult {
   success: boolean;
   txIds: string[];
+  /** SPL op ids — what the day log stores and verifies. */
+  opTxIds: string[];
   log: string[];
   error?: string;
   /**
@@ -46,6 +48,7 @@ export async function broadcastHarvest(
     return {
       success: false,
       txIds: [],
+      opTxIds: [],
       log,
       error: "No regions are ready to harvest.",
     };
@@ -57,17 +60,25 @@ export async function broadcastHarvest(
       return {
         success: false,
         txIds: res.txIds,
+        opTxIds: res.opTxIds,
         log,
         error: res.error ?? "Harvest broadcast rejected",
       };
     }
-    const results = await waitForTransactions(res.txIds);
+    const results = await waitForTransactions(res.opTxIds);
     log.push(`✓ Harvest confirmed (${res.txIds.length} tx)`);
-    return { success: true, txIds: res.txIds, log, results };
+    return {
+      success: true,
+      txIds: res.txIds,
+      opTxIds: res.opTxIds,
+      log,
+      results,
+    };
   } catch (err) {
     return {
       success: false,
       txIds: [],
+      opTxIds: [],
       log,
       error: err instanceof Error ? err.message : "Harvest broadcast failed",
     };

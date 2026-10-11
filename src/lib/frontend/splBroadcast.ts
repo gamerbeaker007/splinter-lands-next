@@ -1,5 +1,6 @@
 import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
+import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import {
   HIVE_BLOCK_MS,
   MAX_OPS_PER_BROADCAST,
@@ -18,7 +19,13 @@ const VERIFY_CONCURRENCY = 5;
 
 export interface BroadcastResult {
   success: boolean;
+  /** Hive transaction ids — one per broadcast batch, for explorer links/logs. */
   txIds: string[];
+  /**
+   * SPL transaction id of every broadcast op, in op order. Verify and read
+   * results with these: a Hive tx id only resolves the batch's first op.
+   */
+  opTxIds: string[];
   error?: string;
 }
 
@@ -29,6 +36,8 @@ export interface BroadcastResult {
  * - Throws with a user-visible message on timeout.
  *
  * Looks up via the SPL `lookupTransaction` action. A single tx is just `[txId]`.
+ * Pass SPL op ids (`BroadcastResult.opTxIds`), not Hive tx ids, whenever a
+ * batch may hold more than one op — see `splOpTxIds`.
  */
 export async function waitForTransactions(
   txIds: string[]
@@ -96,6 +105,7 @@ export async function broadcastOperations(
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const txIds: string[] = [];
+  const opTxIds: string[] = [];
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
 
   for (let i = 0; i < batches.length; i++) {
@@ -113,6 +123,7 @@ export async function broadcastOperations(
       return {
         success: false,
         txIds,
+        opTxIds,
         error: formatError(result ?? "Keychain rejected"),
       };
     }
@@ -120,7 +131,10 @@ export async function broadcastOperations(
     const txId =
       (result.result as unknown as { id?: string })?.id ??
       (result.result as unknown as { tx_id?: string })?.tx_id;
-    if (txId) txIds.push(txId);
+    if (txId) {
+      txIds.push(txId);
+      opTxIds.push(...splOpTxIds(txId, batches[i].length));
+    }
 
     // Wait a full block before the next batch so all ops land in different blocks
     if (i < batches.length - 1) {
@@ -128,5 +142,5 @@ export async function broadcastOperations(
     }
   }
 
-  return { success: true, txIds };
+  return { success: true, txIds, opTxIds };
 }

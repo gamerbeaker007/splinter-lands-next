@@ -24,6 +24,8 @@ function chunk<T>(arr: T[], n: number): T[][] {
 export interface RentOnBehalfResult {
   success: boolean;
   txIds: string[];
+  /** SPL id of every op that landed — see `ServerBroadcastResult.opTxIds`. */
+  opTxIds?: string[];
   error?: string;
 }
 

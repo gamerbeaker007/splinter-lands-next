@@ -113,7 +113,7 @@ export function useRenewRentalsAction({
           return;
         }
 
-        await waitForTransactions(rentRes.txIds);
+        await waitForTransactions(rentRes.opTxIds ?? rentRes.txIds);
 
         // Force-bust the card collection cache so the Rental Overview shows
         // fresh rental_date / rental_days after the on-chain renewal.

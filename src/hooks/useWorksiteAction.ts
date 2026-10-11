@@ -89,7 +89,7 @@ export function useWorksiteAction(): UseWorksiteActionReturn {
           return r;
         }
         setPhase("confirming");
-        await waitForTransactions(res.txIds);
+        await waitForTransactions(res.opTxIds);
         const r: WorksiteActionResult = { success: true, txIds: res.txIds };
         setResult(r);
         return r;

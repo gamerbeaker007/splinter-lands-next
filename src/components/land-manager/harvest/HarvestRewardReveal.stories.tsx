@@ -195,6 +195,7 @@ function HarvestSimulator({
     setResult({
       success: true,
       txIds: confirmedTxs.map((_, i) => `sim-tx-${i}`),
+      opTxIds: confirmedTxs.map((_, i) => `sim-tx-${i}`),
     });
     setRewards(found);
     setLastRunFound(found.length);

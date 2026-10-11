@@ -134,14 +134,14 @@ export function useMakeHarvestableAction({
           if (!res.success) {
             setError(res.error ?? "Broadcast failed");
           } else {
-            await waitForTransactions(res.txIds);
+            await waitForTransactions(res.opTxIds);
             // The chain work is done by now, so a failed log write is reported
             // rather than swallowed: the run succeeded, the Today panel will
             // just be missing it.
             const recorded = await recordMakeHarvestableLog(
               username,
               actions,
-              res.txIds
+              res.opTxIds
             ).then(
               () => null,
               (err: unknown) => formatError(err)

@@ -373,8 +373,12 @@ export function useCustomPlanAction({
         setResult(broadcastResult);
 
         if (broadcastResult.txIds.length > 0) {
-          await waitForTransactions(broadcastResult.txIds);
-          await recordPostHarvestLog(username, actions, broadcastResult.txIds);
+          await waitForTransactions(broadcastResult.opTxIds);
+          await recordPostHarvestLog(
+            username,
+            actions,
+            broadcastResult.opTxIds
+          );
         }
 
         await invalidatePlayerRegionCaches();

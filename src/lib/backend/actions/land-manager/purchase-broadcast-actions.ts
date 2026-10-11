@@ -28,6 +28,8 @@ export interface PurchaseItem {
 export interface PurchaseOnBehalfResult {
   success: boolean;
   txIds: string[];
+  /** SPL id of every op that landed — see `ServerBroadcastResult.opTxIds`. */
+  opTxIds?: string[];
   error?: string;
 }
 
