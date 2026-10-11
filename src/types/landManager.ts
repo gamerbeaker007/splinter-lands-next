@@ -140,17 +140,6 @@ export const TOP_UP_POOL_STRATEGY_LABELS: Record<TopUpPoolStrategy, string> = {
 export const TOP_UP_POOL_SAFETY_MARGIN = 1.1;
 
 /**
- * Weeks of a donor resource's own consumption held back from `swap_resource`.
- *
- * A swap must never turn one resource's skip into another's, so the donor keeps
- * its own top-up target ({@link TOP_UP_POOL_SAFETY_MARGIN} weeks, which this
- * action is about to deposit) plus the one week it burns before the next run.
- * Measured against GROSS consumption: what the donor burns is what it must keep,
- * regardless of how much of it the region grows back.
- */
-export const SWAP_DONOR_RESERVE_WEEKS = TOP_UP_POOL_SAFETY_MARGIN + 1;
-
-/**
  * Extra output the Top Up Pools funding swap aims for, above what the deposit
  * actually needs.
  *

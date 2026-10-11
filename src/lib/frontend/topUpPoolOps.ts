@@ -13,10 +13,10 @@ import {
   buildSellResourceForDecOp,
   buildSwapTokensOp,
 } from "@/lib/shared/operations/opBuilders";
+import { HOURS_PER_WEEK } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   PostHarvestActionSummary,
-  SWAP_DONOR_RESERVE_WEEKS,
   SWAP_OUTPUT_HEADROOM,
   TOP_UP_POOL_SAFETY_MARGIN,
   TopUpPoolAddition,
@@ -32,16 +32,17 @@ import { SplLandPool } from "@/types/spl/landPools";
 // ─────────────────────────────────────────────────────────────────────────────
 // Top Up Pools planner
 //
-// One execution adds ~110% of a week's EXTERNAL need of each resource back into
-// the liquidity pools, so that deposit matures past the 30-day lock and later
-// becomes tax-free withdrawal fuel for Make Harvestable's `pool` strategy. The
-// external need is what the regions cannot produce themselves — a region growing
-// most of its own grain does not need its whole burn deposited for it.
+// One execution adds ~110% of the elapsed window's EXTERNAL need of each
+// resource back into the liquidity pools, so that deposit matures past the
+// 30-day lock and later becomes tax-free withdrawal fuel for Make Harvestable's
+// `pool` strategy. The external need is what the regions cannot produce
+// themselves — a region growing most of its own grain does not need its whole
+// burn deposited for it.
 //
 // It is an INCREMENTAL top-up: an existing multi-week pool balance does not
-// reduce this week's target, and the 30-day vesting lock is NOT multiplied into
-// it — once the pipeline rolls, one week's demand goes in as an older week's
-// deposit unlocks.
+// reduce this window's target, and the 30-day vesting lock is NOT multiplied
+// into it — once the pipeline rolls, the elapsed window's demand goes in as the
+// matching earlier deposit unlocks.
 //
 // Two invariants drive the shape of this file:
 //
@@ -126,8 +127,9 @@ export interface TopUpPoolParams {
   strategies: TopUpPoolStrategy[];
   /**
    * symbol → resource units that must come from OUTSIDE the regions per 7 days,
-   * i.e. each region's max(0, consumption - own production) summed up. This is
-   * what the deposit targets are sized against.
+   * i.e. each region's max(0, consumption - own production) summed up. The
+   * planner scales this weekly reference to productionWindowHours for the
+   * current deposit target.
    */
   weeklyExternalNeed: Record<string, number>;
   /**
@@ -144,7 +146,7 @@ export interface TopUpPoolParams {
   };
   /** Regions whose consumption could not be measured (surfaced in the plan). */
   consumptionWarnings?: string[];
-  /** Accrual window used to size external need, in hours (1..168). */
+  /** Accrual window used to size the external-need target, in hours (1..168). */
   productionWindowHours?: number;
   /** Why this accrual window was chosen. */
   productionWindowReason?: string;
@@ -563,13 +565,27 @@ function trySellResource(
   };
 }
 
+/** Elapsed planning window, defaulted and clamped to one hour through one week. */
+function productionWindowHours(params: TopUpPoolParams): number {
+  return Math.min(
+    HOURS_PER_WEEK,
+    Math.max(1, params.productionWindowHours ?? HOURS_PER_WEEK)
+  );
+}
+
 /**
- * How much of a donor resource must stay put before any of it may be swapped
- * away: the donor's own top-up target plus the week it burns before the next
- * run. See {@link SWAP_DONOR_RESERVE_WEEKS}.
+ * Keep enough of a donor resource for this window's own top-up target and the
+ * gross amount it is expected to burn before the next run.
  */
 function donorReserve(params: TopUpPoolParams, symbol: string): number {
-  return (params.weeklyConsumption[symbol] ?? 0) * SWAP_DONOR_RESERVE_WEEKS;
+  const windowFraction = productionWindowHours(params) / HOURS_PER_WEEK;
+  const windowConsumption =
+    (params.weeklyConsumption[symbol] ?? 0) * windowFraction;
+  const windowTopUpTarget =
+    (params.weeklyExternalNeed[symbol] ?? 0) *
+    windowFraction *
+    TOP_UP_POOL_SAFETY_MARGIN;
+  return windowConsumption + windowTopUpTarget;
 }
 
 interface DonorCandidate {
@@ -687,9 +703,9 @@ function sizeSwap(
  * back at 10% + 10%), and the DEC side is taken from the wallet, falling back
  * to selling a little more of the same donor when the wallet is short.
  *
- * The donor is protected by {@link donorReserve}: its own top-up target plus a
- * week of its own consumption is untouchable, so fixing GRAIN can never turn
- * WOOD into the skipped resource.
+ * The donor is protected by {@link donorReserve}: its own window-sized top-up
+ * target plus expected gross consumption until the next run is untouchable, so
+ * fixing GRAIN can never turn WOOD into the skipped resource.
  */
 function trySwapResource(
   params: TopUpPoolParams,
@@ -1032,6 +1048,7 @@ function planResource(
  * dialog and the broadcast both use exactly this output.
  */
 export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
+  const windowHours = productionWindowHours(params);
   let projection: Projection = {
     dec: params.decBalance,
     resource: Object.fromEntries(
@@ -1048,7 +1065,9 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
     const demand = resourceDemand(params, symbol);
     // The safety margin applies to the NET external need — buying a margin on
     // top of resource the regions grow themselves would over-deposit.
-    const target = demand.weeklyExternalNeed * TOP_UP_POOL_SAFETY_MARGIN;
+    const windowExternalNeed =
+      (demand.weeklyExternalNeed * windowHours) / HOURS_PER_WEEK;
+    const target = windowExternalNeed * TOP_UP_POOL_SAFETY_MARGIN;
     const ratio = decPerResource(params.pools, symbol);
     const decRequired = target * ratio * DEC_SAFETY;
     const available = availableResource(params.regions, projection, symbol);
@@ -1066,8 +1085,8 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
           demand.weeklyExternalNeed <= 0
             ? demand.weeklyConsumption > 0
               ? "the regions produce everything they consume — nothing to import"
-              : "no measurable weekly consumption"
-            : `weekly target ${round3(target)} is below the ${MIN_TARGET} minimum`
+              : "no measurable external need"
+            : `window target ${round3(target)} is below the ${MIN_TARGET} minimum`
         )
       );
       continue;
@@ -1106,7 +1125,7 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
   const plan: TopUpPoolPlan = {
     resources,
     dec_balance: round3(params.decBalance),
-    production_window_hours: round3(params.productionWindowHours ?? 168),
+    production_window_hours: round3(windowHours),
     production_window_reason:
       params.productionWindowReason ??
       "No planning-window reason provided; defaulting to 7 days.",
@@ -1127,11 +1146,31 @@ export function buildTopUpPoolPlan(params: TopUpPoolParams): TopUpPoolPlan {
  */
 export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   const log: string[] = [];
+  const isFromDb = plan.production_window_source === "db";
+  const isFullWeek = plan.production_window_hours >= HOURS_PER_WEEK;
+  const isElapsedWindow = isFromDb && !isFullWeek;
+
+  if (isElapsedWindow) {
+    log.push(
+      `This top-up covers since the last successful run, plus a 10% margin.`
+    );
+  } else if (!isFromDb) {
+    log.push("Run this after Harvest, roughly once per week.");
+  }
+
+  const windowSource = isFromDb
+    ? "from last successful Top Up"
+    : "fallback default";
 
   log.push(
-    "Run this after Harvest, roughly once per week.",
-    `Top-up window: ${formatNumber(plan.production_window_hours)}h (${plan.production_window_source === "db" ? "from last successful Top Up" : "fallback default"}).`,
-    plan.production_window_reason,
+    `Top-up window: ${formatNumber(plan.production_window_hours)}h (${windowSource}).`
+  );
+
+  if (!isElapsedWindow) {
+    log.push(plan.production_window_reason);
+  }
+
+  log.push(
     "Skipping runs can shrink the tax-free buffer available to Prepare Harvest.",
     `\nAccount DEC available: ${formatNumber(plan.dec_balance)} DEC`
   );
@@ -1141,6 +1180,8 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
   }
 
   for (const r of plan.resources) {
+    const windowExternalNeed =
+      (r.weekly_external_need * plan.production_window_hours) / HOURS_PER_WEEK;
     log.push(
       `\n── ${r.symbol} ────────────────────────────────`,
       `Consumed: ${formatNumber(r.consumed_per_hour)}/hr`,
@@ -1148,7 +1189,8 @@ export function formatTopUpPoolLog(plan: TopUpPoolPlan): string[] {
       `External need: ${formatNumber(r.external_need_per_hour)}/hr`,
       `Weekly consumption: ${formatNumber(r.weekly_consumption)} ${r.symbol} (gross)`,
       `Weekly external need: ${formatNumber(r.weekly_external_need)} ${r.symbol}`,
-      `Target this execution: ${formatNumber(r.target)} ${r.symbol} (external need +10% margin)`,
+      `External need in this window: ${formatNumber(windowExternalNeed)} ${r.symbol}`,
+      `Target this execution: ${formatNumber(r.target)} ${r.symbol} (window external need +10% margin)`,
       `Available ${r.symbol}: ${formatNumber(r.available_resource)}`,
       `DEC required for pool addition: ${formatNumber(r.dec_required)}`,
       // Every strategy that ran is listed with what it covered, so the split

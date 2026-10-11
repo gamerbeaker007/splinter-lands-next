@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.40.0",
+  "version": "1.40.1",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -50,13 +50,13 @@
     "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^5.2.1",
+    "@chromatic-com/storybook": "^5.4.0",
     "@eslint/eslintrc": "^3",
-    "@storybook/addon-a11y": "^10.5.6",
-    "@storybook/addon-docs": "^10.5.6",
-    "@storybook/addon-onboarding": "^10.5.6",
-    "@storybook/addon-vitest": "^10.5.6",
-    "@storybook/nextjs": "^10.5.6",
+    "@storybook/addon-a11y": "^10.6.1",
+    "@storybook/addon-docs": "^10.6.1",
+    "@storybook/addon-onboarding": "^10.6.1",
+    "@storybook/addon-vitest": "^10.6.1",
+    "@storybook/nextjs": "^10.6.1",
     "@types/node": "^24",
     "@types/pg": "^8.15.6",
     "@types/react": "^19",
@@ -70,12 +70,12 @@
     "dotenv": "^17.2.3",
     "eslint": "^9.39.1",
     "eslint-config-next": "^16.3.5",
-    "eslint-plugin-storybook": "^10.5.6",
+    "eslint-plugin-storybook": "^10.6.1",
     "playwright": "^1.57.0",
     "prettier": "^3.8.1",
     "prisma": "^7.10.0",
     "retry-axios": "^4.0.1",
-    "storybook": "^10.5.6",
+    "storybook": "^10.6.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }

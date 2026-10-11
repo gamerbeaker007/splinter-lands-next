@@ -148,6 +148,62 @@ describe("Top Up Pools — targets are sized on the external need", () => {
     expect(grain.status).toBe("READY");
   });
 
+  it("scales the weekly external need to the elapsed top-up window", () => {
+    const plan = buildTopUpPoolPlan(
+      params({
+        strategies: ["buy_resources"],
+        decBalance: 10_000_000,
+        weeklyConsumption: { GRAIN: 100_000 },
+        weeklyExternalNeed: { GRAIN: 25_000 },
+        productionWindowHours: 3,
+        productionWindowSource: "db",
+      })
+    );
+    const grain = forSymbol(plan, "GRAIN");
+    const log = plan.log.join("\n");
+
+    expect(grain.weekly_consumption).toBe(100_000);
+    expect(grain.weekly_external_need).toBe(25_000);
+    expect(grain.target).toBeCloseTo(
+      (25_000 * 3 * TOP_UP_POOL_SAFETY_MARGIN) / 168,
+      3
+    );
+    expect(log).toContain(
+      "This top-up covers since the last successful run, plus a 10% margin."
+    );
+    expect(log).toContain("Top-up window: 3h (from last successful Top Up).");
+    expect(log).toContain("External need in this window: 446.429 GRAIN");
+    expect(log).toContain("Target this execution: 491.071 GRAIN");
+    expect(log).not.toContain("roughly once per week");
+  });
+
+  it("scales swap donor reserves to the elapsed window", () => {
+    const plan = buildTopUpPoolPlan(
+      params({
+        balances: { R1: { GRAIN: 0, WOOD: 10_000, STONE: 0, IRON: 0 } },
+        strategies: ["swap_resource"],
+        decBalance: 1_000,
+        weeklyConsumption: { GRAIN: 100_000, WOOD: 50_000 },
+        weeklyExternalNeed: { GRAIN: 100_000, WOOD: 50_000 },
+        productionWindowHours: 4,
+        productionWindowSource: "db",
+      })
+    );
+    const grain = forSymbol(plan, "GRAIN");
+    const woodSwap = grain.funding.find(
+      (step) => step.kind === "swap" && step.from_symbol === "WOOD"
+    );
+
+    // A 4-hour window reserves 2,500 WOOD: 1,190.476 for gross consumption
+    // and 1,309.524 for its external-need top-up target.
+    expect(grain.status).toBe("READY");
+    expect(woodSwap).toBeDefined();
+    expect(woodSwap!.kind).toBe("swap");
+    if (woodSwap?.kind === "swap") {
+      expect(woodSwap.in_amount).toBeLessThan(7_500);
+    }
+  });
+
   it("skips a resource the regions fully produce themselves", () => {
     const plan = buildTopUpPoolPlan(
       params({

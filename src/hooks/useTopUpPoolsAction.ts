@@ -117,10 +117,9 @@ async function planTopUp(
     decBalance,
     strategies,
     weeklyExternalNeed: need.perResource,
-    // Deliberately still a FULL week, unlike weeklyExternalNeed above: this
-    // feeds the donor reserve, which protects what a donor region will burn
-    // before the next run. That is forward-looking, so a short window since the
-    // last claim must not shrink it.
+    // The planner scales these weekly gross rates to the elapsed top-up window
+    // when protecting donor resources for expected consumption before the next
+    // run.
     weeklyConsumption: Object.fromEntries(
       Object.entries(need.consumedPerHour).map(([symbol, rate]) => [
         symbol,

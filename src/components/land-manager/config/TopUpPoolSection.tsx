@@ -39,15 +39,17 @@ export default function TopUpPoolSection({
         display="block"
         mb={1}
       >
-        Adds roughly one week of consumption back into the liquidity pools so it
-        matures past the 30-day lock and can later be withdrawn tax-free by Make
-        Harvestable. The first enabled strategy must be able to fund the whole
-        target for a resource; only then is the next one tried. Unchecked
-        strategies are never used. Clearing every strategy disables the action
-        and its pool-buffer warning. &quot;Swap surplus of another
-        resource&quot; only ever spends what a resource holds above its own
-        weekly target plus one week of its own consumption, so covering a grain
-        shortage with spare wood cannot starve the wood top-up.
+        Adds the net external need accrued since the previous successful run,
+        plus a 10% margin, back into the liquidity pools. If no run is recorded,
+        the target defaults to one week. Deposits mature past the 30-day lock
+        and can later be withdrawn tax-free by Make Harvestable. The first
+        enabled strategy must be able to fund the whole target for a resource;
+        only then is the next one tried. Unchecked strategies are never used.
+        Clearing every strategy disables the action and its pool-buffer warning.
+        &quot;Swap surplus of another resource&quot; only spends what a resource
+        holds above its own top-up target and expected gross consumption for the
+        same window, so covering a grain shortage with spare wood cannot starve
+        the wood top-up.
       </Typography>
       <StrategyOrderList
         all={ALL_TOP_UP_POOL_STRATEGIES}

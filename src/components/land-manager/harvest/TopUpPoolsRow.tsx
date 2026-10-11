@@ -164,7 +164,7 @@ export default function TopUpPoolsRow({
         ? "Loading Top Up timing window from successful run history..."
         : windowInfo.disabled
           ? `Top Up Pools is temporarily disabled: ${windowInfo.reason}`
-          : `Add ${windowLabel} of consumption (+10%) back into the liquidity pools — shows the plan for confirmation first`;
+          : `Add the net external need over ${windowLabel} (+10% margin) back into the liquidity pools — review the plan before confirming`;
 
   return (
     <ActionCardColumn>

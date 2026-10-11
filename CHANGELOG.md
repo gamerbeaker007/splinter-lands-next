@@ -12,6 +12,17 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Land Manager - Harvest (Top Up Pools):** The elapsed time since the previous
+  successful run now scales the pool deposit target. Shorter windows no longer
+  plan a full week's resources; swap donor reserves are scaled to the same
+  window's gross consumption and external-need top-up target.
+
+### Changed
+
+- update storybook dependencies
+
 ---
 
 ## [v1.40.0] - 2026-10-11
@@ -37,7 +48,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 ### Fixed
 
 - **Land Manager - Harvest (Custom Plan):** Pool withdraw did not share balanced
-
+P
 ---
 
 ## [v1.39.1] - 2026-10-05
