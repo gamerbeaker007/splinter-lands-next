@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.40.1",
+  "version": "1.41.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -19,7 +19,7 @@
     "prisma:studio": "prisma studio",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "docker:build": "docker build -t gamerbeaker/splinter-lands-next:latest .",
+    "docker:build": "docker build --build-arg DEPLOYMENT_ID=local-$(date +%s) -t gamerbeaker/splinter-lands-next:latest .",
     "docker:up": "docker compose up -d",
     "docker:down": "docker compose down",
     "docker:logs": "docker compose logs -f web",

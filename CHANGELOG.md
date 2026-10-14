@@ -12,6 +12,19 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ## [Unreleased]
 
+---
+
+## [v1.41.0] - 2026-10-14
+
+
+### Added
+
+- **New version snackbar:** Tabs left open across a deploy now show a "new version
+  available — reload" prompt at the top. Builds get a per-deploy `deploymentId`
+  (git SHA via the `DEPLOYMENT_ID` Docker build arg), which also enables Next.js
+  version-skew protection: stale tabs hard-reload on navigation instead of hitting
+  "Failed to find Server Action".
+
 ### Fixed
 
 - **Land Manager - Harvest (Top Up Pools):** The elapsed time since the previous

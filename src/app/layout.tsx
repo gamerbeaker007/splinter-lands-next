@@ -1,5 +1,6 @@
 // app/layout.tsx
 import FilterPanelHost from "@/components/filter/panel/FilterPanelHost";
+import NewVersionSnackbar from "@/components/shared/NewVersionSnackbar";
 import SideBar from "@/components/side-bar/SideBar";
 import TestModeChip from "@/components/test-mode/TestModeChip";
 import TopBar from "@/components/top-bar/TopBar";
@@ -55,6 +56,7 @@ export default function RootLayout({
                     </Box>
                   </Box>
                   <TestModeChip />
+                  <NewVersionSnackbar />
                 </PlayerProvider>
               </PageTitleProvider>
             </AuthProvider>
