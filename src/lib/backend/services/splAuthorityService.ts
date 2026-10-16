@@ -1,6 +1,11 @@
 import { fetchPlayerAuthorities } from "@/lib/backend/api/spl/spl-base-api";
 import { cache } from "@/lib/backend/cache/cache";
 import logger from "@/lib/backend/log/logger.server";
+import {
+  authorityListsOf,
+  hasAuthority,
+  type PlayerAuthorityLists,
+} from "@/lib/shared/playerAuthorities";
 
 const AUTHORITY_TTL_SEC = 300;
 
@@ -33,31 +38,21 @@ export interface PurchaseAuthorityInfo {
   purchase: string[];
 }
 
-interface CachedAuthorities {
-  rental: string[];
-  purchase: string[];
-}
-
 /**
  * Reads (and caches for 5 minutes) the player's full authority lists. One
- * fetch serves both the rental and purchase authority checks.
+ * fetch serves both the rental and purchase authority checks. Server-side
+ * only for on-behalf validation — the UI reads its own copy in the browser.
  */
 async function getPlayerAuthorities(
   player: string
-): Promise<CachedAuthorities> {
+): Promise<PlayerAuthorityLists> {
   const key = cacheKey(player);
-  const cached = cache.get<CachedAuthorities>(key);
+  const cached = cache.get<PlayerAuthorityLists>(key);
   if (cached !== undefined) return cached;
 
   try {
     const rows = await fetchPlayerAuthorities([player]);
-    const row = rows.find(
-      (r) => r.name?.toLowerCase() === player.toLowerCase()
-    );
-    const info: CachedAuthorities = {
-      rental: row?.authorities?.rental ?? [],
-      purchase: row?.authorities?.purchase ?? [],
-    };
+    const info = authorityListsOf(rows, player);
     cache.set(key, info, AUTHORITY_TTL_SEC);
     return info;
   } catch (err) {
@@ -80,8 +75,7 @@ export async function getRentalAuthorityInfo(
   if (!service || !player) return { authorized: false, rental: [] };
 
   const { rental } = await getPlayerAuthorities(player);
-  const authorized = rental.map((p) => p.toLowerCase()).includes(service);
-  return { authorized, rental };
+  return { authorized: hasAuthority(rental, service), rental };
 }
 
 /**
@@ -95,8 +89,7 @@ export async function getPurchaseAuthorityInfo(
   if (!service || !player) return { authorized: false, purchase: [] };
 
   const { purchase } = await getPlayerAuthorities(player);
-  const authorized = purchase.map((p) => p.toLowerCase()).includes(service);
-  return { authorized, purchase };
+  return { authorized: hasAuthority(purchase, service), purchase };
 }
 
 export function invalidateAuthorityCache(player: string): void {

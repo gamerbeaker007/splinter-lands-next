@@ -1,25 +1,16 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getLatestResourceSupply } from "@/lib/backend/actions/resources/supply-actions";
-import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box } from "@mui/material";
-import { useEffect, useState } from "react";
 import { ResourceCard } from "./ResrouceCard";
 
 export function DailyProduceConsumeOverview() {
-  const [latestResourcesSupply, setlatestResourcesSupply] =
-    useState<ResourceSupplyOverview | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getLatestResourceSupply();
-        setlatestResourcesSupply(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: latestResourcesSupply } = useAsyncData(
+    "latest-resource-supply",
+    () => getLatestResourceSupply(),
+    { errorMessage: "Failed to load resource supply" }
+  );
 
   return (
     <Box display="flex" flexWrap="wrap" gap={2}>

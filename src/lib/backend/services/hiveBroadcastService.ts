@@ -77,6 +77,12 @@ export interface ServerBroadcastResult {
    * resolves the batch's first op — see `splOpTxIds`.
    */
   opTxIds?: string[];
+  /**
+   * SPL op ids the server already confirmed on-chain (verify-on-throw looks up
+   * the Hive tx id, i.e. a recovered batch's first op). Callers can skip them
+   * when polling, instead of looking the same tx up a second time.
+   */
+  confirmedOpTxIds?: string[];
   error?: string;
   /**
    * Tx ids that were signed and sent but whose broadcast call threw and could
@@ -188,6 +194,7 @@ export async function broadcastOpsAsService(
 
   const txIds: string[] = [];
   const opTxIds: string[] = [];
+  const confirmedOpTxIds: string[] = [];
   const prefixed = applyDevPrefixToOps(
     operations as unknown as LooseOp[]
   ) as unknown as Operation[];
@@ -223,11 +230,13 @@ export async function broadcastOpsAsService(
         );
         txIds.push(trxId);
         opTxIds.push(...splOpTxIds(trxId, batches[i].length));
+        confirmedOpTxIds.push(trxId);
       } else {
         return {
           success: false,
           txIds,
           opTxIds,
+          confirmedOpTxIds,
           attemptedTxIds: [trxId],
           error: message,
         };
@@ -238,5 +247,5 @@ export async function broadcastOpsAsService(
       await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
     }
   }
-  return { success: true, txIds, opTxIds };
+  return { success: true, txIds, opTxIds, confirmedOpTxIds };
 }

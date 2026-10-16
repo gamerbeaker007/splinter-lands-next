@@ -4,11 +4,12 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import { usePoolBufferAlerts } from "@/hooks/usePoolBufferAlerts";
 import { useWorksiteAlerts } from "@/hooks/useWorksiteAlerts";
-import {
-  getPlayerCardAlerts,
-  getPlayerDeedAlerts,
-} from "@/lib/backend/actions/player/alerts-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import {
+  loadPlayerCardAlerts,
+  loadPlayerDeedAlerts,
+} from "@/lib/frontend/player-data";
 import {
   AlertSeverity,
   buildLandManagerAlerts,
@@ -78,19 +79,24 @@ export function LandManagerAlertsProvider({
     [worksiteLoading, feedPlan, fixTargets, undeveloped, hasPending]
   );
 
-  // After an action broadcasts (refreshKey > 0) bypass the server caches, the
-  // same way the player dashboard's Refresh button does.
+  // After an action broadcasts (refreshKey > 0) drop the tab's memoized SPL
+  // reads for the player, the same way the player dashboard's Refresh button
+  // does. The card alerts load runs first (effects run in order), so the deed
+  // alerts load below shares its fresh deed read.
   const playerKey = username ? `${username}\u0000${refreshKey}` : null;
   const force = refreshKey > 0;
   const cardAlerts = useAsyncData(
     playerKey,
-    () => getPlayerCardAlerts(username, force),
-    "Failed to load player alerts"
+    () => {
+      if (force) invalidatePlayerBrowserCaches(username);
+      return loadPlayerCardAlerts(username);
+    },
+    { errorMessage: "Failed to load player alerts" }
   );
   const deedAlerts = useAsyncData(
     playerKey,
-    () => getPlayerDeedAlerts(username, force),
-    "Failed to load deed alerts"
+    () => loadPlayerDeedAlerts(username),
+    { errorMessage: "Failed to load deed alerts" }
   );
 
   const input: LandManagerAlertsInput = useMemo(
@@ -103,8 +109,8 @@ export function LandManagerAlertsProvider({
       globalShortfall: regionData.globalShortfall,
       globalExcess: regionData.globalExcess,
       worksiteAlerts,
-      cardAlerts: cardAlerts.data,
-      deedAlerts: deedAlerts.data,
+      cardAlerts: cardAlerts.data ?? null,
+      deedAlerts: deedAlerts.data ?? null,
     }),
     [
       poolBufferRows,

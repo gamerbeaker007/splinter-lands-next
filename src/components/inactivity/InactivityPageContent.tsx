@@ -1,34 +1,25 @@
 "use client";
 
 import InactivityDashboard from "@/components/inactivity/InactivityDashboard";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getInactivityAnalysis } from "@/lib/backend/actions/inactivity/inactivity-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { InactivityAnalysis } from "@/types/inactivity";
 import { Alert, Box, CircularProgress } from "@mui/material";
-import { useEffect, useState } from "react";
 
 export default function InactivityPageContent() {
-  const [data, setData] = useState<InactivityAnalysis | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { filters } = useFilters();
 
-  useEffect(() => {
-    if (!filters) return;
-
-    async function fetchData() {
-      try {
-        setLoading(true);
-        const result = await getInactivityAnalysis(filters);
-        setData(result);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load data");
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [filters]);
+  const {
+    data,
+    loading: fetching,
+    error,
+  } = useAsyncData(
+    filters ? JSON.stringify(filters) : null,
+    () => getInactivityAnalysis(filters!),
+    { errorMessage: "Failed to load data", keepPreviousData: false }
+  );
+  // Filters arrive from context after mount; spin until the first load ran.
+  const loading = fetching || !filters;
 
   if (loading) {
     return (

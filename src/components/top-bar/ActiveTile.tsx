@@ -1,27 +1,17 @@
 "use client";
 
-import { Active } from "@/generated/prisma/client";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getLatestActiveEntry } from "@/lib/backend/api/internal/active-data";
 import Box from "@mui/material/Box";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
 
 const MAX_PLOTS = 150_000;
 
 export default function ActiveTile() {
-  const [activeLatest, setActiveLatest] = useState<Active | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getLatestActiveEntry();
-        setActiveLatest(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: activeLatest } = useAsyncData("latest-active", () =>
+    getLatestActiveEntry()
+  );
 
   const percentage = (
     ((activeLatest?.active_based_on_pp ?? 0) / MAX_PLOTS) *

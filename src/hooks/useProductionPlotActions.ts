@@ -1,8 +1,8 @@
 "use client";
 
-import { getPowerCoreInfo } from "@/lib/backend/actions/land-manager/overview-actions";
-import { getPlotStakeAssets } from "@/lib/backend/actions/land-manager/production-actions";
-import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { getPowerCoreInfo } from "@/lib/frontend/land-data";
+import { getPlotStakeAssets } from "@/lib/frontend/land-production-data";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -217,7 +217,7 @@ export function useProductionPlotActions({
                 ? verifyErr.message
                 : "Transaction verification failed";
           }
-          await refreshCardCollection();
+          invalidatePlayerBrowserCaches(username);
         }
 
         const res: ProductionActionResult = {
@@ -272,7 +272,7 @@ export function useProductionPlotActions({
           setError(msg);
           return { success: false, error: msg };
         }
-        await refreshCardCollection();
+        invalidatePlayerBrowserCaches(username);
         onSuccess?.();
         return { success: true };
       } catch (err) {

@@ -1,22 +1,19 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { Active } from "@/generated/prisma/client";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getAllActiveData } from "@/lib/backend/api/internal/active-data";
 import { Box, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+
+const NO_ACTIVE: Active[] = [];
 
 export default function ActivityChart() {
-  const [data, setData] = useState<Active[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const raw = await getAllActiveData();
-        setData(raw);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data = NO_ACTIVE } = useAsyncData(
+    "active",
+    () => getAllActiveData(),
+    {
+      errorMessage: "Failed to load activity data",
+    }
+  );
 
   const dates = data.map((row) => row.date);
   const activeBasedOnPP = data.map((row) => row.active_based_on_pp);

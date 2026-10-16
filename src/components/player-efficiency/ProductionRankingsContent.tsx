@@ -1,5 +1,6 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import {
   getProductionLeaderboard,
   ResourceLeaderboard,
@@ -16,29 +17,21 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ProductionLeaderboardColumn from "./ProductionLeaderboardColumn";
+
+const NO_LEADERBOARDS: ResourceLeaderboard[] = [];
 
 export function ProductionRankingsContent() {
   const { filters } = useFilters();
   const { selectedPlayer } = usePlayer();
-  const [data, setData] = useState<ResourceLeaderboard[]>([]);
-  const [loading, setLoading] = useState(false);
   const [showNet, setShowNet] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const result = await getProductionLeaderboard(filters, selectedPlayer);
-        setData(result);
-      } catch (error) {
-        console.error("Error fetching production leaderboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [filters, selectedPlayer]);
+  const { data = NO_LEADERBOARDS, loading } = useAsyncData(
+    JSON.stringify({ filters, selectedPlayer }),
+    () => getProductionLeaderboard(filters, selectedPlayer),
+    { errorMessage: "Error fetching production leaderboard" }
+  );
 
   // Filter and sort leaderboards by PRODUCING_RESOURCES order
   const sortedLeaderboards = PRODUCING_RESOURCES.map((resource) =>

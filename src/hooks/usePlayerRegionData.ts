@@ -1,15 +1,16 @@
 "use client";
 
-import {
-  getPlayerRegionData,
-  getPlayerTaxData,
-} from "@/lib/backend/actions/player/region-actions";
+import { getPlayerTaxData } from "@/lib/backend/actions/player/region-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { loadPlayerRegionData } from "@/lib/frontend/player-data";
 import { FilterInput } from "@/types/filters";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo } from "react";
 import { useAsyncData } from "./useAsyncData";
 
 /**
- * Hook for fetching player region overview data using server actions.
+ * Hook for player region overview data: the region summary is computed in the
+ * browser from the player's own deeds; the tax income comes from the server's
+ * region-wide data.
  */
 export function usePlayerRegionData(
   playerName: string | null,
@@ -30,36 +31,35 @@ export function usePlayerRegionData(
     [playerName, filters, includeTaxes, includeTransferFee]
   );
 
-  // `force` is not part of the cache key — it is a property of the *next*
-  // request, not of the data being asked for.
-  const forceNext = useRef(false);
-
-  const { data, loading, error, reload } = useAsyncData(
+  const {
+    data,
+    loading,
+    error,
+    refetch: reload,
+  } = useAsyncData(
     key,
     async () => {
-      const force = forceNext.current;
-      forceNext.current = false;
       const [regionData, taxData] = await Promise.all([
-        getPlayerRegionData(
+        loadPlayerRegionData(
           playerName as string,
           filters as FilterInput,
           includeTaxes,
-          includeTransferFee,
-          force
+          includeTransferFee
         ),
         getPlayerTaxData(playerName as string),
       ]);
       return { regionData, taxData };
     },
-    "Failed to load region data"
+    { errorMessage: "Failed to load region data" }
   );
 
   const refetch = useCallback(
     (force: boolean = false) => {
-      forceNext.current = force;
-      reload();
+      // A forced refresh drops the tab's memoized SPL reads for the player.
+      if (force && playerName) invalidatePlayerBrowserCaches(playerName);
+      void reload();
     },
-    [reload]
+    [reload, playerName]
   );
 
   return {

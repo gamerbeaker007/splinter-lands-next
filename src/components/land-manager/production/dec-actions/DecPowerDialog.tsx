@@ -1,9 +1,6 @@
 "use client";
 
-import {
-  DecPowerDirection,
-  DecPowerPlan,
-} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { DecPowerDirection, DecPowerPlan } from "@/lib/shared/decPower";
 import { formatInt, formatNumber } from "@/lib/formatters";
 import { WarningAmber } from "@mui/icons-material";
 import {

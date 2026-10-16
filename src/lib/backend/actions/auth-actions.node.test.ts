@@ -22,6 +22,10 @@ const mockCookieValue = vi.hoisted(() => ({
   value: undefined as string | undefined,
 }));
 
+vi.mock("next/server", () => ({
+  connection: vi.fn(async () => {}),
+}));
+
 vi.mock("next/headers", () => ({
   cookies: vi.fn(async () => ({
     get: () =>
@@ -38,13 +42,10 @@ const mockVerifyResult = vi.hoisted(() => ({
 
 vi.mock("@/lib/backend/api/spl/spl-base-api", () => ({
   verifySplJwt: vi.fn(async () => mockVerifyResult.value),
-  fetchSettings: vi.fn(async () => ({ maintenance_mode: false })),
-  splLogin: vi.fn(),
 }));
 
-// ── Mock playerService ────────────────────────────────────────────────────────
-vi.mock("@/lib/backend/services/playerService", () => ({
-  invalidatePlayerCaches: vi.fn(),
+vi.mock("@/lib/backend/services/settingsService", () => ({
+  getCachedSettings: vi.fn(async () => ({ maintenance_mode: false })),
 }));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────

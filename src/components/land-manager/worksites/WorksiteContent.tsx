@@ -3,13 +3,16 @@
 import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
 import WorksiteBulkActions from "@/components/land-manager/worksites/WorksiteBulkActions";
 import WorksitePlotCard from "@/components/land-manager/worksites/WorksitePlotCard";
-import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
-import { getPlayerWorksiteData } from "@/lib/backend/actions/land-manager/worksite-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { filterDeeds } from "@/lib/filters";
 import {
   FilterProvider,
   useFilters,
 } from "@/lib/frontend/context/FilterContext";
+import {
+  getRegionGrain,
+  getPlayerWorksiteData,
+} from "@/lib/frontend/land-data";
 import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { MakeHarvestableStrategy } from "@/types/landManager";
@@ -140,56 +143,42 @@ function RegionGroup({
 
 // ── Inner component (uses FilterContext) ─────────────────────────────────────
 
+const NO_DEEDS: DeedComplete[] = [];
+const NO_GRAIN: Record<string, number> = {};
+
 function WorksiteContentBody({ username, strategies, onSuccess }: Props) {
-  const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
-  // Grain held per region_uid — gates the Feed workers button on each plot.
-  const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
-  const [loading, setLoading] = useState(true); // true on mount; set back to true in handleRefresh
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"list" | "grouped">("list");
   const [refreshKey, setRefreshKey] = useState(0);
   const [pageSize, setPageSize] = useState<number>(10);
   const [listPage, setListPage] = useState(1);
-  // One "now" for the whole page — construction/eligibility checks in the cards
-  // and in the bulk action counts must judge against the same instant. Re-stamped
-  // on every reload so a finished construction becomes actionable after Refresh.
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [mountedAt] = useState(() => Date.now());
 
   const { filters, setLocationOverride } = useFilters();
 
-  // Fetch fresh data on mount and on refresh
-  useEffect(() => {
-    let cancelled = false;
+  // Fresh data on mount and on refresh. One "now" for the whole page —
+  // construction/eligibility checks in the cards and in the bulk action counts
+  // must judge against the same instant. Re-stamped on every reload so a
+  // finished construction becomes actionable after Refresh.
+  const { data: worksite, loading } = useAsyncData(
+    `worksite-data:${refreshKey}`,
+    async () => ({ ...(await getPlayerWorksiteData()), nowMs: Date.now() })
+  );
+  const allDeeds = worksite?.deeds ?? NO_DEEDS;
+  const nowMs = worksite?.nowMs ?? mountedAt;
+  const fetchError = loading ? null : (worksite?.error ?? null);
 
-    getPlayerWorksiteData().then(({ deeds, error }) => {
-      if (cancelled) return;
-      if (error) setFetchError(error);
-      setAllDeeds(deeds);
-      setNowMs(Date.now());
-      setLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  // Fetch current grain per region (gates the Feed workers button). Forced so it
-  // reflects grain consumed after a feed action; re-runs whenever deeds reload.
-  useEffect(() => {
-    if (allDeeds.length === 0) return;
-    const regionUids = [...new Set(allDeeds.map((d) => d.region_uid))];
-    let cancelled = false;
-    getBulkRegionData(regionUids, true).then(({ balances }) => {
-      if (cancelled) return;
-      const grain: Record<string, number> = {};
-      for (const uid of regionUids) grain[uid] = balances[uid]?.GRAIN ?? 0;
-      setRegionGrain(grain);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [allDeeds]);
+  // Current grain per region_uid — gates the Feed workers button on each plot.
+  // Forced so it reflects grain consumed after a feed action; re-read whenever
+  // the deeds reload.
+  const grainRegionKey = [...new Set(allDeeds.map((d) => d.region_uid))].join(
+    ","
+  );
+  const { data: regionGrain = NO_GRAIN } = useAsyncData(
+    grainRegionKey ? `grain:${worksite?.nowMs}:${grainRegionKey}` : null,
+    async () => {
+      return getRegionGrain(grainRegionKey.split(","), true);
+    }
+  );
 
   // Push live region/tract/plot lists into the LandFilterDrawer so the location
   // filter reflects this player's plots (rather than the global DB cache).
@@ -211,13 +200,9 @@ function WorksiteContentBody({ username, strategies, onSuccess }: Props) {
   }, [allDeeds, setLocationOverride]);
 
   const handleRefresh = useCallback(() => {
-    setLoading(true);
-    setFetchError(null);
     setRefreshKey((k) => k + 1);
   }, []);
   const handleSuccess = useCallback(() => {
-    setLoading(true);
-    setFetchError(null);
     setRefreshKey((k) => k + 1);
     // Bubble up so page-level panels (Today log, alerts) reflect grain moves /
     // feeds too — they do not share this page's local refresh key.

@@ -18,7 +18,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type Props = {
   open: boolean;
@@ -67,15 +67,16 @@ export function ImportDeedDialog({ open, onClose, onImported }: Props) {
   const [localError, setLocalError] = useState<string | null>(null);
   const { loading, error: fetchError, fetchPlot, reset } = useFetchPlot();
 
-  useEffect(() => {
-    (async () => {
-      if (!open) {
-        setPlotId("");
-        setLocalError(null);
-        reset();
-      }
-    })();
-  }, [open, reset]);
+  // Clear the form when the dialog closes — adjusted during render, not in an effect.
+  const [wasOpen, setWasOpen] = useState(open);
+  if (wasOpen !== open) {
+    setWasOpen(open);
+    if (!open) {
+      setPlotId("");
+      setLocalError(null);
+      reset();
+    }
+  }
 
   const handleImport = async () => {
     setLocalError(null);

@@ -1,7 +1,10 @@
 "use client";
 
-import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
-import { getPlayerWorksiteData } from "@/lib/backend/actions/land-manager/worksite-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import {
+  getPlayerWorksiteData,
+  getRegionGrain,
+} from "@/lib/frontend/land-data";
 import {
   BulkFeedPlan,
   getWorksitePlotState,
@@ -10,7 +13,7 @@ import {
 } from "@/lib/shared/worksiteEligibility";
 import { CoverGrainTarget } from "@/lib/frontend/coverWorksiteGrainOps";
 import { DeedComplete } from "@/types/deed";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 
 export interface UndevelopedPlot {
   deedUid: string;
@@ -29,6 +32,9 @@ export interface WorksiteAlertsData {
   hasPending: boolean;
 }
 
+const NO_DEEDS: DeedComplete[] = [];
+const NO_GRAIN: Record<string, number> = {};
+
 const EMPTY_PLAN: BulkFeedPlan = {
   feedable: [],
   shortOnGrain: [],
@@ -44,48 +50,26 @@ const EMPTY_PLAN: BulkFeedPlan = {
  * finally broadcast cannot drift from that page.
  *
  * Note on cost: the deed fetch is deliberately uncached (the Worksite page wants
- * it fresh), but the grain read goes through the *unforced* bulk region call, so
- * it rides the 30s cache the rest of the Land Manager already primes.
+ * it fresh), but the grain read is *unforced* and region-overview only, so it
+ * rides the 30s per-region memo the rest of the Land Manager already primes.
  */
 export function useWorksiteAlerts(refreshKey: number = 0): WorksiteAlertsData {
-  const [deeds, setDeeds] = useState<DeedComplete[]>([]);
-  const [regionGrain, setRegionGrain] = useState<Record<string, number>>({});
-  const [nowMs, setNowMs] = useState(() => Date.now());
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const { deeds: fetched } = await getPlayerWorksiteData();
-        if (cancelled) return;
-
-        const regionUids = [...new Set(fetched.map((d) => d.region_uid))];
-        const grain: Record<string, number> = {};
-        if (regionUids.length > 0) {
-          const { balances } = await getBulkRegionData(regionUids);
-          if (cancelled) return;
-          for (const uid of regionUids) grain[uid] = balances[uid]?.GRAIN ?? 0;
-        }
-
-        setDeeds(fetched);
-        setRegionGrain(grain);
-        // Stamped together with the data so every check below judges the same
-        // instant — a construction that finishes later needs a refresh, which
-        // is exactly when this effect re-runs.
-        setNowMs(Date.now());
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  const { data, loading } = useAsyncData(
+    `worksite-alerts:${refreshKey}`,
+    async () => {
+      const { deeds: fetched } = await getPlayerWorksiteData();
+      const regionUids = [...new Set(fetched.map((d) => d.region_uid))];
+      const grain =
+        regionUids.length > 0 ? await getRegionGrain(regionUids) : NO_GRAIN;
+      // Stamped together with the data so every check below judges the same
+      // instant — a construction that finishes later needs a refresh, which
+      // is exactly when this reloads.
+      return { deeds: fetched, regionGrain: grain, nowMs: Date.now() };
     }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+  );
+  const deeds = data?.deeds ?? NO_DEEDS;
+  const regionGrain = data?.regionGrain ?? NO_GRAIN;
+  const nowMs = data?.nowMs ?? 0;
 
   const feedPlan = useMemo(
     () =>

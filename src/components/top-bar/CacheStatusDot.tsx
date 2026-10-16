@@ -1,37 +1,27 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getCacheStatus } from "@/lib/backend/actions/cache-actions";
 import Box from "@mui/material/Box";
 import CircularProgress from "@mui/material/CircularProgress";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
 
 type Status = "idle" | "loading" | "success" | "error";
 
 export default function CacheStatusDot() {
-  const [status, setStatus] = useState<Status>("idle");
-  const [info, setInfo] = useState<{
-    lastUpdate: string;
-    uniquePlayers: number;
-  } | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      setStatus("loading");
-      try {
-        const data = await getCacheStatus();
-        setInfo({
-          lastUpdate: data.lastUpdate.toString(),
-          uniquePlayers: data.uniquePlayers,
-        });
-        setStatus("success");
-      } catch (error) {
-        console.error(error);
-        setStatus("error");
-      }
-    })();
-  }, []);
+  const {
+    data: info,
+    loading,
+    error,
+  } = useAsyncData("cache-status", async () => {
+    const data = await getCacheStatus();
+    return {
+      lastUpdate: data.lastUpdate.toString(),
+      uniquePlayers: data.uniquePlayers,
+    };
+  });
+  const status: Status = loading ? "loading" : error ? "error" : "success";
 
   const colorMap: Record<Status, string> = {
     idle: "grey.400",

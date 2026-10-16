@@ -1,4 +1,4 @@
-import { parseTrxInfo } from "@/lib/backend/api/spl/trxLookupParser";
+import { parseTrxInfo } from "@/lib/shared/spl/trxLookupParser";
 import {
   HARVEST_MYTHICS_PRODUCTION_LOOKUPS,
   HARVEST_MYTHICS_PRODUCTION_OPS_PER_TX,

@@ -1,29 +1,20 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getAllResourceSupply } from "@/lib/backend/actions/resources/supply-actions";
-import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
 import ProduceConsumeBarChart from "./ProduceConsumeBarChart";
 import SupplyLineChart from "./SupplyLineChart";
 
 export function ProduceConsumeHistoricalOverview() {
-  const [historicalResourcesSupply, setHistoricalResourcesSupply] = useState<
-    ResourceSupplyOverview[] | null
-  >(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllResourceSupply();
-        setHistoricalResourcesSupply(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: historicalResourcesSupply } = useAsyncData(
+    "resource-supply",
+    () => getAllResourceSupply(),
+    { errorMessage: "Failed to load resource supply" }
+  );
 
   return (
     <>

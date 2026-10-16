@@ -1,36 +1,26 @@
 "use client";
 
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getActiveDeedCountByRegion } from "@/lib/backend/actions/region/active-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
+
+const NO_COUNTS: Record<string, { active: number; inactive: number }> = {};
 
 export default function ActiveDeedsChart() {
   const { filters } = useFilters();
-  const [data, setData] = useState<
-    Record<string, { active: number; inactive: number }>
-  >({});
-  const [xTitle, setXTitle] = useState<string>("");
-
-  useEffect(() => {
-    if (!filters) return;
-
-    (async () => {
-      try {
-        const raw = await getActiveDeedCountByRegion(filters);
-        if (filters.filter_regions?.length === 1) {
-          setXTitle("Tract");
-        } else {
-          setXTitle("Region");
-        }
-        setData(raw);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, [filters]);
+  const { data: loaded } = useAsyncData(
+    filters ? JSON.stringify(filters) : null,
+    async () => ({
+      counts: await getActiveDeedCountByRegion(filters!),
+      xTitle: filters!.filter_regions?.length === 1 ? "Tract" : "Region",
+    }),
+    { errorMessage: "Failed to load active deed counts" }
+  );
+  const data = loaded?.counts ?? NO_COUNTS;
+  const xTitle = loaded?.xTitle ?? "";
 
   const regionLabels = Object.keys(data);
   const activeCounts = regionLabels.map((key) => data[key].active);

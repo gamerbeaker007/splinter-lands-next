@@ -1,59 +1,37 @@
-import { getPlayerDashboardData } from "@/lib/backend/actions/player/dashboard-actions";
-import { PlayerOverview } from "@/types/playerOverview";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+"use client";
+
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { loadPlayerOverview } from "@/lib/frontend/player-data";
+import { useCallback } from "react";
 
 export function usePlayerDashboard(player: string) {
-  const [playerOverview, setPlayerOverview] = useState<PlayerOverview | null>(
-    null
+  const { data, loading, error, refetch } = useAsyncData(
+    player ? `dashboard|${player}` : null,
+    () => loadPlayerOverview(player),
+    { keepPreviousData: false, errorMessage: "Failed to fetch data" }
   );
-  const [loadingText, setLoadingText] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
 
-  // Monotonically increasing id so only the most recent request may write
-  // state. Guards against stale responses landing out of order when the
-  // player changes while a request is still in flight.
-  const requestIdRef = useRef(0);
-
+  /** `force` drops the tab's memoized SPL reads for the player first. */
   const fetchPlayerData = useCallback(
     async (force: boolean = false) => {
-      const requestId = ++requestIdRef.current;
-      const isStale = () => requestIdRef.current !== requestId;
-
-      try {
-        setLoadingText("Fetching base player data...");
-        setPlayerOverview(null);
-
-        startTransition(async () => {
-          try {
-            const data = await getPlayerDashboardData(player, force);
-            if (isStale()) return;
-            setLoadingText(null);
-            setPlayerOverview(data);
-          } catch (err) {
-            if (isStale()) return;
-            console.error("Failed to fetch data", err);
-            setLoadingText("An error occurred while loading data.");
-          }
-        });
-      } catch (err) {
-        if (isStale()) return;
-        console.error("Failed to fetch data", err);
-        setLoadingText("An error occurred while loading data.");
-      }
+      if (force && player) invalidatePlayerBrowserCaches(player);
+      await refetch();
     },
-    [player]
+    [player, refetch]
   );
 
-  useEffect(() => {
-    (async () => {
-      if (!player || player === "") {
-        setLoadingText(null);
-        return;
-      }
+  const loadingText = loading
+    ? "Fetching base player data..."
+    : error
+      ? "An error occurred while loading data."
+      : null;
 
-      await fetchPlayerData(false);
-    })();
-  }, [player, fetchPlayerData]);
-
-  return { playerOverview, loadingText, fetchPlayerData, isPending };
+  return {
+    // The previous overview is hidden while a refresh runs, as before.
+    playerOverview: loading ? null : (data ?? null),
+    loadingText,
+    fetchPlayerData,
+    isPending: loading,
+  };
 }

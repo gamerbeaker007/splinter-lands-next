@@ -5,8 +5,8 @@ import {
   SUPPORT_VALIDATOR,
   SUPPORT_VALIDATOR_BRAND,
 } from "@/constants/support";
-import { getValidatorVotes } from "@/lib/backend/actions/support/support-actions";
-import type { ValidatorVote } from "@/lib/backend/api/spl/spl-validator-api";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { loadValidatorVotes } from "@/lib/frontend/support-data";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -15,6 +15,7 @@ import {
   buildApproveValidatorOp,
   buildUnapproveValidatorOp,
 } from "@/lib/shared/operations/supportOpBuilders";
+import type { ValidatorVote } from "@/types/validator";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HowToVoteIcon from "@mui/icons-material/HowToVote";
 import Alert from "@mui/material/Alert";
@@ -29,7 +30,7 @@ import ListItem from "@mui/material/ListItem";
 import ListItemText from "@mui/material/ListItemText";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Props {
   username: string | null;
@@ -51,56 +52,36 @@ export default function ValidatorSupport({
   authLoading,
   onMessage,
 }: Props) {
-  // Tagged with the user it was fetched for, so logging out or switching
-  // account falls back to idle/loading by derivation rather than by a
-  // synchronous reset inside the effect.
-  const [loaded, setLoaded] = useState<{ user: string; state: VotesState }>();
   const [pendingVote, setPendingVote] = useState<string | null>(null);
+
+  // Keyed on the user, so logging out or switching account falls back to
+  // idle/loading by derivation rather than by a reset.
+  const {
+    data: votesResult,
+    loading: votesLoading,
+    error: votesError,
+    refetch,
+    mutate,
+  } = useAsyncData(
+    authLoading || !username ? null : username,
+    () => loadValidatorVotes(username as string),
+    { errorMessage: "Failed to load validator votes" }
+  );
 
   const votesState: VotesState = !username
     ? { kind: "idle" }
-    : loaded?.user === username
-      ? loaded.state
-      : { kind: "loading" };
+    : votesLoading
+      ? { kind: "loading" }
+      : votesError
+        ? { kind: "error", error: votesError }
+        : !votesResult
+          ? { kind: "loading" }
+          : votesResult.error
+            ? { kind: "error", error: votesResult.error }
+            : { kind: "loaded", votes: votesResult.votes };
 
-  const setVotesState = useCallback(
-    (state: VotesState) => {
-      if (username) setLoaded({ user: username, state });
-    },
-    [username]
-  );
-
-  useEffect(() => {
-    if (authLoading || !username) return;
-
-    let cancelled = false;
-    void (async () => {
-      const result = await getValidatorVotes();
-      if (cancelled) return;
-      setLoaded({
-        user: username,
-        state: result.error
-          ? { kind: "error", error: result.error }
-          : { kind: "loaded", votes: result.votes },
-      });
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, username]);
-
-  /** Refresh from a user action (vote/unvote); the mount load is the effect. */
-  const loadVotes = useCallback(async () => {
-    if (!username) return;
-    setVotesState({ kind: "loading" });
-    const result = await getValidatorVotes();
-    setVotesState(
-      result.error
-        ? { kind: "error", error: result.error }
-        : { kind: "loaded", votes: result.votes }
-    );
-  }, [username, setVotesState]);
+  /** Refresh from a user action (vote/unvote). */
+  const loadVotes = refetch;
 
   const waitForVotes = useCallback(
     async (isVerified: (votes: ValidatorVote[]) => boolean) => {
@@ -108,9 +89,9 @@ export default function ValidatorSupport({
       const delayMs = 3000;
 
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        const refreshed = await getValidatorVotes();
+        const refreshed = await loadValidatorVotes(username as string);
         if (!refreshed.error) {
-          setVotesState({ kind: "loaded", votes: refreshed.votes });
+          mutate(refreshed);
           if (isVerified(refreshed.votes)) {
             return true;
           }
@@ -123,7 +104,7 @@ export default function ValidatorSupport({
 
       return false;
     },
-    [setVotesState]
+    [mutate, username]
   );
 
   const handleVote = async () => {

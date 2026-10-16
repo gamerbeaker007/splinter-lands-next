@@ -1,49 +1,14 @@
 "use server";
 
 import { getCachedRegionDataSSR } from "@/lib/backend/api/internal/deed-data";
-import { getPlayerData } from "@/lib/backend/api/internal/player-data";
-import {
-  processPlayerRegionInformation,
-  processPlayerTaxIncome,
-} from "@/lib/backend/services/playerService";
 import { getCachedResourcePrices } from "@/lib/backend/services/resourceService";
 import { filterDeeds } from "@/lib/filters";
-import { FilterInput } from "@/types/filters";
-import { PlayerRegionDataType, RegionTaxSummary } from "@/types/resource";
+import { processPlayerTaxIncome } from "@/lib/shared/player/playerRegion";
+import { RegionTaxSummary } from "@/types/resource";
 
 /**
- * Get player region overview data
- */
-export async function getPlayerRegionData(
-  player: string,
-  filters: FilterInput,
-  includeTaxes: boolean = true,
-  includeTransferFee: boolean = true,
-  force: boolean = false
-): Promise<PlayerRegionDataType> {
-  try {
-    const playerData = await getPlayerData(player, filters, force);
-
-    if (!playerData) {
-      throw new Error("No data found");
-    }
-
-    const result = await processPlayerRegionInformation(
-      playerData,
-      includeTaxes,
-      includeTransferFee
-    );
-    return result;
-  } catch (err) {
-    console.error("Failed to load player region data", err);
-    throw new Error(
-      err instanceof Error ? err.message : "Failed to load player region data"
-    );
-  }
-}
-
-/**
- * Get player tax income data
+ * Get player tax income data (region-wide DB data, no SPL call). The player's
+ * region summary itself is computed in the browser (`loadPlayerRegionData`).
  */
 export async function getPlayerTaxData(
   player: string

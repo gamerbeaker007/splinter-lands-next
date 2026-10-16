@@ -1,6 +1,6 @@
 "use client";
 
-import { getFilteredEnrichedPlayerDeeds } from "@/lib/backend/actions/player/enriched-deed-actions";
+import { loadFilteredEnrichedPlayerDeeds } from "@/lib/frontend/player-data";
 import { FilterInput } from "@/types/filters";
 import { useMemo } from "react";
 import { useProgressiveDeeds } from "./useProgressiveDeeds";
@@ -22,7 +22,7 @@ export function useEnrichedPlayerDeeds(
   return useProgressiveDeeds(
     key,
     () =>
-      getFilteredEnrichedPlayerDeeds(
+      loadFilteredEnrichedPlayerDeeds(
         playerName as string,
         filters as FilterInput
       ),

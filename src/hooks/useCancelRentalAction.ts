@@ -1,6 +1,6 @@
 "use client";
 
-import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
 import {
   broadcastOperations,
   KeychainKeyTypes,
@@ -48,7 +48,7 @@ export function useCancelRentalAction({
           return;
         }
         await waitForTransactions(result.opTxIds);
-        await refreshCardCollection();
+        invalidatePlayerBrowserCaches(username);
         onSuccess?.();
       } catch (err) {
         setError(err instanceof Error ? err.message : "Cancel rental failed");

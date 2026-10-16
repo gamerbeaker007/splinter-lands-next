@@ -27,8 +27,8 @@ export default function LandFilterDrawer({ player, filtersEnabled }: Props) {
   // "" keys the site-wide (player-less) option set.
   const { data: availableOptions, loading } = useAsyncData(
     player ?? "",
-    loadFilterValues,
-    "Failed to load filter options"
+    () => loadFilterValues(player ?? ""),
+    { errorMessage: "Failed to load filter options" }
   );
 
   // Merge any location override on top of the fetched (site-wide) options.

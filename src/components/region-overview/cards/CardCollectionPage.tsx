@@ -5,36 +5,23 @@ import { CardSetOverviewChart } from "@/components/region-overview/cards/CardSet
 import { CardSetPpPieChart } from "@/components/region-overview/cards/CardSetPpPieChart";
 import { CardsByRarityChart } from "@/components/region-overview/cards/CardsByRarityChart";
 import WeeklyDataAlert from "@/components/ui/WeeklyDataAlert";
-import {
-  getLandCardCollectionData,
-  LandCardCollectionResult,
-} from "@/lib/backend/actions/region/land-card-collection-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-card-collection-actions";
 import { formatNumber } from "@/lib/formatters";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { Alert, Box, Paper, Skeleton, Typography } from "@mui/material";
-import { useEffect, useState, useTransition } from "react";
 
 export function CardCollectionPage() {
-  const [data, setData] = useState<LandCardCollectionResult | null>(null);
-  const [isPending, startTransition] = useTransition();
   const { filters } = useFilters();
+  const players = filters ? (filters.filter_players ?? []) : null;
 
-  useEffect(() => {
-    if (!filters) return;
+  const { data, loading } = useAsyncData(
+    players ? JSON.stringify(players) : null,
+    () => getLandCardCollectionData({ filter_players: players! }),
+    { errorMessage: "Failed to load card collection data" }
+  );
 
-    startTransition(async () => {
-      try {
-        const result = await getLandCardCollectionData({
-          filter_players: filters.filter_players ?? [],
-        });
-        setData(result);
-      } catch (error) {
-        console.error("Failed to load card collection data:", error);
-      }
-    });
-  }, [filters]);
-
-  if (isPending && !data) {
+  if (loading && !data) {
     return (
       <Box sx={{ p: 2 }}>
         <Skeleton variant="rectangular" width="100%" height={400} />

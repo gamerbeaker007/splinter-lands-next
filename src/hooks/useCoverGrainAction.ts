@@ -8,7 +8,7 @@ import {
   getPlayerPoolPositions,
   getProductionOverview,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { ActionPhase } from "@/lib/shared/actionPhase";
 import { computePoolHolding } from "@/lib/shared/poolPositionUtils";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";

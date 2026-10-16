@@ -7,6 +7,9 @@ import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 import { SplLandPool } from "@/types/spl/landPools";
 import pLimit from "p-limit";
+import { enrichPoolData } from "@/lib/shared/poolPositionEnrich";
+
+export { enrichPoolData };
 
 const limit = pLimit(5);
 const MIN_INTERVAL_MS = 15;
@@ -86,25 +89,4 @@ export async function throttledFetchAllAssets(
 
   await Promise.all(tasks);
   return results;
-}
-
-export function enrichPoolData(
-  playerTradeHubPosition: PlayerTradeHubPosition,
-  today: Date,
-  metrics: SplLandPool[]
-) {
-  playerTradeHubPosition.date = today;
-  const resource = playerTradeHubPosition.token.split("-")[1];
-  const metric = metrics.find((m) => m.token_symbol === resource);
-
-  const totalShares = Number(metric?.total_shares ?? 0);
-  const totalDEC = Number(metric?.dec_quantity ?? 0);
-  const totalResource = Number(metric?.resource_quantity ?? 0);
-
-  const sharePercentage =
-    totalShares > 0 ? playerTradeHubPosition.balance / totalShares : 0;
-
-  playerTradeHubPosition.share_percentage = sharePercentage * 100;
-  playerTradeHubPosition.dec_quantity = totalDEC * sharePercentage;
-  playerTradeHubPosition.resource_quantity = totalResource * sharePercentage;
 }

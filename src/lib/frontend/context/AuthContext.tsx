@@ -1,11 +1,19 @@
 "use client";
 
 import {
+  establishSessionAction,
   getAuthStatus,
-  loginAction,
   logoutAction,
 } from "@/lib/backend/actions/auth-actions";
+import { clearBrowserCaches } from "@/lib/frontend/browser-cache";
 import logger from "@/lib/frontend/log/logger.client";
+import { splLoginInBrowser } from "@/lib/frontend/spl-browser-api";
+import {
+  clearSplSession,
+  getSplSessionFor,
+  onSplUnauthorized,
+  splSessionChanged,
+} from "@/lib/frontend/splSession";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import { useRouter } from "next/navigation";
 import {
@@ -13,6 +21,7 @@ import {
   ReactNode,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -40,12 +49,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const AUTH_CHECK_ERROR = "Auth check error";
 
-/** Resolves the current session from the server, or throws. */
+/**
+ * Resolves the current session from the server, or throws.
+ *
+ * A server session whose cookie the browser can't read (an httpOnly cookie
+ * from before browser-side SPL reads) can't make the JWT reads the land
+ * manager needs, so it is ended and the user logs in again once.
+ */
 async function readAuthUser(): Promise<AuthUser | null> {
   const data = await getAuthStatus();
-  return data.authenticated && data.username
-    ? { username: data.username, isAuthenticated: true }
-    : null;
+  if (!data.authenticated || !data.username) {
+    clearSplSession();
+    return null;
+  }
+  if (!getSplSessionFor(data.username)) {
+    await logoutAction();
+    return null;
+  }
+  return { username: data.username, isAuthenticated: true };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -133,18 +154,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const finalSignature =
         signature || (await signWithKeychain(username, message));
 
-      // Use server action instead of API route
-      const result = await loginAction(
+      // The SPL login runs in the browser (the visitor's IP, not the
+      // server's); the server only verifies the token and sets its cookie.
+      const { token } = await splLoginInBrowser(
         username.toLowerCase(),
         finalTimestamp,
         finalSignature
       );
+      const result = await establishSessionAction(username, token);
 
       if (!result.success) {
         const errorMsg = result.error || "Login failed";
         setError(errorMsg);
         throw new Error(errorMsg);
       }
+      clearBrowserCaches();
+      splSessionChanged(); // the server just set the session cookie
 
       // Refresh auth status after successful login
       await checkAuthStatus();
@@ -166,6 +191,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Logout function - logs errors but doesn't throw
   const logout = async () => {
+    clearSplSession();
+    clearBrowserCaches();
     try {
       setError(null);
       await logoutAction();
@@ -210,6 +237,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  // SPL rejected the browser's token (expired / revoked): end the session.
+  const logoutRef = useRef(logout);
+  useEffect(() => {
+    logoutRef.current = logout;
+  });
+  useEffect(() => onSplUnauthorized(() => void logoutRef.current()), []);
 
   const contextValue: AuthContextType = {
     user,

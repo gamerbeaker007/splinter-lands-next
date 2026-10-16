@@ -4,15 +4,11 @@ import LandCardVericoTile from "@/components/region-overview/summary/LandCardVer
 import PlayerTopTenTile from "@/components/region-overview/summary/PlayerTopTenTile";
 import RegionSummaryStats from "@/components/region-overview/summary/RegionSummaryStats";
 import WorksiteTypeTile from "@/components/region-overview/summary/WorksiteTypeTile";
-import {
-  getLandCardCollectionData,
-  LandCardCollectionResult,
-} from "@/lib/backend/actions/region/land-card-collection-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-card-collection-actions";
 import { getRegionSummary } from "@/lib/backend/actions/region/summary-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { RegionSummary } from "@/types/regionSummary";
 import { Box, Stack, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
 import BoostTile from "./BoostTile";
 import DeedRarityTile from "./DeedRarityTile";
 import DeedStatusTile from "./DeedStatusTile";
@@ -20,27 +16,21 @@ import DeedTypeTile from "./DeedTypeTile";
 import LandCardTile from "./LandCardTile";
 
 export default function SummaryPage() {
-  const [summary, setSummary] = useState<RegionSummary | null>(null);
-  const [landCardData, setLandCardData] =
-    useState<LandCardCollectionResult | null>(null);
   const { filters } = useFilters();
 
-  useEffect(() => {
-    if (!filters) return;
-
-    (async () => {
-      try {
-        const data = await getRegionSummary(filters);
-        const result = await getLandCardCollectionData({
-          filter_players: filters.filter_players ?? [],
-        });
-        setSummary(data);
-        setLandCardData(result);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, [filters]);
+  const { data } = useAsyncData(
+    filters ? JSON.stringify(filters) : null,
+    async () => {
+      const summary = await getRegionSummary(filters!);
+      const landCardData = await getLandCardCollectionData({
+        filter_players: filters!.filter_players ?? [],
+      });
+      return { summary, landCardData };
+    },
+    { errorMessage: "Failed to load region summary" }
+  );
+  const summary = data?.summary ?? null;
+  const landCardData = data?.landCardData ?? null;
 
   return (
     <>

@@ -1,9 +1,8 @@
 "use client";
 
-import { ResourceHubMetrics } from "@/generated/prisma/client";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
-import { useEffect, useState } from "react";
 import { ResourceFactorChart } from "./ResourceFactorChart";
 import { ResourcePriceChart } from "./ResourcePriceChart";
 
@@ -11,20 +10,11 @@ export function ResourceFactorSection() {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  const [tradeHubMetrics, setTradeHubMetrics] = useState<
-    ResourceHubMetrics[] | null
-  >(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllTradeHubData();
-        setTradeHubMetrics(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: tradeHubMetrics } = useAsyncData(
+    "trade-hub",
+    () => getAllTradeHubData(),
+    { errorMessage: "Failed to load trade hub data" }
+  );
 
   return (
     <Box minHeight={500} mt={4}>

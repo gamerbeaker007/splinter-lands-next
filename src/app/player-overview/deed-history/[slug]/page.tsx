@@ -1,9 +1,7 @@
-import DeedHistoryDashboard from "@/components/player-overview/deed-history/DeedHistoryDashboard";
+import DeedHistoryContent from "@/components/player-overview/deed-history/DeedHistoryContent";
 import DeedSelector from "@/components/player-overview/deed-history/DeedSelector";
-import { getDeedHistory } from "@/lib/backend/actions/deed/deed-history-actions";
-import { Alert, Box, Skeleton, Typography } from "@mui/material";
+import { Alert, Box, Typography } from "@mui/material";
 import { notFound } from "next/navigation";
-import { Suspense } from "react";
 
 /**
  * Placeholder slug that only exists to give this route one concrete param.
@@ -41,26 +39,6 @@ interface PageProps {
   params: Promise<{ slug: string }>;
 }
 
-async function DeedHistoryContent({ deedUid }: { deedUid: string }) {
-  const { projects, harvests } = await getDeedHistory(deedUid);
-
-  return (
-    <DeedHistoryDashboard projects={projects.data} harvests={harvests.data} />
-  );
-}
-
-function DeedHistoryLoading() {
-  return (
-    <Box sx={{ padding: 2 }}>
-      <Skeleton variant="rectangular" height={400} sx={{ mb: 2 }} />
-      <Box sx={{ display: "flex", gap: 2 }}>
-        <Skeleton variant="rectangular" height={300} sx={{ flex: 1 }} />
-        <Skeleton variant="rectangular" height={300} sx={{ flex: 1 }} />
-      </Box>
-    </Box>
-  );
-}
-
 export default async function DeedHistoryPage({ params }: PageProps) {
   const { slug: deedUid } = await params;
 
@@ -90,9 +68,7 @@ export default async function DeedHistoryPage({ params }: PageProps) {
         which player harvested resources or made project changes.
       </Alert>
 
-      <Suspense fallback={<DeedHistoryLoading />}>
-        <DeedHistoryContent deedUid={deedUid} />
-      </Suspense>
+      <DeedHistoryContent deedUid={deedUid} />
     </Box>
   );
 }

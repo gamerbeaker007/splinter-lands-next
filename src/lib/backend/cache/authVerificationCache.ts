@@ -1,6 +1,9 @@
 import { createHash } from "crypto";
 
-const VERIFY_CACHE_TTL_MS = 5 * 60 * 1000;
+// Nearly every land-manager action calls getAuthStatus; 30 min keeps that to
+// ~2 SPL verifications per hour per user. A revoked token is still caught by
+// the 401 on the browser's own JWT reads, which logs the user out.
+const VERIFY_CACHE_TTL_MS = 30 * 60 * 1000;
 const verifyCache = new Map<string, { username: string; expiresAt: number }>();
 
 function tokenCacheKey(token: string): string {

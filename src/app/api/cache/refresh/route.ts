@@ -25,7 +25,6 @@ import {
   invalidateTradeHubDataCache,
 } from "@/lib/backend/api/internal/trade-hub-data";
 import logger from "@/lib/frontend/log/logger.client";
-import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -59,10 +58,7 @@ export async function POST(request: NextRequest) {
       invalidateTradeHubDataCache(),
     ]);
 
-    // Step 2: Invalidate Next.js cache tags for processed data
-    revalidateTag("daily", "default");
-
-    // Step 3: Warm up all caches by fetching fresh data
+    // Step 2: Warm up all caches by fetching fresh data
     logger.info("🔥 Warming up all caches...");
     const [
       deeds,

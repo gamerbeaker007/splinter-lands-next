@@ -5,11 +5,11 @@ import MythicOverview from "@/components/land-manager/harvest/MythicOverview";
 import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/harvest/RegionResourceSummary";
 import TodayPanel from "@/components/land-manager/shared/TodayPanel";
-import { getPlayerMythicDeeds } from "@/lib/backend/actions/land-manager/overview-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { getPlayerMythicDeeds } from "@/lib/frontend/land-data";
 import { formatNumber } from "@/lib/formatters";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
-import { MythicDeed } from "@/types/landManager";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
@@ -24,7 +24,6 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 
 export default function HarvestPage() {
   const {
@@ -36,13 +35,12 @@ export default function HarvestPage() {
     openConfigDialog,
   } = useLandManagerContext();
 
-  const [allMythicDeeds, setAllMythicDeeds] = useState<MythicDeed[] | null>(
-    null
+  // Kept across refreshes (keepPreviousData), as the old effect never reset it.
+  const { data: allMythicDeeds } = useAsyncData(
+    `mythic-deeds:${refreshKey}`,
+    () => getPlayerMythicDeeds(),
+    { errorMessage: "Failed to load mythic deeds" }
   );
-
-  useEffect(() => {
-    getPlayerMythicDeeds().then(setAllMythicDeeds);
-  }, [refreshKey]);
 
   const enabledMythicDeeds =
     allMythicDeeds?.filter((d) =>

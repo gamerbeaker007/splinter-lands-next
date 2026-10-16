@@ -2,7 +2,7 @@
 // cannot be bundled for the browser that Storybook renders in.
 import type { PoolBufferRow } from "@/hooks/usePoolBufferAlerts";
 import type { WorksiteAlertsData } from "@/hooks/useWorksiteAlerts";
-import type { RegionDECInfo } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import type { RegionDECInfo } from "@/lib/shared/decPower";
 import {
   buildLandManagerAlerts,
   countAlertsBySeverity,

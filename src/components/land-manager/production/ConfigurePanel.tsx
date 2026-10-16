@@ -2,15 +2,13 @@
 
 import { renderResourceIcon } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { UseProductionPlotActions } from "@/hooks/useProductionPlotActions";
-import {
-  getRegionStakedDEC,
-  RegionDECInfo,
-} from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { useDerivedState } from "@/hooks/useSyncedState";
 import {
   getPlotConfigureData,
-  PlotConfigureData,
-} from "@/lib/backend/actions/land-manager/production-actions";
+  getRegionStakedDEC,
+} from "@/lib/frontend/land-production-data";
 import { formatFixed, formatInt, formatNumber } from "@/lib/formatters";
 import { deedToPlotPlannerData } from "@/lib/frontend/utils/deedToPlotPlanner";
 import {
@@ -41,7 +39,7 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { MdInfo } from "react-icons/md";
 import AssetPickerDialog, {
   PickerKind,
@@ -53,7 +51,6 @@ import {
   initStagedConfig,
   MAX_WORKER_SLOTS,
   SpotCardVM,
-  StagedConfig,
   stagedHasChanges,
 } from "./productionConfigTypes";
 import { EmptySpot, FilledCardSpot, FilledItemSpot } from "./SpotTile";
@@ -234,19 +231,36 @@ export default function ConfigurePanel({
   actions,
   onSaved,
 }: Props) {
-  const [data, setData] = useState<PlotConfigureData | null>(null);
-  const [staged, setStaged] = useState<StagedConfig | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [regionDEC, setRegionDEC] = useState<RegionDECInfo | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
-  // Bumping reloadKey re-runs the loader; this flips the spinner back on
-  // without calling setState synchronously inside the effect.
-  const reload = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    setReloadKey((k) => k + 1);
-  }, []);
+  const reload = useCallback(() => setReloadKey((k) => k + 1), []);
+
+  const {
+    data: loaded,
+    loading,
+    error,
+  } = useAsyncData(
+    `${deed.deed_uid}|${deed.region_number}|${reloadKey}`,
+    async () => {
+      const [plotData, regionData] = await Promise.all([
+        getPlotConfigureData(deed.deed_uid),
+        getRegionStakedDEC().catch(() => null),
+      ]);
+      return {
+        plotData,
+        regionDEC:
+          regionData?.regions.find(
+            (r) => r.region_number === deed.region_number
+          ) ?? null,
+      };
+    },
+    { errorMessage: "Failed to load plot" }
+  );
+  const data = loaded?.plotData ?? null;
+  const regionDEC = error ? null : (loaded?.regionDEC ?? null);
+  // The staged edit starts over from every freshly loaded on-chain state.
+  const [staged, setStaged] = useDerivedState(data, (d) =>
+    d ? initStagedConfig(d) : null
+  );
 
   // item/runi picker
   const [picker, setPicker] = useState<PickerKind | null>(null);
@@ -279,37 +293,6 @@ export default function ConfigurePanel({
     return { current, next };
   }, [deed, data, staged, prices, spsRatio]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [plotData, regionData] = await Promise.all([
-          getPlotConfigureData(deed.deed_uid),
-          getRegionStakedDEC().catch(() => null),
-        ]);
-        if (cancelled) return;
-        setData(plotData);
-        setStaged(initStagedConfig(plotData));
-        setRegionDEC(
-          regionData?.regions.find(
-            (r) => r.region_number === deed.region_number
-          ) ?? null
-        );
-        setError(null);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load plot");
-          setRegionDEC(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [deed.deed_uid, deed.region_number, reloadKey]);
-
   const handlePick = useCallback(
     (result: PickerResult) => {
       setStaged((prev) => {
@@ -323,23 +306,26 @@ export default function ConfigurePanel({
       });
       setPicker(null);
     },
-    [picker]
+    [picker, setStaged]
   );
 
-  const handleWorkerConfirm = useCallback((picks: SpotCardVM[]) => {
-    setStaged((prev) => {
-      if (!prev) return prev;
-      const workers = [...prev.workers];
-      const empties = workers
-        .map((w, i) => (w === null ? i : -1))
-        .filter((i) => i >= 0);
-      picks.forEach((p, k) => {
-        if (k < empties.length) workers[empties[k]] = p;
+  const handleWorkerConfirm = useCallback(
+    (picks: SpotCardVM[]) => {
+      setStaged((prev) => {
+        if (!prev) return prev;
+        const workers = [...prev.workers];
+        const empties = workers
+          .map((w, i) => (w === null ? i : -1))
+          .filter((i) => i >= 0);
+        picks.forEach((p, k) => {
+          if (k < empties.length) workers[empties[k]] = p;
+        });
+        return { ...prev, workers };
       });
-      return { ...prev, workers };
-    });
-    setWorkerOpen(false);
-  }, []);
+      setWorkerOpen(false);
+    },
+    [setStaged]
+  );
 
   const clearWorker = (idx: number) =>
     setStaged((prev) => {

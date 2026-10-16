@@ -10,6 +10,7 @@ import {
   TodayLogs,
   TopUpWindowInfo,
 } from "@/types/landManager";
+import { requirePlayer } from "@/lib/backend/auth/requirePlayer";
 import { getAuthStatus } from "../auth-actions";
 
 const TOP_UP_MIN_HOURS = 1;
@@ -44,7 +45,8 @@ export interface RecordHarvestLogInput {
 export async function recordHarvestLog(
   input: RecordHarvestLogInput
 ): Promise<void> {
-  const { player, resources, txIds } = input;
+  const { player: claimedPlayer, resources, txIds } = input;
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landHarvestLog.findUnique({
@@ -93,8 +95,14 @@ export interface RecordDonationsLogInput {
 export async function recordDonationsLog(
   input: RecordDonationsLogInput
 ): Promise<void> {
-  const { player, paidDonations, unpaidDonations, donationError, txIds } =
-    input;
+  const {
+    player: claimedPlayer,
+    paidDonations,
+    unpaidDonations,
+    donationError,
+    txIds,
+  } = input;
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landHarvestLog.findUnique({
@@ -223,10 +231,11 @@ function mergeActions(
 }
 
 export async function recordMakeHarvestableLog(
-  player: string,
+  claimedPlayer: string,
   actions: ActionSummary[],
   txIds: string[]
 ): Promise<void> {
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landMakeHarvestableLog.findUnique({
@@ -287,10 +296,11 @@ function mergePostHarvestActions(
 }
 
 export async function recordPostHarvestLog(
-  player: string,
+  claimedPlayer: string,
   actions: PostHarvestActionSummary[],
   txIds: string[]
 ): Promise<void> {
+  const player = await requirePlayer(claimedPlayer);
   if (actions.length === 0) return;
   const date = today();
   const existing = await prisma.landPostHarvestLog.findUnique({
@@ -323,7 +333,7 @@ export async function recordPostHarvestLog(
 
 /** Persist one successful Top Up Pools run for elapsed-window sizing. */
 export async function recordTopUpPoolRun(
-  player: string,
+  claimedPlayer: string,
   windowHours: number,
   txIds: string[]
 ): Promise<{ ok: true } | { ok: false; error: string }> {
@@ -331,6 +341,7 @@ export async function recordTopUpPoolRun(
     (id): id is string => typeof id === "string" && id.trim().length > 0
   );
   try {
+    const player = await requirePlayer(claimedPlayer);
     await prisma.landTopUpPoolRun.create({
       data: {
         player,
@@ -359,8 +370,9 @@ export async function recordTopUpPoolRun(
  * - >168h => cap at 168h.
  */
 export async function getTopUpWindowInfo(
-  player: string
+  claimedPlayer: string
 ): Promise<TopUpWindowInfo> {
+  const player = await requirePlayer(claimedPlayer);
   const latest = await prisma.landTopUpPoolRun.findFirst({
     where: { player },
     orderBy: { executed_at: "desc" },
@@ -414,7 +426,7 @@ export async function getTopUpWindowInfo(
 // ── Mythic harvest log ────────────────────────────────────────────────────────
 
 export async function recordMythicHarvestLog(
-  player: string,
+  claimedPlayer: string,
   results: MythicHarvestResult[],
   txIds: string[],
   donations?: {
@@ -424,6 +436,7 @@ export async function recordMythicHarvestLog(
     donationTxIds: string[];
   }
 ): Promise<void> {
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landMythicHarvestLog.findUnique({
@@ -621,8 +634,15 @@ export interface RecordRentalLogInput {
 export async function recordRentalLog(
   input: RecordRentalLogInput
 ): Promise<void> {
-  const { player, rentedCount, stakedCount, totalDec, rentTxIds, stakeTxIds } =
-    input;
+  const {
+    player: claimedPlayer,
+    rentedCount,
+    stakedCount,
+    totalDec,
+    rentTxIds,
+    stakeTxIds,
+  } = input;
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landWorkerLog.findUnique({
@@ -671,7 +691,7 @@ export async function recordPurchaseLog(
   input: RecordPurchaseLogInput
 ): Promise<void> {
   const {
-    player,
+    player: claimedPlayer,
     boughtCount,
     stakedCount,
     totalDec,
@@ -679,6 +699,7 @@ export async function recordPurchaseLog(
     purchaseTxIds,
     stakeTxIds,
   } = input;
+  const player = await requirePlayer(claimedPlayer);
   const date = today();
 
   const existing = await prisma.landWorkerLog.findUnique({

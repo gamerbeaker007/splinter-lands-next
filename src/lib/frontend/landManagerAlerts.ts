@@ -2,7 +2,7 @@
 // value import would drag the whole server chain into the browser bundle.
 import type { PoolBufferRow } from "@/hooks/usePoolBufferAlerts";
 import type { WorksiteAlertsData } from "@/hooks/useWorksiteAlerts";
-import type { RegionDECInfo } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import type { RegionDECInfo } from "@/lib/shared/decPower";
 import type { CardAlerts } from "@/types/cardAlerts";
 import type { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import type { WorkerEligibilityResult } from "@/types/landManager";

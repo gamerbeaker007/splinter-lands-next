@@ -1,8 +1,10 @@
 "use client";
 
 import WorkerCardPicksCell from "@/components/land-manager/production/rental-actions/WorkerCardPicksCell";
-import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
-import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
+import type {
+  BuyExecutionPlan,
+  RentalExecutionPlan,
+} from "@/lib/shared/workerPlan";
 import { parseLandStatsResources } from "@/lib/filters";
 import { formatFixed } from "@/lib/formatters";
 import { WorkerPlanItem } from "@/types/landManager";

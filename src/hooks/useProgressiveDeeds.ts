@@ -1,6 +1,6 @@
 "use client";
 
-import { enrichDeedsWithStakedAssets } from "@/lib/backend/actions/player/enriched-deed-actions";
+import { enrichDeedsWithStakedAssets } from "@/lib/frontend/player-data";
 import { DeedComplete } from "@/types/deed";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -26,7 +26,8 @@ export interface ProgressiveDeeds {
 /**
  * Two-phase deed loading with progress indication:
  * Phase 1 — `fetchPage` returns the filtered deeds without staked assets.
- * Phase 2 — staked assets are enriched in batches, reporting progress.
+ * Phase 2 — staked assets are read from SPL in the browser, in batches, so
+ *           progress can be reported.
  *
  * Everything the old per-screen versions reset at the start of a request
  * (deeds, totals, warning, progress, loading text) lives in one snapshot
@@ -135,7 +136,7 @@ export function useProgressiveDeeds(
   };
 }
 
-/** Deeds per enrichment round trip; the server action parallelises within. */
+/** Deeds per progress step; reads within a batch run in parallel (capped). */
 const BATCH_SIZE = 10;
 
 const NO_DEEDS: DeedComplete[] = [];

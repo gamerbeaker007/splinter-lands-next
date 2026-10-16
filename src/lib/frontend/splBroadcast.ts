@@ -1,4 +1,4 @@
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
+import { lookupTxOutcome } from "@/lib/frontend/settledTxOutcomes";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import {
@@ -35,7 +35,9 @@ export interface BroadcastResult {
  * - Returns the parsed result for each txId (in the same order), or null if not resolved before timeout.
  * - Throws with a user-visible message on timeout.
  *
- * Looks up via the SPL `lookupTransaction` action. A single tx is just `[txId]`.
+ * Looks up straight from the browser, so the polling counts against the
+ * visitor's IP, and records settled ids tab-wide (`settledTxOutcomes`) so the
+ * Today panel never looks them up again. A single tx is just `[txId]`.
  * Pass SPL op ids (`BroadcastResult.opTxIds`), not Hive tx ids, whenever a
  * batch may hold more than one op — see `splOpTxIds`.
  */
@@ -52,7 +54,7 @@ export async function waitForTransactions(
     await Promise.all(
       [...pending].map((i) =>
         limit(async () => {
-          const outcome = await lookupTransaction(txIds[i]);
+          const outcome = await lookupTxOutcome(txIds[i]);
           if (outcome.status === "failed") {
             throw new Error(outcome.error);
           }

@@ -9,6 +9,7 @@ import CustomPlanDialog, {
 } from "@/components/land-manager/harvest/CustomPlanDialog";
 import { renderResourceIcon } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useProcessResourcesAction } from "@/hooks/useProcessResourcesAction";
 import { getDefaultCustomPlan } from "@/lib/backend/actions/land-manager/custom-plan-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
@@ -54,7 +55,8 @@ export default function ProcessResourcesRow({
 }: Props) {
   const { openConfigDialog } = useLandManagerContext();
   const [customPlanOpen, setCustomPlanOpen] = useState(false);
-  const [defaultPlanName, setDefaultPlanName] = useState<string | null>(null);
+  // Bumped when the Custom Plan dialog closes, to re-read the default plan.
+  const [dialogCloses, setDialogCloses] = useState(0);
   // The Custom Plan broadcasts from its own dialog, so its tx status is kept
   // here to show on the card once the dialog has closed.
   const [customPlanStatus, setCustomPlanStatus] =
@@ -80,16 +82,18 @@ export default function ProcessResourcesRow({
 
   // Which plan the Custom Plan dialog will open on. Re-read after the dialog
   // closes — the player can have changed the default from inside it.
-  useEffect(() => {
-    if (postHarvestStrategy !== "custom_plan" || customPlanOpen) return;
-    let cancelled = false;
-    getDefaultCustomPlan().then(({ plan }) => {
-      if (!cancelled) setDefaultPlanName(plan?.name ?? null);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [postHarvestStrategy, customPlanOpen]);
+  const { data: defaultPlan } = useAsyncData(
+    postHarvestStrategy === "custom_plan"
+      ? `default-plan:${dialogCloses}`
+      : null,
+    () => getDefaultCustomPlan()
+  );
+  const defaultPlanName = defaultPlan?.plan?.name ?? null;
+
+  const closeCustomPlan = () => {
+    setCustomPlanOpen(false);
+    setDialogCloses((n) => n + 1);
+  };
 
   // Build the plan first and hand it to the confirm dialog; only the
   // dialog's Confirm actually broadcasts.
@@ -214,10 +218,10 @@ export default function ProcessResourcesRow({
           username={username}
           visibleRegions={visibleRegions}
           open={customPlanOpen}
-          onClose={() => setCustomPlanOpen(false)}
+          onClose={closeCustomPlan}
           onStatusChange={setCustomPlanStatus}
           onSuccess={() => {
-            setCustomPlanOpen(false);
+            closeCustomPlan();
             onSuccess();
           }}
         />

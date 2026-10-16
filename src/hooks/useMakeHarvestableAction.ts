@@ -5,7 +5,7 @@ import {
   getLandPools,
   getPlayerPoolPositions,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { buildMakeHarvestableOps } from "@/lib/frontend/makeHarvestableOps";
 import { makeHarvestablePreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import { computePoolHolding } from "@/lib/shared/poolPositionUtils";

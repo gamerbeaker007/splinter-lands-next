@@ -4,7 +4,7 @@ import {
   getBulkRegionData,
   getLandPools,
   getPlayerPoolPositions,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import {
   computePoolHolding,
   computeRegionResourceBalance,
@@ -96,7 +96,7 @@ export function usePoolBufferAlerts(
         };
       });
     },
-    "Failed to load pool buffer alerts"
+    { errorMessage: "Failed to load pool buffer alerts" }
   );
 
   return { rows: data ?? NO_ROWS, loading };

@@ -11,6 +11,7 @@ import CustomPlanSummary from "@/components/land-manager/harvest/custom-plan/Cus
 import CustomPlanEditor, {
   draftsToItems,
 } from "@/components/land-manager/harvest/CustomPlanEditor";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useCustomPlanAction } from "@/hooks/useCustomPlanAction";
 import { BroadcastResult } from "@/lib/frontend/splBroadcast";
 import {
@@ -25,7 +26,7 @@ import {
   getDecBalance,
   getLandPools,
   getPlayerPoolPositions,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import {
   CustomPlan,
@@ -63,6 +64,10 @@ export interface CustomPlanExecutionStatus {
   error: string | null;
 }
 
+const NO_BALANCES: Record<string, Record<string, number>> = {};
+const NO_POOLS: SplLandPool[] = [];
+const NO_POSITIONS: Record<string, SplPlayerPoolPosition> = {};
+
 export default function CustomPlanDialog({
   username,
   visibleRegions,
@@ -72,17 +77,40 @@ export default function CustomPlanDialog({
   onStatusChange,
 }: Props) {
   // ── Data state ──────────────────────────────────────────────────────────────
-  const [loading, setLoading] = useState(open);
+  const enabledUidKey = visibleRegions.map((r) => r.region_uid).join(",");
+  const { data: loaded, loading } = useAsyncData(
+    open ? `custom-plan-dialog:${username}:${enabledUidKey}` : null,
+    async () => {
+      const enabledUids = enabledUidKey ? enabledUidKey.split(",") : [];
+      const [plansRes, bulkData, poolsData, dec, positions] = await Promise.all(
+        [
+          getCustomPlans(),
+          getBulkRegionData(enabledUids, false),
+          getLandPools(),
+          getDecBalance(username),
+          getPlayerPoolPositions(username, NATURAL_RESOURCES, false),
+        ]
+      );
+      return {
+        plans: plansRes.plans ?? [],
+        loadError: plansRes.error ?? null,
+        balances: bulkData.balances,
+        pools: poolsData.pools,
+        decBalance: dec,
+        poolPositions: positions,
+      };
+    },
+    { keepPreviousData: false }
+  );
+  const balances: Record<string, Record<string, number>> = loaded?.balances ??
+  NO_BALANCES;
+  const decBalance = loaded?.decBalance ?? 0;
+  const pools: SplLandPool[] = loaded?.pools ?? NO_POOLS;
+  const poolPositions: Record<string, SplPlayerPoolPosition> =
+    loaded?.poolPositions ?? NO_POSITIONS;
+  const loadError = loaded?.loadError ?? null;
   const [savedPlans, setSavedPlans] = useState<CustomPlan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
-  const [balances, setBalances] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [decBalance, setDecBalance] = useState(0);
-  const [pools, setPools] = useState<SplLandPool[]>([]);
-  const [poolPositions, setPoolPositions] = useState<
-    Record<string, SplPlayerPoolPosition>
-  >({});
 
   // ── Editor state ─────────────────────────────────────────────────────────────
   const [planName, setPlanName] = useState("");
@@ -102,7 +130,6 @@ export default function CustomPlanDialog({
   const [saveBusy, setSaveBusy] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [unsavedDialogOpen, setUnsavedDialogOpen] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   // ── Action hook ───────────────────────────────────────────────────────────────
   const action = useCustomPlanAction({ username, visibleRegions, onSuccess });
@@ -117,43 +144,28 @@ export default function CustomPlanDialog({
     onStatusChange({ result: action.result, error: action.error });
   }, [action.result, action.error, onStatusChange]);
 
-  // ── Load data on open ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!open) return;
-    const enabledUids = visibleRegions.map((r) => r.region_uid);
-
-    Promise.all([
-      getCustomPlans(),
-      getBulkRegionData(enabledUids, false),
-      getLandPools(),
-      getDecBalance(username),
-      getPlayerPoolPositions(username, NATURAL_RESOURCES, false),
-    ]).then(([plansRes, bulkData, poolsData, dec, positions]) => {
-      if (plansRes.error) setLoadError(plansRes.error);
-      else setLoadError(null);
-      const plans = plansRes.plans ?? [];
-      setSavedPlans(plans);
-      setBalances(bulkData.balances);
-      setPools(poolsData.pools);
-      setDecBalance(dec);
-      setPoolPositions(positions);
-
-      if (plans.length > 0) {
-        // The player's default plan is what the dialog opens on; without one
-        // it falls back to the first saved plan.
-        const preselected = plans.find((p) => p.is_default) ?? plans[0];
-        setSelectedPlanId(preselected.id);
-        setPlanName(preselected.name);
-      } else {
-        setSelectedPlanId(null);
-        setPlanName("");
-      }
-      setIsDirty(false);
-      setMultiplierText("1");
-      setEditorKey((k) => k + 1);
-      setLoading(false);
-    });
-  }, [open, username, visibleRegions]);
+  // ── Seed the editor from each fresh load ─────────────────────────────────────
+  // Adjusted while rendering (not in an effect) so the editor never renders a
+  // frame with the previous plan — see react.dev "adjusting state on a prop change".
+  const [seededFrom, setSeededFrom] = useState<typeof loaded>(undefined);
+  if (loaded && loaded !== seededFrom) {
+    setSeededFrom(loaded);
+    const plans = loaded.plans;
+    setSavedPlans(plans);
+    if (plans.length > 0) {
+      // The player's default plan is what the dialog opens on; without one
+      // it falls back to the first saved plan.
+      const preselected = plans.find((p) => p.is_default) ?? plans[0];
+      setSelectedPlanId(preselected.id);
+      setPlanName(preselected.name);
+    } else {
+      setSelectedPlanId(null);
+      setPlanName("");
+    }
+    setIsDirty(false);
+    setMultiplierText("1");
+    setEditorKey((k) => k + 1);
+  }
 
   // ── Select a saved plan ───────────────────────────────────────────────────────
   function selectPlan(planId: string | null) {

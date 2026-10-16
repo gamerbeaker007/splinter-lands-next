@@ -1,12 +1,10 @@
 "use client";
 
-import {
-  DecPowerDirection,
-  DecPowerPlan,
-  getDecPowerPlan,
-  recordDecPowerLog,
-} from "@/lib/backend/actions/land-manager/dec-power-actions";
-import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
+import { recordDecPowerLog } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { getDecBalance } from "@/lib/frontend/land-data";
+import { getDecPowerPlan } from "@/lib/frontend/land-production-data";
+import { DecPowerDirection, DecPowerPlan } from "@/lib/shared/decPower";
 import { formatNumber } from "@/lib/formatters";
 import {
   broadcastOperations,
@@ -175,6 +173,7 @@ export function useDecPowerAction({
 
       if (res.txIds.length > 0) {
         await waitForTransactions(res.opTxIds);
+        invalidatePlayerBrowserCaches(username);
       }
 
       const totalSucceeded = Object.values(succeededByRegion).reduce(

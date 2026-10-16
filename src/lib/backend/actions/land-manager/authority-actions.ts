@@ -1,114 +1,25 @@
 "use server";
 
 import {
-  getPurchaseAuthorityInfo,
-  getRentalAuthorityInfo,
   getServiceAccount,
   invalidateAuthorityCache,
   isServiceBroadcastConfigured,
 } from "@/lib/backend/services/splAuthorityService";
 import { getAuthStatus } from "../auth-actions";
 
-export interface RentalAuthorityStatus {
-  /** True when SPL_LAND_SERVICE_ACCOUNT + SPL_LAND_SERVICE_ACTIVE_KEY are set. */
-  serviceConfigured: boolean;
-  /** Display name of the configured service account (or null when unset). */
-  serviceAccount: string | null;
-  /** True only when the authenticated user has granted rental authority. */
-  authorized: boolean;
-  /** The username the check was performed for (null when not logged in). */
-  player: string | null;
-  /** Current full rental authorities list — used by the UI to smart-merge. */
-  rental: string[];
-}
-
 /**
- * Resolves whether the logged-in user has granted rental authority to the
- * configured service account, plus the full current rental list so the UI
- * can build a grant/revoke op without clobbering other authorities.
+ * The configured land-service account (server env) — everything the browser
+ * needs to compute authority status itself from its own `/players/authorities`
+ * read (`getAuthorityStatus` in lib/frontend/land-data.ts). No SPL call.
  */
-export async function getRentalAuthorityStatus(): Promise<RentalAuthorityStatus> {
-  const serviceConfigured = isServiceBroadcastConfigured();
-  const serviceAccount = getServiceAccount();
-  const auth = await getAuthStatus();
-  const player = auth.authenticated && auth.username ? auth.username : null;
-  if (!player || !serviceConfigured) {
-    return {
-      serviceConfigured,
-      serviceAccount,
-      authorized: false,
-      player,
-      rental: [],
-    };
-  }
-  const info = await getRentalAuthorityInfo(player);
-  return {
-    serviceConfigured,
-    serviceAccount,
-    authorized: info.authorized,
-    player,
-    rental: info.rental,
-  };
-}
-
-/** Force a fresh check next time. Call after a grant/revoke broadcast. */
-export async function refreshRentalAuthorityStatus(): Promise<RentalAuthorityStatus> {
-  const auth = await getAuthStatus();
-  if (auth.authenticated && auth.username) {
-    invalidateAuthorityCache(auth.username);
-  }
-  return getRentalAuthorityStatus();
-}
-
-export interface PurchaseAuthorityStatus {
-  /** True when SPL_LAND_SERVICE_ACCOUNT + SPL_LAND_SERVICE_ACTIVE_KEY are set. */
+export async function getAuthorityServiceInfo(): Promise<{
   serviceConfigured: boolean;
-  /** Display name of the configured service account (or null when unset). */
   serviceAccount: string | null;
-  /** True only when the authenticated user has granted purchase authority. */
-  authorized: boolean;
-  /** The username the check was performed for (null when not logged in). */
-  player: string | null;
-  /** Current full purchase authorities list — used by the UI to smart-merge. */
-  purchase: string[];
-}
-
-/**
- * Purchase counterpart of {@link getRentalAuthorityStatus}: resolves whether
- * the logged-in user has granted purchase authority to the service account,
- * plus the full current purchase list for smart-merging on grant/revoke.
- */
-export async function getPurchaseAuthorityStatus(): Promise<PurchaseAuthorityStatus> {
-  const serviceConfigured = isServiceBroadcastConfigured();
-  const serviceAccount = getServiceAccount();
-  const auth = await getAuthStatus();
-  const player = auth.authenticated && auth.username ? auth.username : null;
-  if (!player || !serviceConfigured) {
-    return {
-      serviceConfigured,
-      serviceAccount,
-      authorized: false,
-      player,
-      purchase: [],
-    };
-  }
-  const info = await getPurchaseAuthorityInfo(player);
+}> {
   return {
-    serviceConfigured,
-    serviceAccount,
-    authorized: info.authorized,
-    player,
-    purchase: info.purchase,
+    serviceConfigured: isServiceBroadcastConfigured(),
+    serviceAccount: getServiceAccount(),
   };
-}
-
-/** Force a fresh purchase-authority check next time. */
-export async function refreshPurchaseAuthorityStatus(): Promise<PurchaseAuthorityStatus> {
-  const auth = await getAuthStatus();
-  if (auth.authenticated && auth.username) {
-    invalidateAuthorityCache(auth.username);
-  }
-  return getPurchaseAuthorityStatus();
 }
 
 /**

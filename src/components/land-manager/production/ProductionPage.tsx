@@ -27,9 +27,9 @@ import {
 import { usePurchaseAuthorityStatus } from "@/hooks/usePurchaseAuthorityStatus";
 import { useRentalAuthorityStatus } from "@/hooks/useRentalAuthorityStatus";
 import { useWorkerAction } from "@/hooks/useWorkerAction";
-import { getProductionPageData } from "@/lib/backend/actions/land-manager/production-actions";
 import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
+import { getProductionPageData } from "@/lib/frontend/land-production-data";
 import { filterDeeds } from "@/lib/filters";
 import {
   FilterProvider,
@@ -56,6 +56,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useSearchParams } from "next/navigation";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const PAGE_SIZE = 25;
@@ -93,6 +94,8 @@ function actionableRows(
 
 // ── Inner component — uses FilterContext ─────────────────────────────────────
 
+const NO_DEEDS: DeedComplete[] = [];
+
 function ProductionPageContent() {
   const {
     auth,
@@ -109,14 +112,19 @@ function ProductionPageContent() {
   const purchaseAuthorityHook = usePurchaseAuthorityStatus();
 
   // ── Production table state ───────────────────────────────────────────────
-  const [allDeeds, setAllDeeds] = useState<DeedComplete[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   const [localRefreshKey, setLocalRefreshKey] = useState(0);
+  const { data: pageData, loading } = useAsyncData(
+    `production|${localRefreshKey}`,
+    async () => ({ ...(await getProductionPageData()), loadedAt: Date.now() }),
+    { errorMessage: "Failed to load production data" }
+  );
+  const allDeeds = pageData?.deeds ?? NO_DEEDS;
+  const fetchError = loading ? null : (pageData?.error ?? null);
   // One "now" for the page so the table's construction badges and the Change
   // worksite dialog judge against the same instant. Re-stamped on every reload,
   // so a finished construction becomes actionable after Refresh.
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  const [mountedAtMs] = useState(() => Date.now());
+  const nowMs = pageData?.loadedAt ?? mountedAtMs;
   const [sort, setSort] = useState<{
     key: ProductionSortKey;
     dir: SortDirection;
@@ -144,9 +152,21 @@ function ProductionPageContent() {
   const appliedLocationQueryRef = useRef<string | null>(null);
   const pendingAutoOpenDeedUidRef = useRef<string | null>(null);
 
-  // resource prices for the production-impact line (cached server-side)
-  const [prices, setPrices] = useState<Prices | null>(null);
-  const [spsRatio, setSpsRatio] = useState(0);
+  // resource prices for the production-impact line (cached server-side) —
+  // loaded once
+  const { data: impactData } = useAsyncData(
+    "production-impact",
+    async () => {
+      const [prices, ratio] = await Promise.all([
+        getActualResourcePrices(),
+        getDailySPSRatio(),
+      ]);
+      return { prices, ratio };
+    },
+    { errorMessage: "Failed to load prices" }
+  );
+  const prices: Prices | null = impactData?.prices ?? null;
+  const spsRatio = impactData?.ratio ?? 0;
 
   const parsedLocationQuery = useMemo<ParsedLocationQuery>(() => {
     const regionRaw = searchParams.get("region");
@@ -179,8 +199,6 @@ function ProductionPageContent() {
   }, [allDeeds]);
 
   const handleRefresh = useCallback(() => {
-    setLoading(true);
-    setFetchError(null);
     setLocalRefreshKey((k) => k + 1);
   }, []);
 
@@ -193,37 +211,6 @@ function ProductionPageContent() {
     username,
     onSuccess: handleSuccess,
   });
-
-  useEffect(() => {
-    let cancelled = false;
-    getProductionPageData().then(({ deeds, error }) => {
-      if (cancelled) return;
-      if (error) setFetchError(error);
-      setAllDeeds(deeds);
-      setNowMs(Date.now());
-      setLoading(false);
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [localRefreshKey]);
-
-  // Production-impact supporting data — load once
-  useEffect(() => {
-    let cancelled = false;
-
-    Promise.all([getActualResourcePrices(), getDailySPSRatio()]).then(
-      ([prices, ratio]) => {
-        if (cancelled) return;
-
-        setPrices(prices);
-        setSpsRatio(ratio);
-      }
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   // Feed this player's live region/tract/plot lists into LandFilterDrawer.
   useEffect(() => {

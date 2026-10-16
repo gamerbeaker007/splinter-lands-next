@@ -3,7 +3,7 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { RegionResourcePP } from "@/types/regionProductionSummary";
 import { Box, Typography } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { ResourceSelector } from "../ResourceSelector";
 
 type Props = {
@@ -13,23 +13,19 @@ type Props = {
 export default function TopRegionsByResourceChart({ data }: Props) {
   const resourceTypes = Object.keys(data).filter((r) => r !== "");
 
-  const [selectedResource, setSelectedResource] = useState<string | null>(
+  const [chosenResource, setSelectedResource] = useState<string | null>(
     resourceTypes[0]
   );
+  // Falls back to the first resource when the data no longer has the chosen one.
+  const selectedResource =
+    chosenResource && resourceTypes.includes(chosenResource)
+      ? chosenResource
+      : (resourceTypes[0] ?? null);
 
   const handleSelect = (resource: string | null) => {
     if (!resource || resource === selectedResource) return;
     setSelectedResource(resource);
   };
-
-  //Auto-reset when data/resourceTypes change
-  useEffect(() => {
-    (async () => {
-      if (!selectedResource || !resourceTypes.includes(selectedResource)) {
-        setSelectedResource(resourceTypes[0] ?? null);
-      }
-    })();
-  }, [resourceTypes, selectedResource]);
 
   let topRegions: string[] = [];
   let baseValues: number[] = [];

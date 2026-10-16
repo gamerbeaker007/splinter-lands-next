@@ -120,7 +120,7 @@ export async function computeAndStorePlayerCardCollections(today: Date) {
       await throttleRate(MIN_INTERVAL_MS);
 
       try {
-        const collection = await fetchPlayerCardCollection(player, true);
+        const collection = await fetchPlayerCardCollection(player);
         const landCards = collection.filter(isCardOnLand);
 
         const cardSetMap = new Map<string, CardSetStats>();

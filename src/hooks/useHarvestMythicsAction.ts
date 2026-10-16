@@ -5,7 +5,7 @@ import {
   getLandPools,
   getPlayerMythicDeeds,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import {
   applyDailyCaps,
   buildDonationOps,

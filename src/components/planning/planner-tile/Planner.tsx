@@ -40,7 +40,7 @@ import { RegionTax } from "@/types/regionTax";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { Card, Item } from "@/types/stakedAssets";
 import { Box, capitalize, Paper, Stack, Typography } from "@mui/material";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useEffectEvent, useMemo, useRef, useState } from "react";
 import SlotEditor from "../card-editor/SlotEditor";
 import { PlannerControls } from "../deed-editor/PlanningControls";
 import { DECOutput } from "../output/DECOutput";
@@ -386,6 +386,12 @@ export default function Planner({
   const { fetchPlot } = useFetchPlot();
   const autoImportedPlotId = useRef<number | null>(null);
 
+  // applyImportedDeed only writes state; read the latest one without making
+  // it an effect dependency.
+  const onAutoImported = useEffectEvent((deed: DeedComplete) =>
+    applyImportedDeed(deed)
+  );
+
   // Auto-import when the planner is opened from a deed card link.
   useEffect(() => {
     if (!importPlotId || autoImportedPlotId.current === importPlotId) return;
@@ -393,10 +399,8 @@ export default function Planner({
 
     (async () => {
       const deed = await fetchPlot(importPlotId);
-      if (deed) applyImportedDeed(deed);
+      if (deed) onAutoImported(deed);
     })();
-    // applyImportedDeed only writes state, so it is safe to leave out of deps.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [importPlotId, fetchPlot]);
 
   const onTotemChange = (tier: TotemTier) => {

@@ -1,29 +1,22 @@
 "use client";
 
 import { ResourceActiveSummaryCard } from "@/components/region-overview/active/ResrouceSummaryCard";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getActiveProductionSummary } from "@/lib/backend/actions/region/production-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
 import { RegionActiveSummary } from "@/types/regionActiveSummary";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
+
+const NO_SUMMARY: Record<string, RegionActiveSummary> = {};
 
 export default function ActiveSummary() {
   const { filters } = useFilters();
-  const [data, setData] = useState<Record<string, RegionActiveSummary>>({});
-
-  useEffect(() => {
-    if (!filters) return;
-
-    (async () => {
-      try {
-        const raw = await getActiveProductionSummary(filters);
-        setData(raw);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, [filters]);
+  const { data = NO_SUMMARY } = useAsyncData(
+    filters ? JSON.stringify(filters) : null,
+    () => getActiveProductionSummary(filters!),
+    { errorMessage: "Failed to load active production summary" }
+  );
 
   return (
     <>

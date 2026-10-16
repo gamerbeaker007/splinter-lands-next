@@ -1,12 +1,14 @@
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
 import {
   getRenewRentalPlan,
   getRenewRentalsEligibility,
-  refreshCardCollection,
-} from "@/lib/backend/actions/land-manager/renew-rental-actions";
-import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
+} from "@/lib/frontend/land-production-data";
 import { waitForTransactions } from "@/lib/frontend/splBroadcast";
+import { unconfirmedOpTxIds } from "@/lib/shared/splTrxIds";
 import { RenewRentalPlan } from "@/types/landManager";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 interface Params {
   username: string;
@@ -41,21 +43,27 @@ export function useRenewRentalsAction({
   onSuccess,
 }: Params): UseRenewRentalsAction {
   const [busy, setBusy] = useState(false);
-  const [eligible, setEligible] = useState(false);
-  const [seasonDaysRemaining, setSeasonDaysRemaining] = useState(99);
   const [plan, setPlan] = useState<RenewRentalPlan | null>(null);
   const [result, setResult] = useState<RenewRentalsExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Lightweight eligibility check on mount so the button can be disabled
-  // proactively. Uses cached card collection — no force-fetch.
-  useEffect(() => {
-    if (!username) return;
-    getRenewRentalsEligibility().then((e) => {
-      setEligible(e.eligible);
-      setSeasonDaysRemaining(e.season_days_remaining);
-    });
-  }, [username]);
+  // proactively. Uses the memoised card collection — no fresh read. A plan
+  // fetched by `open` supersedes it.
+  const { data: initialEligibility } = useAsyncData(
+    username ? `renew-eligibility|${username}` : null,
+    () => getRenewRentalsEligibility()
+  );
+  const [planEligibility, setPlanEligibility] = useState<{
+    eligible: boolean;
+    seasonDaysRemaining: number;
+  } | null>(null);
+  const eligible =
+    planEligibility?.eligible ?? initialEligibility?.eligible ?? false;
+  const seasonDaysRemaining =
+    planEligibility?.seasonDaysRemaining ??
+    initialEligibility?.season_days_remaining ??
+    99;
 
   /** Fetches a fresh plan (force-fetch) and shows the confirm dialog. */
   const open = useCallback(async () => {
@@ -65,10 +73,10 @@ export function useRenewRentalsAction({
     try {
       const fetched = await getRenewRentalPlan();
       setPlan(fetched);
-      setEligible(
-        fetched.season_days_remaining < 7 && fetched.items.length > 0
-      );
-      setSeasonDaysRemaining(fetched.season_days_remaining);
+      setPlanEligibility({
+        eligible: fetched.season_days_remaining < 7 && fetched.items.length > 0,
+        seasonDaysRemaining: fetched.season_days_remaining,
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -113,11 +121,18 @@ export function useRenewRentalsAction({
           return;
         }
 
-        await waitForTransactions(rentRes.opTxIds ?? rentRes.txIds);
+        // The server may already have confirmed some ops (verify-on-throw);
+        // only poll the rest.
+        await waitForTransactions(
+          unconfirmedOpTxIds(
+            rentRes.opTxIds ?? rentRes.txIds,
+            rentRes.confirmedOpTxIds
+          )
+        );
 
-        // Force-bust the card collection cache so the Rental Overview shows
+        // Drop the memoised card collection so the Rental Overview shows
         // fresh rental_date / rental_days after the on-chain renewal.
-        await refreshCardCollection();
+        invalidatePlayerBrowserCaches(username);
 
         setResult({
           success: true,

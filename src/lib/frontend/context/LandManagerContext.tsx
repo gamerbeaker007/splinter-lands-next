@@ -1,5 +1,8 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useSplSession } from "@/hooks/useSplSession";
+import { getProductionOverview } from "@/lib/frontend/land-data";
 import {
   createDefaultLandManagerConfig,
   LandManagerConfig,
@@ -12,6 +15,7 @@ import {
   useCallback,
   useContext,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 export interface LandManagerAuthStatus {
@@ -24,6 +28,13 @@ interface LandManagerContextType {
   config: LandManagerConfig;
   setConfig: (config: LandManagerConfig) => void;
   allRegions: SplProductionOverviewRegion[];
+  /** True until the player's region list has loaded (browser JWT read). */
+  regionsLoading: boolean;
+  /**
+   * The server session exists but this browser holds no SPL token (cleared
+   * site data, or a login from before browser-side reads): log in again.
+   */
+  sessionMissing: boolean;
   refreshKey: number;
   triggerRefresh: () => void;
   configDialogOpen: boolean;
@@ -39,16 +50,37 @@ const LandManagerContext = createContext<LandManagerContextType | undefined>(
 interface ProviderProps {
   auth: LandManagerAuthStatus;
   initialConfig: LandManagerConfig;
-  allRegions: SplProductionOverviewRegion[];
   children: ReactNode;
 }
+
+const NO_REGIONS: SplProductionOverviewRegion[] = [];
+const noopSubscribe = () => () => {};
 
 export function LandManagerContextProvider({
   auth,
   initialConfig,
-  allRegions,
   children,
 }: ProviderProps) {
+  // Loaded once per session from the browser, as the server layout did once
+  // per page load; a failure leaves the list empty (as before). The browser
+  // session is unknown until hydration, so that counts as loading too.
+  const hydrated = useSyncExternalStore(
+    noopSubscribe,
+    () => true,
+    () => false
+  );
+  const session = useSplSession();
+  const sessionMissing = hydrated && auth.authenticated && !session;
+  const regionsKey =
+    auth.authenticated && session
+      ? `production-overview:${session.username}`
+      : null;
+  const { data: overview, loading } = useAsyncData(regionsKey, () =>
+    getProductionOverview()
+  );
+  const regionsLoading = !hydrated || loading;
+  const allRegions = overview?.regions ?? NO_REGIONS;
+
   const [config, setConfig] = useState<LandManagerConfig>(initialConfig);
   const [refreshKey, setRefreshKey] = useState(0);
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
@@ -71,6 +103,8 @@ export function LandManagerContextProvider({
         config,
         setConfig,
         allRegions,
+        regionsLoading,
+        sessionMissing,
         refreshKey,
         triggerRefresh,
         configDialogOpen,

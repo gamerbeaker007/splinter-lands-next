@@ -1,14 +1,9 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getPlayerEfficiency } from "@/lib/backend/actions/efficiency-actions";
 import { PlayerProductionSummaryEnriched } from "@/types/PlayerProductionSummaryEnriched";
-import {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { createContext, ReactNode, useContext } from "react";
 
 type PlayerEfficiencyContextType = {
   playerProductionSummaryData: PlayerProductionSummaryEnriched[] | null;
@@ -34,19 +29,10 @@ type PlayerEfficiencyProviderProps = {
 export function PlayerEfficiencyProvider({
   children,
 }: PlayerEfficiencyProviderProps) {
-  const [playerProductionSummaryData, setPlayerProductionSummaryData] =
-    useState<PlayerProductionSummaryEnriched[] | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getPlayerEfficiency();
-        setPlayerProductionSummaryData(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data } = useAsyncData("player-efficiency", () =>
+    getPlayerEfficiency()
+  );
+  const playerProductionSummaryData = data ?? null;
 
   return (
     <PlayerEfficiencyContext.Provider value={{ playerProductionSummaryData }}>

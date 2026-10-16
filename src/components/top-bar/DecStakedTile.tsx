@@ -1,15 +1,12 @@
 "use client";
 
-import {
-  getLandDecStakeSummary,
-  type LandDecStakeSummary,
-} from "@/lib/backend/actions/region/summary-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { getLandDecStakeSummary } from "@/lib/backend/actions/region/summary-actions";
 import { formatCompactNumber, formatNumber } from "@/lib/formatters";
 import Box from "@mui/material/Box";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useEffect, useState } from "react";
 
 // Same constants the Region Overview summary uses for its DEC indicator.
 const MAX_PLOTS = 150_000;
@@ -29,17 +26,9 @@ function DetailRow({ label, value }: { label: string; value: string }) {
 
 /** Top bar chip: total DEC staked on land, with the breakdown on hover. */
 export default function DecStakedTile() {
-  const [summary, setSummary] = useState<LandDecStakeSummary | null>(null);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        setSummary(await getLandDecStakeSummary());
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: summary } = useAsyncData("land-dec-stake-summary", () =>
+    getLandDecStakeSummary()
+  );
 
   const staked = summary?.totalDecStaked ?? 0;
   const needed = summary?.totalDecNeeded ?? 0;

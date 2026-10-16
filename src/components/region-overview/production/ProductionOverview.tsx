@@ -3,35 +3,25 @@
 import BaseVsBoostedPPChart from "@/components/region-overview/production/RawVsBoostedPPChart";
 import ResourcePPChart from "@/components/region-overview/production/ResourcePPChart";
 import TopRegionsByResourceChart from "@/components/region-overview/production/TopRegionsByResourceChart";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getRegionProductionData } from "@/lib/backend/actions/region/production-actions";
 import { useFilters } from "@/lib/frontend/context/FilterContext";
-import { RegionPP } from "@/types/regionProductionSummary";
 import { Skeleton, useMediaQuery, useTheme } from "@mui/material";
 import Box from "@mui/material/Box";
-import { useEffect, useState, useTransition } from "react";
 
 export function ProductionOverviewPage() {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  const [data, setData] = useState<RegionPP | null>(null);
-  const [isPending, startTransition] = useTransition();
   const { filters } = useFilters();
 
-  useEffect(() => {
-    if (!filters) return;
+  const { data, loading } = useAsyncData(
+    filters ? JSON.stringify(filters) : null,
+    () => getRegionProductionData(filters!),
+    { errorMessage: "Failed to load production data" }
+  );
 
-    startTransition(async () => {
-      try {
-        const result = await getRegionProductionData(filters);
-        setData(result);
-      } catch (error) {
-        console.error("Failed to load production data:", error);
-      }
-    });
-  }, [filters]);
-
-  if (isPending && !data) {
+  if (loading && !data) {
     return (
       <Box sx={{ p: 2 }}>
         <Skeleton

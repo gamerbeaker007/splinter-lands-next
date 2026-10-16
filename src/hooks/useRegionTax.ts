@@ -16,8 +16,8 @@ export function useRegionTaxInfo(filters?: FilterInput) {
 
   const { data, loading, error } = useAsyncData(
     filtersKey,
-    loadRegionTax,
-    "Could not load region tax information."
+    () => loadRegionTax(filtersKey),
+    { errorMessage: "Could not load region tax information." }
   );
 
   return { regionTax: data, loading, error };

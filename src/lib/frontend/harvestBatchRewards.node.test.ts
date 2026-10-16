@@ -1,4 +1,4 @@
-import { parseTrxInfo } from "@/lib/backend/api/spl/trxLookupParser";
+import { parseTrxInfo } from "@/lib/shared/spl/trxLookupParser";
 import { broadcastKeepsThenCastles } from "@/lib/frontend/broadcastMythicHarvest";
 import { broadcastHarvest } from "@/lib/frontend/executeHarvestFlow";
 import {
@@ -43,15 +43,16 @@ const lookups = vi.hoisted(() => ({
   byId: {} as Record<string, unknown>,
 }));
 
-// The real action wraps an HTTP call; replay captured trx_info envelopes
+// The real lookup is an HTTP call; replay captured trx_info envelopes
 // through the real parser instead. An id SPL does not know reads as pending,
 // exactly like the live endpoint ("Transaction [...] not found").
-vi.mock("@/lib/backend/actions/land-manager/overview-actions", async () => {
-  const { parseTrxInfo } =
-    await import("@/lib/backend/api/spl/trxLookupParser");
+vi.mock("@/lib/frontend/spl-browser-api", async () => {
+  const { parseTrxInfo } = await import("@/lib/shared/spl/trxLookupParser");
   return {
-    lookupTransaction: async (id: string) =>
-      parseTrxInfo(lookups.byId[id] as SplTrxInfo | undefined),
+    splBrowser: {
+      fetchTransactionLookup: async (id: string) =>
+        parseTrxInfo(lookups.byId[id] as SplTrxInfo | undefined),
+    },
   };
 });
 

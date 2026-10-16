@@ -10,7 +10,7 @@ import { useLandLiquidityPools } from "@/hooks/useLandLiquidityPools";
 import {
   getBulkRegionData,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { formatInt } from "@/lib/formatters";
 import {
   aggregateCosts,
@@ -303,15 +303,15 @@ export default function RegionOverview({
   const uidKey = [...uids].sort().join(",");
 
   // refreshKey is part of the cache key so a parent-driven refresh refetches;
-  // `reload` covers the local one after a single-region harvest.
+  // `refetch` covers the local one after a single-region harvest.
   const {
     data: bulk,
     loading,
-    reload,
+    refetch,
   } = useAsyncData(
     uidKey === "" ? null : `${refreshKey}|${uidKey}`,
-    loadBulkRegionData,
-    "Failed to load region data"
+    () => loadBulkRegionData(uidKey),
+    { errorMessage: "Failed to load region data" }
   );
 
   const harvestable = bulk?.harvestable ?? NO_HARVESTABLE;
@@ -323,8 +323,8 @@ export default function RegionOverview({
   // numbers it had a moment ago and looks like it never refreshed.
   const handleHarvested = useCallback(async () => {
     await invalidatePlayerRegionCaches().catch(() => {});
-    reload();
-  }, [reload]);
+    await refetch();
+  }, [refetch]);
 
   if (visibleRegions.length === 0) {
     return (

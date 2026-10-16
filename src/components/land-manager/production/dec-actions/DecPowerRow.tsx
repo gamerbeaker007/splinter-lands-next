@@ -1,7 +1,7 @@
 "use client";
 
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
-import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { DecPowerDirection } from "@/lib/shared/decPower";
 import { formatInt } from "@/lib/formatters";
 import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";

@@ -1,11 +1,11 @@
 "use client";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import {
-  RegionDECInfo,
   getRegionStakedDEC,
-} from "@/lib/backend/actions/land-manager/dec-power-actions";
-import { getWorkerEligibility } from "@/lib/backend/actions/land-manager/worker-actions";
+  getWorkerEligibility,
+} from "@/lib/frontend/land-production-data";
+import { RegionDECInfo } from "@/lib/shared/decPower";
 import { WorkerEligibilityResult } from "@/types/landManager";
-import { useEffect, useState } from "react";
 
 interface LandRegionData {
   eligibility: WorkerEligibilityResult | null;
@@ -38,33 +38,26 @@ interface LandRegionData {
   loading: boolean;
 }
 
+const NO_REGIONS: RegionDECInfo[] = [];
+
 export function useLandManagerRegionData(
   refreshKey: number = 0
 ): LandRegionData {
-  const [eligibility, setEligibility] =
-    useState<WorkerEligibilityResult | null>(null);
-  const [stakedDEC, setStakedDEC] = useState<RegionDECInfo[]>([]);
-  const [totalStaked, setTotalStaked] = useState(0);
-  const [totalRequired, setTotalRequired] = useState(0);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    Promise.all([getWorkerEligibility(), getRegionStakedDEC()]).then(
-      ([e, a]) => {
-        if (!cancelled) {
-          setEligibility(e);
-          setStakedDEC(a.regions);
-          setTotalStaked(a.totalStaked);
-          setTotalRequired(a.totalRequired);
-          setLoading(false);
-        }
-      }
-    );
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
+  const { data, loading } = useAsyncData(
+    `land-region-data|${refreshKey}`,
+    async () => {
+      const [eligibility, staked] = await Promise.all([
+        getWorkerEligibility(),
+        getRegionStakedDEC(),
+      ]);
+      return { eligibility, staked };
+    },
+    { errorMessage: "Failed to load region data" }
+  );
+  const eligibility = data?.eligibility ?? null;
+  const stakedDEC = data?.staked.regions ?? NO_REGIONS;
+  const totalStaked = data?.staked.totalStaked ?? 0;
+  const totalRequired = data?.staked.totalRequired ?? 0;
 
   const globalShortfall = Math.max(0, totalRequired - totalStaked);
   const globalExcess = Math.max(0, totalStaked - totalRequired);

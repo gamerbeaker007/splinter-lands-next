@@ -9,7 +9,7 @@ import {
   getDecBalance,
   getLandPools,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { formatError } from "@/lib/frontend/errorFormat";
 import { topUpPreviewRows } from "@/lib/frontend/preview/actionPreviewRows";
 import {

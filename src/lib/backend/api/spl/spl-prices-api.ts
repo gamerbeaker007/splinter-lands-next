@@ -2,7 +2,8 @@ import { PRICE_KEYS, SplPriceData } from "@/types/price";
 import axios from "axios";
 import * as rax from "retry-axios";
 import logger from "../../log/logger.server";
-import { DEFAULT_RETRY_CONFIG } from "./retryConfig";
+import { SPL_PRICES_API } from "@/lib/shared/config/spl-endpoints";
+import { splRetryConfig } from "./spl-retry";
 
 const splPricesClient = axios.create({
   baseURL: "https://prices.splinterlands.com/",
@@ -14,10 +15,10 @@ const splPricesClient = axios.create({
 });
 
 rax.attach(splPricesClient);
-splPricesClient.defaults.raxConfig = DEFAULT_RETRY_CONFIG;
+splPricesClient.defaults.raxConfig = splRetryConfig("[spl-prices] ");
 
 export async function getPrices(): Promise<SplPriceData> {
-  const url = `/prices`;
+  const url = SPL_PRICES_API.PRICES;
   const res = await splPricesClient.get(url);
   const data = res.data;
 

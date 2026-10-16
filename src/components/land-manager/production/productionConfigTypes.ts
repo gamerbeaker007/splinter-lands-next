@@ -1,4 +1,4 @@
-import {
+import type {
   ConfigCard,
   PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";

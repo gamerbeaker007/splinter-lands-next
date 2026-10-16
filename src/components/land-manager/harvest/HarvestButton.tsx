@@ -5,7 +5,7 @@ import {
   recordDonationsLog,
   recordHarvestLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
-import { getLandPools } from "@/lib/backend/actions/land-manager/overview-actions";
+import { getLandPools } from "@/lib/frontend/land-data";
 import { planDesiredDonations } from "@/lib/frontend/donationPayment";
 import { broadcastHarvest } from "@/lib/frontend/executeHarvestFlow";
 import { summarizeHarvestedResources } from "@/lib/frontend/harvestOps";

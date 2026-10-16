@@ -1,97 +1,44 @@
 "use client";
 
-import { getPlayerCardCollection as getPlayerCardCollectionGrouped } from "@/lib/backend/actions/player/collection-actions";
-import { useAuth } from "@/lib/frontend/context/AuthContext";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useSplSession } from "@/hooks/useSplSession";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { loadGroupedCardCollection } from "@/lib/frontend/player-data";
 import { CardFilterInput } from "@/types/filters";
-import { GroupedCardRow } from "@/types/groupedCardRow";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useMemo } from "react";
 
 /**
- * Client-side hook for fetching player card collection using server actions
- * This replaces the old cookie/JWT-based approach with server actions
- * Automatically handles JWT expiration and triggers logout
+ * The player's card collection, grouped, loaded in the browser. When the
+ * viewer is that player their SPL token is sent along; an expired/rejected
+ * token logs them out through the session's 401 handling (AuthContext).
  */
 export function usePlayerCardPP(
   player: string,
   cardFilters: CardFilterInput = {}
 ) {
-  const { logout } = useAuth();
-  const [cardPPResult, setCardPPResult] = useState<GroupedCardRow[] | null>(
-    null
-  );
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const filtersKey = useMemo(() => JSON.stringify(cardFilters), [cardFilters]);
+  const hasPlayer = Boolean(player && player.trim() !== "");
+  // Logging in/out changes what the collection includes for its owner.
+  const viewer = useSplSession()?.username ?? "";
 
-  // Monotonically increasing id so only the most recent request may write
-  // state. Guards against stale responses landing out of order when the
-  // player/filters change while a request is still in flight.
-  const requestIdRef = useRef(0);
-
-  const fetchData = useCallback(
-    async (force: boolean = false) => {
-      const requestId = ++requestIdRef.current;
-      const isStale = () => requestIdRef.current !== requestId;
-
-      if (!player || player.trim() === "") {
-        setCardPPResult(null);
-        setError("Player is required.");
-        return null;
-      }
-
-      setError(null);
-
-      try {
-        const result = await getPlayerCardCollectionGrouped(
-          player,
-          cardFilters,
-          force
-        );
-        if (isStale()) return result;
-        setCardPPResult(result);
-        return result;
-      } catch (err) {
-        if (isStale()) return null;
-        const message = err instanceof Error ? err.message : "Unknown error";
-
-        // Handle expired authentication
-        if (message === "AUTH_EXPIRED") {
-          setError("Authentication expired. Please log in again.");
-          // Trigger logout to clear all auth state
-          logout();
-          return null;
-        }
-
-        setError(`Could not load player collection: ${message}`);
-        setCardPPResult(null);
-        return null;
-      }
-    },
-    [player, cardFilters, logout]
+  const { data, loading, error, refetch } = useAsyncData(
+    hasPlayer ? `card-pp|${player}|${viewer}|${filtersKey}` : null,
+    () => loadGroupedCardCollection(player, cardFilters),
+    { errorMessage: "Unknown error" }
   );
 
   const refetchPlayerCardPP = useCallback(
     (force: boolean = false) => {
-      startTransition(() => {
-        void fetchData(force);
-      });
+      if (force && hasPlayer) invalidatePlayerBrowserCaches(player);
+      void refetch();
     },
-    [fetchData]
+    [player, hasPlayer, refetch]
   );
 
-  useEffect(() => {
-    if (!player || player === "") {
-      return;
-    }
-
-    startTransition(() => {
-      void fetchData(false);
-    });
-  }, [player, cardFilters, fetchData]);
-
   return {
-    cardPPResult,
-    loading: isPending,
-    error,
+    cardPPResult: error ? null : (data ?? null),
+    loading,
+    error: error ? `Could not load player collection: ${error}` : null,
     refetchPlayerCardPP,
   };
 }

@@ -4,7 +4,7 @@ import {
   getDecBalance,
   getLandPools,
   invalidatePlayerRegionCaches,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+} from "@/lib/frontend/land-data";
 import { formatNumber } from "@/lib/formatters";
 import { hiveTxIdsOf } from "@/lib/shared/splTrxIds";
 import { formatError } from "@/lib/frontend/errorFormat";

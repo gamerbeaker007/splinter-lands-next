@@ -2,10 +2,8 @@
 
 import { renderResourceChip } from "@/components/ui/resource/Resource";
 import { Resource } from "@/constants/resource/resource";
-import {
-  getBulkRegionData,
-  getDecBalance,
-} from "@/lib/backend/actions/land-manager/overview-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { getBulkRegionData, getDecBalance } from "@/lib/frontend/land-data";
 import { saveLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { formatCompactNumber } from "@/lib/formatters";
@@ -27,7 +25,7 @@ import {
 } from "@mui/material";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 interface Props {
   regions: SplProductionOverviewRegion[];
@@ -72,46 +70,27 @@ export default function RegionResourceSummary({
   const selected = new Set(selection);
   const dirty = draft !== null && sortedKey(draft) !== enabledKey;
 
-  const [balances, setBalances] = useState<
-    Record<string, Record<string, number>>
-  >({});
-  const [dec, setDec] = useState<number | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const visible = regions.filter((r) =>
-      enabledRegions.includes(r.region_number)
-    );
-
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      try {
-        const [bulk, decBalance] = await Promise.all([
-          visible.length > 0
-            ? getBulkRegionData(visible.map((r) => r.region_uid))
-            : Promise.resolve({ balances: {} }),
-          username ? getDecBalance(username) : Promise.resolve(0),
-        ]);
-        if (cancelled) return;
-        setBalances(bulk.balances ?? {});
-        setDec(decBalance);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabledKey, refreshKey, username]);
-
   const visibleRegions = regions.filter((r) =>
     enabledRegions.includes(r.region_number)
   );
+  const visibleUidKey = visibleRegions.map((r) => r.region_uid).join(",");
+
+  // Previous balances stay on screen while a refresh loads.
+  const { data, loading } = useAsyncData(
+    `${refreshKey}|${username}|${visibleUidKey}`,
+    async () => {
+      const [bulk, decBalance] = await Promise.all([
+        visibleUidKey
+          ? getBulkRegionData(visibleUidKey.split(","))
+          : Promise.resolve({ balances: {} }),
+        username ? getDecBalance(username) : Promise.resolve(0),
+      ]);
+      return { balances: bulk.balances ?? {}, dec: decBalance };
+    },
+    { errorMessage: "Failed to load region balances" }
+  );
+  const balances: Record<string, Record<string, number>> = data?.balances ?? {};
+  const dec = data?.dec ?? null;
 
   const breakdownFor = (symbol: string): RegionAmount[] =>
     visibleRegions.map((region) => ({

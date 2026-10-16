@@ -1,51 +1,24 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useCardDetailsAction } from "@/hooks/useCardDetails";
 import { getTodayLogs } from "@/lib/backend/actions/land-manager/log-actions";
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
+import {
+  getSettledTxOutcome,
+  lookupTxOutcome,
+} from "@/lib/frontend/settledTxOutcomes";
 import { TodayLogs } from "@/types/landManager";
 import { SplTrxResult } from "@/types/spl/trx";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import TodayPanelView from "./TodayPanelView";
 
-export default function TodayPanel({
-  refreshKey = 0,
-}: {
-  refreshKey?: number;
-}) {
-  const [data, setData] = useState<TodayLogs | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [verifiedTxIds, setVerifiedTxIds] = useState<Set<string>>(new Set());
-  const [failedTxIds, setFailedTxIds] = useState<Map<string, string>>(
-    new Map()
-  );
-  const [txResults, setTxResults] = useState<Map<string, SplTrxResult>>(
-    new Map()
-  );
-  const { cardDetails } = useCardDetailsAction();
-  // Persist across refreshes — once a tx is settled it never needs re-lookup
-  const persistentVerified = useRef<Set<string>>(new Set());
-  const persistentFailed = useRef<Map<string, string>>(new Map());
-  // The parsed payload of each confirmed tx — the only source for what the
-  // engine actually awarded (totem fragments, Labor's Luck cards).
-  const persistentResults = useRef<Map<string, SplTrxResult>>(new Map());
+/** Second (and last) lookup pass for ids SPL had not indexed yet. */
+const RECHECK_DELAY_MS = 5000;
 
-  useEffect(() => {
-    let cancelled = false;
-    getTodayLogs().then((d) => {
-      if (!cancelled) {
-        setData(d);
-        setLoading(false);
-      }
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshKey]);
-
-  useEffect(() => {
-    if (!data) return;
-    const allTxIds = [
+function loggedTxIds(data: TodayLogs | undefined): string[] {
+  if (!data) return [];
+  return [
+    ...new Set([
       ...(data.harvest?.harvest_transactions ?? []),
       ...(data.harvest?.donation_transactions ?? []),
       ...(data.makeHarvestable?.transactions ?? []),
@@ -57,67 +30,75 @@ export default function TodayPanel({
       ...(data.worker?.stake_transactions ?? []),
       ...(data.stakeDec?.transactions ?? []),
       ...(data.unstakeDec?.transactions ?? []),
-    ];
-    const unique = [...new Set(allTxIds)];
-    if (unique.length === 0) return;
+    ]),
+  ];
+}
 
-    const publish = () => {
-      setVerifiedTxIds(new Set(persistentVerified.current));
-      setFailedTxIds(new Map(persistentFailed.current));
-      setTxResults(new Map(persistentResults.current));
-    };
+export default function TodayPanel({
+  refreshKey = 0,
+}: {
+  refreshKey?: number;
+}) {
+  const { data, loading } = useAsyncData(`today-logs:${refreshKey}`, () =>
+    getTodayLogs()
+  );
+  const { cardDetails } = useCardDetailsAction();
+  // Bumped after each lookup pass so the outcomes below are re-read.
+  const [lookupVersion, setLookupVersion] = useState(0);
 
-    // Immediately reflect already-known outcomes without any API call
-    publish();
+  const txIds = useMemo(() => loggedTxIds(data), [data]);
 
-    const toPoll = unique.filter(
-      (id) =>
-        !persistentVerified.current.has(id) && !persistentFailed.current.has(id)
-    );
+  // Settled ids (this tab, any flow) are never looked up again — see
+  // settledTxOutcomes. Only still-unknown ids hit SPL, from the browser.
+  useEffect(() => {
+    const unknown = (ids: string[]) =>
+      ids.filter((id) => !getSettledTxOutcome(id));
+    const toPoll = unknown(txIds);
     if (toPoll.length === 0) return;
 
     let cancelled = false;
+    const lookupAll = (ids: string[]) =>
+      Promise.all(ids.map((txId) => lookupTxOutcome(txId)));
 
-    async function lookupAll(ids: string[]) {
-      await Promise.all(
-        ids.map(async (txId) => {
-          const outcome = await lookupTransaction(txId);
-          if (outcome.status === "success") {
-            persistentVerified.current.add(txId);
-            persistentResults.current.set(txId, outcome.result);
-          } else if (outcome.status === "failed")
-            persistentFailed.current.set(txId, outcome.error);
-        })
-      );
-    }
-
-    async function poll(ids: string[]) {
-      await lookupAll(ids);
+    void (async () => {
+      await lookupAll(toPoll);
       if (cancelled) return;
-      publish();
+      setLookupVersion((v) => v + 1);
 
-      const remaining = ids.filter(
-        (id) =>
-          !persistentVerified.current.has(id) &&
-          !persistentFailed.current.has(id)
-      );
+      const remaining = unknown(toPoll);
       if (remaining.length === 0) return;
-      await new Promise((r) => setTimeout(r, 5000));
+      await new Promise((r) => setTimeout(r, RECHECK_DELAY_MS));
       if (cancelled) return;
       await lookupAll(remaining);
-      if (!cancelled) publish();
-    }
-
-    poll(toPoll);
+      if (!cancelled) setLookupVersion((v) => v + 1);
+    })();
     return () => {
       cancelled = true;
     };
-  }, [data]);
+  }, [txIds]);
+
+  // The parsed payload of each confirmed tx is the only source for what the
+  // engine actually awarded (totem fragments, Labor's Luck cards).
+  const { verifiedTxIds, failedTxIds, txResults } = useMemo(() => {
+    void lookupVersion; // re-read the record after each lookup pass
+    const verified = new Set<string>();
+    const failed = new Map<string, string>();
+    const results = new Map<string, SplTrxResult>();
+    for (const id of txIds) {
+      const outcome = getSettledTxOutcome(id);
+      if (outcome?.status === "success") {
+        verified.add(id);
+        results.set(id, outcome.result);
+      } else if (outcome?.status === "failed") failed.set(id, outcome.error);
+    }
+    return { verifiedTxIds: verified, failedTxIds: failed, txResults: results };
+  }, [txIds, lookupVersion]);
 
   return (
     <TodayPanelView
-      data={data}
-      loading={loading}
+      data={data ?? null}
+      // A refresh keeps showing the previous day log instead of a skeleton.
+      loading={loading && !data}
       verifiedTxIds={verifiedTxIds}
       failedTxIds={failedTxIds}
       txResults={txResults}

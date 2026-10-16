@@ -1,4 +1,4 @@
-import { DecPowerDirection } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import { DecPowerDirection } from "@/lib/shared/decPower";
 import { Bolt, FlashOff, SvgIconComponent } from "@mui/icons-material";
 
 export interface DecPowerVariant {

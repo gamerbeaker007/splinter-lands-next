@@ -4,7 +4,7 @@ import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { useCancelRentalAction } from "@/hooks/useCancelRentalAction";
 import { useRentedCardsList } from "@/hooks/useRentedCardsList";
 import { useUnstakeWorkerAction } from "@/hooks/useUnstakeWorkerAction";
-import { type RentedCardEntry } from "@/lib/backend/actions/land-manager/rental-actions";
+import { type RentedCardEntry } from "@/lib/shared/rentals";
 import { formatInt, formatNumber } from "@/lib/formatters";
 import { Cancel, LinkOff, RemoveCircleOutline } from "@mui/icons-material";
 import {

@@ -10,8 +10,8 @@ import {
   useLandManagerContext,
 } from "@/lib/frontend/context/LandManagerContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
+import LandManagerPageSkeleton from "@/app/land-manager/loading";
 import { LandManagerConfig } from "@/types/landManager";
-import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import {
   Settings as SettingsIcon,
   WarningAmber as WarningAmberIcon,
@@ -35,7 +35,6 @@ import { ReactNode } from "react";
 interface Props {
   auth: LandManagerAuthStatus;
   initialConfig: LandManagerConfig;
-  allRegions: SplProductionOverviewRegion[];
   children: ReactNode;
 }
 
@@ -116,6 +115,8 @@ function LandManagerShell({ children }: { children: ReactNode }) {
     config,
     setConfig,
     allRegions,
+    regionsLoading,
+    sessionMissing,
     triggerRefresh,
     configDialogOpen,
     configDialogSection,
@@ -125,8 +126,12 @@ function LandManagerShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   usePageTitle("Land Manager");
 
-  if (!auth.authenticated) {
+  if (!auth.authenticated || sessionMissing) {
     return <NotLoggedIn />;
+  }
+  // Pages expect the region list on mount (it used to be server-rendered).
+  if (regionsLoading) {
+    return <LandManagerPageSkeleton />;
   }
 
   const activeTabIndex = NAV_TABS.findIndex((t) =>
@@ -226,7 +231,6 @@ function LandManagerShell({ children }: { children: ReactNode }) {
 export default function LandManagerProvider({
   auth,
   initialConfig,
-  allRegions,
   children,
 }: Props) {
   return (
@@ -234,7 +238,6 @@ export default function LandManagerProvider({
       key={auth.username ?? "anonymous"}
       auth={auth}
       initialConfig={initialConfig}
-      allRegions={allRegions}
     >
       <LandManagerShell>{children}</LandManagerShell>
     </LandManagerContextProvider>

@@ -1,12 +1,12 @@
 "use client";
 
+import { useLocalStorageValue } from "@/hooks/useLocalStorageValue";
 import {
   createContext,
   ReactNode,
   useCallback,
   useContext,
   useMemo,
-  useSyncExternalStore,
 } from "react";
 
 const STORAGE_KEY = "selected-player";
@@ -16,39 +16,6 @@ type PlayerContextType = {
   setSelectedPlayer: (player: string) => void;
   clearPlayer: () => void;
 };
-
-// localStorage is the source of truth, read through useSyncExternalStore.
-// Reading it in an effect instead would mean a second render on every mount
-// (and a synchronous setState inside that effect); this way the server
-// snapshot is "" and the client renders the stored player straight away.
-const listeners = new Set<() => void>();
-
-function subscribe(onChange: () => void) {
-  listeners.add(onChange);
-  // Also picks up changes made in another tab.
-  window.addEventListener("storage", onChange);
-  return () => {
-    listeners.delete(onChange);
-    window.removeEventListener("storage", onChange);
-  };
-}
-
-function getSnapshot() {
-  return localStorage.getItem(STORAGE_KEY) ?? "";
-}
-
-function getServerSnapshot() {
-  return "";
-}
-
-function writePlayer(player: string) {
-  if (player) {
-    localStorage.setItem(STORAGE_KEY, player);
-  } else {
-    localStorage.removeItem(STORAGE_KEY);
-  }
-  listeners.forEach((onChange) => onChange());
-}
 
 const PlayerContext = createContext<PlayerContextType | null>(null);
 
@@ -65,19 +32,17 @@ type PlayerProviderProps = {
 };
 
 export function PlayerProvider({ children }: PlayerProviderProps) {
-  const selectedPlayer = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getServerSnapshot
+  // localStorage is the source of truth (also follows other tabs); "" on the
+  // server and during hydration, then the stored player.
+  const [stored, setStored] = useLocalStorageValue(STORAGE_KEY);
+  const selectedPlayer = stored ?? "";
+
+  const setSelectedPlayer = useCallback(
+    (player: string) => setStored(player.trim().toLowerCase()),
+    [setStored]
   );
 
-  const setSelectedPlayer = useCallback((player: string) => {
-    writePlayer(player.trim().toLowerCase());
-  }, []);
-
-  const clearPlayer = useCallback(() => {
-    writePlayer("");
-  }, []);
+  const clearPlayer = useCallback(() => setStored(""), [setStored]);
 
   const value = useMemo(
     () => ({ selectedPlayer, setSelectedPlayer, clearPlayer }),

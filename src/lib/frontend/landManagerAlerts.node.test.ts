@@ -4,7 +4,7 @@ import {
   deriveDecStatus,
   LandManagerAlertsInput,
 } from "@/lib/frontend/landManagerAlerts";
-import type { RegionDECInfo } from "@/lib/backend/actions/land-manager/dec-power-actions";
+import type { RegionDECInfo } from "@/lib/shared/decPower";
 import type { CardAlerts, DeedInfo } from "@/types/cardAlerts";
 import { describe, expect, it } from "vitest";
 

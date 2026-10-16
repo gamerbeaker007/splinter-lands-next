@@ -1,6 +1,6 @@
 "use client";
 
-import { ResourceHubMetrics } from "@/generated/prisma/client";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -11,29 +11,20 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 import TradeHubCumulativeBurnChart from "./TradeHubCumulativeBurnChart";
 import TradeHubLineChart from "./TradeHubLineChart";
 import TradeHubQuantityHistoryChart from "./TradeHubQuantityHistoryChart";
 import TradeHubVolumeChart from "./TradeHubVolumeChart";
 
 export function TradeHubPage() {
-  const [historicalTradeHubMetrics, setHistoricalTradeHubMetrics] = useState<
-    ResourceHubMetrics[] | null
-  >(null);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const data = await getAllTradeHubData();
-        setHistoricalTradeHubMetrics(data);
-      } catch (error) {
-        console.error(error);
-      }
-    })();
-  }, []);
+  const { data: historicalTradeHubMetrics } = useAsyncData(
+    "trade-hub",
+    () => getAllTradeHubData(),
+    { errorMessage: "Failed to load trade hub data" }
+  );
 
   return (
     <>

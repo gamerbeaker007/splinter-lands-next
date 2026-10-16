@@ -2,95 +2,13 @@
 
 import { DONATION_ACCOUNT, type DonationCurrency } from "@/constants/support";
 import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
-import {
-  fetchHiveAccountBalances,
-  fetchHiveTransfer,
-} from "@/lib/backend/api/hive/hive-account-api";
-import {
-  fetchPlayerBalances,
-  fetchTransactionLookup,
-} from "@/lib/backend/api/spl/spl-base-api";
+import { fetchHiveTransfer } from "@/lib/backend/api/hive/hive-account-api";
+import { fetchTransactionLookup } from "@/lib/backend/api/spl/spl-base-api";
 import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
-import {
-  fetchValidatorVotesByAccount,
-  ValidatorVote,
-} from "@/lib/backend/api/spl/spl-validator-api";
 import logger from "@/lib/backend/log/logger.server";
 import { prisma } from "@/lib/prisma";
 import { TRX_VERIFY_POLL_MS, TRX_VERIFY_TIMEOUT_MS } from "@/types/landManager";
 import { Decimal } from "@prisma/client/runtime/client";
-
-// ── Validator votes ───────────────────────────────────────────────────────────
-
-export async function getValidatorVotes(): Promise<{
-  votes: ValidatorVote[];
-  error?: string;
-}> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return { votes: [], error: "Not authenticated" };
-  }
-  try {
-    const votes = await fetchValidatorVotesByAccount(auth.username);
-    return { votes };
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : "Unknown error";
-    logger.warn(`[support] Failed to fetch validator votes: ${msg}`);
-    return { votes: [], error: msg };
-  }
-}
-
-// ── Balances ──────────────────────────────────────────────────────────────────
-
-export async function getSupportBalances(): Promise<{
-  dec: number;
-  sps: number;
-  hive: number;
-  hbd: number;
-  error?: string;
-}> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return { dec: 0, sps: 0, hive: 0, hbd: 0, error: "Not authenticated" };
-  }
-
-  const [splResult, hiveResult] = await Promise.allSettled([
-    fetchPlayerBalances(auth.username, ["DEC", "SPS"]),
-    fetchHiveAccountBalances(auth.username),
-  ]);
-
-  let dec = 0;
-  let sps = 0;
-  let hive = 0;
-  let hbd = 0;
-  const errors: string[] = [];
-
-  if (splResult.status === "fulfilled") {
-    for (const b of splResult.value) {
-      if (b.token === "DEC") dec = Number(b.balance);
-      if (b.token === "SPS") sps = Number(b.balance);
-    }
-  } else {
-    errors.push("Could not load DEC/SPS balances");
-    logger.warn(`[support] SPL balance fetch failed: ${splResult.reason}`);
-  }
-
-  if (hiveResult.status === "fulfilled") {
-    hive = hiveResult.value.hive;
-    hbd = hiveResult.value.hbd;
-  } else {
-    errors.push("Could not load HIVE/HBD balances");
-    logger.warn(`[support] Hive balance fetch failed: ${hiveResult.reason}`);
-  }
-
-  return {
-    dec,
-    sps,
-    hive,
-    hbd,
-    error: errors.length > 0 ? errors.join("; ") : undefined,
-  };
-}
 
 // ── Donation recording ────────────────────────────────────────────────────────
 //

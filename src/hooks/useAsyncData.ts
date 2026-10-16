@@ -2,92 +2,130 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-/**
- * A finished load, tagged with the request it belongs to. Anything that would
- * otherwise be reset at the start of a new request is derived from whether
- * this tag still matches the current one.
- */
-interface Snapshot<T> {
-  tag: string;
-  data: T | null;
+interface Settled<T> {
+  key: string;
+  data: T | undefined;
   error: string | null;
 }
 
-export interface AsyncData<T> {
-  /** Result of the current request, or null while it is still in flight. */
-  data: T | null;
+export interface UseAsyncDataOptions {
+  /** Keep showing the previous key's data while the new key loads (default `true`). */
+  keepPreviousData?: boolean;
+  /** Error message when the loader throws a non-`Error` value. */
+  errorMessage?: string;
+}
+
+export interface UseAsyncDataReturn<T> {
+  data: T | undefined;
   loading: boolean;
   error: string | null;
-  /** Re-runs `load` for the current key. */
-  reload: () => void;
+  /**
+   * Re-runs the loader for the current key; never rejects (failures land in `error`).
+   * `silent` keeps `loading` false, for a background refresh that shouldn't flash a spinner.
+   */
+  refetch: (options?: { silent?: boolean }) => Promise<void>;
+  /** Replaces the current key's data locally (e.g. with a fresher result polled elsewhere). */
+  mutate: (data: T) => void;
+}
+
+function toErrorMessage(err: unknown, fallback: string): string {
+  return err instanceof Error ? err.message : fallback;
 }
 
 /**
- * Runs `load` whenever `key` changes, and tracks loading/error around it.
+ * Loads data for `key` and reloads whenever `key` changes; `key = null` means "nothing
+ * to load" (disabled / missing input). Encode every input the loader depends on in `key`.
+ * The loader's `signal` aborts when the key changes or the component unmounts.
  *
- * `loading`, the error and the reset-to-empty on a null key are all *derived*
- * from whether the stored snapshot still matches the current key, so the hook
- * never writes state synchronously while the effect runs — the single write
- * happens after the awaited load settles. That is what keeps callers clear of
- * `react-hooks/set-state-in-effect` (and of the cascading render it warns
- * about) without every hook hand-rolling its own cancellation flag.
- *
- * `key` is null when there is nothing to load; the hook then stays idle with
- * `data: null, loading: false`.
- *
- * `load` receives the (non-null) key, so a single-argument server action can
- * be passed straight in. Only `key` (and `reload`) decide *when* a load runs —
- * the latest `load` is read through a ref — so an inline closure over props is
- * fine and will not cause a refetch loop. Whatever the loader reads besides
- * the key must therefore be reflected in the key.
+ * `loading` is derived (settled key ≠ requested key), so no state is set synchronously
+ * inside the effect, and a response for a superseded key is dropped instead of
+ * overwriting newer data.
  */
 export function useAsyncData<T>(
   key: string | null,
-  load: (key: string) => Promise<T>,
-  errorMessage = "Failed to load data"
-): AsyncData<T> {
-  const [snapshot, setSnapshot] = useState<Snapshot<T> | null>(null);
-  const [reloadToken, setReloadToken] = useState(0);
+  loader: (signal: AbortSignal) => Promise<T>,
+  options: UseAsyncDataOptions = {}
+): UseAsyncDataReturn<T> {
+  const { keepPreviousData = true, errorMessage = "Failed to load data" } =
+    options;
+  const [settled, setSettled] = useState<Settled<T> | null>(null);
+  const [refetching, setRefetching] = useState(0);
 
-  // Read at load time rather than depended on, so callers may pass a closure.
-  const loadRef = useRef(load);
+  const loaderRef = useRef(loader);
+  const keyRef = useRef(key);
+  const errorMessageRef = useRef(errorMessage);
   useEffect(() => {
-    loadRef.current = load;
+    loaderRef.current = loader;
+    keyRef.current = key;
+    errorMessageRef.current = errorMessage;
   });
 
-  const tag = key === null ? null : `${reloadToken}\u0000${key}`;
-  const fresh = tag !== null && snapshot?.tag === tag;
+  const settle = useCallback(
+    (settledKey: string, result: { data: T } | { error: unknown }) => {
+      setSettled((prev) =>
+        "data" in result
+          ? { key: settledKey, data: result.data, error: null }
+          : {
+              key: settledKey,
+              data: prev?.key === settledKey ? prev.data : undefined,
+              error: toErrorMessage(result.error, errorMessageRef.current),
+            }
+      );
+    },
+    []
+  );
 
   useEffect(() => {
-    if (key === null || tag === null) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const data = await loadRef.current(key);
-        if (!cancelled) setSnapshot({ tag, data, error: null });
-      } catch (err) {
-        if (cancelled) return;
-        console.error(`${errorMessage}:`, err);
-        setSnapshot({
-          tag,
-          data: null,
-          error: err instanceof Error ? err.message : errorMessage,
-        });
+    if (key === null) return;
+    const controller = new AbortController();
+    loaderRef.current(controller.signal).then(
+      (data) => {
+        if (!controller.signal.aborted) settle(key, { data });
+      },
+      (error: unknown) => {
+        if (!controller.signal.aborted) settle(key, { error });
       }
-    })();
+    );
+    return () => controller.abort();
+  }, [key, settle]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [key, tag, errorMessage]);
+  const refetch = useCallback(
+    async (options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      const requestKey = keyRef.current;
+      if (requestKey === null) return;
+      if (!silent) setRefetching((n) => n + 1);
+      try {
+        const data = await loaderRef.current(new AbortController().signal);
+        if (keyRef.current === requestKey) settle(requestKey, { data });
+      } catch (error) {
+        if (keyRef.current === requestKey) settle(requestKey, { error });
+      } finally {
+        if (!silent) setRefetching((n) => n - 1);
+      }
+    },
+    [settle]
+  );
 
-  const reload = useCallback(() => setReloadToken((n) => n + 1), []);
+  const mutate = useCallback(
+    (data: T) => {
+      const currentKey = keyRef.current;
+      if (currentKey !== null) settle(currentKey, { data });
+    },
+    [settle]
+  );
 
+  const isCurrent = key !== null && settled?.key === key;
   return {
-    data: fresh ? snapshot.data : null,
-    error: fresh ? snapshot.error : null,
-    loading: tag !== null && !fresh,
-    reload,
+    data:
+      key === null
+        ? undefined
+        : isCurrent || keepPreviousData
+          ? settled?.data
+          : undefined,
+    loading: key !== null && (!isCurrent || refetching > 0),
+    error: isCurrent ? settled.error : null,
+    refetch,
+    mutate,
   };
 }

@@ -5,7 +5,8 @@ import CardTableIcon from "@/components/player-overview/collection-overview/Card
 import FoilIcon from "@/components/ui/FoilIcon";
 import ScrollableTableContainer from "@/components/ui/ScrollableTableContainer";
 import { usePersistedCardFilters } from "@/hooks/usePersistedCardFilters";
-import { getPlayerLandCards } from "@/lib/backend/actions/player/landCards-actions";
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { loadPlayerLandCards } from "@/lib/frontend/player-data";
 import { formatInt } from "@/lib/formatters";
 import { filterAvailableCards } from "@/lib/frontend/utils/landCardFilters";
 import { land_hammer_icon_url } from "@/lib/shared/statics_icon_urls";
@@ -197,10 +198,17 @@ export default function WorkerSelectDialog({
   onConfirm,
 }: Props) {
   const { theme } = useAppTheme();
-  const [cards, setCards] = useState<PlayerLandCard[] | null>(null);
-  // Mounted on demand, so it always opens in a loading state.
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // Load the player's land-eligible cards (excludes cards staked on land).
+  const {
+    data: loadedCards,
+    loading,
+    error,
+  } = useAsyncData(
+    open ? `land-cards|${username}` : null,
+    () => loadPlayerLandCards(username),
+    { errorMessage: "Failed to load cards" }
+  );
+  const cards: PlayerLandCard[] | null = loadedCards ?? null;
   const {
     filters: filter,
     setFilters: setFilter,
@@ -224,27 +232,6 @@ export default function WorkerSelectDialog({
       setSortDir(key === "name" || key === "set" ? "asc" : "desc");
     }
   };
-
-  // Load the player's land-eligible cards (excludes cards staked on land).
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    getPlayerLandCards(username)
-      .then((data) => {
-        if (cancelled) return;
-        setCards(data);
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setError(err instanceof Error ? err.message : "Failed to load cards");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, username]);
 
   const excludeSet = useMemo(() => new Set(excludeUids), [excludeUids]);
 

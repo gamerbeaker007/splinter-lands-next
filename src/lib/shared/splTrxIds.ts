@@ -20,3 +20,17 @@ export function hiveTxIdOf(opTxId: string): string {
 export function hiveTxIdsOf(opTxIds: string[]): string[] {
   return [...new Set(opTxIds.map(hiveTxIdOf))];
 }
+
+/**
+ * The op ids still to poll for: drops those the server already confirmed
+ * on-chain (on-behalf verify-on-throw), so the browser doesn't look them up a
+ * second time.
+ */
+export function unconfirmedOpTxIds(
+  opTxIds: string[],
+  confirmed: string[] | undefined
+): string[] {
+  if (!confirmed || confirmed.length === 0) return opTxIds;
+  const done = new Set(confirmed);
+  return opTxIds.filter((id) => !done.has(id));
+}

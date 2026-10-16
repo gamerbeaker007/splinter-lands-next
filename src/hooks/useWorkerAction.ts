@@ -1,23 +1,15 @@
 import {
-  getPurchaseAuthorityStatus,
-  getRentalAuthorityStatus,
-} from "@/lib/backend/actions/land-manager/authority-actions";
-import {
-  BuyExecutionPlan,
-  getBuyExecutionPlan,
-} from "@/lib/backend/actions/land-manager/buy-actions";
-import {
   recordPurchaseLog,
   recordRentalLog,
 } from "@/lib/backend/actions/land-manager/log-actions";
-import { getDecBalance } from "@/lib/backend/actions/land-manager/overview-actions";
 import { purchaseOnBehalfOf } from "@/lib/backend/actions/land-manager/purchase-broadcast-actions";
 import { rentOnBehalfOf } from "@/lib/backend/actions/land-manager/rent-broadcast-actions";
+import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
+import { getAuthorityStatus, getDecBalance } from "@/lib/frontend/land-data";
 import {
+  getBuyExecutionPlan,
   getRentalExecutionPlan,
-  RentalExecutionPlan,
-} from "@/lib/backend/actions/land-manager/rental-actions";
-import { refreshCardCollection } from "@/lib/backend/actions/land-manager/renew-rental-actions";
+} from "@/lib/frontend/land-production-data";
 import {
   broadcastOperations,
   waitForTransactions,
@@ -26,6 +18,11 @@ import {
   buildStakeWorkersOp,
   StakeWorkerCard,
 } from "@/lib/shared/operations/opBuilders";
+import { unconfirmedOpTxIds } from "@/lib/shared/splTrxIds";
+import type {
+  BuyExecutionPlan,
+  RentalExecutionPlan,
+} from "@/lib/shared/workerPlan";
 import {
   BuyConfig,
   RentalConfig,
@@ -97,12 +94,22 @@ function rentMode(rental: RentalConfig, filteredDeedUids?: string[]) {
   return {
     label: "rent",
     notConfiguredError: "Server-side renting is not configured.",
-    fetchPlan: () => getRentalExecutionPlan(rental, filteredDeedUids),
-    authority: getRentalAuthorityStatus,
+    fetchPlan: (fresh = false) =>
+      getRentalExecutionPlan(rental, filteredDeedUids, fresh),
+    authority: () => getAuthorityStatus("rental"),
     async broadcast(picks: WorkerPlanPick[]) {
       const marketIds = picks.map((p) => p.market_id);
       const res = await rentOnBehalfOf(marketIds);
-      return { ...res, verb: "Rent" };
+      // Rent results aren't read, so ops the server already confirmed
+      // (verify-on-throw) needn't be polled again.
+      return {
+        ...res,
+        verb: "Rent",
+        pollIds: unconfirmedOpTxIds(
+          res.opTxIds ?? res.txIds,
+          res.confirmedOpTxIds
+        ),
+      };
     },
     record: (
       player: string,
@@ -128,15 +135,17 @@ function buyMode(buy: BuyConfig, filteredDeedUids?: string[]) {
   return {
     label: "buy",
     notConfiguredError: "Server-side buying is not configured.",
-    fetchPlan: () => getBuyExecutionPlan(buy, filteredDeedUids),
-    authority: getPurchaseAuthorityStatus,
+    fetchPlan: (fresh = false) =>
+      getBuyExecutionPlan(buy, filteredDeedUids, fresh),
+    authority: () => getAuthorityStatus("purchase"),
     async broadcast(picks: WorkerPlanPick[]) {
       const items = picks.map((p) => ({
         market_id: p.market_id,
         price_dec: p.total_dec,
       }));
       const res = await purchaseOnBehalfOf(items);
-      return { ...res, verb: "Buy" };
+      // Every op is polled: the purchase results carry the actual DEC/USD.
+      return { ...res, verb: "Buy", pollIds: res.opTxIds ?? res.txIds };
     },
     record: (
       player: string,
@@ -228,7 +237,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
     let balance: number;
     try {
       [exec, balance] = await Promise.all([
-        s.fetchPlan(),
+        s.fetchPlan(true),
         getDecBalance(username),
       ]);
     } catch (err) {
@@ -290,9 +299,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         return;
       }
 
-      const actionResults = await waitForTransactions(
-        actionRes.opTxIds ?? actionRes.txIds
-      );
+      const actionResults = await waitForTransactions(actionRes.pollIds);
 
       // Prefer actual DEC/USD from confirmed purchase results; fall back to the
       // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
@@ -363,7 +370,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         await waitForTransactions(stakeRes.opTxIds);
       }
 
-      await refreshCardCollection();
+      invalidatePlayerBrowserCaches(username);
 
       const stakedCount = exec.plan.items
         .filter(

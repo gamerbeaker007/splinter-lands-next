@@ -25,7 +25,7 @@ export function NewVersionSnackbarView({
       <Alert
         severity="info"
         variant="filled"
-        sx={{borderRadius: 6}}
+        sx={{ borderRadius: 6 }}
         action={
           <>
             <Button

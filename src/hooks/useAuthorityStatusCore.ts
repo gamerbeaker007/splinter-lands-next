@@ -1,14 +1,16 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
+import { useSplSession } from "@/hooks/useSplSession";
 import { invalidateRentalAuthorityCache } from "@/lib/backend/actions/land-manager/authority-actions";
-import { lookupTransaction } from "@/lib/backend/actions/land-manager/overview-actions";
 import { formatError } from "@/lib/frontend/errorFormat";
+import { splBrowser } from "@/lib/frontend/spl-browser-api";
 import {
   broadcastOperations,
   KeychainKeyTypes,
 } from "@/lib/frontend/splBroadcast";
 import { buildSetAuthorityOp } from "@/lib/shared/operations/opBuilders";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export interface AuthorityActionResult {
   success: boolean;
@@ -46,9 +48,9 @@ export interface UseAuthorityStatus {
 interface Config {
   /** Which authority list this hook manages — drives the op field + result read. */
   kind: "rental" | "purchase";
-  /** Load the current (possibly cached) status. */
+  /** Load the current (possibly memoised) status. */
   load: () => Promise<AuthorityCoreStatus>;
-  /** Force-refresh the status, bypassing the server cache. */
+  /** Force-refresh the status, bypassing the memo. */
   reload: () => Promise<AuthorityCoreStatus>;
 }
 
@@ -59,8 +61,10 @@ const CONFIRM_TIMEOUT_MS = 30_000;
  * Authority status + grant/revoke for a single authority kind. Grant/revoke:
  * 1. Refresh the live list (prevent stale-cache overwrites).
  * 2. Build and broadcast `sm_set_authority` via Hive Keychain (active key).
- * 3. Poll `/transactions/lookup` until SPL confirms the tx (or 30s elapses).
- * 4. Update local state directly from the confirmed tx result.
+ * 3. Poll `/transactions/lookup` (from the browser) until SPL confirms the tx
+ *    (or 30s elapses).
+ * 4. Update local state directly from the confirmed tx result, and drop the
+ *    server's on-behalf validation cache so it sees the new grant.
  *
  * Rental and purchase share the same cache entry, so invalidating either
  * flushes both.
@@ -70,36 +74,26 @@ export function useAuthorityStatusCore({
   load,
   reload,
 }: Config): UseAuthorityStatus {
-  const [status, setStatus] = useState<AuthorityCoreStatus | null>(null);
-  // Starts true: the initial load is kicked off by the effect below, and
-  // flipping the flag there would be a synchronous write during the effect.
-  const [loading, setLoading] = useState(true);
+  const session = useSplSession();
+  const {
+    data,
+    loading: loadingStatus,
+    mutate: setStatus,
+  } = useAsyncData(`authority:${kind}:${session?.username ?? ""}`, () =>
+    load()
+  );
+  const status = data ?? null;
+  const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(async () => {
-    setLoading(true);
+    setRefreshing(true);
     try {
       setStatus(await reload());
     } finally {
-      setLoading(false);
+      setRefreshing(false);
     }
-  }, [reload]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const next = await load();
-        if (!cancelled) setStatus(next);
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [load]);
+  }, [reload, setStatus]);
 
   const setAuthority = useCallback(
     async (next: string[]): Promise<AuthorityActionResult> => {
@@ -129,7 +123,7 @@ export function useAuthorityStatusCore({
         const deadline = Date.now() + CONFIRM_TIMEOUT_MS;
         while (Date.now() < deadline) {
           await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS));
-          const outcome = await lookupTransaction(txId);
+          const outcome = await splBrowser.fetchTransactionLookup(txId);
           if (outcome.status === "failed") {
             return { success: false, txId, error: outcome.error };
           }
@@ -141,11 +135,11 @@ export function useAuthorityStatusCore({
             const newAuthorized = newAccounts
               .map((a) => a.toLowerCase())
               .includes(svc);
-            setStatus((prev) =>
-              prev
-                ? { ...prev, accounts: newAccounts, authorized: newAuthorized }
-                : prev
-            );
+            setStatus({
+              ...status,
+              accounts: newAccounts,
+              authorized: newAuthorized,
+            });
             void invalidateRentalAuthorityCache();
             return { success: true, txId, confirmed: true };
           }
@@ -158,7 +152,7 @@ export function useAuthorityStatusCore({
         setBusy(false);
       }
     },
-    [status, kind]
+    [status, kind, setStatus]
   );
 
   const grant = useCallback(async (): Promise<AuthorityActionResult> => {
@@ -176,7 +170,7 @@ export function useAuthorityStatusCore({
     const next = [...fresh.accounts];
     if (!lowerSet.has(svc.toLowerCase())) next.push(svc);
     return setAuthority(next);
-  }, [status, reload, setAuthority]);
+  }, [status, reload, setAuthority, setStatus]);
 
   const revoke = useCallback(async (): Promise<AuthorityActionResult> => {
     if (!status?.serviceAccount) {
@@ -189,7 +183,14 @@ export function useAuthorityStatusCore({
     ).toLowerCase();
     const next = fresh.accounts.filter((a) => a.toLowerCase() !== target);
     return setAuthority(next);
-  }, [status, reload, setAuthority]);
+  }, [status, reload, setAuthority, setStatus]);
 
-  return { status, loading, busy, refresh, grant, revoke };
+  return {
+    status,
+    loading: loadingStatus || refreshing,
+    busy,
+    refresh,
+    grant,
+    revoke,
+  };
 }

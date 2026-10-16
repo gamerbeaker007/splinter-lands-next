@@ -4,6 +4,7 @@ import ActionCard, {
   ActionCardColumn,
   buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { useTopUpPoolsAction } from "@/hooks/useTopUpPoolsAction";
 import { getTopUpWindowInfo } from "@/lib/backend/actions/land-manager/log-actions";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
@@ -20,7 +21,7 @@ import {
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import WaterDropIcon from "@mui/icons-material/WaterDrop";
 import { Chip, Stack, Tooltip } from "@mui/material";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 
 interface Props {
   username: string;
@@ -32,6 +33,15 @@ interface Props {
   onSuccess: () => void;
 }
 
+const DEFAULT_WINDOW_INFO: TopUpWindowInfo = {
+  hours: HOURS_PER_WEEK,
+  disabled: false,
+  source: "fallback",
+  reason:
+    "No successful Top Up Pools run found yet; defaulting to a full 7-day window.",
+  lastCompletedAt: null,
+};
+
 export default function TopUpPoolsRow({
   username,
   visibleRegions,
@@ -41,61 +51,22 @@ export default function TopUpPoolsRow({
   onPlan,
   onSuccess,
 }: Props) {
-  const [windowInfo, setWindowInfo] = useState<TopUpWindowInfo>({
-    hours: HOURS_PER_WEEK,
-    disabled: false,
-    source: "fallback",
-    reason:
-      "No successful Top Up Pools run found yet; defaulting to a full 7-day window.",
-    lastCompletedAt: null,
-  });
-  const [windowLoading, setWindowLoading] = useState(true);
-
-  const reloadWindowInfo = useCallback(async () => {
-    setWindowLoading(true);
-    try {
-      const info = await getTopUpWindowInfo(username);
-      setWindowInfo(info);
-    } catch {
-      setWindowInfo({
-        hours: HOURS_PER_WEEK,
-        disabled: false,
-        source: "fallback",
-        reason:
-          "Could not read Top Up history; defaulting to a full 7-day window.",
-        lastCompletedAt: null,
-      });
-    } finally {
-      setWindowLoading(false);
-    }
-  }, [username]);
-
-  useEffect(() => {
-    let mounted = true;
-
-    (async () => {
-      try {
-        const info = await getTopUpWindowInfo(username);
-        if (mounted) setWindowInfo(info);
-      } catch {
-        if (!mounted) return;
-        setWindowInfo({
-          hours: HOURS_PER_WEEK,
-          disabled: false,
-          source: "fallback",
-          reason:
-            "Could not read Top Up history; defaulting to a full 7-day window.",
-          lastCompletedAt: null,
-        });
-      } finally {
-        if (mounted) setWindowLoading(false);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-    };
-  }, [username]);
+  const {
+    data,
+    loading: windowLoading,
+    mutate: setWindowInfo,
+    refetch: reloadWindowInfo,
+  } = useAsyncData(`top-up-window:${username}`, () =>
+    getTopUpWindowInfo(username).catch((): TopUpWindowInfo => ({
+      hours: HOURS_PER_WEEK,
+      disabled: false,
+      source: "fallback",
+      reason:
+        "Could not read Top Up history; defaulting to a full 7-day window.",
+      lastCompletedAt: null,
+    }))
+  );
+  const windowInfo = data ?? DEFAULT_WINDOW_INFO;
 
   const { openConfigDialog } = useLandManagerContext();
 
@@ -113,10 +84,9 @@ export default function TopUpPoolsRow({
         "Top Up Pools just completed successfully. A 1-hour cooldown is now active.",
       lastCompletedAt: new Date().toISOString(),
     });
-    setWindowLoading(false);
     void reloadWindowInfo();
     onSuccess();
-  }, [onSuccess, reloadWindowInfo]);
+  }, [onSuccess, reloadWindowInfo, setWindowInfo]);
 
   const action = useTopUpPoolsAction({
     username,

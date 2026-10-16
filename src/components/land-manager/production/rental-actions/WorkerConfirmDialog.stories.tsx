@@ -1,5 +1,7 @@
-import { BuyExecutionPlan } from "@/lib/backend/actions/land-manager/buy-actions";
-import { RentalExecutionPlan } from "@/lib/backend/actions/land-manager/rental-actions";
+import type {
+  BuyExecutionPlan,
+  RentalExecutionPlan,
+} from "@/lib/shared/workerPlan";
 import {
   DEFAULT_BUY_CONFIG,
   DEFAULT_RENTAL_CONFIG,

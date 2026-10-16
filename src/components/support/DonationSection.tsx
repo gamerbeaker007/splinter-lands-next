@@ -6,8 +6,8 @@ import {
   SUPPORTED_DONATION_CURRENCIES,
   type DonationCurrency,
 } from "@/constants/support";
+import { loadSupportBalances } from "@/lib/frontend/support-data";
 import {
-  getSupportBalances,
   recordHiveTransferDonation,
   recordTokenTransferDonation,
 } from "@/lib/backend/actions/support/support-actions";
@@ -106,11 +106,11 @@ export default function DonationSection({
   const {
     data: balances,
     loading: balancesLoading,
-    reload: refreshBalances,
+    refetch: refreshBalances,
   } = useAsyncData(
     authLoading || !username ? null : username,
-    getSupportBalances,
-    "Failed to load balances"
+    () => loadSupportBalances(username as string),
+    { errorMessage: "Failed to load balances" }
   );
   const balanceValue = balances?.[currencyConfig.balanceKey] ?? null;
   const balancesError = balances?.error ?? null;
@@ -238,7 +238,7 @@ export default function DonationSection({
               <span>
                 <IconButton
                   size="small"
-                  onClick={refreshBalances}
+                  onClick={() => void refreshBalances()}
                   disabled={balancesLoading}
                 >
                   {balancesLoading ? (

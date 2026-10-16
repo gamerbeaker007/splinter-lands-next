@@ -16,10 +16,10 @@ interface UseLiquidityPoolsReturn {
 const POOLS_KEY = "land-liquidity-pools";
 
 export function useLandLiquidityPools(): UseLiquidityPoolsReturn {
-  const { data, loading, error, reload } = useAsyncData(
+  const { data, loading, error, refetch } = useAsyncData(
     POOLS_KEY,
-    getLandLiquidityPools,
-    "Failed to fetch data"
+    () => getLandLiquidityPools(),
+    { errorMessage: "Failed to fetch data" }
   );
 
   return {
@@ -27,6 +27,6 @@ export function useLandLiquidityPools(): UseLiquidityPoolsReturn {
     timeStamp: data?.timeStamp ?? null,
     loading,
     error,
-    refetch: reload,
+    refetch: () => void refetch(),
   };
 }

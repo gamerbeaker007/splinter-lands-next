@@ -1,6 +1,7 @@
 import { Client } from "@hiveio/dhive";
 import logger from "../../log/logger.server";
 
+// Keep in sync with lib/frontend/support-data.ts HIVE_NODES (browser reads).
 const HIVE_NODES = [
   "https://api.hive.blog",
   "https://api.openhive.network",
@@ -10,25 +11,6 @@ const HIVE_NODES = [
 
 // dhive rotates to the next node on failure, so one shared client is enough.
 const client = new Client(HIVE_NODES);
-
-export interface HiveAccountBalances {
-  hive: number;
-  hbd: number;
-}
-
-export async function fetchHiveAccountBalances(
-  username: string
-): Promise<HiveAccountBalances> {
-  logger.info(`Fetch Hive account balances for: ${username}`);
-  const accounts = await client.database.getAccounts([username]);
-  if (!accounts || accounts.length === 0) {
-    throw new Error(`Hive account not found: ${username}`);
-  }
-  const account = accounts[0];
-  const hive = parseFloat(String(account.balance).split(" ")[0]) || 0;
-  const hbd = parseFloat(String(account.hbd_balance).split(" ")[0]) || 0;
-  return { hive, hbd };
-}
 
 export interface HiveTransfer {
   from: string;

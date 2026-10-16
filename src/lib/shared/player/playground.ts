@@ -1,0 +1,196 @@
+import { Resource } from "@/constants/resource/resource";
+import { filterCardCollection } from "@/lib/backend/helpers/filterPlayerCards";
+import { toPlayerLandCards } from "@/lib/shared/player/landCards";
+import { mapRegionDataToDeedComplete } from "@/lib/shared/deedMapping";
+import { determineBcxCap, determineLandBoosts } from "@/lib/utils/cardUtil";
+import { CardSetNameLandValid } from "@/types/editions";
+import {
+  CardBloodline,
+  cardElementColorMap,
+  cardFoilOptions,
+  CardRarity,
+  cardRarityOptions,
+  DeedType,
+  MagicType,
+  PlotRarity,
+  PlotStatus,
+  RUNI_FLAT_ADD,
+  RuniTier,
+  SlotInput,
+  titleModifiers,
+  TitleTier,
+  totemModifiers,
+  TotemTier,
+  WorksiteType,
+} from "@/types/planner";
+import {
+  PlayerLandCard,
+  PlaygroundData,
+  PlaygroundDeed,
+} from "@/types/playground";
+import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
+import { SplCardDetails } from "@/types/splCardDetails";
+import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+
+/**
+ * Optimized player data for the playground (only the essential fields), from
+ * the player's deeds and card collection plus the shared card details. Pure.
+ */
+export function buildPlaygroundData(
+  player: string,
+  regionData: RawRegionDataResponse,
+  cardCollection: SplPlayerCardCollection[],
+  cardDetails: SplCardDetails[]
+): PlaygroundData {
+  // Convert and map deeds
+  const deedComplete = mapRegionDataToDeedComplete(regionData);
+
+  // Sort deeds by region, tract, plot
+  const sortedDeeds = deedComplete.sort((a, b) => {
+    if (a.region_number !== b.region_number)
+      return a.region_number - b.region_number;
+    if (a.tract_number !== b.tract_number)
+      return a.tract_number - b.tract_number;
+    return a.plot_number - b.plot_number;
+  });
+
+  // Group staked cards by deed_uid from card collection
+  // Cards are staked if stake_end_date is null/undefined or in the future
+  const now = new Date();
+  const threeDaysInMs = 3 * 24 * 60 * 60 * 1000;
+  const stakedCardsByDeed = new Map<string, string[]>();
+
+  //First filter out all non land cards from the collection
+  const filteredCardCollection = filterCardCollection(
+    cardCollection,
+    cardDetails,
+    player
+  );
+
+  filteredCardCollection.forEach((card) => {
+    if (card.stake_ref_uid && card.card_detail_id !== 505) {
+      //Exclude Runi cards
+      const isStaked =
+        !card.stake_end_date ||
+        new Date(card.stake_end_date).getTime() > now.getTime() + threeDaysInMs;
+      if (isStaked) {
+        const deedCards = stakedCardsByDeed.get(card.stake_ref_uid) || [];
+        deedCards.push(card.uid);
+        stakedCardsByDeed.set(card.stake_ref_uid, deedCards);
+      }
+    }
+  });
+
+  // Map to optimized deed structure
+  const deeds: PlaygroundDeed[] = sortedDeeds.map((deed) => {
+    // Get staked cards for this deed
+    const workerUids = stakedCardsByDeed.get(deed.deed_uid) || [];
+
+    // Determine power core tier from runi_boost
+    let runi: RuniTier = "none";
+    if (
+      deed.stakingDetail?.runi_boost &&
+      deed.stakingDetail.total_runi_boost_pp
+    ) {
+      runi =
+        deed.stakingDetail.total_runi_boost_pp > RUNI_FLAT_ADD.regular
+          ? "regular"
+          : "gold";
+    }
+
+    const titleBoost = deed.stakingDetail?.title_boost;
+    const titleTier: TitleTier = titleBoost
+      ? (Object.entries(titleModifiers).find(
+          ([, boostValue]) => boostValue === titleBoost
+        )?.[0] as TitleTier) || "none"
+      : "none";
+
+    const totemBoost = deed.stakingDetail?.totem_boost;
+    const totemTier: TotemTier = totemBoost
+      ? (Object.entries(totemModifiers).find(
+          ([, boostValue]) => boostValue === totemBoost
+        )?.[0] as TotemTier) || "none"
+      : "none";
+
+    // Create SlotInput for each worker
+    const createSlotInput = (uid: string | null): SlotInput | null => {
+      if (!uid) return null;
+
+      const card = filteredCardCollection.find((c) => c.uid === uid);
+      if (!card) return null;
+
+      const splCard = cardDetails.find((cd) => cd.id === card.card_detail_id);
+      const setName = card.card_set ?? "chaos";
+      const rarity = cardRarityOptions[
+        (splCard?.rarity ?? 1) - 1
+      ] as CardRarity;
+      const foil = cardFoilOptions[card.foil] || "regular";
+      const color = splCard?.color.toLowerCase() ?? "red";
+      const element = cardElementColorMap[color];
+      const secondaryElement = splCard?.secondary_color
+        ? (cardElementColorMap[splCard.secondary_color.toLowerCase()] ?? null)
+        : null;
+      const bcx = determineBcxCap(setName, rarity, card.foil, card.bcx);
+      const landBasePP = Number(card.land_base_pp);
+      const bloodline = (splCard?.sub_type ?? "Unknown") as CardBloodline;
+      const landBoosts = determineLandBoosts(rarity, foil, bcx, splCard);
+      return {
+        id: 0, // Will be overridden by slot index
+        set: setName as CardSetNameLandValid,
+        rarity,
+        bcx,
+        landBasePP: Number.isFinite(landBasePP) ? landBasePP : undefined,
+        foil,
+        element,
+        secondaryElement,
+        bloodline,
+        landBoosts,
+        uid, // Store the card UID for tracking
+        name: splCard?.name ?? "Unknown",
+      };
+    };
+
+    return {
+      deed_uid: deed.deed_uid,
+      region_number: deed.region_number,
+      tract_number: deed.tract_number,
+      plot_number: deed.plot_number,
+      plot_id: deed.plot_id,
+      rarity: (deed.rarity || "") as PlotRarity,
+      plotStatus: (deed.plot_status || "natural") as PlotStatus,
+      magicType: (deed.magic_type || null) as MagicType,
+      resource: deed.resource_symbol as Resource,
+      deedType: (deed.deed_type?.toLowerCase() || "bog") as DeedType,
+      worksiteType: (deed.worksite_type || "") as WorksiteType,
+      basePP: deed.stakingDetail?.total_base_pp_after_cap || 0,
+      boostedPP: deed.stakingDetail?.total_boost_pp || 0,
+      isConstruction: deed.worksiteDetail?.is_construction || false,
+      runi,
+      titleTier,
+      totemTier,
+      worker1Uid: createSlotInput(workerUids[0]),
+      worker2Uid: createSlotInput(workerUids[1]),
+      worker3Uid: createSlotInput(workerUids[2]),
+      worker4Uid: createSlotInput(workerUids[3]),
+      worker5Uid: createSlotInput(workerUids[4]),
+    };
+  });
+
+  // Player's land-eligible cards (shared, feature-neutral mapping).
+  const cards: PlayerLandCard[] = toPlayerLandCards(
+    player,
+    cardCollection,
+    cardDetails
+  );
+
+  // Calculate total boosted PP
+  const totalBoostedPP = deeds.reduce((sum, deed) => {
+    return sum + deed.boostedPP;
+  }, 0);
+
+  return {
+    deeds,
+    cards,
+    totalBoostedPP,
+  };
+}

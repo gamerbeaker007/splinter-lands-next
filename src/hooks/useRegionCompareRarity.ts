@@ -15,8 +15,8 @@ export function useRegionCompareRarity(filters?: FilterInput) {
 
   const { data, loading, error } = useAsyncData(
     filtersKey,
-    loadCompareRarity,
-    "Could not load region compare rarity information."
+    () => loadCompareRarity(filtersKey),
+    { errorMessage: "Could not load region compare rarity information." }
   );
 
   return { regionCompareRarity: data, loading, error };

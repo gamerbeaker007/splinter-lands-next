@@ -14,6 +14,38 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.42.0] - 2026-10-16
+
+### Improved
+
+- **Reduced Server Load:** Player pages and the Land Manager now load per-player
+  Splinterlands data (deeds, staked assets, balances, liquidity, collection,
+  inventory, region production, stake items, market listings for planning)
+  directly from your browser instead of through the server. The server no
+  longer sends one batch of Splinterlands requests per visitor, which was causing rate limits
+  (HTTP 429) as more people used the site.
+- **Transaction Confirmation:** Polling for broadcast transactions now runs in
+  the browser, and transactions already confirmed are not looked up again
+  (Today panel, on-behalf rentals).
+- **Login:** The Splinterlands login request now runs in the browser; the
+  server only verifies the token once.
+- **Caching & Reliability:** Removed the per-player server caches and their
+  "force refresh" plumbing. Shared data (card details, settings, prices,
+  market snapshots) stays cached on the server. All Splinterlands clients share
+  one retry schedule (5s → 8m50s, `Retry-After` honoured).
+- **Support Page:** Balances and validator votes load in the browser.
+- **Security:** Added a Content-Security-Policy. Land Manager run logs can now
+  only be written for the logged-in account (previously the server accepted any
+  player name for them).
+
+### Changed
+
+- **Log in again once:** After this update every user must log in to the Land
+  Manager once more. The session cookie is now readable by the page so the
+  browser can send the token on its own Splinterlands reads.
+
+---
+
 ## [v1.41.0] - 2026-10-14
 
 

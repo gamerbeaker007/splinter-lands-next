@@ -1,5 +1,5 @@
 import { getTodayPaidDonations } from "@/lib/backend/actions/land-manager/donation-actions";
-import { getBulkRegionData } from "@/lib/backend/actions/land-manager/overview-actions";
+import { getBulkRegionData } from "@/lib/frontend/land-data";
 import {
   applyDailyCaps,
   buildDonationOps,

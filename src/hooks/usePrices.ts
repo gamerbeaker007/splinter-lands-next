@@ -1,32 +1,18 @@
 // hooks/usePrices.ts
+import { useAsyncData } from "@/hooks/useAsyncData";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
-import { Prices } from "@/types/price";
-import { useCallback, useEffect, useState } from "react";
 
 export function usePrices() {
-  const [prices, setPrices] = useState<Prices | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data, loading, error, refetch } = useAsyncData(
+    "resource-prices",
+    () => getActualResourcePrices(),
+    { errorMessage: "Could not load prices." }
+  );
 
-  const fetchPrices = useCallback(async () => {
-    try {
-      setLoading(true);
-      const data = await getActualResourcePrices();
-      setPrices(data);
-      setError(null);
-    } catch (err) {
-      console.error("Failed to fetch prices:", err);
-      setError("Could not load prices.");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    (async () => {
-      await fetchPrices();
-    })();
-  }, [fetchPrices]);
-
-  return { prices, loading, error, fetchPrices };
+  return {
+    prices: data ?? null,
+    loading,
+    error: error ? "Could not load prices." : null,
+    fetchPrices: refetch,
+  };
 }

@@ -1,12 +1,13 @@
 "use client";
 
+import { useAsyncData } from "@/hooks/useAsyncData";
 import {
   AvailableRuni,
   AvailableStakeItem,
   getAvailableRunis,
   getAvailableStakeItems,
   StakeItemKind,
-} from "@/lib/backend/actions/land-manager/production-actions";
+} from "@/lib/frontend/land-production-data";
 import {
   STAKE_TYPE_UID_LAND_POWER_CORE,
   STAKE_TYPE_UID_LAND_TITLE,
@@ -36,7 +37,6 @@ import {
   ListItemText,
   Typography,
 } from "@mui/material";
-import { useEffect, useState } from "react";
 import { SpotCardVM, SpotItemVM } from "./productionConfigTypes";
 
 const ITEM_STAKE_TYPE: Record<string, string> = {
@@ -50,6 +50,9 @@ export type PickerKind = StakeItemKind | "runi";
 
 export type PickerResult =
   { kind: "item"; item: SpotItemVM } | { kind: "runi"; runi: SpotCardVM };
+
+const NO_ITEMS: AvailableStakeItem[] = [];
+const NO_RUNIS: AvailableRuni[] = [];
 
 const TITLE_FOR: Record<PickerKind, string> = {
   powerCore: "Select a Power Core",
@@ -90,43 +93,21 @@ export default function AssetPickerDialog({
   onClose,
   onPick,
 }: Readonly<Props>) {
-  // Mounted on demand (keyed by kind), so it always opens in a loading state.
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [items, setItems] = useState<AvailableStakeItem[]>([]);
-  const [runis, setRunis] = useState<AvailableRuni[]>([]);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-
-    const load = async () => {
+  const { data, loading, error } = useAsyncData(
+    open ? `${kind}|${deedUid}` : null,
+    async () => {
       if (kind === "runi") {
         const res = await getAvailableRunis(deedUid);
-        if (cancelled) return;
-        if (res.error) setError(res.error);
-        setRunis(res.runis);
-      } else {
-        const res = await getAvailableStakeItems(kind);
-        if (cancelled) return;
-        if (res.error) setError(res.error);
-        setItems(res.items);
+        return { items: NO_ITEMS, runis: res.runis, error: res.error };
       }
-    };
-
-    load()
-      .catch((err) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : "Failed to load");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [open, kind, deedUid]);
+      const res = await getAvailableStakeItems(kind);
+      return { items: res.items, runis: NO_RUNIS, error: res.error };
+    },
+    { errorMessage: "Failed to load" }
+  );
+  const items = data?.items ?? NO_ITEMS;
+  const runis = data?.runis ?? NO_RUNIS;
+  const loadError = error ?? data?.error ?? null;
 
   const pickItem = (item: AvailableStakeItem) => {
     const vm: SpotItemVM = {
@@ -233,9 +214,9 @@ export default function AssetPickerDialog({
     <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
       <DialogTitle>{TITLE_FOR[kind]}</DialogTitle>
       <DialogContent dividers>
-        {error && (
+        {loadError && (
           <Alert severity="error" sx={{ mb: 1 }}>
-            {error}
+            {loadError}
           </Alert>
         )}
         {renderContent()}

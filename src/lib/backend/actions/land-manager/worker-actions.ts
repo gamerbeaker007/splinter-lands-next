@@ -1,103 +1,33 @@
 "use server";
 
-import { getAuthStatus } from "@/lib/backend/actions/auth-actions";
 import {
-  fetchRegionDataPlayer,
-  fetchStakedAssets,
-} from "@/lib/backend/api/spl/spl-land-api";
-import { getBiomeModifiersFromStakingDetail } from "@/lib/utils/cardUtil";
-import {
-  BuyPlan,
-  RentalPlan,
-  WorkerEligibilityResult,
-  WorkerEligiblePlot,
-} from "@/types/landManager";
-import { Card, StakedAssets } from "@/types/stakedAssets";
-import pLimit from "p-limit";
+  loadBuyPlanCandidates,
+  loadRentalPlanCandidates,
+} from "@/lib/backend/services/landWorkerPlanService";
+import type {
+  PlanCaps,
+  PlotBiomeModifiers,
+  SeasonDaysResult,
+  WorkerPlanCandidates,
+} from "@/lib/shared/workerPlan";
 
-export async function getWorkerEligibility(): Promise<WorkerEligibilityResult> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
-    return { eligible: [], unpoweredSkipped: [] };
-  }
-
-  const regionData = await fetchRegionDataPlayer(auth.username);
-  if (!regionData || regionData.deeds.length === 0)
-    return { eligible: [], unpoweredSkipped: [] };
-
-  const stakingByDeed = new Map(
-    regionData.staking_details.map((s) => [s.deed_uid, s])
-  );
-  const worksiteByDeed = new Map(
-    regionData.worksite_details.map((s) => [s.deed_uid, s])
-  );
-
-  const eligible: WorkerEligiblePlot[] = [];
-  const unpoweredSkipped: WorkerEligiblePlot[] = [];
-
-  for (const deed of regionData.deeds) {
-    const staking = stakingByDeed.get(deed.deed_uid);
-    if (!staking) continue;
-    const worksiteDetails = worksiteByDeed.get(deed.deed_uid) ?? null;
-
-    const maxWorkers = staking.max_workers_allowed ?? 0;
-    const workerCount = staking.worker_count ?? 0;
-
-    const plot: WorkerEligiblePlot = {
-      ...deed,
-      worksiteDetail: worksiteDetails,
-      stakingDetail: staking,
-      worker_count: workerCount,
-      max_workers: maxWorkers,
-      empty_slots: maxWorkers - workerCount,
-      is_powered: staking.is_powered ?? false,
-      biome_modifiers: getBiomeModifiersFromStakingDetail(staking),
-    };
-
-    if (plot.is_powered) {
-      if (workerCount < maxWorkers) {
-        eligible.push(plot);
-      }
-    } else {
-      unpoweredSkipped.push(plot);
-    }
-  }
-
-  const byRegionThenPlot = (a: WorkerEligiblePlot, b: WorkerEligiblePlot) =>
-    a.region_number - b.region_number || a.plot_number - b.plot_number;
-
-  eligible.sort(byRegionThenPlot);
-  unpoweredSkipped.sort(byRegionThenPlot);
-
-  return { eligible, unpoweredSkipped };
+/**
+ * Candidate selection for the browser-built worker plans
+ * (`buildRentalExecutionPlan` / `buildBuyExecutionPlan`). Only shared,
+ * server-cached data is read here (grouped market, card details, settings /
+ * DEC price); the player's plots arrive as their biome modifiers and the live
+ * listings are fetched by the browser.
+ */
+export async function getRentalPlanCandidates(
+  biomeModifiers: PlotBiomeModifiers[],
+  caps: PlanCaps
+): Promise<WorkerPlanCandidates<SeasonDaysResult>> {
+  return loadRentalPlanCandidates(biomeModifiers, caps);
 }
 
-// Only fetch staked assets for plots that actually have picks to stake.
-export async function fetchEmptySlotsByDeed(plan: BuyPlan | RentalPlan) {
-  const deedsToFetch = plan.items
-    .filter((i) => i.picks.length > 0)
-    .map((i) => i.plot);
-
-  const emptySlotsByDeed: Record<string, number[]> = {};
-  const limit = pLimit(5);
-
-  await Promise.all(
-    deedsToFetch.map((plot) =>
-      limit(async () => {
-        try {
-          const assets: StakedAssets | undefined = await fetchStakedAssets(
-            plot.deed_uid
-          );
-          const occupied = new Set<number>(
-            (assets?.cards ?? []).map((c: Card) => c.slot)
-          );
-          const all = Array.from({ length: plot.max_workers }, (_, i) => i + 1);
-          emptySlotsByDeed[plot.deed_uid] = all.filter((s) => !occupied.has(s));
-        } catch {
-          emptySlotsByDeed[plot.deed_uid] = [];
-        }
-      })
-    )
-  );
-  return emptySlotsByDeed;
+export async function getBuyPlanCandidates(
+  biomeModifiers: PlotBiomeModifiers[],
+  caps: PlanCaps
+): Promise<WorkerPlanCandidates<number>> {
+  return loadBuyPlanCandidates(biomeModifiers, caps);
 }

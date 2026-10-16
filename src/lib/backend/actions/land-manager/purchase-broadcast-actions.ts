@@ -30,6 +30,8 @@ export interface PurchaseOnBehalfResult {
   txIds: string[];
   /** SPL id of every op that landed — see `ServerBroadcastResult.opTxIds`. */
   opTxIds?: string[];
+  /** Op ids the server already confirmed — skip them when polling. */
+  confirmedOpTxIds?: string[];
   error?: string;
 }
 
