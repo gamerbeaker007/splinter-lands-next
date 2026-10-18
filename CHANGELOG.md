@@ -14,6 +14,40 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.43.0] - 2026-10-18
+
+### Added
+
+- **Land Manager - Find Workers:** Added rent and buy search flows with
+  authorization status, saved default strategies, session-only search overrides,
+  plot and worker cost summaries, and planner-based production estimates.
+- **Storybook:** Added representative Find Workers states, including paginated
+  plot results, loading and error states, authorization states, and batch-size
+  controls.
+
+### Improved
+
+- **Land Manager - Production:** Reorganized bulk operations and Find Workers
+  controls, and improved responsive plot and selected-worker result cards.
+- **Land Manager - Find Workers:** Rent and buy batch settings now use matching
+  sliders and enforce a maximum of 100 plots per run. Saved values above the
+  maximum are capped at 100 when used.
+- **Land Manager - Bulk actions:** Confirmation dialogs remain open while
+  actions are being verified, show a busy state, and report completed outcomes
+  using floating feedback. A new floating message replaces an older one rather
+  than queueing it.
+
+### Security release note
+
+- The security hardening from `main` commit
+  `a61e16206e1efcb5e2f77f31c4a327c82284a531` is intended to be included in this
+  release. It includes the Next.js advisory update, fail-closed cache refresh
+  authorization, and additional validation for service-signed transactions.
+  This commit is not yet part of the current branch and must be integrated
+  before publishing the release.
+
+---
+
 ## [v1.42.0] - 2026-10-16
 
 ### Improved

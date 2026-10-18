@@ -119,7 +119,10 @@ export default function DecPowerRow({
         </Stack>
       )}
 
-      <FloatingFeedback floating={menuItem}>
+      <FloatingFeedback
+        floating={menuItem}
+        feedbackKey={action.result ?? action.error}
+      >
         {action.result?.success && (
           <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
             {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC

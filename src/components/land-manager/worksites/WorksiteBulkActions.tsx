@@ -151,7 +151,6 @@ export default function WorksiteBulkActions({
         : null;
 
   const handleCancelConfirm = async () => {
-    setPending(null);
     const res = await action.cancelConstructions(
       username,
       cancelCandidates.map((c) => ({
@@ -160,11 +159,13 @@ export default function WorksiteBulkActions({
         projectId: c.projectId,
       }))
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const handleFeedConfirm = async () => {
-    setPending(null);
     const res = await action.feedWorkers(
       username,
       feedPlan.feedable.map((c) => ({
@@ -173,13 +174,15 @@ export default function WorksiteBulkActions({
         projectId: c.projectId,
       }))
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const handleChangeConfirm = async () => {
     if (pending?.type !== "change") return;
     const { option } = pending;
-    setPending(null);
     const opName = worksiteConstructionOpName[option.worksite];
     if (!opName) return;
     const res = await action.buildWorksites(
@@ -190,10 +193,17 @@ export default function WorksiteBulkActions({
       })),
       opName
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const changeOption = pending?.type === "change" ? pending.option : null;
+  const changeOpName = changeOption
+    ? worksiteConstructionOpName[changeOption.worksite]
+    : null;
+  const changeBusyKey = changeOpName ? bulkBusyKey.build(changeOpName) : "";
 
   return (
     <Card
@@ -513,7 +523,10 @@ export default function WorksiteBulkActions({
             })}
 
           {/* ── Feedback (floats when the host menu is closed) ── */}
-          <FloatingFeedback floating={menuMode}>
+          <FloatingFeedback
+            floating={menuMode}
+            feedbackKey={action.result ?? action.error}
+          >
             {action.result?.success && (
               <Alert
                 severity="success"
@@ -542,7 +555,7 @@ export default function WorksiteBulkActions({
       {/* Feed confirm */}
       <Dialog
         open={pending?.type === "feed"}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -585,17 +598,29 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleFeedConfirm}
+            onClick={() => void handleFeedConfirm()}
             size="small"
             variant="contained"
             color="success"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Feed {feedCount} worksite{feedCount === 1 ? "" : "s"}
+            {action.busy
+              ? buttonStatus(bulkBusyKey.feed)
+              : `Feed ${feedCount} worksite${feedCount === 1 ? "" : "s"}`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -603,7 +628,7 @@ export default function WorksiteBulkActions({
       {/* Cancel construction confirm */}
       <Dialog
         open={pending?.type === "cancel"}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -635,17 +660,29 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleCancelConfirm}
+            onClick={() => void handleCancelConfirm()}
             size="small"
             variant="contained"
             color="error"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Cancel {cancelCount} construction{cancelCount === 1 ? "" : "s"}
+            {action.busy
+              ? buttonStatus(bulkBusyKey.cancel)
+              : `Cancel ${cancelCount} construction${cancelCount === 1 ? "" : "s"}`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -653,7 +690,7 @@ export default function WorksiteBulkActions({
       {/* Change worksite confirm */}
       <Dialog
         open={changeOption !== null}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -683,36 +720,47 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleChangeConfirm}
+            onClick={() => void handleChangeConfirm()}
             size="small"
             variant="contained"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Build {changeOption?.candidates.length}
+            {action.busy
+              ? buttonStatus(changeBusyKey)
+              : `Build ${changeOption?.candidates.length}`}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Fix grain deficit — plan first, broadcast only after confirmation */}
-      {fixOpen && (
-        <FixGrainDeficitDialog
-          open={fixOpen}
-          username={username}
-          strategies={strategies}
-          targets={fixTargets}
-          subject={`${fixCount} plot${fixCount === 1 ? "" : "s"}`}
-          plotLabels={feedPlan.shortOnGrain.map((c) => c.plotLabel)}
-          onClose={() => setFixOpen(false)}
-          onSuccess={() => {
-            setFixOpen(false);
-            onSuccess();
-          }}
-        />
-      )}
+      <FixGrainDeficitDialog
+        open={fixOpen}
+        username={username}
+        strategies={strategies}
+        targets={fixTargets}
+        subject={`${fixCount} plot${fixCount === 1 ? "" : "s"}`}
+        plotLabels={feedPlan.shortOnGrain.map((c) => c.plotLabel)}
+        floatingFeedback={menuMode}
+        onClose={() => setFixOpen(false)}
+        onSuccess={() => {
+          setFixOpen(false);
+          onSuccess();
+        }}
+      />
     </Card>
   );
 }

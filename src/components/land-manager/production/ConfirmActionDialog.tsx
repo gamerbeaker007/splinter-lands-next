@@ -5,6 +5,7 @@ import {
   Alert,
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -138,6 +139,9 @@ export default function ConfirmActionDialog({
           color={meta.destructive ? "error" : "primary"}
           onClick={onConfirm}
           disabled={busy}
+          startIcon={
+            busy ? <CircularProgress size={16} color="inherit" /> : undefined
+          }
         >
           {busy ? "Working…" : meta.title}
         </Button>

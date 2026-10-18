@@ -240,7 +240,7 @@ export default function FindWorkersWizard({
     >
       <DialogTitle>
         {resultsOpen
-          ? `Find Workers to ${mode === "rent" ? "Rent" : "Buy"} — Results`
+          ? `Find Workers to ${mode === "rent" ? "Rent" : "Buy"} - Results`
           : "Find Workers"}
       </DialogTitle>
       <DialogContent dividers>

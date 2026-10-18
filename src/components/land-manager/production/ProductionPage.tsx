@@ -7,6 +7,7 @@ import ConfigurePanel from "@/components/land-manager/production/ConfigurePanel"
 import ConfirmActionDialog, {
   ACTION_META,
 } from "@/components/land-manager/production/ConfirmActionDialog";
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import DecPowerControls from "@/components/land-manager/production/DecPowerControls";
 import FindWorkersWizard from "@/components/land-manager/production/FindWorkersWizard";
 import ProductionRegionGroup from "@/components/land-manager/production/ProductionRegionGroup";
@@ -445,8 +446,8 @@ function ProductionPageContent() {
     if (!confirm) return;
     const deedUids = confirm.rows.map((r) => r.deedUid);
     const kind = confirm.kind;
-    setConfirm(null);
-    await actions.run(kind, deedUids);
+    const result = await actions.run(kind, deedUids);
+    if (result && !result.error) setConfirm(null);
   }, [confirm, actions]);
 
   const renderConfigure = useCallback(
@@ -637,45 +638,46 @@ function ProductionPageContent() {
       </Stack>
 
       {/* ── Feedback alerts ───────────────────────────────────────────────── */}
-      {actions.error && (
-        <Alert severity="error" sx={{ mb: 1.5 }} onClose={actions.clearError}>
-          {actions.error}
-        </Alert>
-      )}
-      {result && (
-        <Alert
-          severity={
-            result.failed.length > 0
-              ? "warning"
-              : result.succeeded.length > 0
-                ? "success"
-                : "info"
-          }
-          sx={{ mb: 1.5 }}
-          onClose={actions.clearResult}
-        >
-          {ACTION_META[result.kind].title}:{" "}
-          {result.succeeded.length > 0 && (
-            <Chip
-              size="small"
-              color="success"
-              label={`${result.succeeded.length} done`}
-              sx={{ mr: 0.5 }}
-            />
-          )}
-          {result.failed.length > 0 && (
-            <Chip
-              size="small"
-              color="error"
-              label={`${result.failed.length} failed`}
-              sx={{ mr: 0.5 }}
-            />
-          )}
-          {result.skipped.length > 0 && (
-            <Chip size="small" label={`${result.skipped.length} skipped`} />
-          )}
-        </Alert>
-      )}
+      <FloatingFeedback floating feedbackKey={result ?? actions.error}>
+        {actions.error && (
+          <Alert severity="error" onClose={actions.clearError}>
+            {actions.error}
+          </Alert>
+        )}
+        {result && (
+          <Alert
+            severity={
+              result.failed.length > 0
+                ? "warning"
+                : result.succeeded.length > 0
+                  ? "success"
+                  : "info"
+            }
+            onClose={actions.clearResult}
+          >
+            {ACTION_META[result.kind].title}:{" "}
+            {result.succeeded.length > 0 && (
+              <Chip
+                size="small"
+                color="success"
+                label={`${result.succeeded.length} done`}
+                sx={{ mr: 0.5 }}
+              />
+            )}
+            {result.failed.length > 0 && (
+              <Chip
+                size="small"
+                color="error"
+                label={`${result.failed.length} failed`}
+                sx={{ mr: 0.5 }}
+              />
+            )}
+            {result.skipped.length > 0 && (
+              <Chip size="small" label={`${result.skipped.length} skipped`} />
+            )}
+          </Alert>
+        )}
+      </FloatingFeedback>
       {fetchError && (
         <Alert severity="error" sx={{ mb: 1.5 }}>
           {fetchError}

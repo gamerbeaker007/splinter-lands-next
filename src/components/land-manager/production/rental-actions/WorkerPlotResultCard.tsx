@@ -171,8 +171,8 @@ function PlotArtwork({
             bgcolor: "grey.900",
             [`@container (min-width: ${PICKS_OVERLAY_MIN_WIDTH}px)`]: {
               position: "absolute",
-              top: 40,
-              left: 12,
+              top: 100,
+              left: 75,
               right: 12,
               p: 0,
               bgcolor: "transparent",
