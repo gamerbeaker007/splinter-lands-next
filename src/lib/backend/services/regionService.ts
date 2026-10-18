@@ -43,8 +43,8 @@ export async function getRegionSummary(
   return summarizeDeedsData(filteredDeeds);
 }
 
-export async function getUniquePlayerCountFromBlob(forceWait: boolean = false) {
-  const blob = await getCachedRegionDataSSR(forceWait);
+export async function getUniquePlayerCountFromBlob() {
+  const blob = await getCachedRegionDataSSR();
 
   const uniquePlayers = new Set<string>();
 

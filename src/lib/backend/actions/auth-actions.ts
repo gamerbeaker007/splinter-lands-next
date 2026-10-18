@@ -3,6 +3,7 @@
 import { verifySplJwt } from "@/lib/backend/api/spl/spl-base-api";
 import { getCachedSettings } from "@/lib/backend/services/settingsService";
 import {
+  deleteCachedVerification,
   getCachedVerification,
   setCachedVerification,
 } from "@/lib/backend/cache/authVerificationCache";
@@ -131,6 +132,8 @@ export async function establishSessionAction(
 export async function logoutAction() {
   try {
     const cookieStore = await cookies();
+    const jwtToken = cookieStore.get("jwt_token")?.value;
+    if (jwtToken) deleteCachedVerification(jwtToken);
     cookieStore.delete("jwt_token");
 
     return { success: true };

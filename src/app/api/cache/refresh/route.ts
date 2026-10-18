@@ -2,28 +2,28 @@ import { getLandCardCollectionData } from "@/lib/backend/actions/region/land-car
 import {
   getAllActiveData,
   invalidateActiveDataCache,
-} from "@/lib/backend/api/internal/active-data";
+} from "@/lib/backend/api/internal/active-data-cache";
 import {
   getCachedRegionDataSSR,
   invalidateDeedCache,
-} from "@/lib/backend/api/internal/deed-data";
+} from "@/lib/backend/api/internal/deed-data-cache";
 import {
   getPlayerProductionData,
   invalidatePlayerProductionDataCache,
-} from "@/lib/backend/api/internal/player-production-data";
+} from "@/lib/backend/api/internal/player-production-data-cache";
 import { getPlayerTradeHubPositionData } from "@/lib/backend/api/internal/player-trade-hub-data";
 import {
   getAllResourceSupplyData,
   invalidateResourceSupplyDataCache,
-} from "@/lib/backend/api/internal/resource-supply-data";
+} from "@/lib/backend/api/internal/resource-supply-data-cache";
 import {
   getAllResourceTrackingdata,
   invalidateResourceTrackingDataCache,
-} from "@/lib/backend/api/internal/resource-tracking-data";
+} from "@/lib/backend/api/internal/resource-tracking-data-cache";
 import {
   getAllTradeHubData,
   invalidateTradeHubDataCache,
-} from "@/lib/backend/api/internal/trade-hub-data";
+} from "@/lib/backend/api/internal/trade-hub-data-cache";
 import logger from "@/lib/frontend/log/logger.client";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -37,11 +37,18 @@ import { NextRequest, NextResponse } from "next/server";
  */
 export async function POST(request: NextRequest) {
   try {
-    // Optionally verify request is authenticated/authorized
+    // Fails closed: without a configured token nobody may trigger a full
+    // reload of every table (the worker also skips refreshing without one).
     const authHeader = request.headers.get("authorization");
     const expectedToken = process.env.CACHE_INVALIDATE_TOKEN;
 
-    if (expectedToken && authHeader !== `Bearer ${expectedToken}`) {
+    if (!expectedToken) {
+      return NextResponse.json(
+        { error: "Cache refresh is not configured" },
+        { status: 503 }
+      );
+    }
+    if (authHeader !== `Bearer ${expectedToken}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

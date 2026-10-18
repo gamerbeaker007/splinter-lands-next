@@ -1,7 +1,12 @@
 "use server";
 
 import { confirmSplTrx } from "@/lib/backend/api/spl/spl-base-api";
+import { requireFreshPlayer } from "@/lib/backend/auth/requireFreshPlayer";
 import { broadcastOpsAsService } from "@/lib/backend/services/hiveBroadcastService";
+import {
+  validateMarketIds,
+  withServiceBroadcastSlot,
+} from "@/lib/backend/services/serviceBroadcastGuard";
 import {
   getRentalAuthorityInfo,
   getServiceAccount,
@@ -13,7 +18,6 @@ import {
 } from "@/lib/shared/operations/opBuilders";
 import { MAX_ITEM_SIZE_IN_OPERATION } from "@/types/landManager";
 import { Operation } from "@hiveio/dhive";
-import { getAuthStatus } from "../auth-actions";
 
 function chunk<T>(arr: T[], n: number): T[][] {
   const out: T[][] = [];
@@ -42,11 +46,11 @@ export async function rentOnBehalfOf(
   marketIds: string[],
   renew = false
 ): Promise<RentOnBehalfResult> {
-  const auth = await getAuthStatus();
-  if (!auth.authenticated || !auth.username) {
+  // Verified upstream on every call: a revoked token must not keep spending.
+  const player = await requireFreshPlayer();
+  if (!player) {
     return { success: false, txIds: [], error: "Not authenticated" };
   }
-  const player = auth.username;
 
   if (!isServiceBroadcastConfigured()) {
     return {
@@ -67,6 +71,8 @@ export async function rentOnBehalfOf(
   if (marketIds.length === 0) {
     return { success: false, txIds: [], error: "No market IDs to rent." };
   }
+  const invalid = validateMarketIds(marketIds);
+  if (invalid) return { success: false, txIds: [], error: invalid };
 
   const { authorized } = await getRentalAuthorityInfo(player);
   if (!authorized) {
@@ -86,5 +92,14 @@ export async function rentOnBehalfOf(
       : (buildRentOnBehalfOp(service, player, ids) as Operation)
   );
 
-  return broadcastOpsAsService(operations, { verify: confirmSplTrx });
+  const result = await withServiceBroadcastSlot(player, () =>
+    broadcastOpsAsService(operations, { verify: confirmSplTrx })
+  );
+  return (
+    result ?? {
+      success: false,
+      txIds: [],
+      error: "Another buy or rent is still running. Try again shortly.",
+    }
+  );
 }
