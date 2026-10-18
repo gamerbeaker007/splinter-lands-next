@@ -39,12 +39,10 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ### Security release note
 
-- The security hardening from `main` commit
-  `a61e16206e1efcb5e2f77f31c4a327c82284a531` is intended to be included in this
-  release. It includes the Next.js advisory update, fail-closed cache refresh
-  authorization, and additional validation for service-signed transactions.
-  This commit is not yet part of the current branch and must be integrated
-  before publishing the release.
+- **Next.js 16.4.2:** Updates from 16.3.8 to fix a Server Action denial-of-service vulnerability.
+- **Cache refresh security:** Requires a configured token; returns 503 if missing and 401 if invalid.
+- **Service account security:** Buy and rent operations verify player login with Splinterlands on every request.
+- **Buy/rent limits:** Validates market IDs and prices, limits requests to 2,000 listings, and caps concurrency per player and globally.
 
 ---
 
