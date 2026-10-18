@@ -3,6 +3,7 @@
 import { getLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
 import {
   buildPlotConfigureData,
+  buildPlotConfigureDataBatch,
   getProductionContext,
   type PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
@@ -63,10 +64,12 @@ import {
   RentalConfig,
   RentalPlan,
   WorkerEligibilityResult,
+  WorkerPlanPlotCard,
 } from "@/types/landManager";
 import type { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import type { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import type { StakedAssets } from "@/types/stakedAssets";
+import type { RegionTax } from "@/types/regionTax";
 import pLimit from "p-limit";
 
 /**
@@ -162,10 +165,17 @@ const isTaxDeed = (deed: DeedComplete) =>
 export async function getProductionPageData(): Promise<{
   deeds: DeedComplete[];
   username: string | null;
+  regionTax: Record<number, RegionTax>;
   error?: string;
 }> {
   const player = sessionPlayer();
-  if (!player) return { deeds: [], username: null, error: NOT_AUTHENTICATED };
+  if (!player)
+    return {
+      deeds: [],
+      username: null,
+      regionTax: {},
+      error: NOT_AUTHENTICATED,
+    };
 
   try {
     const deeds = mapRegionDataToDeedComplete(
@@ -190,10 +200,11 @@ export async function getProductionPageData(): Promise<{
           : (byUid.get(d.deed_uid) ?? d)
       ),
       username: player,
+      regionTax: context.regionTax,
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
-    return { deeds: [], username: player, error: msg };
+    return { deeds: [], username: player, regionTax: {}, error: msg };
   }
 }
 
@@ -269,11 +280,13 @@ export async function getPlotConfigureData(
 }
 
 /** Empty worker slots of every plot that has picks to stake (1-based). */
-async function fetchEmptySlotsByDeed(
-  plan: RentalPlan | BuyPlan
-): Promise<Record<string, number[]>> {
+async function fetchEmptySlotsByDeed(plan: RentalPlan | BuyPlan): Promise<{
+  emptySlotsByDeed: Record<string, number[]>;
+  plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]>;
+}> {
   const plots = plan.items.filter((i) => i.picks.length > 0).map((i) => i.plot);
   const emptySlotsByDeed: Record<string, number[]> = {};
+  const assetsByDeed: Record<string, StakedAssets> = {};
   const limit = pLimit(STAKE_ASSETS_CONCURRENCY);
 
   await Promise.all(
@@ -281,6 +294,7 @@ async function fetchEmptySlotsByDeed(
       limit(async () => {
         try {
           const assets = await splBrowser.fetchStakedAssets(plot.deed_uid);
+          assetsByDeed[plot.deed_uid] = assets;
           const occupied = new Set((assets.cards ?? []).map((c) => c.slot));
           const all = Array.from({ length: plot.max_workers }, (_, i) => i + 1);
           emptySlotsByDeed[plot.deed_uid] = all.filter((s) => !occupied.has(s));
@@ -290,7 +304,19 @@ async function fetchEmptySlotsByDeed(
       })
     )
   );
-  return emptySlotsByDeed;
+
+  const configuredByDeed = await buildPlotConfigureDataBatch(
+    Object.entries(assetsByDeed).map(([deedUid, assets]) => ({
+      deedUid,
+      assets,
+    }))
+  );
+  const plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]> = {};
+  for (const [deedUid, configured] of Object.entries(configuredByDeed)) {
+    plotWorkersByDeed[deedUid] = configured.workers;
+  }
+
+  return { emptySlotsByDeed, plotWorkersByDeed };
 }
 
 // ── Assignable assets (pickers) ───────────────────────────────────────────
@@ -574,7 +600,7 @@ export async function getRentalExecutionPlan(
       priceListing: priceRentalListing,
     }
   );
-  return { plan, emptySlotsByDeed: await fetchEmptySlotsByDeed(plan) };
+  return { plan, ...(await fetchEmptySlotsByDeed(plan)) };
 }
 
 /** Buy counterpart of {@link getRentalExecutionPlan} (same eligible plots). */
@@ -602,5 +628,5 @@ export async function getBuyExecutionPlan(
       priceListing: priceBuyListing,
     }
   );
-  return { plan, emptySlotsByDeed: await fetchEmptySlotsByDeed(plan) };
+  return { plan, ...(await fetchEmptySlotsByDeed(plan)) };
 }

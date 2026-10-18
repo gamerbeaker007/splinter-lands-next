@@ -1,14 +1,17 @@
 "use client";
 
 import LandFilterDrawer from "@/components/filter/LandFilterDrawer";
-import BulkActionsAccordion from "@/components/land-manager/production/BulkActionsAccordion";
+import BulkOperationsMenu from "@/components/land-manager/production/BulkOperationsMenu";
 import ChangeWorksiteDialog from "@/components/land-manager/production/ChangeWorksiteDialog";
 import ConfigurePanel from "@/components/land-manager/production/ConfigurePanel";
 import ConfirmActionDialog, {
   ACTION_META,
 } from "@/components/land-manager/production/ConfirmActionDialog";
+import DecPowerControls from "@/components/land-manager/production/DecPowerControls";
+import FindWorkersWizard from "@/components/land-manager/production/FindWorkersWizard";
 import ProductionRegionGroup from "@/components/land-manager/production/ProductionRegionGroup";
 import ProductionTable from "@/components/land-manager/production/ProductionTable";
+import WorksiteBulkActions from "@/components/land-manager/worksites/WorksiteBulkActions";
 import {
   ProductionRow,
   ProductionSortKey,
@@ -16,8 +19,6 @@ import {
   sortRows,
   toProductionRow,
 } from "@/components/land-manager/production/productionTypes";
-import WorkerConfirmDialog from "@/components/land-manager/production/rental-actions/WorkerConfirmDialog";
-import WorkerActionsAccordions from "@/components/land-manager/production/worker-actions/WorkerActionsAccordions";
 import CustomIconSpinner from "@/components/ui/loaders/CustomIconSpinner";
 import { useLandManagerRegionData } from "@/hooks/useLandManagerRegionData";
 import {
@@ -30,6 +31,8 @@ import { useWorkerAction } from "@/hooks/useWorkerAction";
 import { getDailySPSRatio } from "@/lib/backend/actions/region/sps-actions";
 import { getActualResourcePrices } from "@/lib/backend/actions/resources/prices-actions";
 import { getProductionPageData } from "@/lib/frontend/land-production-data";
+import { getRegionGrain } from "@/lib/frontend/land-data";
+import { formatFixed } from "@/lib/formatters";
 import { filterDeeds } from "@/lib/filters";
 import {
   FilterProvider,
@@ -40,6 +43,7 @@ import { DeedComplete } from "@/types/deed";
 import { FilterInput } from "@/types/filters";
 import { Prices } from "@/types/price";
 import {
+  PersonSearch as FindWorkersIcon,
   Refresh as RefreshIcon,
   ViewList as ViewListIcon,
   ViewModule as ViewModuleIcon,
@@ -60,6 +64,7 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 const PAGE_SIZE = 25;
+const NO_GRAIN: Record<string, number> = {};
 
 type ParsedLocationQuery = {
   hasAllParams: boolean;
@@ -102,6 +107,7 @@ function ProductionPageContent() {
     config,
     refreshKey: ctxRefreshKey,
     triggerRefresh,
+    openConfigDialog,
   } = useLandManagerContext();
   const username = auth.username ?? "";
 
@@ -146,6 +152,7 @@ function ProductionPageContent() {
   // DEC row busy flags
   const [stakeBusy, setStakeBusy] = useState(false);
   const [unstakeBusy, setUnstakeBusy] = useState(false);
+  const [findWorkersOpen, setFindWorkersOpen] = useState(false);
 
   const { filters, setFilters, setLocationOverride } = useFilters();
   const searchParams = useSearchParams();
@@ -374,6 +381,27 @@ function ProductionPageContent() {
       .length;
   }, [regionData.eligibility, filteredDeedUids]);
 
+  const filteredUnpoweredCount = useMemo(() => {
+    if (!regionData.eligibility) return null;
+    const set = new Set(filteredDeedUids);
+    return regionData.eligibility.unpoweredSkipped.filter((plot) =>
+      set.has(plot.deed_uid)
+    ).length;
+  }, [regionData.eligibility, filteredDeedUids]);
+
+  const grainRegionKey = useMemo(
+    () => [...new Set(filteredDeeds.map((deed) => deed.region_uid))].join(","),
+    [filteredDeeds]
+  );
+  const { data: regionGrain = NO_GRAIN, error: regionGrainError } =
+    useAsyncData(
+      grainRegionKey
+        ? `production-grain|${ctxRefreshKey}|${grainRegionKey}`
+        : null,
+      () => getRegionGrain(grainRegionKey.split(","), true),
+      { errorMessage: "Failed to load region grain" }
+    );
+
   // ── Worker action hooks ──────────────────────────────────────────────────
   const rentAction = useWorkerAction({
     mode: "rent",
@@ -469,29 +497,105 @@ function ProductionPageContent() {
 
   return (
     <Box>
-      <WorkerActionsAccordions
-        rentalConfig={config.rental}
-        buyConfig={config.buy}
-        filteredEligibleCount={filteredEligibleCount}
-        rentAction={rentAction}
-        buyAction={buyAction}
-        rentalAuthority={rentalAuthorityHook}
-        purchaseAuthority={purchaseAuthorityHook}
-      />
+      <Stack spacing={1.5} sx={{ mb: 2 }}>
+        <Stack
+          direction="row"
+          spacing={1}
+          sx={{ width: "100%", maxWidth: 560, alignItems: "stretch" }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <BulkOperationsMenu
+              username={username}
+              filteredRows={filteredRows}
+              loading={loading}
+              busy={actions.busy}
+              onSuccess={handleSuccess}
+              onOpenBulkConfirm={openConfirm}
+              actionableRows={actionableRows}
+              renderWorksiteActions={(closeMenu) => (
+                <WorksiteBulkActions
+                  deeds={filteredDeeds}
+                  username={username}
+                  regionGrain={regionGrain}
+                  strategies={config.make_harvestable_strategies}
+                  nowMs={nowMs}
+                  onSuccess={handleSuccess}
+                  menuMode
+                  onMenuAction={closeMenu}
+                />
+              )}
+              renderDecActions={(closeMenu) => (
+                <DecPowerControls
+                  username={username}
+                  stakeActionable={regionData.stakeActionable}
+                  unstakeActionable={regionData.unstakeActionable}
+                  busy={decAnyBusy}
+                  onStakeBusy={setStakeBusy}
+                  onUnstakeBusy={setUnstakeBusy}
+                  onSuccess={handleSuccess}
+                  menuItem
+                  onMenuAction={closeMenu}
+                />
+              )}
+            />
+          </Box>
+          <Button
+            variant="contained"
+            size="medium"
+            color="primary"
+            startIcon={<FindWorkersIcon />}
+            onClick={() => setFindWorkersOpen(true)}
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              whiteSpace: "nowrap",
+              fontWeight: 700,
+            }}
+          >
+            Find Workers
+          </Button>
+        </Stack>
+        {regionGrainError && <Alert severity="error">{regionGrainError}</Alert>}
+      </Stack>
 
-      <BulkActionsAccordion
-        username={username}
-        filteredRows={filteredRows}
-        loading={loading}
-        busy={actions.busy}
-        regionData={regionData}
-        decAnyBusy={decAnyBusy}
-        onStakeBusy={setStakeBusy}
-        onUnstakeBusy={setUnstakeBusy}
-        onSuccess={handleSuccess}
-        onOpenBulkConfirm={openConfirm}
-        actionableRows={actionableRows}
-      />
+      {rentAction.result && (
+        <Alert
+          severity={rentAction.result.success ? "success" : "warning"}
+          sx={{ mb: 1.5 }}
+          onClose={rentAction.clearResult}
+        >
+          Rented {rentAction.result.count} card
+          {rentAction.result.count === 1 ? "" : "s"} · staked{" "}
+          {rentAction.result.stakedCount} · spent{" "}
+          {formatFixed(rentAction.result.totalDec)} DEC
+        </Alert>
+      )}
+      {buyAction.result && (
+        <Alert
+          severity={buyAction.result.success ? "success" : "warning"}
+          sx={{ mb: 1.5 }}
+          onClose={buyAction.clearResult}
+        >
+          Bought {buyAction.result.count} card
+          {buyAction.result.count === 1 ? "" : "s"} · staked{" "}
+          {buyAction.result.stakedCount} · spent{" "}
+          {formatFixed(buyAction.result.totalDec)} DEC
+        </Alert>
+      )}
+      {rentAction.error && !findWorkersOpen && (
+        <Alert
+          severity="error"
+          sx={{ mb: 1.5 }}
+          onClose={rentAction.clearError}
+        >
+          {rentAction.error}
+        </Alert>
+      )}
+      {buyAction.error && !findWorkersOpen && (
+        <Alert severity="error" sx={{ mb: 1.5 }} onClose={buyAction.clearError}>
+          {buyAction.error}
+        </Alert>
+      )}
 
       {/* ── Toolbar ───────────────────────────────────────────────────────── */}
       <Stack
@@ -670,25 +774,23 @@ function ProductionPageContent() {
         />
       )}
 
-      {rentAction.executionPlan && (
-        <WorkerConfirmDialog
-          exec={rentAction.executionPlan}
-          busy={rentAction.busy}
-          decBalance={rentAction.decBalance}
-          onConfirm={() => rentAction.execute()}
-          onCancel={() => rentAction.clearExecutionPlan()}
-        />
-      )}
-
-      {buyAction.executionPlan && (
-        <WorkerConfirmDialog
-          exec={buyAction.executionPlan}
-          busy={buyAction.busy}
-          decBalance={buyAction.decBalance}
-          onConfirm={() => buyAction.execute()}
-          onCancel={() => buyAction.clearExecutionPlan()}
-        />
-      )}
+      <FindWorkersWizard
+        open={findWorkersOpen}
+        onClose={() => setFindWorkersOpen(false)}
+        eligibleCount={filteredEligibleCount}
+        unpoweredCount={filteredUnpoweredCount}
+        rentalConfig={config.rental}
+        buyConfig={config.buy}
+        onOpenConfig={(section) => openConfigDialog(section)}
+        rentAction={rentAction}
+        buyAction={buyAction}
+        rentalAuthority={rentalAuthorityHook}
+        purchaseAuthority={purchaseAuthorityHook}
+        deedByUid={deedByUid}
+        prices={prices}
+        spsRatio={spsRatio}
+        regionTax={Object.values(pageData?.regionTax ?? {})}
+      />
     </Box>
   );
 }

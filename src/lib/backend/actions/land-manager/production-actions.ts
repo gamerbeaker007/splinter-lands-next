@@ -114,11 +114,11 @@ export interface PlotConfigureData {
  * the Configure panel. The browser reads `assets` fresh from SPL; only the
  * card details lookup happens here.
  */
-export async function buildPlotConfigureData(
+function mapPlotConfigureData(
   deedUid: string,
-  assets: StakedAssets
-): Promise<PlotConfigureData> {
-  const cardDetails = await getCachedCardDetailsData();
+  assets: StakedAssets,
+  cardDetails: Awaited<ReturnType<typeof getCachedCardDetailsData>>
+): PlotConfigureData {
   const cards = assets.cards ?? [];
   const items = assets.items ?? [];
 
@@ -185,4 +185,29 @@ export async function buildPlotConfigureData(
     totem: toConfigItem(STAKE_TYPE_UID_LAND_TOTEM),
     title: toConfigItem(STAKE_TYPE_UID_LAND_TITLE),
   };
+}
+
+export async function buildPlotConfigureData(
+  deedUid: string,
+  assets: StakedAssets
+): Promise<PlotConfigureData> {
+  return mapPlotConfigureData(
+    deedUid,
+    assets,
+    await getCachedCardDetailsData()
+  );
+}
+
+/** Enrich several browser-fetched stake snapshots in one server action call. */
+export async function buildPlotConfigureDataBatch(
+  entries: Array<{ deedUid: string; assets: StakedAssets }>
+): Promise<Record<string, PlotConfigureData>> {
+  const cardDetails = await getCachedCardDetailsData();
+  const results = await Promise.all(
+    entries.map(
+      ({ deedUid, assets }) =>
+        [deedUid, mapPlotConfigureData(deedUid, assets, cardDetails)] as const
+    )
+  );
+  return Object.fromEntries(results);
 }

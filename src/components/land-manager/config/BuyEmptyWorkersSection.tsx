@@ -2,11 +2,12 @@
 
 import { FOIL_IDS, foilLabel } from "@/lib/utils/cardUtil";
 import {
-  BUY_BATCH_SIZE_MAX,
-  BUY_BATCH_SIZE_MIN,
   BUY_STRATEGY_LABELS,
   BuyConfig,
   BuyStrategy,
+  normalizeWorkerBatchSize,
+  WORKER_BATCH_SIZE_MAX,
+  WORKER_BATCH_SIZE_MIN,
 } from "@/types/landManager";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -88,18 +89,19 @@ export default function BuyEmptyWorkersSection({
 
       <Stack gap={0.5} mb={2}>
         <Typography variant="caption" fontWeight="bold">
-          Plots per run (batch size): {buy.buy_batch_size}
+          Plots per run (batch size):{" "}
+          {normalizeWorkerBatchSize(buy.buy_batch_size)}
         </Typography>
         <Slider
           size="small"
-          min={BUY_BATCH_SIZE_MIN}
-          max={BUY_BATCH_SIZE_MAX}
+          min={WORKER_BATCH_SIZE_MIN}
+          max={WORKER_BATCH_SIZE_MAX}
           step={1}
-          value={buy.buy_batch_size}
+          value={normalizeWorkerBatchSize(buy.buy_batch_size)}
           valueLabelDisplay="auto"
           marks={[
-            { value: BUY_BATCH_SIZE_MIN, label: `${BUY_BATCH_SIZE_MIN}` },
-            { value: BUY_BATCH_SIZE_MAX, label: `${BUY_BATCH_SIZE_MAX}` },
+            { value: WORKER_BATCH_SIZE_MIN, label: `${WORKER_BATCH_SIZE_MIN}` },
+            { value: WORKER_BATCH_SIZE_MAX, label: `${WORKER_BATCH_SIZE_MAX}` },
           ]}
           onChange={(_, val) =>
             onChange({
@@ -113,7 +115,8 @@ export default function BuyEmptyWorkersSection({
           <Typography variant="caption">
             <strong>Smaller batches = better market matches.</strong> Each run
             re-fetches live market data, so processing fewer plots at a time
-            catches fresher listings between batches.
+            catches fresher listings between runs. Each run processes at most
+            100 plots.
           </Typography>
         </Alert>
       </Stack>

@@ -83,8 +83,10 @@ export interface UseWorkerAction<P extends WorkerExecPlan = WorkerExecPlan> {
   clearExecutionPlan: () => void;
   clearResult: () => void;
   clearError: () => void;
-  prepareExecution: () => Promise<void>;
-  execute: () => Promise<void>;
+  prepareExecution: (
+    configOverride?: RentalConfig | BuyConfig
+  ) => Promise<void>;
+  execute: (configOverride?: RentalConfig | BuyConfig) => Promise<void>;
 }
 
 // Per-mode wiring: which plan to fetch, which authority to check, how to
@@ -194,225 +196,240 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
 
   // Resolve the per-mode strategy. Cheap to build; memoised on (mode, config).
   const strategy = useCallback(
-    () =>
+    (configOverride?: RentalConfig | BuyConfig) =>
       mode === "rent"
-        ? rentMode(config as RentalConfig, filteredDeedUids)
-        : buyMode(config as BuyConfig, filteredDeedUids),
+        ? rentMode(
+            (configOverride as RentalConfig | undefined) ??
+              (config as RentalConfig),
+            filteredDeedUids
+          )
+        : buyMode(
+            (configOverride as BuyConfig | undefined) ?? (config as BuyConfig),
+            filteredDeedUids
+          ),
     [mode, config, filteredDeedUids]
   );
 
-  const prepareExecution = useCallback(async () => {
-    setBusy(true);
-    setError(null);
-    setExecutionPlan(null);
-    setDecBalance(null);
-    try {
-      const [plan, balance] = await Promise.all([
-        strategy().fetchPlan(),
-        username ? getDecBalance(username) : Promise.resolve(0),
-      ]);
-      setExecutionPlan(plan);
+  const prepareExecution = useCallback(
+    async (configOverride?: RentalConfig | BuyConfig) => {
+      setBusy(true);
+      setError(null);
+      setExecutionPlan(null);
+      setDecBalance(null);
+      try {
+        const [plan, balance] = await Promise.all([
+          strategy(configOverride).fetchPlan(),
+          username ? getDecBalance(username) : Promise.resolve(0),
+        ]);
+        setExecutionPlan(plan);
+        setDecBalance(balance);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setBusy(false);
+      }
+    },
+    [strategy, username]
+  );
+
+  const execute = useCallback(
+    async (configOverride?: RentalConfig | BuyConfig) => {
+      if (!username) {
+        setError("Not logged in.");
+        return;
+      }
+      setBusy(true);
+      setError(null);
+      setResult(null);
+
+      const s = strategy(configOverride);
+
+      // Re-fetch plan and DEC balance right before broadcast — listings can be
+      // claimed by others and balances can move while the confirm dialog is open.
+      let exec: WorkerExecPlan;
+      let balance: number;
+      try {
+        [exec, balance] = await Promise.all([
+          s.fetchPlan(true),
+          getDecBalance(username),
+        ]);
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? `Refresh failed: ${err.message}`
+            : "Failed to refresh plan before execute."
+        );
+        setBusy(false);
+        return;
+      }
+      setExecutionPlan(exec);
       setDecBalance(balance);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setBusy(false);
-    }
-  }, [strategy, username]);
 
-  const execute = useCallback(async () => {
-    if (!username) {
-      setError("Not logged in.");
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setResult(null);
-
-    const s = strategy();
-
-    // Re-fetch plan and DEC balance right before broadcast — listings can be
-    // claimed by others and balances can move while the confirm dialog is open.
-    let exec: WorkerExecPlan;
-    let balance: number;
-    try {
-      [exec, balance] = await Promise.all([
-        s.fetchPlan(true),
-        getDecBalance(username),
-      ]);
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? `Refresh failed: ${err.message}`
-          : "Failed to refresh plan before execute."
-      );
-      setBusy(false);
-      return;
-    }
-    setExecutionPlan(exec);
-    setDecBalance(balance);
-
-    const picks = exec.plan.items.flatMap((item) => item.picks);
-    if (picks.length === 0) {
-      setError(
-        `Nothing left to ${s.label} after re-checking the market — listings may have been claimed.`
-      );
-      setBusy(false);
-      return;
-    }
-
-    const totalCost = exec.plan.totals.total_dec;
-    if (balance < totalCost) {
-      setError(
-        `Insufficient DEC: need ${totalCost.toFixed(3)} but have ${balance.toFixed(3)}. Top up and re-run.`
-      );
-      setBusy(false);
-      return;
-    }
-
-    try {
-      // ── Phase 1: rent/buy (server-signed, no Keychain popup) ──
-      const authority = await s.authority();
-      if (!authority.serviceConfigured) {
-        setError(s.notConfiguredError);
-        setBusy(false);
-        return;
-      }
-      if (!authority.authorized) {
+      const picks = exec.plan.items.flatMap((item) => item.picks);
+      if (picks.length === 0) {
         setError(
-          `@${authority.serviceAccount} does not have ${s.label === "rent" ? "rental" : "purchase"} authority for @${authority.player}.`
+          `Nothing left to ${s.label} after re-checking the market — listings may have been claimed.`
         );
         setBusy(false);
         return;
       }
 
-      const actionRes = await s.broadcast(picks);
-      if (!actionRes.success) {
+      const totalCost = exec.plan.totals.total_dec;
+      if (balance < totalCost) {
         setError(
-          `${actionRes.verb} failed: ${actionRes.error ?? "unknown error"}.${
-            actionRes.txIds.length > 0
-              ? " Some chunks may have already broadcast — check your wallet."
-              : ""
-          }`
+          `Insufficient DEC: need ${totalCost.toFixed(3)} but have ${balance.toFixed(3)}. Top up and re-run.`
         );
         setBusy(false);
         return;
       }
 
-      const actionResults = await waitForTransactions(actionRes.pollIds);
-
-      // Prefer actual DEC/USD from confirmed purchase results; fall back to the
-      // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
-      let actualDec = 0;
-      let actualUsd = 0;
-      let sawResult = false;
-      for (const r of actionResults) {
-        if (r?.op === "market_purchase") {
-          actualDec += r.result.total_dec;
-          actualUsd += r.result.total_usd;
-          sawResult = true;
+      try {
+        // ── Phase 1: rent/buy (server-signed, no Keychain popup) ──
+        const authority = await s.authority();
+        if (!authority.serviceConfigured) {
+          setError(s.notConfiguredError);
+          setBusy(false);
+          return;
         }
-      }
-      const totalDec = sawResult ? actualDec : totalCost;
-      const totalUsd = actualUsd;
-
-      // ── Phase 2: stake the acquired cards as workers (posting key) ──
-      const stakeOps: [string, object][] = [];
-      let skippedDeeds = 0;
-      for (const item of exec.plan.items) {
-        if (item.picks.length === 0) continue;
-        const emptySlots = exec.emptySlotsByDeed[item.plot.deed_uid] ?? [];
-        if (emptySlots.length < item.picks.length) {
-          skippedDeeds += 1;
-          continue;
-        }
-        const cards: StakeWorkerCard[] = item.picks.map((pick, i) => ({
-          card_uid: pick.card_uid,
-          slot: emptySlots[i],
-        }));
-        stakeOps.push(buildStakeWorkersOp(username, item.plot.deed_uid, cards));
-      }
-
-      // Hive ids for the result card; SPL op ids for the day log.
-      const actionOpTxIds = actionRes.opTxIds ?? actionRes.txIds;
-      let stakeTxIds: string[] = [];
-      let stakeOpTxIds: string[] = [];
-      if (stakeOps.length > 0) {
-        const stakeRes = await broadcastOperations(username, stakeOps);
-        stakeTxIds = stakeRes.txIds;
-        stakeOpTxIds = stakeRes.opTxIds;
-        if (!stakeRes.success) {
-          setResult({
-            success: false,
-            mode,
-            actionTxIds: actionRes.txIds,
-            stakeTxIds,
-            count: picks.length,
-            stakedCount: 0,
-            totalDec,
-            totalUsd,
-          });
-          s.record(
-            username,
-            picks.length,
-            0,
-            totalDec,
-            totalUsd,
-            actionOpTxIds,
-            stakeOpTxIds
-          ).catch(() => {});
+        if (!authority.authorized) {
           setError(
-            `Cards were ${s.label === "rent" ? "rented" : "bought"} but staking failed: ${stakeRes.error}. You can manually stake them from Splinterlands.`
+            `@${authority.serviceAccount} does not have ${s.label === "rent" ? "rental" : "purchase"} authority for @${authority.player}.`
           );
           setBusy(false);
           return;
         }
-        await waitForTransactions(stakeRes.opTxIds);
+
+        const actionRes = await s.broadcast(picks);
+        if (!actionRes.success) {
+          setError(
+            `${actionRes.verb} failed: ${actionRes.error ?? "unknown error"}.${
+              actionRes.txIds.length > 0
+                ? " Some chunks may have already broadcast — check your wallet."
+                : ""
+            }`
+          );
+          setBusy(false);
+          return;
+        }
+
+        const actionResults = await waitForTransactions(actionRes.pollIds);
+
+        // Prefer actual DEC/USD from confirmed purchase results; fall back to the
+        // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
+        let actualDec = 0;
+        let actualUsd = 0;
+        let sawResult = false;
+        for (const r of actionResults) {
+          if (r?.op === "market_purchase") {
+            actualDec += r.result.total_dec;
+            actualUsd += r.result.total_usd;
+            sawResult = true;
+          }
+        }
+        const totalDec = sawResult ? actualDec : totalCost;
+        const totalUsd = actualUsd;
+
+        // ── Phase 2: stake the acquired cards as workers (posting key) ──
+        const stakeOps: [string, object][] = [];
+        let skippedDeeds = 0;
+        for (const item of exec.plan.items) {
+          if (item.picks.length === 0) continue;
+          const emptySlots = exec.emptySlotsByDeed[item.plot.deed_uid] ?? [];
+          if (emptySlots.length < item.picks.length) {
+            skippedDeeds += 1;
+            continue;
+          }
+          const cards: StakeWorkerCard[] = item.picks.map((pick, i) => ({
+            card_uid: pick.card_uid,
+            slot: emptySlots[i],
+          }));
+          stakeOps.push(
+            buildStakeWorkersOp(username, item.plot.deed_uid, cards)
+          );
+        }
+
+        // Hive ids for the result card; SPL op ids for the day log.
+        const actionOpTxIds = actionRes.opTxIds ?? actionRes.txIds;
+        let stakeTxIds: string[] = [];
+        let stakeOpTxIds: string[] = [];
+        if (stakeOps.length > 0) {
+          const stakeRes = await broadcastOperations(username, stakeOps);
+          stakeTxIds = stakeRes.txIds;
+          stakeOpTxIds = stakeRes.opTxIds;
+          if (!stakeRes.success) {
+            setResult({
+              success: false,
+              mode,
+              actionTxIds: actionRes.txIds,
+              stakeTxIds,
+              count: picks.length,
+              stakedCount: 0,
+              totalDec,
+              totalUsd,
+            });
+            s.record(
+              username,
+              picks.length,
+              0,
+              totalDec,
+              totalUsd,
+              actionOpTxIds,
+              stakeOpTxIds
+            ).catch(() => {});
+            setError(
+              `Cards were ${s.label === "rent" ? "rented" : "bought"} but staking failed: ${stakeRes.error}. You can manually stake them from Splinterlands.`
+            );
+            setBusy(false);
+            return;
+          }
+          await waitForTransactions(stakeRes.opTxIds);
+        }
+
+        invalidatePlayerBrowserCaches(username);
+
+        const stakedCount = exec.plan.items
+          .filter(
+            (item) =>
+              item.picks.length > 0 &&
+              (exec.emptySlotsByDeed[item.plot.deed_uid]?.length ?? 0) >=
+                item.picks.length
+          )
+          .reduce((sum, item) => sum + item.picks.length, 0);
+
+        setResult({
+          success: true,
+          mode,
+          actionTxIds: actionRes.txIds,
+          stakeTxIds,
+          count: picks.length,
+          stakedCount,
+          totalDec,
+          totalUsd,
+        });
+        setExecutionPlan(null);
+        s.record(
+          username,
+          picks.length,
+          stakedCount,
+          totalDec,
+          totalUsd,
+          actionOpTxIds,
+          stakeOpTxIds
+        ).catch(() => {});
+        if (skippedDeeds > 0) {
+          setError(
+            `${skippedDeeds} plot${skippedDeeds === 1 ? "" : "s"} skipped during staking (slot count mismatch). Stake remaining cards manually.`
+          );
+        }
+        onSuccess?.();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Unknown error");
+      } finally {
+        setBusy(false);
       }
-
-      invalidatePlayerBrowserCaches(username);
-
-      const stakedCount = exec.plan.items
-        .filter(
-          (item) =>
-            item.picks.length > 0 &&
-            (exec.emptySlotsByDeed[item.plot.deed_uid]?.length ?? 0) >=
-              item.picks.length
-        )
-        .reduce((sum, item) => sum + item.picks.length, 0);
-
-      setResult({
-        success: true,
-        mode,
-        actionTxIds: actionRes.txIds,
-        stakeTxIds,
-        count: picks.length,
-        stakedCount,
-        totalDec,
-        totalUsd,
-      });
-      setExecutionPlan(null);
-      s.record(
-        username,
-        picks.length,
-        stakedCount,
-        totalDec,
-        totalUsd,
-        actionOpTxIds,
-        stakeOpTxIds
-      ).catch(() => {});
-      if (skippedDeeds > 0) {
-        setError(
-          `${skippedDeeds} plot${skippedDeeds === 1 ? "" : "s"} skipped during staking (slot count mismatch). Stake remaining cards manually.`
-        );
-      }
-      onSuccess?.();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unknown error");
-    } finally {
-      setBusy(false);
-    }
-  }, [username, strategy, mode, onSuccess]);
+    },
+    [username, strategy, mode, onSuccess]
+  );
 
   return {
     busy,
