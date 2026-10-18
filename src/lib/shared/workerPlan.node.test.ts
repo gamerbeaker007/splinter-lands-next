@@ -1,6 +1,9 @@
 import {
   buildWorkerPlan,
+  isWithinWorkerCap,
   PlanCaps,
+  priceBuyListing,
+  priceRentalListing,
   WorkerPlanStrategy,
 } from "@/lib/shared/workerPlan";
 import { computeWorkerEligibility } from "@/lib/shared/workerEligibility";
@@ -9,6 +12,7 @@ import {
   normalizeWorkerBatchSize,
   WorkerEligiblePlot,
 } from "@/types/landManager";
+import { SplMarketListing } from "@/types/spl/marketListing";
 import { describe, expect, it } from "vitest";
 
 function makePlot(index: number): WorkerEligiblePlot {
@@ -84,6 +88,30 @@ const emptyCandidateStrategy: WorkerPlanStrategy<null> = {
   priceListing: () => null,
 };
 
+function makeListing(buy_price: number, currency: string): SplMarketListing {
+  return {
+    market_id: "market-1",
+    card_id: "card-1",
+    uid: "worker-1",
+    card_detail_id: 1,
+    edition: 7,
+    foil: 0,
+    gold: false,
+    level: 1,
+    bcx: 1,
+    xp: 0,
+    buy_price,
+    price_bcx: buy_price,
+    fee_percent: 0,
+    seller: "seller",
+    type: "SELL",
+    rental_type: "season",
+    expiration_date: "2026-11-01T00:00:00.000Z",
+    currency,
+    land_base_pp: "100",
+  };
+}
+
 describe("worker plan batch size", () => {
   it("normalizes legacy and oversized settings to the supported range", () => {
     expect(normalizeWorkerBatchSize(null)).toBe(100);
@@ -143,5 +171,37 @@ describe("worker plan batch size", () => {
     expect(result.unpoweredSkipped.map((entry) => entry.deed_uid)).toEqual([
       "plot-1",
     ]);
+  });
+});
+
+describe("per-worker cost caps", () => {
+  it("applies buy caps to DEC-converted listing cost, not the USD sticker price", () => {
+    const affordableUsd = priceBuyListing(makeListing(4.5, "USD"), 0.0015);
+    const overCapUsd = priceBuyListing(makeListing(5, "USD"), 0.0015);
+    const overCapDec = priceBuyListing(makeListing(3000.01, "DEC"), 0.0015);
+
+    expect(affordableUsd?.worker_cap_cost).toBe(3000);
+    expect(isWithinWorkerCap(affordableUsd!, 3000)).toBe(true);
+    expect(overCapUsd?.worker_cap_cost).toBeCloseTo(3333.333);
+    expect(isWithinWorkerCap(overCapUsd!, 3000)).toBe(false);
+    expect(isWithinWorkerCap(overCapDec!, 3000)).toBe(false);
+  });
+
+  it("keeps rental caps on DEC/day rather than total rental cost", () => {
+    const pricing = priceRentalListing(
+      makeListing(300, "DEC"),
+      { rental_days: 14, source: "test" },
+      0.0015
+    );
+    const overDailyCap = priceRentalListing(
+      makeListing(3000.01, "DEC"),
+      { rental_days: 14, source: "test" },
+      0.0015
+    );
+
+    expect(pricing?.total_dec).toBe(4200);
+    expect(pricing?.worker_cap_cost).toBe(300);
+    expect(isWithinWorkerCap(pricing!, 3000)).toBe(true);
+    expect(isWithinWorkerCap(overDailyCap!, 3000)).toBe(false);
   });
 });

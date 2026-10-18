@@ -1,7 +1,9 @@
 "use client";
 
 import AuthorityControl from "@/components/land-manager/production/rental-actions/AuthorityControl";
-import WorkerPlotResultCard from "@/components/land-manager/production/rental-actions/WorkerPlotResultCard";
+import WorkerPlotResultCard, {
+  WORKER_PLOT_OVERLAY_MIN_WIDTH,
+} from "@/components/land-manager/production/rental-actions/WorkerPlotResultCard";
 import InlineWorkerSettings from "@/components/land-manager/production/InlineWorkerSettings";
 import type { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
 import type { UseWorkerAction } from "@/hooks/useWorkerAction";
@@ -439,12 +441,6 @@ export default function FindWorkersWizard({
                   >
                     Search Again
                   </Button>
-                  {needsNewSearch && !activeAction.busy && (
-                    <Typography variant="caption" color="warning.main">
-                      Search again to see the plan for these settings before
-                      confirming.
-                    </Typography>
-                  )}
                 </Stack>
               </Stack>
             </Paper>
@@ -553,8 +549,7 @@ export default function FindWorkersWizard({
                   <Box
                     sx={{
                       display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(min(100%, 420px), 1fr))",
+                      gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, ${WORKER_PLOT_OVERLAY_MIN_WIDTH}px), 1fr))`,
                       alignItems: "start",
                       gap: 1.5,
                     }}

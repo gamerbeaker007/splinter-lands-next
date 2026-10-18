@@ -42,7 +42,7 @@ const DEED_IMAGE_RATIO = "800 / 422";
 const CARD_MAX_WIDTH = 600;
 // Below this card width the picks no longer fit on the artwork, so they move
 // underneath it.
-const PICKS_OVERLAY_MIN_WIDTH = 520;
+export const WORKER_PLOT_OVERLAY_MIN_WIDTH = 520;
 
 const badgeSx = {
   display: "flex",
@@ -169,7 +169,7 @@ function PlotArtwork({
           sx={{
             p: 1,
             bgcolor: "grey.900",
-            [`@container (min-width: ${PICKS_OVERLAY_MIN_WIDTH}px)`]: {
+            [`@container (min-width: ${WORKER_PLOT_OVERLAY_MIN_WIDTH}px)`]: {
               position: "absolute",
               top: 100,
               left: 75,

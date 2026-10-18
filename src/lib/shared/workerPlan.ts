@@ -101,6 +101,8 @@ export interface PlanCaps {
 /** Cost of a single listing, plus the rental-only fields when applicable. */
 export interface ListingPricing {
   total_dec: number;
+  /** Cost compared with the flow's per-worker cap: DEC/day for rent, DEC for buy. */
+  worker_cap_cost: number;
   total_usd?: number;
   buy_price_per_day?: number;
   rental_days?: number;
@@ -140,6 +142,13 @@ export interface WorkerPlanStrategy<Ctx> {
   /** Price one listing; return null to skip it. */
   priceListing(listing: SplMarketListing, ctx: Ctx): ListingPricing | null;
   log?: (message: string) => void;
+}
+
+export function isWithinWorkerCap(
+  pricing: ListingPricing,
+  maxPerWorker: number
+): boolean {
+  return maxPerWorker <= 0 || pricing.worker_cap_cost <= maxPerWorker;
 }
 
 /** The only per-plot input candidate selection needs. */
@@ -348,8 +357,6 @@ async function buildScoredPairs<Ctx>(
     }
 
     for (const listing of listings) {
-      if (listing.buy_price > maxPerWorker) continue;
-
       // land_base_pp comes from the actual listing, not an estimate, so this
       // correctly rejects below-threshold low-level cards.
       const land_base_pp = Number(listing.land_base_pp);
@@ -358,6 +365,7 @@ async function buildScoredPairs<Ctx>(
 
       const pricing = strategy.priceListing(listing, ctx);
       if (!pricing || pricing.total_dec <= 0) continue;
+      if (!isWithinWorkerCap(pricing, maxPerWorker)) continue;
 
       for (const plot of eligible) {
         const mod = plot.biome_modifiers[tuple.element] ?? 0;
@@ -606,6 +614,7 @@ export function priceRentalListing(
   if (rentalDays <= 0) return null;
   return {
     total_dec: listing.buy_price * rentalDays,
+    worker_cap_cost: listing.buy_price,
     total_usd: listing.buy_price * rentalDays * usdPerDec,
     buy_price_per_day: listing.buy_price,
     rental_days: rentalDays,
@@ -621,11 +630,13 @@ export function priceBuyListing(
   if (listing.currency == "USD") {
     return {
       total_dec: listing.buy_price / decPrice,
+      worker_cap_cost: listing.buy_price / decPrice,
       total_usd: listing.buy_price,
     };
   } else if (listing.currency == "DEC") {
     return {
       total_dec: listing.buy_price,
+      worker_cap_cost: listing.buy_price,
       total_usd: listing.buy_price * decPrice,
     };
   } else {
