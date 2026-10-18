@@ -100,11 +100,12 @@ type SlotCardLike = Pick<
   | "bloodline"
   | "landBoosts"
   | "landBasePP"
-> & { slot?: number };
+> & { slot?: number; uid?: string };
 
 function spotCardToSlotInput(card: SlotCardLike, index: number): SlotInput {
   return {
     id: card.slot ?? index + 1,
+    uid: card.uid,
     set: card.set as CardSetNameLandValid,
     rarity: card.rarity,
     bcx: card.bcx,
@@ -202,20 +203,24 @@ export function projectWorkerPlanPlot(
   spsRatio: number,
   regionTax: RegionTax[] | null
 ): WorkerPlanPlotProjection {
-  const selectedCards = picks.map((pick, index) => ({
-    uid: pick.card_uid,
-    name: pick.card_name,
-    set: pick.card_set,
-    rarity: pick.rarity,
-    bcx: pick.bcx,
-    foil: pick.foil,
-    element: pick.element,
-    secondaryElement: pick.secondary_element,
-    bloodline: pick.bloodline,
-    landBoosts: pick.land_boosts,
-    landBasePP: pick.land_base_pp,
-    slot: emptySlots[index],
-  }));
+  // A pick without a free slot is not staked, so it is not projected either
+  // (and must not borrow an occupied slot id).
+  const selectedCards = picks
+    .slice(0, emptySlots.length)
+    .map((pick, index) => ({
+      uid: pick.card_uid,
+      name: pick.card_name,
+      set: pick.card_set,
+      rarity: pick.rarity,
+      bcx: pick.bcx,
+      foil: pick.foil,
+      element: pick.element,
+      secondaryElement: pick.secondary_element,
+      bloodline: pick.bloodline,
+      landBoosts: pick.land_boosts,
+      landBasePP: pick.land_base_pp,
+      slot: emptySlots[index],
+    }));
   const current = projectPlot(
     deed,
     currentWorkers,

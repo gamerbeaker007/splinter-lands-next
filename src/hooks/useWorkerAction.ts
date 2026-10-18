@@ -34,6 +34,14 @@ import { useCallback, useState } from "react";
 
 export type WorkerMode = "rent" | "buy";
 
+// The refreshed plan may cost a little more than the one shown (prices move);
+// beyond this the user has to look at the new plan and confirm again.
+const PLAN_COST_TOLERANCE = 0.02;
+
+function configKey(config: RentalConfig | BuyConfig): string {
+  return JSON.stringify(config);
+}
+
 /** Minimal execution-plan shape the shared flow needs (both modes satisfy it). */
 interface WorkerExecPlan {
   plan: { items: WorkerPlanItem[]; totals: WorkerPlanTotals };
@@ -51,7 +59,7 @@ export interface WorkerExecuteResult {
   count: number;
   stakedCount: number;
   totalDec: number;
-  /** USD value of bought cards. Always 0 for rentals. */
+  /** USD value: actual for buys, the planned estimate for rentals. */
   totalUsd: number;
 }
 
@@ -80,6 +88,11 @@ export interface UseWorkerAction<P extends WorkerExecPlan = WorkerExecPlan> {
   decBalance: number | null;
   result: WorkerExecuteResult | null;
   error: string | null;
+  /**
+   * The shown plan may no longer be confirmed: a run already acquired some of
+   * its cards, or the settings changed since the search. Search again first.
+   */
+  isPlanConfirmable: (config: RentalConfig | BuyConfig) => boolean;
   clearExecutionPlan: () => void;
   clearResult: () => void;
   clearError: () => void;
@@ -193,6 +206,8 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
   const [decBalance, setDecBalance] = useState<number | null>(null);
   const [result, setResult] = useState<WorkerExecuteResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Config the shown plan was searched with; null once a run consumed it.
+  const [planConfigKey, setPlanConfigKey] = useState<string | null>(null);
 
   // Resolve the per-mode strategy. Cheap to build; memoised on (mode, config).
   const strategy = useCallback(
@@ -216,6 +231,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
       setError(null);
       setExecutionPlan(null);
       setDecBalance(null);
+      setPlanConfigKey(null);
       try {
         const [plan, balance] = await Promise.all([
           strategy(configOverride).fetchPlan(),
@@ -223,13 +239,14 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         ]);
         setExecutionPlan(plan);
         setDecBalance(balance);
+        setPlanConfigKey(configKey(configOverride ?? config));
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setBusy(false);
       }
     },
-    [strategy, username]
+    [strategy, username, config]
   );
 
   const execute = useCallback(
@@ -238,6 +255,16 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         setError("Not logged in.");
         return;
       }
+      // Only ever run the plan the user looked at: edited settings or a run
+      // that already acquired cards need a new search first.
+      if (
+        !executionPlan ||
+        planConfigKey !== configKey(configOverride ?? config)
+      ) {
+        setError("Search again before confirming.");
+        return;
+      }
+      const shownTotals = executionPlan.plan.totals;
       setBusy(true);
       setError(null);
       setResult(null);
@@ -275,6 +302,16 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
       }
 
       const totalCost = exec.plan.totals.total_dec;
+      if (
+        totalCost > shownTotals.total_dec * (1 + PLAN_COST_TOLERANCE) ||
+        picks.length > shownTotals.slots_filled
+      ) {
+        setError(
+          `The market moved: the refreshed plan costs ${totalCost.toFixed(3)} DEC for ${picks.length} workers (was ${shownTotals.total_dec.toFixed(3)} DEC). Review it and confirm again.`
+        );
+        setBusy(false);
+        return;
+      }
       if (balance < totalCost) {
         setError(
           `Insufficient DEC: need ${totalCost.toFixed(3)} but have ${balance.toFixed(3)}. Top up and re-run.`
@@ -283,6 +320,8 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         return;
       }
 
+      let broadcastAttempted = false;
+      let completed = false;
       try {
         // ── Phase 1: rent/buy (server-signed, no Keychain popup) ──
         const authority = await s.authority();
@@ -299,6 +338,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
           return;
         }
 
+        broadcastAttempted = true;
         const actionRes = await s.broadcast(picks);
         if (!actionRes.success) {
           setError(
@@ -315,7 +355,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
         const actionResults = await waitForTransactions(actionRes.pollIds);
 
         // Prefer actual DEC/USD from confirmed purchase results; fall back to the
-        // plan estimate for DEC. (Rentals have no per-tx USD — totalUsd stays 0.)
+        // plan estimate (rentals have no per-tx result).
         let actualDec = 0;
         let actualUsd = 0;
         let sawResult = false;
@@ -327,7 +367,9 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
           }
         }
         const totalDec = sawResult ? actualDec : totalCost;
-        const totalUsd = actualUsd;
+        const totalUsd = sawResult
+          ? actualUsd
+          : picks.reduce((sum, pick) => sum + pick.total_usd, 0);
 
         // ── Phase 2: stake the acquired cards as workers (posting key) ──
         const stakeOps: [string, object][] = [];
@@ -406,6 +448,7 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
           totalDec,
           totalUsd,
         });
+        completed = true;
         setExecutionPlan(null);
         s.record(
           username,
@@ -425,10 +468,16 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
       } catch (err) {
         setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
+        // Cards may have been acquired even when the run failed: drop stale
+        // reads and never let the same plan be confirmed twice.
+        if (broadcastAttempted && !completed) {
+          invalidatePlayerBrowserCaches(username);
+          setPlanConfigKey(null);
+        }
         setBusy(false);
       }
     },
-    [username, strategy, mode, onSuccess]
+    [username, strategy, mode, onSuccess, executionPlan, planConfigKey, config]
   );
 
   return {
@@ -438,9 +487,12 @@ export function useWorkerAction(params: WorkerActionParams): UseWorkerAction {
     decBalance,
     result,
     error,
+    isPlanConfirmable: (cfg) =>
+      executionPlan != null && planConfigKey === configKey(cfg),
     clearExecutionPlan: () => {
       setExecutionPlan(null);
       setDecBalance(null);
+      setPlanConfigKey(null);
     },
     clearResult: () => setResult(null),
     clearError: () => setError(null),

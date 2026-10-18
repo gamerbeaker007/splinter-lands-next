@@ -398,7 +398,9 @@ function ProductionPageContent() {
       grainRegionKey
         ? `production-grain|${ctxRefreshKey}|${grainRegionKey}`
         : null,
-      () => getRegionGrain(grainRegionKey.split(","), true),
+      // Memoised read: broadcasts clear the memo and ctxRefreshKey refetches,
+      // so forcing it would only add a JWT read per region on every load.
+      () => getRegionGrain(grainRegionKey.split(",")),
       { errorMessage: "Failed to load region grain" }
     );
 

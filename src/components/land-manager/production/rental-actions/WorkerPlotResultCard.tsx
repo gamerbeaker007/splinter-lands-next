@@ -13,7 +13,11 @@ import {
   land_keep_icon_url,
   land_unsurveyd_deed_url,
 } from "@/lib/shared/statics_icon_urls";
-import { getDeedImg } from "@/lib/utils/deedUtil";
+import {
+  getDeedImg,
+  getDeedRarityIcon,
+  getPlotStatusIcon,
+} from "@/lib/utils/deedUtil";
 import { DeedComplete } from "@/types/deed";
 import { WorkerPlanItem, WorkerPlanPlotCard } from "@/types/landManager";
 import { Prices } from "@/types/price";
@@ -31,6 +35,39 @@ interface Props {
   prices: Prices | null;
   spsRatio: number;
   regionTax: RegionTax[];
+}
+
+// Deed artwork is 800×422; the header keeps that ratio so nothing is cropped.
+const DEED_IMAGE_RATIO = "800 / 422";
+const CARD_MAX_WIDTH = 600;
+// Below this card width the picks no longer fit on the artwork, so they move
+// underneath it.
+const PICKS_OVERLAY_MIN_WIDTH = 520;
+
+const badgeSx = {
+  display: "flex",
+  alignItems: "center",
+  gap: 0.5,
+  px: 0.75,
+  py: 0.3,
+  borderRadius: 1,
+  bgcolor: "rgba(0,0,0,0.75)",
+  color: "#fff",
+  fontSize: "0.7rem",
+  fontWeight: 700,
+  textTransform: "uppercase",
+  letterSpacing: 0.4,
+} as const;
+
+function BadgeIcon({ src }: { src: string }) {
+  return (
+    <Box
+      component="img"
+      src={src}
+      alt=""
+      sx={{ width: 16, height: 16, objectFit: "contain" }}
+    />
+  );
 }
 
 function PlotArtwork({
@@ -52,137 +89,94 @@ function PlotArtwork({
           deed.worksite_type ?? undefined
         )
       : land_unsurveyd_deed_url;
+  const statusIcon = deed.castle
+    ? land_castle_icon_url
+    : deed.keep
+      ? land_keep_icon_url
+      : deed.plot_status
+        ? getPlotStatusIcon(deed.plot_status)
+        : null;
+  const statusLabel = deed.castle
+    ? "Castle"
+    : deed.keep
+      ? "Keep"
+      : deed.plot_status;
 
   return (
-    <Box
-      sx={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 800,
-        mx: "auto",
-        aspectRatio: "16 / 7",
-        minWidth: 0,
-        minHeight: { xs: 210, sm: 250 },
-        overflow: "hidden",
-        borderRadius: 1,
-        bgcolor: "grey.900",
-      }}
-    >
+    <Box sx={{ position: "relative" }}>
       <Box
-        component="img"
-        src={src}
-        alt={`${deed.rarity ?? "Land"} plot artwork`}
-        loading="lazy"
-        decoding="async"
-        onError={() => setImageFailed(true)}
         sx={{
-          display: "block",
+          position: "relative",
           width: "100%",
-          height: "100%",
-          objectFit: "cover",
+          aspectRatio: DEED_IMAGE_RATIO,
+          overflow: "hidden",
+          bgcolor: "grey.900",
         }}
-      />
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="flex-start"
-        sx={{ position: "absolute", top: "7%", left: "3%", right: "3%" }}
       >
         <Box
+          component="img"
+          src={src}
+          alt={`${deed.rarity ?? "Land"} plot artwork`}
+          loading="lazy"
+          decoding="async"
+          onError={() => setImageFailed(true)}
           sx={{
-            px: 0.9,
-            py: 0.35,
-            borderRadius: 1,
-            bgcolor: "rgba(0,0,0,0.75)",
-            color: "#fff",
-            fontSize: "0.72rem",
-            fontWeight: 800,
-            textTransform: "uppercase",
-            letterSpacing: 0.5,
+            display: "block",
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
           }}
+        />
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          sx={{ position: "absolute", top: 8, left: 8, right: 8 }}
         >
-          {deed.rarity ?? "Unsurveyed"}
-        </Box>
-        <Stack direction="row" spacing={0.5}>
-          {deed.plot_status && (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                gap: 0.4,
-                px: 0.75,
-                py: 0.3,
-                borderRadius: 1,
-                bgcolor: "rgba(0,0,0,0.72)",
-                color: "#fff",
-                fontSize: "0.68rem",
-                fontWeight: 700,
-                textTransform: "uppercase",
-              }}
-            >
-              {deed.castle ? (
-                <Box
-                  component="img"
-                  src={land_castle_icon_url}
-                  alt=""
-                  sx={{ width: 14, height: 14, objectFit: "contain" }}
-                />
-              ) : deed.keep ? (
-                <Box
-                  component="img"
-                  src={land_keep_icon_url}
-                  alt=""
-                  sx={{ width: 14, height: 14, objectFit: "contain" }}
-                />
-              ) : null}
-              {deed.castle ? "Castle" : deed.keep ? "Keep" : deed.plot_status}
+          <Box sx={badgeSx}>
+            {deed.rarity && <BadgeIcon src={getDeedRarityIcon(deed.rarity)} />}
+            {deed.rarity ?? "Unsurveyed"}
+          </Box>
+          {statusLabel && (
+            <Box sx={badgeSx}>
+              {statusIcon && <BadgeIcon src={statusIcon} />}
+              {statusLabel}
             </Box>
           )}
-          <Box
-            sx={{
-              px: 0.75,
-              py: 0.3,
-              borderRadius: 1,
-              bgcolor: "rgba(0,0,0,0.72)",
-              color: "#fff",
-              fontSize: "0.68rem",
-              fontWeight: 700,
-            }}
-          >
-            {deed.stakingDetail?.is_powered ? "Powered" : "Unpowered"}
-          </Box>
         </Stack>
-      </Stack>
-      <Box
-        sx={{
-          position: "absolute",
-          inset: "auto 0 0",
-          px: 1.5,
-          pt: 4,
-          pb: 1,
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)",
-          color: "#fff",
-          textShadow: "0 1px 3px rgba(0,0,0,0.9)",
-        }}
-      >
-        <Typography variant="subtitle2" fontWeight={700} noWrap>
-          {deed.region_name} #{String(deed.region_number).padStart(3, "0")}-
-          {String(deed.tract_number).padStart(3, "0")}-
-          {String(deed.plot_number).padStart(3, "0")}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{ fontFamily: "monospace", fontWeight: 600 }}
-        ></Typography>
+        <Box
+          sx={{
+            position: "absolute",
+            inset: "auto 0 0",
+            px: 1.5,
+            pt: 3,
+            pb: 0.75,
+            background:
+              "linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 55%, transparent 100%)",
+            color: "#fff",
+            textShadow: "0 1px 3px rgba(0,0,0,0.9)",
+          }}
+        >
+          <Typography variant="subtitle2" fontWeight={700} noWrap>
+            {deed.region_name} #{String(deed.region_number).padStart(3, "0")}-
+            {String(deed.tract_number).padStart(3, "0")}-
+            {String(deed.plot_number).padStart(3, "0")}
+          </Typography>
+        </Box>
       </Box>
       {children && (
         <Box
           sx={{
-            position: "absolute",
-            top: { xs: 42, sm: 50 },
-            left: { xs: 12, sm: 20 },
-            right: 1,
+            p: 1,
+            bgcolor: "grey.900",
+            [`@container (min-width: ${PICKS_OVERLAY_MIN_WIDTH}px)`]: {
+              position: "absolute",
+              top: 40,
+              left: 12,
+              right: 12,
+              p: 0,
+              bgcolor: "transparent",
+            },
           }}
         >
           {children}
@@ -294,11 +288,11 @@ export default function WorkerPlotResultCard({
       variant="outlined"
       sx={{
         width: "100%",
-        minWidth: { xs: 0, sm: 320 },
-        maxWidth: 800,
+        maxWidth: CARD_MAX_WIDTH,
         mx: "auto",
         overflow: "hidden",
         borderColor: "divider",
+        containerType: "inline-size",
       }}
       aria-label={`Selected workers for region ${deed.region_number}, tract ${deed.tract_number}, plot ${deed.plot_number}`}
     >
@@ -316,7 +310,7 @@ export default function WorkerPlotResultCard({
         )}
       </PlotArtwork>
       <Grid container spacing={0}>
-        <Grid size={{ xs: 12, md: 4 }} sx={{ p: 1.5 }}>
+        <Grid size={{ xs: 12, md: 5 }} sx={{ p: 1.5 }}>
           <Stack spacing={1}>
             {mode === "rent" ? (
               <Stack spacing={0.25}>
@@ -343,7 +337,7 @@ export default function WorkerPlotResultCard({
           </Stack>
         </Grid>
         <Grid
-          size={{ xs: 12, md: 8 }}
+          size={{ xs: 12, md: 7 }}
           sx={{
             p: 1.5,
             borderTop: { xs: 1, md: 0 },

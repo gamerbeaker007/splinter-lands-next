@@ -4,6 +4,7 @@ import { getLandManagerConfig } from "@/lib/backend/actions/land-manager/config-
 import {
   buildPlotConfigureData,
   buildPlotConfigureDataBatch,
+  type ConfigureAssetsInput,
   getProductionContext,
   type PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
@@ -279,6 +280,31 @@ export async function getPlotConfigureData(
   return buildPlotConfigureData(deedUid, assets);
 }
 
+/** Only the stake fields the server needs — keeps the action payload small. */
+function toConfigureAssetsInput(assets: StakedAssets): ConfigureAssetsInput {
+  return {
+    cards: (assets.cards ?? []).map((c) => ({
+      uid: c.uid,
+      card_detail_id: c.card_detail_id,
+      card_set: c.card_set,
+      edition: c.edition,
+      foil: c.foil,
+      bcx: c.bcx,
+      slot: c.slot,
+      stake_type_uid: c.stake_type_uid,
+      base_pp_after_cap: c.base_pp_after_cap,
+      total_harvest_pp: c.total_harvest_pp,
+      terrain_boost: c.terrain_boost,
+    })),
+    items: (assets.items ?? []).map((i) => ({
+      uid: i.uid,
+      name: i.name,
+      stake_type_uid: i.stake_type_uid,
+      boost: i.boost,
+    })),
+  };
+}
+
 /** Empty worker slots of every plot that has picks to stake (1-based). */
 async function fetchEmptySlotsByDeed(plan: RentalPlan | BuyPlan): Promise<{
   emptySlotsByDeed: Record<string, number[]>;
@@ -305,15 +331,21 @@ async function fetchEmptySlotsByDeed(plan: RentalPlan | BuyPlan): Promise<{
     )
   );
 
-  const configuredByDeed = await buildPlotConfigureDataBatch(
-    Object.entries(assetsByDeed).map(([deedUid, assets]) => ({
-      deedUid,
-      assets,
-    }))
-  );
+  // Current workers only feed the result-card projection: a failure here
+  // must not block planning or executing.
   const plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]> = {};
-  for (const [deedUid, configured] of Object.entries(configuredByDeed)) {
-    plotWorkersByDeed[deedUid] = configured.workers;
+  try {
+    const configuredByDeed = await buildPlotConfigureDataBatch(
+      Object.entries(assetsByDeed).map(([deedUid, assets]) => ({
+        deedUid,
+        assets: toConfigureAssetsInput(assets),
+      }))
+    );
+    for (const [deedUid, configured] of Object.entries(configuredByDeed)) {
+      plotWorkersByDeed[deedUid] = configured.workers;
+    }
+  } catch (err) {
+    console.error("Failed to load current workers for projection", err);
   }
 
   return { emptySlotsByDeed, plotWorkersByDeed };

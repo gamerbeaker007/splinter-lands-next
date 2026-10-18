@@ -1,5 +1,6 @@
 "use client";
 
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
 import { DecPowerDirection } from "@/lib/shared/decPower";
 import { formatInt } from "@/lib/formatters";
@@ -53,10 +54,9 @@ export default function DecPowerRow({
   const disabled = anyBusy || availableTotal <= 0;
 
   const handleConfirm = async () => {
-    await action.execute();
     // Close only on a clean run; partial / failed runs keep the dialog open so
     // the user can see what landed.
-    if (!action.error) setPlanOpen(false);
+    if (await action.execute()) setPlanOpen(false);
   };
 
   // One button, one path: build the plan, show it, and broadcast only on
@@ -119,27 +119,29 @@ export default function DecPowerRow({
         </Stack>
       )}
 
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
-          {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC
-          across {succeededRegionCount} region
-          {succeededRegionCount === 1 ? "" : "s"}.
-        </Alert>
-      )}
+      <FloatingFeedback floating={menuItem}>
+        {action.result?.success && (
+          <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+            {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC
+            across {succeededRegionCount} region
+            {succeededRegionCount === 1 ? "" : "s"}.
+          </Alert>
+        )}
 
-      {action.result && !action.result.success && (
-        <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
-          Partial run — {variant.pastVerb.toLowerCase()}{" "}
-          {formatInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
-          {formatInt(action.result.totalFailed)} DEC.
-        </Alert>
-      )}
+        {action.result && !action.result.success && (
+          <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
+            Partial run — {variant.pastVerb.toLowerCase()}{" "}
+            {formatInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
+            {formatInt(action.result.totalFailed)} DEC.
+          </Alert>
+        )}
 
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
-          {action.error}
-        </Alert>
-      )}
+        {action.error && (
+          <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+            {action.error}
+          </Alert>
+        )}
+      </FloatingFeedback>
 
       {planOpen && action.plan && (
         <DecPowerDialog

@@ -44,7 +44,8 @@ export interface UseDecPowerAction {
   clearResult: () => void;
   clearError: () => void;
   preview: () => Promise<void>;
-  execute: () => Promise<void>;
+  /** Resolves true only when every op landed. */
+  execute: () => Promise<boolean>;
 }
 
 export function useDecPowerAction({
@@ -87,10 +88,10 @@ export function useDecPowerAction({
     }
   }, [direction, needsBalance, username]);
 
-  const execute = useCallback(async () => {
+  const execute = useCallback(async (): Promise<boolean> => {
     if (!username) {
       setError("Not logged in.");
-      return;
+      return false;
     }
     setBusy(true);
     setError(null);
@@ -113,7 +114,7 @@ export function useDecPowerAction({
           : "Failed to refresh plan before execute."
       );
       setBusy(false);
-      return;
+      return false;
     }
     setPlan(plan);
     setDecBalance(balance);
@@ -121,14 +122,14 @@ export function useDecPowerAction({
     if (plan.items.length === 0) {
       setError(`No DEC ${noun} left.`);
       setBusy(false);
-      return;
+      return false;
     }
     if (needsBalance && balance !== null && balance < plan.total_dec) {
       setError(
         `Insufficient DEC: need ${formatNumber(plan.total_dec)} but have ${formatNumber(balance)}. Top up and re-run.`
       );
       setBusy(false);
-      return;
+      return false;
     }
 
     const succeededByRegion: Record<string, number> = {};
@@ -208,6 +209,7 @@ export function useDecPowerAction({
       if (!phaseError) {
         setPlan(null);
         onSuccess?.();
+        return true;
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
@@ -229,6 +231,7 @@ export function useDecPowerAction({
     } finally {
       setBusy(false);
     }
+    return false;
   }, [username, direction, needsBalance, buildOp, noun, verb, onSuccess]);
 
   return {

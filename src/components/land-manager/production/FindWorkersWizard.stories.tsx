@@ -405,6 +405,7 @@ function FindWorkersWizardStory({
     ...rentState,
     eligiblePlotCount: eligibleCount,
     decBalance: 5000,
+    isPlanConfirmable: () => rentState.executionPlan != null,
     clearExecutionPlan: () =>
       setRentState((previous) => ({ ...previous, executionPlan: null })),
     clearResult: () =>
@@ -438,6 +439,7 @@ function FindWorkersWizardStory({
     ...buyState,
     eligiblePlotCount: eligibleCount,
     decBalance: 5000,
+    isPlanConfirmable: () => buyState.executionPlan != null,
     clearExecutionPlan: () =>
       setBuyState((previous) => ({ ...previous, executionPlan: null })),
     clearResult: () =>

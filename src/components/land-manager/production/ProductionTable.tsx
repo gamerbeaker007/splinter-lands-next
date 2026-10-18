@@ -6,14 +6,10 @@ import { ProductionActionKind } from "@/hooks/useProductionPlotActions";
 import { formatInt, formatNumber } from "@/lib/formatters";
 import { getElementIconUrl } from "@/lib/frontend/utils/icons";
 import { titleIconMap, totemIconMap } from "@/lib/shared/statics";
-import {
-  land_default_off_icon_url_placeholder,
-  land_mythic_icon_url,
-  land_runi_power_core_icon_url,
-  WEB_URL,
-} from "@/lib/shared/statics_icon_urls";
+import { land_runi_power_core_icon_url } from "@/lib/shared/statics_icon_urls";
 import { TAX_ESTIMATE_NOTE } from "@/lib/shared/taxProduction";
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
+import { getDeedRarityIcon, getPlotStatusIcon } from "@/lib/utils/deedUtil";
 import {
   titleModifiers,
   TitleTier,
@@ -376,19 +372,8 @@ export interface ProductionTableProps {
 
 const COLUMN_COUNT = HEAD_CELLS.length;
 
-function rarityIcon(rarity: string): string {
-  return rarity === "mythic"
-    ? land_mythic_icon_url
-    : land_default_off_icon_url_placeholder.replace("__NAME__", rarity);
-}
-
 function isMagical(plotStatus: string): boolean {
   return plotStatus.toLowerCase() === "magical";
-}
-
-function plotStatusIcon(plotStatus: string): string {
-  const landPlotIconUrl = `${WEB_URL}website/ui_elements/lands/sideMenu/__NAME__Off.svg`;
-  return landPlotIconUrl.replace("__NAME__", plotStatus.toLowerCase());
 }
 
 function showPositiveTerrainBoosts(biomeModifiers: BiomeModifiers) {
@@ -623,7 +608,7 @@ export default function ProductionTable({
                     >
                       <span>
                         <Image
-                          src={rarityIcon(r.rarity)}
+                          src={getDeedRarityIcon(r.rarity)}
                           alt={r.rarity}
                           width={18}
                           height={18}
@@ -640,7 +625,7 @@ export default function ProductionTable({
                       >
                         <span>
                           <Image
-                            src={plotStatusIcon(r.plotStatus)}
+                            src={getPlotStatusIcon(r.plotStatus)}
                             alt={r.plotStatus}
                             width={18}
                             height={18}

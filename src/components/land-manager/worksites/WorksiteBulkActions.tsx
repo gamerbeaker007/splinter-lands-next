@@ -1,5 +1,6 @@
 "use client";
 
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
 import {
   bulkBusyKey,
@@ -511,28 +512,30 @@ export default function WorksiteBulkActions({
               );
             })}
 
-          {/* ── Feedback ── */}
-          {!menuMode && action.result?.success && (
-            <Alert
-              severity="success"
-              onClose={action.clearResult}
-              sx={{ mt: 1, py: 0 }}
-            >
-              Done — {action.result.processed} plot
-              {action.result.processed === 1 ? "" : "s"} in{" "}
-              {action.result.txIds.length} transaction
-              {action.result.txIds.length === 1 ? "" : "s"}.
-            </Alert>
-          )}
-          {!menuMode && action.result && !action.result.success && (
-            <Alert
-              severity="error"
-              onClose={action.clearResult}
-              sx={{ mt: 1, py: 0 }}
-            >
-              {action.result.error}
-            </Alert>
-          )}
+          {/* ── Feedback (floats when the host menu is closed) ── */}
+          <FloatingFeedback floating={menuMode}>
+            {action.result?.success && (
+              <Alert
+                severity="success"
+                onClose={action.clearResult}
+                sx={{ mt: 1, py: 0 }}
+              >
+                Done — {action.result.processed} plot
+                {action.result.processed === 1 ? "" : "s"} in{" "}
+                {action.result.txIds.length} transaction
+                {action.result.txIds.length === 1 ? "" : "s"}.
+              </Alert>
+            )}
+            {action.result && !action.result.success && (
+              <Alert
+                severity="error"
+                onClose={action.clearResult}
+                sx={{ mt: 1, py: 0 }}
+              >
+                {action.result.error}
+              </Alert>
+            )}
+          </FloatingFeedback>
         </Box>
       </Collapse>
 

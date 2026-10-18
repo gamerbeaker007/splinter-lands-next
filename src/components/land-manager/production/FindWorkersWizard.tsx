@@ -183,6 +183,7 @@ export default function FindWorkersWizard({
 
   const searchAgain = async () => {
     setResultsPage(1);
+    activeAction.clearResult();
     if (mode === "rent") {
       await rentAction.prepareExecution(rentalOverride);
     } else if (mode === "buy") {
@@ -219,10 +220,15 @@ export default function FindWorkersWizard({
     purchaseAuthority.status.authorized
   );
   const pageCount = Math.ceil(selectedItems.length / RESULTS_PAGE_SIZE);
+  // A refreshed plan (on confirm) can have fewer plots than the page shown.
+  const page = Math.min(resultsPage, Math.max(pageCount, 1));
   const visibleItems = selectedItems.slice(
-    (resultsPage - 1) * RESULTS_PAGE_SIZE,
-    resultsPage * RESULTS_PAGE_SIZE
+    (page - 1) * RESULTS_PAGE_SIZE,
+    page * RESULTS_PAGE_SIZE
   );
+  const activeConfig = mode === "buy" ? buyOverride : rentalOverride;
+  const needsNewSearch =
+    executionPlan != null && !activeAction.isPlanConfirmable(activeConfig);
 
   return (
     <Dialog
@@ -420,7 +426,7 @@ export default function FindWorkersWizard({
                     }
                   />
                 </Box>
-                <Stack direction="row" gap={1}>
+                <Stack direction="row" gap={1} alignItems="center">
                   <Button
                     variant="contained"
                     onClick={() => void searchAgain()}
@@ -433,6 +439,12 @@ export default function FindWorkersWizard({
                   >
                     Search Again
                   </Button>
+                  {needsNewSearch && !activeAction.busy && (
+                    <Typography variant="caption" color="warning.main">
+                      Search again to see the plan for these settings before
+                      confirming.
+                    </Typography>
+                  )}
                 </Stack>
               </Stack>
             </Paper>
@@ -574,16 +586,16 @@ export default function FindWorkersWizard({
                         sx={{ gridColumn: "1 / -1" }}
                       >
                         <Typography variant="caption" color="text.secondary">
-                          Showing {(resultsPage - 1) * RESULTS_PAGE_SIZE + 1}–
+                          Showing {(page - 1) * RESULTS_PAGE_SIZE + 1}–
                           {Math.min(
-                            resultsPage * RESULTS_PAGE_SIZE,
+                            page * RESULTS_PAGE_SIZE,
                             selectedItems.length
                           )}{" "}
                           of {selectedItems.length} plots
                         </Typography>
                         <Pagination
                           count={pageCount}
-                          page={resultsPage}
+                          page={page}
                           onChange={(_, nextPage) => setResultsPage(nextPage)}
                           size="small"
                           showFirstButton
@@ -613,7 +625,8 @@ export default function FindWorkersWizard({
                 activeAction.busy ||
                 !executionPlan ||
                 totalPicks === 0 ||
-                insufficientDec
+                insufficientDec ||
+                needsNewSearch
               }
               startIcon={
                 activeAction.busy ? (

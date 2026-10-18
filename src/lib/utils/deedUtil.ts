@@ -1,6 +1,8 @@
 import { titleIconMapOnTitle } from "@/lib/shared/statics";
 import {
+  land_default_off_icon_url_placeholder,
   land_hammer_icon_url,
+  land_mythic_icon_url,
   land_unsurveyd_deed_url,
   SPL_WEB_URL,
 } from "@/lib/shared/statics_icon_urls";
@@ -47,6 +49,22 @@ export function getDeedImg(
   } else {
     return `${BASE_URL}/${deedType.toLowerCase()}_${plotStatus.toLowerCase()}_${rarity.toLowerCase()}.jpg`;
   }
+}
+
+/** Side-menu rarity icon, e.g. "common" → commonOff.svg (mythic reuses legendary). */
+export function getDeedRarityIcon(rarity: string): string {
+  const name = rarity.toLowerCase();
+  return name === "mythic"
+    ? land_mythic_icon_url
+    : land_default_off_icon_url_placeholder.replace("__NAME__", name);
+}
+
+/** Side-menu plot status icon, e.g. "natural" → naturalOff.svg. */
+export function getPlotStatusIcon(plotStatus: string): string {
+  return land_default_off_icon_url_placeholder.replace(
+    "__NAME__",
+    plotStatus.toLowerCase()
+  );
 }
 
 export function getDeedGeographyImg(deedType: string) {

@@ -95,25 +95,48 @@ export default function WorkerCardPicksCell({
               uid={pick.card_uid}
             />
           </Tooltip>
-          <Stack spacing={0.25} sx={{ textAlign: "left", mt: 0.4 }}>
+          {/* Own backdrop: the cell also sits on top of plot artwork. */}
+          <Stack
+            spacing={0.25}
+            sx={{
+              textAlign: "left",
+              mt: 0.4,
+              px: 0.5,
+              py: 0.25,
+              borderRadius: 0.5,
+              bgcolor: "rgba(0,0,0,0.75)",
+              color: "#fff",
+            }}
+          >
             <Stack direction="row" alignItems="center" spacing={0.25}>
-              <Typography variant="caption" fontWeight={700}>
-                {mode === "rent"
-                  ? `${formatFixed(pick.buy_price_per_day ?? 0)} DEC/day`
-                  : `${formatFixed(pick.total_dec)} DEC`}
+              <Typography variant="caption" fontWeight={700} noWrap>
+                {formatFixed(
+                  mode === "rent"
+                    ? (pick.buy_price_per_day ?? 0)
+                    : pick.total_dec
+                )}
               </Typography>
               <Box
                 component="img"
                 src={dec_icon_url}
-                alt=""
+                alt="DEC"
                 sx={{ width: 14, height: 14, objectFit: "contain" }}
               />
+              {mode === "rent" && (
+                <Typography variant="caption" fontWeight={700} noWrap>
+                  /day
+                </Typography>
+              )}
             </Stack>
-            <Typography variant="caption" color="text.secondary" noWrap>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255,255,255,0.75)" }}
+              noWrap
+            >
               {formatNumber(
                 (selectedPPByUid[pick.card_uid]?.boostedPP ??
                   pick.effective_pp) / (pick.total_dec || 1),
-                { maximumFractionDigits: 3 }
+                { maximumFractionDigits: 1 }
               )}{" "}
               PP/DEC
             </Typography>
