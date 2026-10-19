@@ -1,8 +1,9 @@
+import CardHoverPreview from "@/components/ui/CardHoverPreview";
 import { SpotCardVM } from "@/components/land-manager/production/productionConfigTypes";
 import { getCardImgV2 } from "@/lib/utils/cardUtil";
 import { GroupedCardRow } from "@/types/groupedCardRow";
 import { cardFoilOptions } from "@/types/planner/primitives";
-import { Box, Tooltip } from "@mui/material";
+import { Box } from "@mui/material";
 import Image from "next/image";
 
 type Props = {
@@ -17,25 +18,7 @@ export default function CardTableIcon({ card }: Props) {
       : getCardImgV2(card.name, card.edition, cardFoilOptions[card.foil]);
 
   return (
-    <Tooltip
-      title={
-        <Box width={220} height={300} position="relative">
-          <Image
-            src={img}
-            alt={card.name}
-            fill
-            sizes="220px"
-            style={{
-              objectFit: "contain", // Show full card in tooltip
-              objectPosition: "center",
-              borderRadius: 8,
-            }}
-          />
-        </Box>
-      }
-      placement="right"
-      arrow
-    >
+    <CardHoverPreview img={img} name={card.name} foil={card.foil}>
       <Box
         width={60}
         height={60}
@@ -58,6 +41,6 @@ export default function CardTableIcon({ card }: Props) {
           }}
         />
       </Box>
-    </Tooltip>
+    </CardHoverPreview>
   );
 }

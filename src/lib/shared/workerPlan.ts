@@ -274,7 +274,9 @@ export function selectCandidateTuples(
 
   for (const g of grouped) {
     const card = cardById.get(g.card_detail_id);
-    if (!card) continue;
+    // no_pp cards (e.g. Conclave Extra/Rewards) list with land_base_pp 0, so
+    // every listing would be rejected later — yet the set estimate scores them
+    if (!card || card.no_pp) continue;
     if (g.foil < minFoil) continue;
     if (g.low_price > maxPerWorker) continue;
 
@@ -475,6 +477,7 @@ export async function buildWorkerPlan<Ctx>(
     batched.map((plot) => plot.biome_modifiers),
     caps
   );
+  console.log("candidates", candidates);
   const { tuples, cards: cardDetails, ctx } = candidates;
   const cardById = new Map(cardDetails.map((c) => [c.id, c]));
   if (tuples.length === 0 || ctx === null) {

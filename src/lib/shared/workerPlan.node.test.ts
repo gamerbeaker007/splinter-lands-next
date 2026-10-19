@@ -4,6 +4,7 @@ import {
   PlanCaps,
   priceBuyListing,
   priceRentalListing,
+  selectCandidateTuples,
   WorkerPlanStrategy,
 } from "@/lib/shared/workerPlan";
 import { computeWorkerEligibility } from "@/lib/shared/workerEligibility";
@@ -12,7 +13,11 @@ import {
   normalizeWorkerBatchSize,
   WorkerEligiblePlot,
 } from "@/types/landManager";
-import { SplMarketListing } from "@/types/spl/marketListing";
+import {
+  SplMarketListing,
+  SplMarketListingGrouped,
+} from "@/types/spl/marketListing";
+import { SplCardDetails } from "@/types/splCardDetails";
 import { describe, expect, it } from "vitest";
 
 function makePlot(index: number): WorkerEligiblePlot {
@@ -203,5 +208,53 @@ describe("per-worker cost caps", () => {
     expect(pricing?.worker_cap_cost).toBe(300);
     expect(isWithinWorkerCap(pricing!, 3000)).toBe(true);
     expect(isWithinWorkerCap(overDailyCap!, 3000)).toBe(false);
+  });
+});
+
+describe("candidate selection", () => {
+  const caps: PlanCaps = {
+    batchSize: 10,
+    maxTotalDec: 0,
+    maxPerWorker: 0,
+    minLandBasePp: 0,
+    minFoil: 3,
+    requireTerrainBoost: false,
+  };
+
+  function makeCard(id: number, no_pp: boolean): SplCardDetails {
+    return { id, rarity: 1, tier: 14, color: "Red", no_pp } as SplCardDetails;
+  }
+
+  function makeGrouped(
+    card_detail_id: number,
+    edition: number,
+    low_price: number
+  ): SplMarketListingGrouped {
+    return {
+      card_detail_id,
+      gold: false,
+      foil: 3,
+      edition,
+      qty: 1,
+      level: 10,
+      low_price_bcx: low_price / 38,
+      low_price,
+      high_price: low_price,
+      mana: 4,
+      season_qty: 0,
+      daily_qty: 0,
+    };
+  }
+
+  it("skips no_pp cards, which list with land_base_pp 0", () => {
+    // The no_pp Conclave Rewards card is cheaper, so it would rank first.
+    const { tuples } = selectCandidateTuples(
+      [makeGrouped(871, 18, 10), makeGrouped(717, 14, 50)],
+      [makeCard(871, true), makeCard(717, false)],
+      [makePlot(1).biome_modifiers],
+      caps
+    );
+
+    expect(tuples.map((t) => t.card_detail_id)).toEqual([717]);
   });
 });

@@ -5,7 +5,7 @@ import { formatFixed, formatNumber } from "@/lib/formatters";
 import { dec_icon_url } from "@/lib/shared/statics_icon_urls";
 import { WorkerPlanPick } from "@/types/landManager";
 import { cardElementColorMap } from "@/types/planner/primitives";
-import { Box, Stack, Tooltip, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 
 export type WorkerMode = "rent" | "buy";
 
@@ -79,22 +79,23 @@ export default function WorkerCardPicksCell({
     >
       {picks.map((pick) => (
         <Box key={pick.card_uid} sx={{ flex: "0 0 85px", width: 85 }}>
-          <Tooltip title={<PickTooltip pick={pick} />} placement="top" arrow>
-            <CardTile
-              name={pick.card_name}
-              rarity={pick.rarity}
-              edition={pick.edition}
-              foil={pick.foil}
-              terrain_boost={Number(pick.biome_modifier)}
-              actual_bcx={pick.bcx}
-              max_bcx={pick.max_bcx}
-              base_pp={Number(pick.land_base_pp)}
-              boosted_pp={Number(
-                selectedPPByUid[pick.card_uid]?.boostedPP ?? pick.effective_pp
-              )}
-              uid={pick.card_uid}
-            />
-          </Tooltip>
+          {/* The pick details sit under the full card the tile shows on hover. */}
+          <CardTile
+            name={pick.card_name}
+            rarity={pick.rarity}
+            edition={pick.edition}
+            foil={pick.foil}
+            terrain_boost={Number(pick.biome_modifier)}
+            actual_bcx={pick.bcx}
+            max_bcx={pick.max_bcx}
+            base_pp={Number(pick.land_base_pp)}
+            boosted_pp={Number(
+              selectedPPByUid[pick.card_uid]?.boostedPP ?? pick.effective_pp
+            )}
+            uid={pick.card_uid}
+            previewDetails={<PickTooltip pick={pick} />}
+            level={pick.level}
+          />
           {/* Own backdrop: the cell also sits on top of plot artwork. */}
           <Stack
             spacing={0.25}

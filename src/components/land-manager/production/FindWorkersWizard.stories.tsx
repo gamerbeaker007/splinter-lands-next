@@ -1,3 +1,4 @@
+import type { StakingDetail, WorksiteDetail } from "@/generated/prisma/client";
 import type { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
 import type {
   UseWorkerAction,
@@ -10,7 +11,7 @@ import type {
 import {
   DEFAULT_BUY_CONFIG,
   DEFAULT_RENTAL_CONFIG,
-  RentalEligiblePlot,
+  WorkerEligiblePlot,
   WorkerPlanItem,
   WorkerPlanPick,
   WorkerPlanPlotCard,
@@ -25,7 +26,7 @@ import FindWorkersWizard from "./FindWorkersWizard";
 
 type Scenario = "results" | "loading" | "error" | "empty" | "many";
 
-const plot: RentalEligiblePlot = {
+const plot: WorkerEligiblePlot = {
   deed_uid: "plot-story-65-12-8",
   map_name: "praetoria",
   region_id: 65,
@@ -72,7 +73,7 @@ const plot: RentalEligiblePlot = {
     token_symbol: "GRAIN",
     id: 1,
     worksite_type: "Grain Farm",
-  },
+  } as WorksiteDetail,
   stakingDetail: {
     deed_uid: "plot-story-65-12-8",
     region_uid: "praetoria-65",
@@ -82,7 +83,7 @@ const plot: RentalEligiblePlot = {
     total_runi_boost_pp: null,
     title_boost: null,
     totem_boost: null,
-  },
+  } as StakingDetail,
   worker_count: 2,
   max_workers: 5,
   empty_slots: 3,
@@ -139,7 +140,7 @@ const item: WorkerPlanItem = {
 
 const manyItems: WorkerPlanItem[] = Array.from({ length: 24 }, (_, index) => {
   const deedUid = `plot-story-${index + 1}`;
-  const nextPlot: RentalEligiblePlot = {
+  const nextPlot: WorkerEligiblePlot = {
     ...plot,
     deed_uid: deedUid,
     plot_id: 651208 + index,
@@ -161,12 +162,12 @@ const manyItems: WorkerPlanItem[] = Array.from({ length: 24 }, (_, index) => {
       worksite_type: ["Grain Farm", "Logging Camp", "Quarry", "Iron Mine"][
         index % 4
       ],
-    },
+    } as WorksiteDetail,
     stakingDetail: {
       ...plot.stakingDetail,
       deed_uid: deedUid,
       region_uid: `praetoria-${65 + Math.floor(index / 12)}`,
-    },
+    } as StakingDetail,
   };
   const nextPicks = picks.map((pick, pickIndex) => ({
     ...pick,
@@ -573,7 +574,8 @@ export const EditLocalSettingsAndSearchAgain: Story = {
         name: /Plots per run:/,
       })
     );
-    await within(document.body).getByRole("slider").press("End");
+    within(document.body).getByRole("slider").focus();
+    await userEvent.keyboard("{End}");
     await userEvent.click(
       within(document.body).getByRole("button", { name: "Done" })
     );

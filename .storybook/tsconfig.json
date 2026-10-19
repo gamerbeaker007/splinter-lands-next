@@ -10,8 +10,9 @@
   },
   "include": [
     "**/*",
-    "**/*.stories.ts",
-    "**/*.stories.tsx"
+    "../next-env.d.ts",
+    "../src/**/*.stories.ts",
+    "../src/**/*.stories.tsx"
   ],
   "exclude": []
 }

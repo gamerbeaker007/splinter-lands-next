@@ -36,14 +36,14 @@ export const cardSetName = [...landCardSet, "gladius", "foundation"] as const;
 export type CardSetName = (typeof cardSetName)[number];
 export type CardSetNameLandValid = (typeof landCardSet)[number];
 
-export interface EidtionTypeDef {
+export interface EditionTypeDef {
   displayName: string;
   urlName: string;
   setName?: CardSetName;
   editionIcon?: string;
 }
 
-export const editionMap: Record<number, EidtionTypeDef> = {
+export const editionMap: Record<number, EditionTypeDef> = {
   0: {
     displayName: "Alpha",
     urlName: "alpha",

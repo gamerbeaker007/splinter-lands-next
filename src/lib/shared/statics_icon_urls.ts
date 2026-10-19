@@ -60,6 +60,8 @@ export const land_runi_boost_icon_url =
 
 export const land_runi_regular_icon_url = `${WEB_URL}cards_v2.2/Runi.jpg`;
 export const land_runi_gold_icon_url = `${WEB_URL}cards_v2.2/Runi_gold.jpg`;
+/** Animated overlay the SPL site draws over arcane-foil cards. */
+export const arcane_glimmer_url = `${WEB_URL}card_effects/arcane_glimmer_full.webp`;
 export const land_runi_power_core_icon_url = `${WEB_URL}website/ui_elements/lands/consumable/power_core.png`;
 
 export const land_common_totem_icon_url = `${WEB_URL}website/icons/icon_totem_1_common_300.png`;

@@ -122,7 +122,12 @@ function ProductionPageContent() {
   const [localRefreshKey, setLocalRefreshKey] = useState(0);
   const { data: pageData, loading } = useAsyncData(
     `production|${localRefreshKey}`,
-    async () => ({ ...(await getProductionPageData()), loadedAt: Date.now() }),
+    // The first load may take the snapshot the shell warmed while the player
+    // was on Harvest; Refresh (and post-action reloads) read live.
+    async () => ({
+      ...(await getProductionPageData(localRefreshKey > 0)),
+      loadedAt: Date.now(),
+    }),
     { errorMessage: "Failed to load production data" }
   );
   const allDeeds = pageData?.deeds ?? NO_DEEDS;

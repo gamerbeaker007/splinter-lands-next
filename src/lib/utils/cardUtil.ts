@@ -48,6 +48,12 @@ export const foilLabel = (foil: number): string => {
   return opt ? cardFoilLabels[opt] : `Unknown (${foil})`;
 };
 
+/** Whether a numeric foil id is an arcane variant (Gold Arcane / Black Arcane). */
+export const isArcaneFoil = (foil: number): boolean => {
+  const opt = cardFoilOptions[foil];
+  return opt === "gold arcane" || opt === "black arcane";
+};
+
 /** All valid foil ids, in order. Use the index to look up `cardFoilOptions`. */
 export const FOIL_IDS: number[] = cardFoilOptions.map((_, i) => i);
 
@@ -277,21 +283,6 @@ export function findCardSet(
 
   // 3) Last resort: map by edition (covers any remaining edge cases)
   return editionMap[edition].setName as CardSetNameLandValid;
-}
-
-export function findCardEditionNameByName(
-  cardDetails: SplCardDetails[],
-  cardName: string,
-  set: CardSetNameLandValid
-): string {
-  const splCard = cardDetails.find((cd) => cd.name === cardName);
-  const editionArray = splCard?.editions.split(",") ?? [];
-  if (editionArray.length > 1) {
-    //multiple editions assume alpha beta return set
-    return set as string;
-  } else {
-    return editionMap[Number(editionArray[0])].urlName as string;
-  }
 }
 
 const combine_rates: Record<CardRarity, number[]> = {

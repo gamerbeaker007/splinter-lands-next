@@ -156,19 +156,30 @@ function withPerHourTaxProduction(
 const isTaxDeed = (deed: DeedComplete) =>
   deed.worksiteDetail?.token_symbol === "TAX";
 
-/**
- * The player's full deed data, each deed enriched with `productionInfo`
- * (rewards/hour produce value, consume cost, and netDEC). The Production page
- * renders rewards-per-hour and net DEC straight from this — no per-deed
- * staked-asset calls are needed for the table. Always fresh so the page
- * reflects the current on-chain state.
- */
-export async function getProductionPageData(): Promise<{
+interface ProductionPageData {
   deeds: DeedComplete[];
   username: string | null;
   regionTax: Record<number, RegionTax>;
   error?: string;
-}> {
+}
+
+// Long enough to survive a Harvest ↔ Production switch after the shell warmed
+// this page (see LandManagerProvider); actions and Refresh invalidate it.
+const PRODUCTION_PAGE_TTL_MS = 60_000;
+const productionPageCache = createBrowserCache<ProductionPageData>(
+  PRODUCTION_PAGE_TTL_MS
+);
+
+/**
+ * The player's full deed data, each deed enriched with `productionInfo`
+ * (rewards/hour produce value, consume cost, and netDEC). The Production page
+ * renders rewards-per-hour and net DEC straight from this — no per-deed
+ * staked-asset calls are needed for the table. Memoised so a warmed page opens
+ * instantly; `fresh` (the page's Refresh) reads the current on-chain state.
+ */
+export async function getProductionPageData(
+  fresh = false
+): Promise<ProductionPageData> {
   const player = sessionPlayer();
   if (!player)
     return {
@@ -179,34 +190,46 @@ export async function getProductionPageData(): Promise<{
     };
 
   try {
-    const deeds = mapRegionDataToDeedComplete(
-      await loadPlayerDeeds(player, true)
+    return await memo(
+      productionPageCache,
+      `${player}:production-page|`,
+      fresh,
+      () => loadProductionPageData(player, fresh)
     );
-    const taxRegions = [
-      ...new Set(deeds.filter(isTaxDeed).map((d) => d.region_number)),
-    ];
-    const context = await getProductionContext(taxRegions);
-    // Tax plots are valued from the region tax context, so the generic
-    // enrichment (which would read each vault) only sees the others.
-    const enriched = await enrichWithProductionInfo(
-      deeds.filter((d) => !isTaxDeed(d)),
-      context.prices,
-      () => Promise.reject(new Error("tax plots are valued per hour"))
-    );
-    const byUid = new Map(enriched.map((d) => [d.deed_uid, d]));
-    return {
-      deeds: deeds.map((d) =>
-        isTaxDeed(d)
-          ? withPerHourTaxProduction(d, context)
-          : (byUid.get(d.deed_uid) ?? d)
-      ),
-      username: player,
-      regionTax: context.regionTax,
-    };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
     return { deeds: [], username: player, regionTax: {}, error: msg };
   }
+}
+
+async function loadProductionPageData(
+  player: string,
+  fresh: boolean
+): Promise<ProductionPageData> {
+  const deeds = mapRegionDataToDeedComplete(
+    await loadPlayerDeeds(player, fresh)
+  );
+  const taxRegions = [
+    ...new Set(deeds.filter(isTaxDeed).map((d) => d.region_number)),
+  ];
+  const context = await getProductionContext(taxRegions);
+  // Tax plots are valued from the region tax context, so the generic
+  // enrichment (which would read each vault) only sees the others.
+  const enriched = await enrichWithProductionInfo(
+    deeds.filter((d) => !isTaxDeed(d)),
+    context.prices,
+    () => Promise.reject(new Error("tax plots are valued per hour"))
+  );
+  const byUid = new Map(enriched.map((d) => [d.deed_uid, d]));
+  return {
+    deeds: deeds.map((d) =>
+      isTaxDeed(d)
+        ? withPerHourTaxProduction(d, context)
+        : (byUid.get(d.deed_uid) ?? d)
+    ),
+    username: player,
+    regionTax: context.regionTax,
+  };
 }
 
 // ── Staked assets ─────────────────────────────────────────────────────────
