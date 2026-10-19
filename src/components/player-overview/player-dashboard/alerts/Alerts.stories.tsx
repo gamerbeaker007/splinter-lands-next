@@ -1,5 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { Meta, StoryObj } from "@storybook/react";
+import type { DeedInfo } from "@/types/cardAlerts";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
 import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
@@ -15,130 +16,37 @@ const meta: Meta = {
 
 export default meta;
 
-const tooMuchBasePP = [
-  {
-    deedId: 999,
-    plotId: 9999,
-    regionNumber: 56,
-    plotNumber: 102,
-    tractNumber: 5,
-    regionName: "Quegmoor",
-    territory: "Pristine Northwest",
-    deedType: "Mountain",
-    magicType: "",
-    plotStatus: "natural",
-    rarity: "common",
-    worksiteType: "Ore Mine",
-  },
-];
+const deedInfo: DeedInfo = {
+  plotId: 9999,
+  regionNumber: 56,
+  plotNumber: 102,
+  tractNumber: 5,
+  regionName: "Quegmoor",
+  territory: "Pristine Northwest",
+  deedType: "Mountain",
+  magicType: "",
+  plotStatus: "natural",
+  rarity: "common",
+  basePP: 0,
+  boostPP: 0,
+  worksiteType: "Ore Mine",
+  rationingLite: 0,
+};
 
-const powerCoreAlerts = [
-  {
-    deedId: 999,
-    plotId: 9999,
-    regionNumber: 56,
-    plotNumber: 102,
-    tractNumber: 5,
-    regionName: "Quegmoor",
-    territory: "Pristine Northwest",
-    deedType: "Mountain",
-    magicType: "",
-    plotStatus: "natural",
-    rarity: "common",
-    worksiteType: "Ore Mine",
-  },
-];
+const tooMuchBasePP = [deedInfo];
 
-const assignedWorkersAlerts = [
-  {
-    deedInfo: {
-      deedId: 999,
-      plotId: 9999,
-      regionNumber: 56,
-      plotNumber: 102,
-      tractNumber: 5,
-      regionName: "Quegmoor",
-      territory: "Pristine Northwest",
-      deedType: "Mountain",
-      magicType: "",
-      plotStatus: "natural",
-      rarity: "common",
-      worksiteType: "Ore Mine",
-    },
-    assignedCards: 10,
-  },
-];
+const powerCoreAlerts = [deedInfo];
 
-const missingBloodLineBoostAlerts = [
-  {
-    deedId: 999,
-    plotId: 9999,
-    regionNumber: 56,
-    plotNumber: 102,
-    tractNumber: 5,
-    regionName: "Quegmoor",
-    territory: "Pristine Northwest",
-    deedType: "Mountain",
-    magicType: "",
-    plotStatus: "natural",
-    rarity: "common",
-    worksiteType: "Ore Mine",
-  },
-];
+const assignedWorkersAlerts = [{ deedInfo, assignedCards: 10 }];
 
-const negativeDECAlerts = [
-  {
-    deedInfo: {
-      deedId: 999,
-      plotId: 9999,
-      regionNumber: 56,
-      plotNumber: 102,
-      tractNumber: 5,
-      regionName: "Quegmoor",
-      territory: "Pristine Northwest",
-      deedType: "Mountain",
-      magicType: "",
-      plotStatus: "natural",
-      rarity: "common",
-      worksiteType: "Ore Mine",
-    },
-    negativeDecPerHour: 1345,
-  },
-];
+const missingBloodLineBoostAlerts = [deedInfo];
 
-const noWorkersAlerts = [
-  {
-    deedId: 999,
-    plotId: 9999,
-    regionNumber: 56,
-    plotNumber: 102,
-    tractNumber: 5,
-    regionName: "Quegmoor",
-    territory: "Pristine Northwest",
-    deedType: "Mountain",
-    magicType: "",
-    plotStatus: "natural",
-    rarity: "common",
-  },
-];
+const negativeDECAlerts = [{ deedInfo, negativeDecPerHour: 1345 }];
+
+const noWorkersAlerts = [{ ...deedInfo, worksiteType: undefined }];
 
 const rationingLiteAlerts = [
-  {
-    deedId: 999,
-    plotId: 9999,
-    regionNumber: 56,
-    plotNumber: 102,
-    tractNumber: 5,
-    regionName: "Quegmoor",
-    territory: "Pristine Northwest",
-    deedType: "Mountain",
-    magicType: "",
-    plotStatus: "natural",
-    rarity: "common",
-    basePP: 12345567788,
-    worksiteType: "Ore Mine",
-    rationingLite: 1,
-  },
+  { ...deedInfo, basePP: 12345567788, rationingLite: 1 },
 ];
 
 const terrainBoosts = {

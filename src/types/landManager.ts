@@ -3,6 +3,7 @@
 import { BiomeModifiers } from "@/lib/utils/cardUtil";
 import { ActionPreviewRow } from "@/types/actionPreview";
 import { DeedComplete } from "@/types/deed";
+import type { CardBloodline, CardElement, LandBoost } from "@/types/planner";
 import { CardRarity } from "./planner";
 
 /**
@@ -348,9 +349,8 @@ export interface RentalConfig {
   /** When true, only cards with a positive terrain boost on the target plot are considered. */
   terrain_boost_only: boolean;
   /**
-   * Max plots to process per run. null = process all eligible plots at once.
-   * Smaller batches allow re-evaluation of market conditions between runs
-   * for potentially better matches; larger batches process more in one go.
+   * Max plots to process per run. Legacy null means unlimited and is normalized
+   * to the enforced 100-plot maximum.
    */
   rental_batch_size: number | null;
   /**
@@ -371,6 +371,22 @@ export const DEFAULT_RENTAL_CONFIG: RentalConfig = {
   land_renters_only: false,
 };
 
+export const WORKER_BATCH_SIZE_MIN = 1;
+export const WORKER_BATCH_SIZE_MAX = 100;
+
+/** Null and non-positive legacy values previously meant "all"; cap them at 100. */
+export function normalizeWorkerBatchSize(
+  value: number | null | undefined
+): number {
+  if (value == null || !Number.isFinite(value) || value <= 0) {
+    return WORKER_BATCH_SIZE_MAX;
+  }
+  return Math.max(
+    WORKER_BATCH_SIZE_MIN,
+    Math.min(WORKER_BATCH_SIZE_MAX, Math.floor(value))
+  );
+}
+
 // === Buy ("purchase") strategy ===
 // Mirrors the rental config but for buying cards outright instead of renting.
 // Fully separate from RentalConfig so buying and renting can be tuned
@@ -381,10 +397,6 @@ export const DEFAULT_BUY_STRATEGY: BuyStrategy = "highest_pp_per_dec";
 export const BUY_STRATEGY_LABELS: Record<BuyStrategy, string> = {
   highest_pp_per_dec: "Highest base_pp per DEC",
 };
-
-/** Batch size is a plain integer 1..50 (no "unlimited"). */
-export const BUY_BATCH_SIZE_MIN = 1;
-export const BUY_BATCH_SIZE_MAX = 50;
 
 export interface BuyConfig {
   strategy: BuyStrategy;
@@ -398,7 +410,7 @@ export interface BuyConfig {
   min_foil: number;
   /** When true, only cards with a positive terrain boost on the target plot are considered. */
   terrain_boost_only: boolean;
-  /** Max plots to process per run (1..50). */
+  /** Max plots to process per run (1..100). */
   buy_batch_size: number;
 }
 
@@ -450,11 +462,18 @@ export interface WorkerPlanPick {
   gold: boolean;
   level: number;
   color: string;
+  card_set: string;
+  element: CardElement;
+  secondary_element: CardElement | null;
+  bloodline: CardBloodline;
+  land_boosts?: LandBoost;
   biome_modifier: number;
   land_base_pp: number;
   effective_pp: number;
   /** Total DEC for this pick (rental: per-day × days; buy: one-time price). */
   total_dec: number;
+  /** USD value at the current DEC/USD reference price. */
+  total_usd: number;
   /** effective_pp / total_dec. */
   pp_per_dec: number;
   seller: string;
@@ -465,6 +484,25 @@ export interface WorkerPlanPick {
   rental_days?: number;
   /** Rental-only: listing expiration date. Absent for purchases. */
   expiration_date?: string;
+}
+
+/** Current on-plot card data needed by the shared planner projection. */
+export interface WorkerPlanPlotCard {
+  uid: string;
+  name: string;
+  rarity: CardRarity;
+  set: string;
+  element: CardElement;
+  secondaryElement: CardElement | null;
+  edition: number;
+  foil: number;
+  bcx: number;
+  maxBcx: number;
+  landBasePP: number;
+  landBoostedPP: number;
+  bloodline?: CardBloodline;
+  landBoosts?: LandBoost;
+  slot: number;
 }
 
 export interface WorkerPlanItem {

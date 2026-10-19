@@ -3,8 +3,11 @@
 import { FOIL_IDS, foilLabel } from "@/lib/utils/cardUtil";
 import {
   RENTAL_STRATEGY_LABELS,
+  normalizeWorkerBatchSize,
   RentalConfig,
   RentalStrategy,
+  WORKER_BATCH_SIZE_MAX,
+  WORKER_BATCH_SIZE_MIN,
 } from "@/types/landManager";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -19,11 +22,10 @@ import {
   Radio,
   RadioGroup,
   Select,
+  Slider,
   Stack,
   Switch,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Typography,
 } from "@mui/material";
 
@@ -34,14 +36,6 @@ interface Props {
   onChange: (rental: RentalConfig) => void;
   layout?: LayoutMode;
 }
-
-const BATCH_PRESETS: Array<{ label: string; value: number }> = [
-  { label: "10", value: 10 },
-  { label: "20", value: 20 },
-  { label: "50", value: 50 },
-  { label: "100", value: 100 },
-  { label: "All", value: 0 }, // 0 is the sentinel for null (no limit)
-];
 
 export default function RentEmptyWorkersSection({
   rental,
@@ -97,34 +91,33 @@ export default function RentEmptyWorkersSection({
 
       <Stack gap={0.5} mb={2}>
         <Typography variant="caption" fontWeight="bold">
-          Plots per run (batch size)
+          Plots per run (batch size):{" "}
+          {normalizeWorkerBatchSize(rental.rental_batch_size)}
         </Typography>
-        <ToggleButtonGroup
-          exclusive
+        <Slider
           size="small"
-          value={rental.rental_batch_size ?? 0}
-          onChange={(_, val: number | null) => {
-            if (val === null) return;
+          min={WORKER_BATCH_SIZE_MIN}
+          max={WORKER_BATCH_SIZE_MAX}
+          step={1}
+          value={normalizeWorkerBatchSize(rental.rental_batch_size)}
+          valueLabelDisplay="auto"
+          marks={[
+            { value: WORKER_BATCH_SIZE_MIN, label: `${WORKER_BATCH_SIZE_MIN}` },
+            { value: WORKER_BATCH_SIZE_MAX, label: `${WORKER_BATCH_SIZE_MAX}` },
+          ]}
+          onChange={(_, value) => {
             onChange({
               ...rental,
-              rental_batch_size: val === 0 ? null : val,
+              rental_batch_size: Array.isArray(value) ? value[0] : value,
             });
           }}
-        >
-          {BATCH_PRESETS.map(({ label, value }) => (
-            <ToggleButton key={label} value={value}>
-              {label}
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+          sx={{ mx: 1, width: "calc(100% - 16px)" }}
+        />
         <Alert severity="info" sx={{ py: 0.5 }}>
           <Typography variant="caption">
             <strong>Smaller batches = better market matches.</strong> Each run
-            re-fetches live market data, so running 10 slots at a time lets you
-            catch fresher listings between batches. Larger batches process more
-            slots at once but market prices may shift during the run — the first
-            slots get the best picks; later slots see what&apos;s left after
-            earlier selections.
+            re-fetches live market data. Each run processes at most 100 plots;
+            smaller batches let you catch fresher listings between runs.
           </Typography>
         </Alert>
       </Stack>

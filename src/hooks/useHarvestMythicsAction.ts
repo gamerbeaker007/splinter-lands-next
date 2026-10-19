@@ -78,7 +78,7 @@ export function useHarvestMythicsAction({
       setError(null);
       try {
         const enabledUids = new Set(visibleRegions.map((r) => r.region_uid));
-        const allDeeds = await getPlayerMythicDeeds();
+        const allDeeds = await getPlayerMythicDeeds(true);
         const mythicDeeds = allDeeds.filter((d) =>
           enabledUids.has(d.region_uid)
         );

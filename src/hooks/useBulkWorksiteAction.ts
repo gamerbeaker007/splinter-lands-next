@@ -115,6 +115,7 @@ export function useBulkWorksiteAction(): UseBulkWorksiteActionReturn {
       setPhase("broadcasting");
       setProgress(null);
       setError(null);
+      setResult(null);
       try {
         const res = await broadcastOperations(username, ops);
         if (!res.success) {

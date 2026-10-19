@@ -35,7 +35,10 @@ import type { SplLandPool, SplPlayerPoolPosition } from "@/types/spl/landPools";
  * reads, and `invalidatePlayerRegionCaches` drops them after a broadcast.
  */
 
-const BULK_REGION_TTL_MS = 30_000;
+// Long enough to survive a Harvest ↔ Production switch after the shell warmed
+// the other page (see LandManagerProvider); actions and Refresh invalidate it.
+const BULK_REGION_TTL_MS = 60_000;
+const MYTHIC_DEEDS_TTL_MS = 60_000;
 const POOL_POSITION_TTL_MS = 30_000;
 const AUTHORITY_TTL_MS = 5 * 60_000;
 
@@ -296,13 +299,26 @@ export async function getPlayerWorksiteData(): Promise<PlayerWorksiteData> {
 
 // ── Mythic deeds (Keeps & Castles) ───────────────────────────────────────────
 
-export async function getPlayerMythicDeeds(): Promise<MythicDeed[]> {
+const mythicDeedsCache = createBrowserCache<MythicDeed[]>(MYTHIC_DEEDS_TTL_MS);
+
+/**
+ * The player's keeps and castles with their vault taxes. Memoised so a warmed
+ * Harvest page opens instantly; `force` for the harvest plan.
+ */
+export async function getPlayerMythicDeeds(
+  force = false
+): Promise<MythicDeed[]> {
   const session = getSplSession();
   if (!session) return [];
-
-  const { deeds, worksite_details } = await splBrowser.fetchRegionDataPlayer(
-    session.username
+  const player = session.username;
+  return memo(mythicDeedsCache, `${player}:mythic-deeds|`, force, () =>
+    loadPlayerMythicDeeds(player)
   );
+}
+
+async function loadPlayerMythicDeeds(player: string): Promise<MythicDeed[]> {
+  const { deeds, worksite_details } =
+    await splBrowser.fetchRegionDataPlayer(player);
   const mythicDeeds = deeds.filter(
     (d) => (d.keep ?? 0) > 0 || (d.castle ?? 0) > 0
   );

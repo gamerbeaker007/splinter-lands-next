@@ -1,6 +1,7 @@
 "use client";
 
 import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import { useCoverGrainAction } from "@/hooks/useCoverGrainAction";
 import { formatInt } from "@/lib/formatters";
 import { CoverGrainTarget } from "@/lib/frontend/coverWorksiteGrainOps";
@@ -24,7 +25,7 @@ import {
   TableRow,
   Typography,
 } from "@mui/material";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 interface Props {
   open: boolean;
@@ -39,6 +40,7 @@ interface Props {
   subject: string;
   /** Plot labels covered by this plan — listed so bulk runs stay understandable. */
   plotLabels?: string[];
+  floatingFeedback?: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -56,11 +58,13 @@ export default function FixGrainDeficitDialog({
   targets,
   subject,
   plotLabels,
+  floatingFeedback = false,
   onClose,
   onSuccess,
 }: Props) {
   const { status, phase, plan, error, buildPlanForRegions, confirm, reset } =
     useCoverGrainAction({ username, strategies });
+  const successNotified = useRef(false);
 
   // Stable identity so the planning effect doesn't re-run on every render of the
   // parent (targets is typically rebuilt inline from the current selection).
@@ -73,11 +77,11 @@ export default function FixGrainDeficitDialog({
     [targets]
   );
 
-  // Compute the proposal when the dialog opens; reset when it closes.
+  // Plan on open; keep completed state after close so menu-mode feedback can float.
   useEffect(() => {
     if (open) {
       buildPlanForRegions(targets);
-    } else {
+    } else if (status !== "done") {
       reset();
     }
     // buildPlanForRegions/reset are stable (useCallback); targetKey drives recompute.
@@ -87,11 +91,19 @@ export default function FixGrainDeficitDialog({
   // Notify parent once the grain has been moved (so it refreshes balances and
   // enables the Feed workers button).
   useEffect(() => {
-    if (status === "done") onSuccess();
+    if (status !== "done") {
+      successNotified.current = false;
+      return;
+    }
+    if (!successNotified.current) {
+      successNotified.current = true;
+      onSuccess();
+    }
   }, [status, onSuccess]);
 
   const busy = status === "planning" || status === "covering";
   const multiRegion = (plan?.regions.length ?? 0) > 1;
+  const successMessage = `Grain deficit fixed! Reload, then use Feed workers to activate the worksite${multiRegion ? "s" : ""}.`;
 
   const handleClose = () => {
     if (busy) return; // don't allow closing mid-broadcast
@@ -99,180 +111,196 @@ export default function FixGrainDeficitDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Fix grain deficit — {subject}</DialogTitle>
-      <DialogContent dividers>
-        {status === "planning" && (
-          <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
-            <CircularProgress size={20} />
-            <Typography variant="body2" color="text.secondary">
-              Computing proposal from your other regions…
-            </Typography>
-          </Stack>
-        )}
+    <>
+      <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
+        <DialogTitle>Fix grain deficit — {subject}</DialogTitle>
+        <DialogContent dividers>
+          {status === "planning" && (
+            <Stack direction="row" alignItems="center" gap={1.5} sx={{ py: 2 }}>
+              <CircularProgress size={20} />
+              <Typography variant="body2" color="text.secondary">
+                Computing proposal from your other regions…
+              </Typography>
+            </Stack>
+          )}
 
-        {status === "error" && !plan && (
-          <Alert severity="error">{error ?? "Could not build a plan."}</Alert>
-        )}
+          {status === "error" && !plan && (
+            <Alert severity="error">{error ?? "Could not build a plan."}</Alert>
+          )}
 
-        {plan && (
-          <>
-            <Typography variant="body2" gutterBottom>
-              Feeding the workers needs{" "}
-              <strong>{formatInt(plan.grainNeeded)} GRAIN</strong>
-              {multiRegion
-                ? ` across ${plan.regions.length} regions`
-                : " in this region"}
-              . Currently held: <strong>{formatInt(plan.currentGrain)}</strong>{" "}
-              — short{" "}
-              <strong>
-                {formatInt(Math.max(0, plan.grainNeeded - plan.currentGrain))}
-              </strong>
-              .
-            </Typography>
+          {plan && (
+            <>
+              <Typography variant="body2" gutterBottom>
+                Feeding the workers needs{" "}
+                <strong>{formatInt(plan.grainNeeded)} GRAIN</strong>
+                {multiRegion
+                  ? ` across ${plan.regions.length} regions`
+                  : " in this region"}
+                . Currently held:{" "}
+                <strong>{formatInt(plan.currentGrain)}</strong> — short{" "}
+                <strong>
+                  {formatInt(Math.max(0, plan.grainNeeded - plan.currentGrain))}
+                </strong>
+                .
+              </Typography>
 
-            {plotLabels && plotLabels.length > 0 && (
-              <Stack
-                direction="row"
-                gap={0.5}
-                flexWrap="wrap"
-                sx={{ mb: 1.5, mt: 0.5 }}
-              >
-                {plotLabels.map((label) => (
-                  <Chip
-                    key={label}
-                    label={label}
-                    size="small"
-                    variant="outlined"
-                    sx={{ height: 18, fontSize: "0.62rem" }}
-                  />
-                ))}
-              </Stack>
-            )}
+              {plotLabels && plotLabels.length > 0 && (
+                <Stack
+                  direction="row"
+                  gap={0.5}
+                  flexWrap="wrap"
+                  sx={{ mb: 1.5, mt: 0.5 }}
+                >
+                  {plotLabels.map((label) => (
+                    <Chip
+                      key={label}
+                      label={label}
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 18, fontSize: "0.62rem" }}
+                    />
+                  ))}
+                </Stack>
+              )}
 
-            {plan.resolved ? (
-              <Alert severity="success" sx={{ mb: 1.5 }}>
-                The plan below brings in {formatInt(plan.delivered)} GRAIN (pool
-                → transfer → swap → buy with DEC), enough to cover the
-                requirement. This only moves grain — once it lands, use Feed
-                workers to activate the worksite
-                {multiRegion ? "s" : ""}.
-              </Alert>
-            ) : (
-              <Alert severity="warning" sx={{ mb: 1.5 }}>
-                Could not fully cover the requirement — the plan only brings in{" "}
-                {formatInt(plan.delivered)} GRAIN, still short{" "}
-                {formatInt(plan.shortfall)}. Free up surplus grain in another
-                region, add DEC, or top up manually.
-              </Alert>
-            )}
+              {plan.resolved ? (
+                <Alert severity="success" sx={{ mb: 1.5 }}>
+                  The plan below brings in {formatInt(plan.delivered)} GRAIN
+                  (pool → transfer → swap → buy with DEC), enough to cover the
+                  requirement. This only moves grain — once it lands, use Feed
+                  workers to activate the worksite
+                  {multiRegion ? "s" : ""}.
+                </Alert>
+              ) : (
+                <Alert severity="warning" sx={{ mb: 1.5 }}>
+                  Could not fully cover the requirement — the plan only brings
+                  in {formatInt(plan.delivered)} GRAIN, still short{" "}
+                  {formatInt(plan.shortfall)}. Free up surplus grain in another
+                  region, add DEC, or top up manually.
+                </Alert>
+              )}
 
-            {multiRegion && (
-              <Box sx={{ mb: 1.5 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Per region
-                </Typography>
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Region</TableCell>
-                      <TableCell align="right">Needed</TableCell>
-                      <TableCell align="right">Held</TableCell>
-                      <TableCell align="right">Delivered</TableCell>
-                      <TableCell align="right">Short</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {plan.regions.map((r) => (
-                      <TableRow key={r.regionUid}>
-                        <TableCell>{r.regionName}</TableCell>
-                        <TableCell align="right">
-                          {formatInt(r.grainNeeded)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatInt(r.currentGrain)}
-                        </TableCell>
-                        <TableCell align="right">
-                          {formatInt(r.delivered)}
-                        </TableCell>
-                        <TableCell
-                          align="right"
-                          sx={{
-                            color: r.resolved ? "success.main" : "warning.main",
-                          }}
-                        >
-                          {formatInt(r.shortfall)}
-                        </TableCell>
+              {multiRegion && (
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    Per region
+                  </Typography>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Region</TableCell>
+                        <TableCell align="right">Needed</TableCell>
+                        <TableCell align="right">Held</TableCell>
+                        <TableCell align="right">Delivered</TableCell>
+                        <TableCell align="right">Short</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Box>
-            )}
+                    </TableHead>
+                    <TableBody>
+                      {plan.regions.map((r) => (
+                        <TableRow key={r.regionUid}>
+                          <TableCell>{r.regionName}</TableCell>
+                          <TableCell align="right">
+                            {formatInt(r.grainNeeded)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatInt(r.currentGrain)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatInt(r.delivered)}
+                          </TableCell>
+                          <TableCell
+                            align="right"
+                            sx={{
+                              color: r.resolved
+                                ? "success.main"
+                                : "warning.main",
+                            }}
+                          >
+                            {formatInt(r.shortfall)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Box>
+              )}
 
-            <Typography variant="subtitle2" gutterBottom>
-              Proposed operations
-            </Typography>
-            <PlanLogBox
-              lines={plan.log}
-              emptyText="(no resource moves needed)"
-              maxHeight={320}
-            />
+              <Typography variant="subtitle2" gutterBottom>
+                Proposed operations
+              </Typography>
+              <PlanLogBox
+                lines={plan.log}
+                emptyText="(no resource moves needed)"
+                maxHeight={320}
+              />
 
-            {status === "covering" && (
-              <Stack
-                direction="row"
-                alignItems="center"
-                gap={1.5}
-                sx={{ mt: 1.5 }}
-              >
-                <CircularProgress size={18} />
-                <Typography variant="body2" color="text.secondary">
-                  {phase === "confirming"
-                    ? (actionPhaseLabel(phase) ??
-                      "Transferring / swapping / buying grain…")
-                    : "Transferring / swapping / buying grain…"}
-                </Typography>
-              </Stack>
-            )}
+              {status === "covering" && (
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  gap={1.5}
+                  sx={{ mt: 1.5 }}
+                >
+                  <CircularProgress size={18} />
+                  <Typography variant="body2" color="text.secondary">
+                    {phase === "confirming"
+                      ? (actionPhaseLabel(phase) ??
+                        "Transferring / swapping / buying grain…")
+                      : "Transferring / swapping / buying grain…"}
+                  </Typography>
+                </Stack>
+              )}
 
-            {status === "error" && error && (
-              <Alert severity="error" sx={{ mt: 1.5 }}>
-                {error}
-              </Alert>
-            )}
+              {status === "error" && error && (
+                <Alert severity="error" sx={{ mt: 1.5 }}>
+                  {error}
+                </Alert>
+              )}
 
-            {status === "done" && (
-              <Alert severity="success" sx={{ mt: 1.5 }}>
-                Grain deficit fixed! Reload, then use Feed workers to activate
-                the worksite{multiRegion ? "s" : ""}.
-              </Alert>
-            )}
-          </>
+              {status === "done" && !floatingFeedback && (
+                <Alert severity="success" sx={{ mt: 1.5 }}>
+                  Grain deficit fixed! Reload, then use Feed workers to activate
+                  the worksite{multiRegion ? "s" : ""}.
+                </Alert>
+              )}
+            </>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose} disabled={busy} size="small">
+            {status === "done" ? "Close" : "Cancel"}
+          </Button>
+          <Box sx={{ flex: 1 }} />
+          <Button
+            onClick={() => {
+              void confirm();
+            }}
+            size="small"
+            variant="contained"
+            color="warning"
+            disabled={!plan || !plan.resolved || busy || status === "done"}
+            startIcon={
+              busy ? <CircularProgress size={14} color="inherit" /> : undefined
+            }
+          >
+            {status === "covering"
+              ? (actionButtonLabel(phase) ?? "Fix deficit")
+              : status === "planning"
+                ? "Planning…"
+                : "Fix deficit"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <FloatingFeedback
+        floating={floatingFeedback}
+        feedbackKey={status === "done" ? successMessage : null}
+      >
+        {floatingFeedback && status === "done" && (
+          <Alert severity="success" onClose={reset}>
+            {successMessage}
+          </Alert>
         )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose} disabled={busy} size="small">
-          {status === "done" ? "Close" : "Cancel"}
-        </Button>
-        <Box sx={{ flex: 1 }} />
-        <Button
-          onClick={() => confirm()}
-          size="small"
-          variant="contained"
-          color="warning"
-          disabled={!plan || !plan.resolved || busy || status === "done"}
-          startIcon={
-            busy ? <CircularProgress size={14} color="inherit" /> : undefined
-          }
-        >
-          {status === "covering"
-            ? (actionButtonLabel(phase) ?? "Fix deficit")
-            : status === "planning"
-              ? "Planning…"
-              : "Fix deficit"}
-        </Button>
-      </DialogActions>
-    </Dialog>
+      </FloatingFeedback>
+    </>
   );
 }

@@ -9,6 +9,7 @@ import {
   calcTotalPP,
   computeSlot,
 } from "@/lib/frontend/utils/plannerCalcs";
+import { WorkerPlanPick, WorkerPlanPlotCard } from "@/types/landManager";
 import { determineCardMaxBCX } from "@/lib/utils/cardUtil";
 import { DeedComplete } from "@/types/deed";
 import { CardSetNameLandValid } from "@/types/editions";
@@ -20,6 +21,7 @@ import {
 } from "@/types/planner";
 import { PlayerLandCard } from "@/types/playerLandCard";
 import { Prices } from "@/types/price";
+import { RegionTax } from "@/types/regionTax";
 import { SpotCardVM } from "../productionConfigTypes";
 
 /** Numeric foil id for a card's foil string (0 = regular). */
@@ -98,11 +100,12 @@ type SlotCardLike = Pick<
   | "bloodline"
   | "landBoosts"
   | "landBasePP"
->;
+> & { slot?: number; uid?: string };
 
-function spotCardToSlotInput(card: SlotCardLike, id: number): SlotInput {
+function spotCardToSlotInput(card: SlotCardLike, index: number): SlotInput {
   return {
-    id,
+    id: card.slot ?? index + 1,
+    uid: card.uid,
     set: card.set as CardSetNameLandValid,
     rarity: card.rarity,
     bcx: card.bcx,
@@ -144,9 +147,10 @@ export function projectPlot(
   workers: SlotCardLike[],
   prices: Prices,
   spsRatio: number,
-  overrides?: PlotBoostOverrides
+  overrides?: PlotBoostOverrides,
+  regionTax: RegionTax[] | null = null
 ): PlotProjection {
-  const slots = workers.map((w, i) => spotCardToSlotInput(w, i + 1));
+  const slots = workers.map((w, i) => spotCardToSlotInput(w, i));
   const plot = deedToPlotPlannerData(deed, slots, overrides);
   const { totalBasePP, totalBoostedPP } = calcTotalPP(plot);
 
@@ -158,8 +162,8 @@ export function projectPlot(
     plot,
     prices,
     spsRatio,
-    null,
-    null
+    regionTax,
+    captureRate
   );
 
   const rationingLite = Boolean(
@@ -181,4 +185,73 @@ export function projectPlot(
     rationingLite,
     captureRate,
   };
+}
+
+export interface WorkerPlanPlotProjection {
+  current: PlotProjection;
+  next: PlotProjection;
+  selectedPPByUid: Record<string, { basePP: number; boostedPP: number }>;
+}
+
+/** Projects the added cards alongside exact current slot occupants. */
+export function projectWorkerPlanPlot(
+  deed: DeedComplete,
+  currentWorkers: WorkerPlanPlotCard[],
+  picks: WorkerPlanPick[],
+  emptySlots: number[],
+  prices: Prices,
+  spsRatio: number,
+  regionTax: RegionTax[] | null
+): WorkerPlanPlotProjection {
+  // A pick without a free slot is not staked, so it is not projected either
+  // (and must not borrow an occupied slot id).
+  const selectedCards = picks
+    .slice(0, emptySlots.length)
+    .map((pick, index) => ({
+      uid: pick.card_uid,
+      name: pick.card_name,
+      set: pick.card_set,
+      rarity: pick.rarity,
+      bcx: pick.bcx,
+      foil: pick.foil,
+      element: pick.element,
+      secondaryElement: pick.secondary_element,
+      bloodline: pick.bloodline,
+      landBoosts: pick.land_boosts,
+      landBasePP: pick.land_base_pp,
+      slot: emptySlots[index],
+    }));
+  const current = projectPlot(
+    deed,
+    currentWorkers,
+    prices,
+    spsRatio,
+    undefined,
+    regionTax
+  );
+  const next = projectPlot(
+    deed,
+    [...currentWorkers, ...selectedCards],
+    prices,
+    spsRatio,
+    undefined,
+    regionTax
+  );
+
+  const slots = [...currentWorkers, ...selectedCards].map((card, index) =>
+    spotCardToSlotInput(card, index)
+  );
+  const plot = deedToPlotPlannerData(deed, slots);
+  const selectedPPByUid: WorkerPlanPlotProjection["selectedPPByUid"] = {};
+  for (const card of selectedCards) {
+    const slot = slots.find((candidate) => candidate.uid === card.uid);
+    if (!slot) continue;
+    const pp = computeSlot(slot, plot);
+    selectedPPByUid[card.uid] = {
+      basePP: pp.basePP,
+      boostedPP: pp.boostedPP,
+    };
+  }
+
+  return { current, next, selectedPPByUid };
 }

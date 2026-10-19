@@ -10,6 +10,10 @@ import {
   useLandManagerContext,
 } from "@/lib/frontend/context/LandManagerContext";
 import { usePageTitle } from "@/lib/frontend/context/PageTitleContext";
+import {
+  landManagerCounterpart,
+  prefetchLandManagerPage,
+} from "@/lib/frontend/land-manager-prefetch";
 import LandManagerPageSkeleton from "@/app/land-manager/loading";
 import { LandManagerConfig } from "@/types/landManager";
 import {
@@ -30,7 +34,7 @@ import {
 } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ReactNode } from "react";
+import { ReactNode, useCallback, useEffect, useMemo } from "react";
 
 interface Props {
   auth: LandManagerAuthStatus;
@@ -84,6 +88,46 @@ function ExperimentalNotice() {
   );
 }
 
+/**
+ * Delay before warming the other page, so the current page's own SPL reads
+ * go first.
+ */
+const PREFETCH_DELAY_MS = 3_000;
+
+/**
+ * Warms Production while on Harvest and vice versa (after a short delay), and
+ * any tab's page on hover/focus. Returns the hover handler for the tabs.
+ */
+function useLandManagerPrefetch(
+  pathname: string | null,
+  ready: boolean
+): (href: string) => void {
+  const { config, allRegions } = useLandManagerContext();
+  const enabledRegionUids = useMemo(
+    () =>
+      allRegions
+        .filter((r) => config.enabled_regions.includes(r.region_number))
+        .map((r) => r.region_uid),
+    [allRegions, config.enabled_regions]
+  );
+
+  const prefetch = useCallback(
+    (href: string) => {
+      if (ready) prefetchLandManagerPage(href, enabledRegionUids);
+    },
+    [ready, enabledRegionUids]
+  );
+
+  useEffect(() => {
+    const counterpart = landManagerCounterpart(pathname);
+    if (!counterpart) return;
+    const timer = setTimeout(() => prefetch(counterpart), PREFETCH_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [pathname, prefetch]);
+
+  return prefetch;
+}
+
 function NotLoggedIn() {
   return (
     <Box
@@ -125,6 +169,10 @@ function LandManagerShell({ children }: { children: ReactNode }) {
   } = useLandManagerContext();
   const pathname = usePathname();
   usePageTitle("Land Manager");
+  const prefetch = useLandManagerPrefetch(
+    pathname,
+    auth.authenticated && !sessionMissing && !regionsLoading
+  );
 
   if (!auth.authenticated || sessionMissing) {
     return <NotLoggedIn />;
@@ -200,6 +248,8 @@ function LandManagerShell({ children }: { children: ReactNode }) {
               label={tab.label}
               component={Link}
               href={tab.href}
+              onMouseEnter={() => prefetch(tab.href)}
+              onFocus={() => prefetch(tab.href)}
             />
           ))}
         </Tabs>

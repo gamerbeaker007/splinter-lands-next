@@ -1,6 +1,7 @@
 "use client";
 
 import type { UseAuthorityStatus } from "@/hooks/useAuthorityStatusCore";
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import {
   Alert,
   Box,
@@ -121,24 +122,18 @@ export default function AuthorityControl({
           </Button>
         )}
       </Stack>
-      {actionInfo && (
-        <Alert
-          severity="success"
-          sx={{ mt: 1 }}
-          onClose={() => setActionInfo(null)}
-        >
-          {actionInfo}
-        </Alert>
-      )}
-      {actionError && (
-        <Alert
-          severity="error"
-          sx={{ mt: 1 }}
-          onClose={() => setActionError(null)}
-        >
-          {actionError}
-        </Alert>
-      )}
+      <FloatingFeedback floating feedbackKey={actionInfo ?? actionError}>
+        {actionInfo && (
+          <Alert severity="success" onClose={() => setActionInfo(null)}>
+            {actionInfo}
+          </Alert>
+        )}
+        {actionError && (
+          <Alert severity="error" onClose={() => setActionError(null)}>
+            {actionError}
+          </Alert>
+        )}
+      </FloatingFeedback>
     </Box>
   );
 }

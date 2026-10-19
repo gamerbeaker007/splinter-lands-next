@@ -1,10 +1,11 @@
 "use client";
 
 import CardTile from "@/components/player-overview/deed-overview/land-deed-card/card/CardTile";
-import { formatFixed, formatInt, formatNumber } from "@/lib/formatters";
+import { formatFixed, formatNumber } from "@/lib/formatters";
+import { dec_icon_url } from "@/lib/shared/statics_icon_urls";
 import { WorkerPlanPick } from "@/types/landManager";
 import { cardElementColorMap } from "@/types/planner/primitives";
-import { Box, Tooltip, Typography } from "@mui/material";
+import { Box, Stack, Typography } from "@mui/material";
 
 export type WorkerMode = "rent" | "buy";
 
@@ -55,72 +56,94 @@ interface Props {
   picks: WorkerPlanPick[];
   /** "rent" shows per-day pricing; "buy" shows the one-time DEC price. */
   mode: WorkerMode;
+  selectedPPByUid?: Record<string, { basePP: number; boostedPP: number }>;
 }
 
 /** Shared picks cell for the rental and buy confirm tables. */
-export default function WorkerCardPicksCell({ picks, mode }: Props) {
+export default function WorkerCardPicksCell({
+  picks,
+  mode,
+  selectedPPByUid = {},
+}: Props) {
   if (picks.length === 0) return null;
 
-  // Rent shows DEC/day per card; buy shows the one-time DEC price.
-  const perCard = (pick: WorkerPlanPick) =>
-    mode === "rent" ? (pick.buy_price_per_day ?? 0) : pick.total_dec;
-  const unit = mode === "rent" ? "DEC/day" : "DEC";
-  const total = picks.reduce((s, p) => s + perCard(p), 0);
-
   return (
-    <Box>
-      <Box sx={{ display: "flex", gap: 0.5, alignItems: "flex-start" }}>
-        {picks.map((pick) => (
-          <Box key={pick.card_uid}>
-            <Tooltip title={<PickTooltip pick={pick} />} placement="top" arrow>
-              <CardTile
-                key={pick.card_uid}
-                name={pick.card_name}
-                rarity={pick.rarity}
-                edition={pick.edition}
-                foil={pick.foil}
-                terrain_boost={Number(pick.biome_modifier)}
-                actual_bcx={pick.bcx}
-                max_bcx={pick.max_bcx}
-                base_pp={Number(pick.land_base_pp)}
-                boosted_pp={Number(pick.effective_pp)}
-                uid={pick.card_uid}
+    <Box
+      sx={{
+        display: "flex",
+        gap: 1,
+        alignItems: "flex-start",
+        overflowX: "auto",
+        maxWidth: "100%",
+      }}
+    >
+      {picks.map((pick) => (
+        <Box key={pick.card_uid} sx={{ flex: "0 0 85px", width: 85 }}>
+          {/* The pick details sit under the full card the tile shows on hover. */}
+          <CardTile
+            name={pick.card_name}
+            rarity={pick.rarity}
+            edition={pick.edition}
+            foil={pick.foil}
+            terrain_boost={Number(pick.biome_modifier)}
+            actual_bcx={pick.bcx}
+            max_bcx={pick.max_bcx}
+            base_pp={Number(pick.land_base_pp)}
+            boosted_pp={Number(
+              selectedPPByUid[pick.card_uid]?.boostedPP ?? pick.effective_pp
+            )}
+            uid={pick.card_uid}
+            previewDetails={<PickTooltip pick={pick} />}
+            level={pick.level}
+          />
+          {/* Own backdrop: the cell also sits on top of plot artwork. */}
+          <Stack
+            spacing={0.25}
+            sx={{
+              textAlign: "left",
+              mt: 0.4,
+              px: 0.5,
+              py: 0.25,
+              borderRadius: 0.5,
+              bgcolor: "rgba(0,0,0,0.75)",
+              color: "#fff",
+            }}
+          >
+            <Stack direction="row" alignItems="center" spacing={0.25}>
+              <Typography variant="caption" fontWeight={700} noWrap>
+                {formatFixed(
+                  mode === "rent"
+                    ? (pick.buy_price_per_day ?? 0)
+                    : pick.total_dec
+                )}
+              </Typography>
+              <Box
+                component="img"
+                src={dec_icon_url}
+                alt="DEC"
+                sx={{ width: 14, height: 14, objectFit: "contain" }}
               />
-            </Tooltip>
+              {mode === "rent" && (
+                <Typography variant="caption" fontWeight={700} noWrap>
+                  /day
+                </Typography>
+              )}
+            </Stack>
             <Typography
               variant="caption"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                color: "text.secondary",
-                mt: 0.25,
-                fontSize: "0.65rem",
-              }}
+              sx={{ color: "rgba(255,255,255,0.75)" }}
+              noWrap
             >
-              {formatInt(perCard(pick))} {unit}
-            </Typography>
-            <Typography
-              variant="caption"
-              sx={{
-                display: "block",
-                textAlign: "center",
-                color: "text.secondary",
-                mt: 0.25,
-                fontSize: "0.65rem",
-              }}
-            >
-              {formatNumber(pick.pp_per_dec, { maximumFractionDigits: 3 })}{" "}
+              {formatNumber(
+                (selectedPPByUid[pick.card_uid]?.boostedPP ??
+                  pick.effective_pp) / (pick.total_dec || 1),
+                { maximumFractionDigits: 1 }
+              )}{" "}
               PP/DEC
             </Typography>
-          </Box>
-        ))}
-      </Box>
-      <Typography
-        variant="caption"
-        sx={{ display: "block", color: "text.secondary", mt: 0.25 }}
-      >
-        {formatFixed(total)} {unit} (Total)
-      </Typography>
+          </Stack>
+        </Box>
+      ))}
     </Box>
   );
 }

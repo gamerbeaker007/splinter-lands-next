@@ -14,6 +14,38 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.43.0] - 2026-10-18
+
+### Added
+
+- **Land Manager - Find Workers:** Added rent and buy search flows with
+  authorization status, saved default strategies, session-only search overrides,
+  plot and worker cost summaries, and planner-based production estimates.
+- **Storybook:** Added representative Find Workers states, including paginated
+  plot results, loading and error states, authorization states, and batch-size
+  controls.
+
+### Improved
+
+- **Land Manager - Production:** Reorganized bulk operations and Find Workers
+  controls, and improved responsive plot and selected-worker result cards.
+- **Land Manager - Find Workers:** Rent and buy batch settings now use matching
+  sliders and enforce a maximum of 100 plots per run. Saved values above the
+  maximum are capped at 100 when used.
+- **Land Manager - Bulk actions:** Confirmation dialogs remain open while
+  actions are being verified, show a busy state, and report completed outcomes
+  using floating feedback. A new floating message replaces an older one rather
+  than queueing it.
+
+### Security release note
+
+- **Next.js 16.4.2:** Updates from 16.3.8 to fix a Server Action denial-of-service vulnerability.
+- **Cache refresh security:** Requires a configured token; returns 503 if missing and 401 if invalid.
+- **Service account security:** Buy and rent operations verify player login with Splinterlands on every request.
+- **Buy/rent limits:** Validates market IDs and prices, limits requests to 2,000 listings, and caps concurrency per player and globally.
+
+---
+
 ## [v1.42.0] - 2026-10-16
 
 ### Improved

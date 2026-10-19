@@ -1,9 +1,17 @@
 "use client";
 
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import { useDecPowerAction } from "@/hooks/useDecPowerAction";
 import { DecPowerDirection } from "@/lib/shared/decPower";
 import { formatInt } from "@/lib/formatters";
-import { Alert, Button, CircularProgress, Stack, Tooltip } from "@mui/material";
+import {
+  Alert,
+  Button,
+  CircularProgress,
+  MenuItem,
+  Stack,
+  Tooltip,
+} from "@mui/material";
 import { useEffect, useState } from "react";
 import DecPowerDialog from "./DecPowerDialog";
 import { DEC_POWER_VARIANTS } from "./decPowerVariant";
@@ -16,6 +24,8 @@ interface Props {
   anyBusy: boolean;
   onBusyChange: (busy: boolean) => void;
   onSuccess: () => void;
+  menuItem?: boolean;
+  onMenuAction?: () => void;
 }
 
 export default function DecPowerRow({
@@ -25,6 +35,8 @@ export default function DecPowerRow({
   anyBusy,
   onBusyChange,
   onSuccess,
+  menuItem = false,
+  onMenuAction,
 }: Props) {
   const variant = DEC_POWER_VARIANTS[direction];
   const Icon = variant.icon;
@@ -42,15 +54,15 @@ export default function DecPowerRow({
   const disabled = anyBusy || availableTotal <= 0;
 
   const handleConfirm = async () => {
-    await action.execute();
     // Close only on a clean run; partial / failed runs keep the dialog open so
     // the user can see what landed.
-    if (!action.error) setPlanOpen(false);
+    if (await action.execute()) setPlanOpen(false);
   };
 
   // One button, one path: build the plan, show it, and broadcast only on
   // confirmation.
   const openPlan = async () => {
+    onMenuAction?.();
     setPlanOpen(true);
     await action.preview();
   };
@@ -61,62 +73,78 @@ export default function DecPowerRow({
 
   return (
     <>
-      <Stack
-        direction="row"
-        gap={2}
-        flexWrap="wrap"
-        alignItems="center"
-        mb={1.5}
-      >
-        <Tooltip
-          title={
-            availableTotal <= 0
-              ? variant.disabledTooltip
-              : `${variant.enabledTooltip} — shows the plan for confirmation first`
-          }
+      {menuItem ? (
+        <MenuItem disabled={disabled} onClick={() => void openPlan()}>
+          {action.busy ? (
+            <CircularProgress size={18} sx={{ mr: 1 }} />
+          ) : (
+            <Icon fontSize="small" sx={{ mr: 1 }} />
+          )}
+          {variant.verb} DEC ({formatInt(availableTotal)} available)
+        </MenuItem>
+      ) : (
+        <Stack
+          direction="row"
+          gap={2}
+          flexWrap="wrap"
+          alignItems="center"
+          mb={1.5}
         >
-          <span>
-            <Button
-              size="small"
-              variant="contained"
-              color={variant.color}
-              startIcon={
-                action.busy ? (
-                  <CircularProgress size={14} color="inherit" />
-                ) : (
-                  <Icon fontSize="small" />
-                )
-              }
-              disabled={disabled}
-              onClick={openPlan}
-            >
-              {variant.verb} DEC…
-            </Button>
-          </span>
-        </Tooltip>
-      </Stack>
-
-      {action.result?.success && (
-        <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
-          {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC
-          across {succeededRegionCount} region
-          {succeededRegionCount === 1 ? "" : "s"}.
-        </Alert>
+          <Tooltip
+            title={
+              availableTotal <= 0
+                ? variant.disabledTooltip
+                : `${variant.enabledTooltip} — shows the plan for confirmation first`
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                variant="contained"
+                color={variant.color}
+                startIcon={
+                  action.busy ? (
+                    <CircularProgress size={14} color="inherit" />
+                  ) : (
+                    <Icon fontSize="small" />
+                  )
+                }
+                disabled={disabled}
+                onClick={openPlan}
+              >
+                {variant.verb} DEC…
+              </Button>
+            </span>
+          </Tooltip>
+        </Stack>
       )}
 
-      {action.result && !action.result.success && (
-        <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
-          Partial run — {variant.pastVerb.toLowerCase()}{" "}
-          {formatInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
-          {formatInt(action.result.totalFailed)} DEC.
-        </Alert>
-      )}
+      <FloatingFeedback
+        floating={menuItem}
+        feedbackKey={action.result ?? action.error}
+      >
+        {action.result?.success && (
+          <Alert severity="success" onClose={action.clearResult} sx={{ mb: 1 }}>
+            {variant.pastVerb} {formatInt(action.result.totalSucceeded)} DEC
+            across {succeededRegionCount} region
+            {succeededRegionCount === 1 ? "" : "s"}.
+          </Alert>
+        )}
 
-      {action.error && (
-        <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
-          {action.error}
-        </Alert>
-      )}
+        {action.result && !action.result.success && (
+          <Alert severity="warning" onClose={action.clearResult} sx={{ mb: 1 }}>
+            Partial run — {variant.pastVerb.toLowerCase()}{" "}
+            {formatInt(action.result.totalSucceeded)} DEC, failed/skipped{" "}
+            {formatInt(action.result.totalFailed)} DEC.
+          </Alert>
+        )}
+
+        {action.error && (
+          <Alert severity="error" onClose={action.clearError} sx={{ mb: 1 }}>
+            {action.error}
+          </Alert>
+        )}
+      </FloatingFeedback>
 
       {planOpen && action.plan && (
         <DecPowerDialog

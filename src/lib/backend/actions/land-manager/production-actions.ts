@@ -26,7 +26,7 @@ import {
 } from "@/types/planner";
 import { Prices } from "@/types/price";
 import { RegionTax } from "@/types/regionTax";
-import { Card, StakedAssets } from "@/types/stakedAssets";
+import { Card, Item, StakedAssets } from "@/types/stakedAssets";
 
 /**
  * Server half of the Production page. The player's own deeds and staked
@@ -114,19 +114,43 @@ export interface PlotConfigureData {
  * the Configure panel. The browser reads `assets` fresh from SPL; only the
  * card details lookup happens here.
  */
-export async function buildPlotConfigureData(
+/** The stake fields the Configure data is built from (small upload). */
+export type ConfigureCardInput = Pick<
+  Card,
+  | "uid"
+  | "card_detail_id"
+  | "card_set"
+  | "edition"
+  | "foil"
+  | "bcx"
+  | "slot"
+  | "stake_type_uid"
+  | "base_pp_after_cap"
+  | "total_harvest_pp"
+  | "terrain_boost"
+>;
+export type ConfigureItemInput = Pick<
+  Item,
+  "uid" | "name" | "stake_type_uid" | "boost"
+>;
+export interface ConfigureAssetsInput {
+  cards?: ConfigureCardInput[];
+  items?: ConfigureItemInput[];
+}
+
+function mapPlotConfigureData(
   deedUid: string,
-  assets: StakedAssets
-): Promise<PlotConfigureData> {
-  const cardDetails = await getCachedCardDetailsData();
+  assets: ConfigureAssetsInput,
+  cardDetails: Awaited<ReturnType<typeof getCachedCardDetailsData>>
+): PlotConfigureData {
   const cards = assets.cards ?? [];
   const items = assets.items ?? [];
 
-  const isRuni = (c: Card) =>
+  const isRuni = (c: ConfigureCardInput) =>
     c.stake_type_uid === STAKE_TYPE_UID_LAND_RUNI ||
     c.card_detail_id === RUNI_CARD_DETAIL_ID;
 
-  const toConfigCard = (c: Card): ConfigCard => {
+  const toConfigCard = (c: ConfigureCardInput): ConfigCard => {
     const { name, rarity } = determineCardInfo(c.card_detail_id, cardDetails);
     const splCard = cardDetails.find((cd) => cd.id === c.card_detail_id);
     const foil = cardFoilOptions[c.foil] ?? "regular";
@@ -185,4 +209,29 @@ export async function buildPlotConfigureData(
     totem: toConfigItem(STAKE_TYPE_UID_LAND_TOTEM),
     title: toConfigItem(STAKE_TYPE_UID_LAND_TITLE),
   };
+}
+
+export async function buildPlotConfigureData(
+  deedUid: string,
+  assets: StakedAssets
+): Promise<PlotConfigureData> {
+  return mapPlotConfigureData(
+    deedUid,
+    assets,
+    await getCachedCardDetailsData()
+  );
+}
+
+/** Enrich several browser-fetched stake snapshots in one server action call. */
+export async function buildPlotConfigureDataBatch(
+  entries: Array<{ deedUid: string; assets: ConfigureAssetsInput }>
+): Promise<Record<string, PlotConfigureData>> {
+  const cardDetails = await getCachedCardDetailsData();
+  const results = await Promise.all(
+    entries.map(
+      ({ deedUid, assets }) =>
+        [deedUid, mapPlotConfigureData(deedUid, assets, cardDetails)] as const
+    )
+  );
+  return Object.fromEntries(results);
 }

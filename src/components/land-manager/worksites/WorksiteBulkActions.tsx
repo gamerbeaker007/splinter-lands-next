@@ -1,5 +1,6 @@
 "use client";
 
+import FloatingFeedback from "@/components/ui/FloatingFeedback";
 import FixGrainDeficitDialog from "@/components/land-manager/worksites/FixGrainDeficitDialog";
 import {
   bulkBusyKey,
@@ -41,6 +42,7 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  MenuItem,
   Stack,
   Tooltip,
   Typography,
@@ -57,6 +59,9 @@ interface Props {
   /** Shared "now" so counts, plan and execution judge against the same instant. */
   nowMs: number;
   onSuccess: () => void;
+  collapsible?: boolean;
+  menuMode?: boolean;
+  onMenuAction?: () => void;
 }
 
 type PendingDialog =
@@ -72,6 +77,9 @@ export default function WorksiteBulkActions({
   strategies,
   nowMs,
   onSuccess,
+  collapsible = true,
+  menuMode = false,
+  onMenuAction,
 }: Props) {
   const action = useBulkWorksiteAction();
   // Only the button that started the run spins; the rest are merely disabled.
@@ -143,7 +151,6 @@ export default function WorksiteBulkActions({
         : null;
 
   const handleCancelConfirm = async () => {
-    setPending(null);
     const res = await action.cancelConstructions(
       username,
       cancelCandidates.map((c) => ({
@@ -152,11 +159,13 @@ export default function WorksiteBulkActions({
         projectId: c.projectId,
       }))
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const handleFeedConfirm = async () => {
-    setPending(null);
     const res = await action.feedWorkers(
       username,
       feedPlan.feedable.map((c) => ({
@@ -165,13 +174,15 @@ export default function WorksiteBulkActions({
         projectId: c.projectId,
       }))
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const handleChangeConfirm = async () => {
     if (pending?.type !== "change") return;
     const { option } = pending;
-    setPending(null);
     const opName = worksiteConstructionOpName[option.worksite];
     if (!opName) return;
     const res = await action.buildWorksites(
@@ -182,215 +193,369 @@ export default function WorksiteBulkActions({
       })),
       opName
     );
-    if (res.success) onSuccess();
+    if (res.success) {
+      setPending(null);
+      onSuccess();
+    }
   };
 
   const changeOption = pending?.type === "change" ? pending.option : null;
+  const changeOpName = changeOption
+    ? worksiteConstructionOpName[changeOption.worksite]
+    : null;
+  const changeBusyKey = changeOpName ? bulkBusyKey.build(changeOpName) : "";
 
   return (
-    <Card variant="outlined" sx={{ mb: 1.5 }}>
-      <Stack
-        direction="row"
-        alignItems="center"
-        gap={0.5}
-        sx={{ px: 1, py: 0.5, cursor: "pointer" }}
-        onClick={() => setCollapsed((c) => !c)}
-      >
-        <IconButton size="small" sx={{ p: 0.25 }}>
-          {collapsed ? (
-            <ExpandMoreIcon fontSize="small" />
-          ) : (
-            <ExpandLessIcon fontSize="small" />
+    <Card
+      variant="outlined"
+      sx={menuMode ? { display: "contents" } : { mb: 1.5 }}
+    >
+      {!menuMode && (
+        <Stack
+          direction="row"
+          alignItems="center"
+          gap={0.5}
+          sx={{
+            px: 1,
+            py: 0.5,
+            cursor: collapsible ? "pointer" : "default",
+          }}
+          onClick={collapsible ? () => setCollapsed((c) => !c) : undefined}
+        >
+          {collapsible && (
+            <IconButton size="small" sx={{ p: 0.25 }}>
+              {collapsed ? (
+                <ExpandMoreIcon fontSize="small" />
+              ) : (
+                <ExpandLessIcon fontSize="small" />
+              )}
+            </IconButton>
           )}
-        </IconButton>
-        <Typography variant="subtitle2" fontWeight={700}>
-          Bulk actions
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          · applies to the {deeds.length} selected plot
-          {deeds.length === 1 ? "" : "s"} (current filters)
-        </Typography>
-      </Stack>
+          <Typography variant="subtitle2" fontWeight={700}>
+            Bulk actions
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            · applies to the {deeds.length} selected plot
+            {deeds.length === 1 ? "" : "s"} (current filters)
+          </Typography>
+        </Stack>
+      )}
 
-      <Collapse in={!collapsed}>
-        <Box sx={{ px: 1.25, pb: 1.25 }}>
-          <Divider sx={{ mb: 1 }} />
+      <Collapse in={menuMode || !collapsible || !collapsed}>
+        <Box sx={menuMode ? undefined : { px: 1.25, pb: 1.25 }}>
+          {!menuMode && <Divider sx={{ mb: 1 }} />}
 
           {/* ── Grain actions ── */}
-          <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center">
-            <Tooltip
-              title={
-                runningLabel(bulkBusyKey.feed) ??
-                feedDisabledReason ??
-                `Feeds ${feedCount} ready worksite${feedCount === 1 ? "" : "s"} for ${formatInt(totalFeedGrain)} GRAIN`
-              }
+          {menuMode ? (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ px: 2, pt: 0.5, display: "block" }}
             >
-              <span>
-                <Button
-                  size="small"
-                  variant="contained"
-                  color="success"
-                  startIcon={
-                    isRunning(bulkBusyKey.feed) ? (
-                      <CircularProgress size={12} color="inherit" />
+              Worksite
+            </Typography>
+          ) : null}
+          {menuMode ? (
+            <>
+              <Tooltip
+                title={
+                  runningLabel(bulkBusyKey.feed) ??
+                  feedDisabledReason ??
+                  `Feeds ${feedCount} ready worksites for ${formatInt(totalFeedGrain)} GRAIN`
+                }
+              >
+                <span>
+                  <MenuItem
+                    disabled={action.busy || feedCount === 0}
+                    onClick={() => {
+                      onMenuAction?.();
+                      setPending({ type: "feed" });
+                    }}
+                  >
+                    {isRunning(bulkBusyKey.feed) ? (
+                      <CircularProgress size={16} sx={{ mr: 1 }} />
                     ) : (
-                      <RestaurantIcon sx={{ fontSize: "0.9rem !important" }} />
-                    )
-                  }
-                  disabled={action.busy || feedCount === 0}
-                  onClick={() => setPending({ type: "feed" })}
-                  sx={{ fontSize: "0.7rem" }}
-                >
-                  {buttonStatus(bulkBusyKey.feed) ??
-                    `Feed Workers (${feedCount})`}
-                </Button>
-              </span>
-            </Tooltip>
-
-            <Tooltip
-              title={
-                fixDisabledReason ??
-                `Plans the grain moves needed for ${fixCount} ready worksite${fixCount === 1 ? "" : "s"} — shown for review before anything is broadcast`
-              }
-            >
-              <span>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="warning"
-                  startIcon={
-                    <AutoFixHighIcon sx={{ fontSize: "0.9rem !important" }} />
-                  }
-                  disabled={action.busy || fixCount === 0}
-                  onClick={() => setFixOpen(true)}
-                  sx={{ fontSize: "0.7rem" }}
-                >
-                  Fix Grain Deficit ({fixCount})
-                </Button>
-              </span>
-            </Tooltip>
-
-            <Tooltip
-              title={
-                runningLabel(bulkBusyKey.cancel) ??
-                cancelDisabledReason ??
-                `Cancels ${cancelCount} running construction${cancelCount === 1 ? "" : "s"} — resources already spent are lost`
-              }
-            >
-              <span>
-                <Button
-                  size="small"
-                  variant="outlined"
-                  color="error"
-                  startIcon={
-                    isRunning(bulkBusyKey.cancel) ? (
-                      <CircularProgress size={12} color="inherit" />
+                      <RestaurantIcon fontSize="small" sx={{ mr: 1 }} />
+                    )}
+                    {buttonStatus(bulkBusyKey.feed) ??
+                      `Feed Workers (${feedCount})`}
+                  </MenuItem>
+                </span>
+              </Tooltip>
+              <Tooltip
+                title={
+                  fixDisabledReason ??
+                  `Plans grain moves for ${fixCount} ready worksites`
+                }
+              >
+                <span>
+                  <MenuItem
+                    disabled={action.busy || fixCount === 0}
+                    onClick={() => {
+                      onMenuAction?.();
+                      setFixOpen(true);
+                    }}
+                  >
+                    <AutoFixHighIcon fontSize="small" sx={{ mr: 1 }} />
+                    Fix Grain Deficit ({fixCount})
+                  </MenuItem>
+                </span>
+              </Tooltip>
+              <Tooltip
+                title={
+                  runningLabel(bulkBusyKey.cancel) ??
+                  cancelDisabledReason ??
+                  `Cancels ${cancelCount} running constructions`
+                }
+              >
+                <span>
+                  <MenuItem
+                    disabled={action.busy || cancelCount === 0}
+                    onClick={() => {
+                      onMenuAction?.();
+                      setPending({ type: "cancel" });
+                    }}
+                  >
+                    {isRunning(bulkBusyKey.cancel) ? (
+                      <CircularProgress size={16} sx={{ mr: 1 }} />
                     ) : (
-                      <CancelIcon sx={{ fontSize: "0.9rem !important" }} />
-                    )
-                  }
-                  disabled={action.busy || cancelCount === 0}
-                  onClick={() => setPending({ type: "cancel" })}
-                  sx={{ fontSize: "0.7rem" }}
-                >
-                  {buttonStatus(bulkBusyKey.cancel) ??
-                    `Cancel Construction (${cancelCount})`}
-                </Button>
-              </span>
-            </Tooltip>
-          </Stack>
+                      <CancelIcon fontSize="small" sx={{ mr: 1 }} />
+                    )}
+                    {buttonStatus(bulkBusyKey.cancel) ??
+                      `Cancel Construction (${cancelCount})`}
+                  </MenuItem>
+                </span>
+              </Tooltip>
+              <Divider />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ px: 2, pt: 0.5, display: "block" }}
+              >
+                Change Worksite
+              </Typography>
+            </>
+          ) : null}
+          {!menuMode && (
+            <Stack direction="row" gap={1} flexWrap="wrap" alignItems="center">
+              <Tooltip
+                title={
+                  runningLabel(bulkBusyKey.feed) ??
+                  feedDisabledReason ??
+                  `Feeds ${feedCount} ready worksite${feedCount === 1 ? "" : "s"} for ${formatInt(totalFeedGrain)} GRAIN`
+                }
+              >
+                <span>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="success"
+                    startIcon={
+                      isRunning(bulkBusyKey.feed) ? (
+                        <CircularProgress size={12} color="inherit" />
+                      ) : (
+                        <RestaurantIcon
+                          sx={{ fontSize: "0.9rem !important" }}
+                        />
+                      )
+                    }
+                    disabled={action.busy || feedCount === 0}
+                    onClick={() => setPending({ type: "feed" })}
+                    sx={{ fontSize: "0.7rem" }}
+                  >
+                    {buttonStatus(bulkBusyKey.feed) ??
+                      `Feed Workers (${feedCount})`}
+                  </Button>
+                </span>
+              </Tooltip>
+
+              <Tooltip
+                title={
+                  fixDisabledReason ??
+                  `Plans the grain moves needed for ${fixCount} ready worksite${fixCount === 1 ? "" : "s"} — shown for review before anything is broadcast`
+                }
+              >
+                <span>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="warning"
+                    startIcon={
+                      <AutoFixHighIcon sx={{ fontSize: "0.9rem !important" }} />
+                    }
+                    disabled={action.busy || fixCount === 0}
+                    onClick={() => setFixOpen(true)}
+                    sx={{ fontSize: "0.7rem" }}
+                  >
+                    Fix Grain Deficit ({fixCount})
+                  </Button>
+                </span>
+              </Tooltip>
+
+              <Tooltip
+                title={
+                  runningLabel(bulkBusyKey.cancel) ??
+                  cancelDisabledReason ??
+                  `Cancels ${cancelCount} running construction${cancelCount === 1 ? "" : "s"} — resources already spent are lost`
+                }
+              >
+                <span>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={
+                      isRunning(bulkBusyKey.cancel) ? (
+                        <CircularProgress size={12} color="inherit" />
+                      ) : (
+                        <CancelIcon sx={{ fontSize: "0.9rem !important" }} />
+                      )
+                    }
+                    disabled={action.busy || cancelCount === 0}
+                    onClick={() => setPending({ type: "cancel" })}
+                    sx={{ fontSize: "0.7rem" }}
+                  >
+                    {buttonStatus(bulkBusyKey.cancel) ??
+                      `Cancel Construction (${cancelCount})`}
+                  </Button>
+                </span>
+              </Tooltip>
+            </Stack>
+          )}
 
           {/* ── Change worksite ── */}
-          <Divider sx={{ my: 1 }} />
-          <Typography
-            variant="caption"
-            color="text.secondary"
-            sx={{ display: "block", mb: 0.5 }}
-          >
-            Change worksite — counts are the selected plots whose deed type
-            allows it and that are free to switch
-          </Typography>
-          <Stack direction="row" gap={0.75} flexWrap="wrap">
-            {changeOptions.map((option) => {
-              const icon = worksiteSelectIconMap[option.worksite];
+          {!menuMode && <Divider sx={{ my: 1 }} />}
+          {!menuMode && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", mb: 0.5 }}
+            >
+              Change worksite — counts are the selected plots whose deed type
+              allows it and that are free to switch
+            </Typography>
+          )}
+          {menuMode ? null : (
+            <Stack direction="row" gap={0.75} flexWrap="wrap">
+              {changeOptions.map((option) => {
+                const icon = worksiteSelectIconMap[option.worksite];
+                const opName = worksiteConstructionOpName[option.worksite];
+                const key = opName ? bulkBusyKey.build(opName) : "";
+                return (
+                  <Tooltip
+                    key={option.worksite}
+                    title={
+                      runningLabel(key) ??
+                      option.blockedReason ??
+                      `Build a ${option.worksite} on ${option.candidates.length} selected plot${option.candidates.length === 1 ? "" : "s"}`
+                    }
+                  >
+                    <span>
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        disabled={action.busy || option.candidates.length === 0}
+                        onClick={() => setPending({ type: "change", option })}
+                        startIcon={
+                          isRunning(key) ? (
+                            <CircularProgress size={12} color="inherit" />
+                          ) : icon ? (
+                            <Box
+                              component="img"
+                              src={icon}
+                              alt={option.worksite}
+                              sx={{
+                                width: 20,
+                                height: 20,
+                                borderRadius: 0.5,
+                                objectFit: "cover",
+                              }}
+                            />
+                          ) : undefined
+                        }
+                        sx={{
+                          fontSize: "0.7rem",
+                          whiteSpace: "nowrap",
+                          "&.Mui-disabled": { opacity: 0.4 },
+                        }}
+                      >
+                        {buttonStatus(key) ??
+                          `${option.worksite} (${option.candidates.length})`}
+                      </Button>
+                    </span>
+                  </Tooltip>
+                );
+              })}
+            </Stack>
+          )}
+          {menuMode &&
+            changeOptions.map((option) => {
               const opName = worksiteConstructionOpName[option.worksite];
               const key = opName ? bulkBusyKey.build(opName) : "";
               return (
-                <Tooltip
+                <MenuItem
                   key={option.worksite}
-                  title={
-                    runningLabel(key) ??
-                    option.blockedReason ??
-                    `Build a ${option.worksite} on ${option.candidates.length} selected plot${option.candidates.length === 1 ? "" : "s"}`
-                  }
+                  disabled={action.busy || option.candidates.length === 0}
+                  onClick={() => {
+                    onMenuAction?.();
+                    setPending({ type: "change", option });
+                  }}
                 >
-                  <span>
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      disabled={action.busy || option.candidates.length === 0}
-                      onClick={() => setPending({ type: "change", option })}
-                      startIcon={
-                        isRunning(key) ? (
-                          <CircularProgress size={12} color="inherit" />
-                        ) : icon ? (
-                          <Box
-                            component="img"
-                            src={icon}
-                            alt={option.worksite}
-                            sx={{
-                              width: 20,
-                              height: 20,
-                              borderRadius: 0.5,
-                              objectFit: "cover",
-                            }}
-                          />
-                        ) : undefined
-                      }
+                  {isRunning(key) ? (
+                    <CircularProgress size={16} sx={{ mr: 1 }} />
+                  ) : worksiteSelectIconMap[option.worksite] ? (
+                    <Box
+                      component="img"
+                      src={worksiteSelectIconMap[option.worksite]}
+                      alt=""
                       sx={{
-                        fontSize: "0.7rem",
-                        whiteSpace: "nowrap",
-                        "&.Mui-disabled": { opacity: 0.4 },
+                        width: 20,
+                        height: 20,
+                        mr: 1,
+                        objectFit: "contain",
                       }}
-                    >
-                      {buttonStatus(key) ??
-                        `${option.worksite} (${option.candidates.length})`}
-                    </Button>
-                  </span>
-                </Tooltip>
+                    />
+                  ) : null}
+                  {buttonStatus(key) ??
+                    `${option.worksite} (${option.candidates.length})`}
+                </MenuItem>
               );
             })}
-          </Stack>
 
-          {/* ── Feedback ── */}
-          {action.result?.success && (
-            <Alert
-              severity="success"
-              onClose={action.clearResult}
-              sx={{ mt: 1, py: 0 }}
-            >
-              Done — {action.result.processed} plot
-              {action.result.processed === 1 ? "" : "s"} in{" "}
-              {action.result.txIds.length} transaction
-              {action.result.txIds.length === 1 ? "" : "s"}.
-            </Alert>
-          )}
-          {action.result && !action.result.success && (
-            <Alert
-              severity="error"
-              onClose={action.clearResult}
-              sx={{ mt: 1, py: 0 }}
-            >
-              {action.result.error}
-            </Alert>
-          )}
+          {/* ── Feedback (floats when the host menu is closed) ── */}
+          <FloatingFeedback
+            floating={menuMode}
+            feedbackKey={action.result ?? action.error}
+          >
+            {action.result?.success && (
+              <Alert
+                severity="success"
+                onClose={action.clearResult}
+                sx={{ mt: 1, py: 0 }}
+              >
+                Done — {action.result.processed} plot
+                {action.result.processed === 1 ? "" : "s"} in{" "}
+                {action.result.txIds.length} transaction
+                {action.result.txIds.length === 1 ? "" : "s"}.
+              </Alert>
+            )}
+            {action.result && !action.result.success && (
+              <Alert
+                severity="error"
+                onClose={action.clearResult}
+                sx={{ mt: 1, py: 0 }}
+              >
+                {action.result.error}
+              </Alert>
+            )}
+          </FloatingFeedback>
         </Box>
       </Collapse>
 
       {/* Feed confirm */}
       <Dialog
         open={pending?.type === "feed"}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -433,17 +598,29 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleFeedConfirm}
+            onClick={() => void handleFeedConfirm()}
             size="small"
             variant="contained"
             color="success"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Feed {feedCount} worksite{feedCount === 1 ? "" : "s"}
+            {action.busy
+              ? buttonStatus(bulkBusyKey.feed)
+              : `Feed ${feedCount} worksite${feedCount === 1 ? "" : "s"}`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -451,7 +628,7 @@ export default function WorksiteBulkActions({
       {/* Cancel construction confirm */}
       <Dialog
         open={pending?.type === "cancel"}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -483,17 +660,29 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleCancelConfirm}
+            onClick={() => void handleCancelConfirm()}
             size="small"
             variant="contained"
             color="error"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Cancel {cancelCount} construction{cancelCount === 1 ? "" : "s"}
+            {action.busy
+              ? buttonStatus(bulkBusyKey.cancel)
+              : `Cancel ${cancelCount} construction${cancelCount === 1 ? "" : "s"}`}
           </Button>
         </DialogActions>
       </Dialog>
@@ -501,7 +690,7 @@ export default function WorksiteBulkActions({
       {/* Change worksite confirm */}
       <Dialog
         open={changeOption !== null}
-        onClose={() => setPending(null)}
+        onClose={action.busy ? undefined : () => setPending(null)}
         maxWidth="sm"
         fullWidth
       >
@@ -531,36 +720,47 @@ export default function WorksiteBulkActions({
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setPending(null)} size="small">
+          <Button
+            onClick={() => setPending(null)}
+            size="small"
+            disabled={action.busy}
+          >
             Back
           </Button>
           <Button
-            onClick={handleChangeConfirm}
+            onClick={() => void handleChangeConfirm()}
             size="small"
             variant="contained"
             autoFocus
+            disabled={action.busy}
+            startIcon={
+              action.busy ? (
+                <CircularProgress size={14} color="inherit" />
+              ) : undefined
+            }
           >
-            Build {changeOption?.candidates.length}
+            {action.busy
+              ? buttonStatus(changeBusyKey)
+              : `Build ${changeOption?.candidates.length}`}
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Fix grain deficit — plan first, broadcast only after confirmation */}
-      {fixOpen && (
-        <FixGrainDeficitDialog
-          open={fixOpen}
-          username={username}
-          strategies={strategies}
-          targets={fixTargets}
-          subject={`${fixCount} plot${fixCount === 1 ? "" : "s"}`}
-          plotLabels={feedPlan.shortOnGrain.map((c) => c.plotLabel)}
-          onClose={() => setFixOpen(false)}
-          onSuccess={() => {
-            setFixOpen(false);
-            onSuccess();
-          }}
-        />
-      )}
+      <FixGrainDeficitDialog
+        open={fixOpen}
+        username={username}
+        strategies={strategies}
+        targets={fixTargets}
+        subject={`${fixCount} plot${fixCount === 1 ? "" : "s"}`}
+        plotLabels={feedPlan.shortOnGrain.map((c) => c.plotLabel)}
+        floatingFeedback={menuMode}
+        onClose={() => setFixOpen(false)}
+        onSuccess={() => {
+          setFixOpen(false);
+          onSuccess();
+        }}
+      />
     </Card>
   );
 }

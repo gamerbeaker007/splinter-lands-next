@@ -6,9 +6,10 @@ import {
 import { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 
 /**
- * Splits the player's plots into those that can take more workers (powered,
- * with empty slots) and powered-off plots that were skipped, each sorted by
- * region then plot number. Pure — runs on the player's own deed read.
+ * Splits plots that have room for more workers into powered eligible plots and
+ * otherwise-eligible plots skipped only because they are powered off. Each
+ * list is sorted by region then plot number. Pure — runs on the player's own
+ * deed read.
  */
 export function computeWorkerEligibility(
   regionData: RawRegionDataResponse | null
@@ -45,13 +46,9 @@ export function computeWorkerEligibility(
       biome_modifiers: getBiomeModifiersFromStakingDetail(staking),
     };
 
-    if (plot.is_powered) {
-      if (workerCount < maxWorkers) {
-        eligible.push(plot);
-      }
-    } else {
-      unpoweredSkipped.push(plot);
-    }
+    if (workerCount >= maxWorkers) continue;
+    if (plot.is_powered) eligible.push(plot);
+    else unpoweredSkipped.push(plot);
   }
 
   const byRegionThenPlot = (a: WorkerEligiblePlot, b: WorkerEligiblePlot) =>

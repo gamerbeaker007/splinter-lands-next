@@ -1,10 +1,12 @@
 import { calcLandPpPerBcx } from "@/lib/frontend/utils/plannerCalcs";
 import {
+  determineLandBoosts,
   determineCardMaxBCX,
   findCardElement,
   findCardSet,
   getCardImgV2,
 } from "@/lib/utils/cardUtil";
+import { cardElementColorMap } from "@/types/planner/primitives";
 import {
   BuyConfig,
   BuyPlan,
@@ -13,9 +15,12 @@ import {
   WorkerEligiblePlot,
   WorkerPlanItem,
   WorkerPlanPick,
+  WorkerPlanPlotCard,
   WorkerPlanTotals,
+  normalizeWorkerBatchSize,
 } from "@/types/landManager";
 import {
+  CardBloodline,
   CardElement,
   CardFoil,
   cardFoilOptions,
@@ -83,7 +88,7 @@ function foilString(foil: number): CardFoil {
 
 // ── Strategy seam ─────────────────────────────────────────────────────────
 
-/** Numeric caps derived from a flow's config. 0 = no limit; batchSize null = all plots. */
+/** Numeric caps derived from a flow's config. 0 = no spend limit; batches cap at 100 plots. */
 export interface PlanCaps {
   batchSize: number | null;
   maxTotalDec: number;
@@ -96,6 +101,9 @@ export interface PlanCaps {
 /** Cost of a single listing, plus the rental-only fields when applicable. */
 export interface ListingPricing {
   total_dec: number;
+  /** Cost compared with the flow's per-worker cap: DEC/day for rent, DEC for buy. */
+  worker_cap_cost: number;
+  total_usd?: number;
   buy_price_per_day?: number;
   rental_days?: number;
   expiration_date?: string;
@@ -134,6 +142,13 @@ export interface WorkerPlanStrategy<Ctx> {
   /** Price one listing; return null to skip it. */
   priceListing(listing: SplMarketListing, ctx: Ctx): ListingPricing | null;
   log?: (message: string) => void;
+}
+
+export function isWithinWorkerCap(
+  pricing: ListingPricing,
+  maxPerWorker: number
+): boolean {
+  return maxPerWorker <= 0 || pricing.worker_cap_cost <= maxPerWorker;
 }
 
 /** The only per-plot input candidate selection needs. */
@@ -179,6 +194,9 @@ function buildPick(
   const set = findCardSet(cardDetails, listing.card_detail_id, listing.edition);
   const maxBcx = determineCardMaxBCX(set, rarity, listing.foil);
   const total_dec = pricing.total_dec;
+  const foil = foilString(listing.foil);
+  const splCard = cardDetails.find((c) => c.id === listing.card_detail_id);
+  const secondaryColor = splCard?.secondary_color?.toLowerCase();
 
   return {
     market_id: listing.market_id,
@@ -193,10 +211,21 @@ function buildPick(
     gold: listing.gold,
     level: listing.level,
     color: card.color,
+    card_set: set,
+    element: findCardElement(cardDetails, listing.card_detail_id),
+    secondary_element: secondaryColor
+      ? (cardElementColorMap[secondaryColor] ?? null)
+      : null,
+    bloodline: (card.sub_type ?? "Unknown") as CardBloodline,
+    land_boosts:
+      set === "land"
+        ? determineLandBoosts(rarity, foil, listing.bcx, card)
+        : undefined,
     biome_modifier: biomeModifier,
     land_base_pp,
     effective_pp,
     total_dec,
+    total_usd: pricing.total_usd ?? 0,
     pp_per_dec: total_dec > 0 ? effective_pp / total_dec : 0,
     seller: listing.seller,
     card_image_url: getCardImgV2(
@@ -245,7 +274,9 @@ export function selectCandidateTuples(
 
   for (const g of grouped) {
     const card = cardById.get(g.card_detail_id);
-    if (!card) continue;
+    // no_pp cards (e.g. Conclave Extra/Rewards) list with land_base_pp 0, so
+    // every listing would be rejected later — yet the set estimate scores them
+    if (!card || card.no_pp) continue;
     if (g.foil < minFoil) continue;
     if (g.low_price > maxPerWorker) continue;
 
@@ -328,8 +359,6 @@ async function buildScoredPairs<Ctx>(
     }
 
     for (const listing of listings) {
-      if (listing.buy_price > maxPerWorker) continue;
-
       // land_base_pp comes from the actual listing, not an estimate, so this
       // correctly rejects below-threshold low-level cards.
       const land_base_pp = Number(listing.land_base_pp);
@@ -338,6 +367,7 @@ async function buildScoredPairs<Ctx>(
 
       const pricing = strategy.priceListing(listing, ctx);
       if (!pricing || pricing.total_dec <= 0) continue;
+      if (!isWithinWorkerCap(pricing, maxPerWorker)) continue;
 
       for (const plot of eligible) {
         const mod = plot.biome_modifiers[tuple.element] ?? 0;
@@ -413,15 +443,13 @@ export async function buildWorkerPlan<Ctx>(
 ): Promise<WorkerPlanBase & { ctx: Ctx | null }> {
   const warnings: string[] = [];
 
-  // Apply batch size cap (null / <= 0 = all plots).
-  let batched = eligible;
-  if (caps.batchSize !== null && caps.batchSize > 0) {
-    batched = eligible.slice(0, caps.batchSize);
-    if (batched.length < eligible.length) {
-      warnings.push(
-        `Batch size ${caps.batchSize}: processing first ${batched.length} of ${eligible.length} eligible plots this run.`
-      );
-    }
+  // Legacy null / non-positive and oversized values are capped at 100.
+  const batchSize = normalizeWorkerBatchSize(caps.batchSize);
+  const batched = eligible.slice(0, batchSize);
+  if (batched.length < eligible.length) {
+    warnings.push(
+      `Batch size ${batchSize}: processing first ${batched.length} of ${eligible.length} eligible plots this run.`
+    );
   }
 
   const items: WorkerPlanItem[] = batched.map((plot) => ({
@@ -435,7 +463,7 @@ export async function buildWorkerPlan<Ctx>(
 
   const empty = (ctx: Ctx | null): WorkerPlanBase & { ctx: Ctx | null } => ({
     items,
-    totals: totalsFor(eligible, items),
+    totals: totalsFor(batched, items),
     warnings,
     ctx,
   });
@@ -449,6 +477,7 @@ export async function buildWorkerPlan<Ctx>(
     batched.map((plot) => plot.biome_modifiers),
     caps
   );
+  console.log("candidates", candidates);
   const { tuples, cards: cardDetails, ctx } = candidates;
   const cardById = new Map(cardDetails.map((c) => [c.id, c]));
   if (tuples.length === 0 || ctx === null) {
@@ -504,6 +533,8 @@ export interface SeasonDaysResult {
   /** null → fall back to per-listing expiration_date. */
   rental_days: number | null;
   source: string;
+  /** DEC/USD market price for estimated fiat cost display. */
+  usd_per_dec?: number;
 }
 
 /**
@@ -579,12 +610,15 @@ function rentalDaysFromListing(
 /** Season rentals: cost = DEC/day × rental_days. */
 export function priceRentalListing(
   listing: SplMarketListing,
-  season: SeasonDaysResult
+  season: SeasonDaysResult,
+  usdPerDec = season.usd_per_dec ?? 0
 ): ListingPricing | null {
   const rentalDays = rentalDaysFromListing(listing, season.rental_days);
   if (rentalDays <= 0) return null;
   return {
     total_dec: listing.buy_price * rentalDays,
+    worker_cap_cost: listing.buy_price,
+    total_usd: listing.buy_price * rentalDays * usdPerDec,
     buy_price_per_day: listing.buy_price,
     rental_days: rentalDays,
     expiration_date: listing.expiration_date,
@@ -597,9 +631,17 @@ export function priceBuyListing(
   decPrice: number
 ): ListingPricing | null {
   if (listing.currency == "USD") {
-    return { total_dec: listing.buy_price / decPrice };
+    return {
+      total_dec: listing.buy_price / decPrice,
+      worker_cap_cost: listing.buy_price / decPrice,
+      total_usd: listing.buy_price,
+    };
   } else if (listing.currency == "DEC") {
-    return { total_dec: listing.buy_price };
+    return {
+      total_dec: listing.buy_price,
+      worker_cap_cost: listing.buy_price,
+      total_usd: listing.buy_price * decPrice,
+    };
   } else {
     // Unknown currency, skip this listing.
     return null;
@@ -609,7 +651,7 @@ export function priceBuyListing(
 /** Plan caps of the rental flow's config. */
 export function rentalPlanCaps(config: RentalConfig): PlanCaps {
   return {
-    batchSize: config.rental_batch_size,
+    batchSize: normalizeWorkerBatchSize(config.rental_batch_size),
     maxTotalDec: config.max_total_dec,
     maxPerWorker: config.max_dec_per_day_per_worker,
     minLandBasePp: config.min_land_base_pp,
@@ -621,7 +663,7 @@ export function rentalPlanCaps(config: RentalConfig): PlanCaps {
 /** Plan caps of the buy flow's config. */
 export function buyPlanCaps(config: BuyConfig): PlanCaps {
   return {
-    batchSize: config.buy_batch_size,
+    batchSize: normalizeWorkerBatchSize(config.buy_batch_size),
     maxTotalDec: config.max_total_dec,
     maxPerWorker: config.max_dec_per_worker,
     minLandBasePp: config.min_land_base_pp,
@@ -671,6 +713,8 @@ export interface WorkerExecutionPlan<P extends RentalPlan | BuyPlan> {
   plan: P;
   // deed_uid -> ordered list of empty slot numbers (1-based).
   emptySlotsByDeed: Record<string, number[]>;
+  // Current worker cards for plots with picks, enriched for planner projections.
+  plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]>;
 }
 
 export type RentalExecutionPlan = WorkerExecutionPlan<RentalPlan>;

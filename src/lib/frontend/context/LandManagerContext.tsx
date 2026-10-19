@@ -2,7 +2,10 @@
 
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useSplSession } from "@/hooks/useSplSession";
-import { getProductionOverview } from "@/lib/frontend/land-data";
+import {
+  getProductionOverview,
+  invalidatePlayerRegionCaches,
+} from "@/lib/frontend/land-data";
 import {
   createDefaultLandManagerConfig,
   LandManagerConfig,
@@ -86,7 +89,12 @@ export function LandManagerContextProvider({
   const [configDialogOpen, setConfigDialogOpen] = useState(false);
   const [configDialogSection, setConfigDialogSection] =
     useState<LandManagerConfigSection | null>(null);
-  const triggerRefresh = useCallback(() => setRefreshKey((k) => k + 1), []);
+  // A refresh asks for live data, so a warmed memo (see LandManagerProvider)
+  // must not answer it.
+  const triggerRefresh = useCallback(() => {
+    void invalidatePlayerRegionCaches();
+    setRefreshKey((k) => k + 1);
+  }, []);
   const openConfigDialog = useCallback((section?: LandManagerConfigSection) => {
     setConfigDialogSection(section ?? null);
     setConfigDialogOpen(true);

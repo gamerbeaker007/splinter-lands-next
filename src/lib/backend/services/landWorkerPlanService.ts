@@ -3,7 +3,7 @@ import {
   fetchMarketForSaleGrouped,
   fetchSettings,
 } from "@/lib/backend/api/spl/spl-base-api";
-import { getPrices } from "@/lib/backend/api/spl/spl-prices-api";
+import { getCachedSplPriceData } from "@/lib/backend/services/tokenService";
 import { cache } from "@/lib/backend/cache/cache";
 import logger from "@/lib/backend/log/logger.server";
 import { getCachedCardDetailsData } from "@/lib/backend/services/cardService";
@@ -78,12 +78,16 @@ export function loadRentalPlanCandidates(
     caps,
     fetchMarketForRentGrouped,
     async (warnings) => {
-      const season = rentalDaysForSeason(await fetchSettings());
+      const [settings, prices] = await Promise.all([
+        fetchSettings(),
+        getCachedSplPriceData(),
+      ]);
+      const season = rentalDaysForSeason(settings);
       logger.info(
         `[rental] rental_days: ${season.rental_days ?? "per-listing"} - ${season.source}`
       );
       warnings.push(...seasonDaysWarnings(season));
-      return season;
+      return { ...season, usd_per_dec: prices.dec ?? 0 };
     }
   );
 }
@@ -98,6 +102,6 @@ export function loadBuyPlanCandidates(
     biomeModifiers,
     caps,
     fetchMarketForSaleGrouped,
-    async () => (await getPrices()).dec ?? 0
+    async () => (await getCachedSplPriceData()).dec ?? 0
   );
 }

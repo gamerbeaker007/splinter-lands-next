@@ -1,8 +1,6 @@
 "use server";
 import { prisma } from "@/lib/prisma";
 import {
-  BUY_BATCH_SIZE_MAX,
-  BUY_BATCH_SIZE_MIN,
   BuyConfig,
   BuyStrategy,
   DEFAULT_BUY_STRATEGY,
@@ -14,7 +12,9 @@ import {
   DEFAULT_POST_HARVEST_STRATEGY,
   DEFAULT_POST_HARVEST_TRANSFER_REGION_UID,
   DEFAULT_RENTAL_STRATEGY,
+  DEFAULT_RENTAL_CONFIG,
   DEFAULT_TOP_UP_POOL_STRATEGIES,
+  normalizeWorkerBatchSize,
   DonationConfig,
   LandManagerConfig,
   MakeHarvestableStrategy,
@@ -71,7 +71,9 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       min_land_base_pp: row?.rental_min_land_base_pp ?? 0,
       min_foil: row?.rental_min_foil ?? 0,
       terrain_boost_only: row?.rental_terrain_boost_only ?? false,
-      rental_batch_size: row?.rental_batch_size ?? null,
+      rental_batch_size: row
+        ? normalizeWorkerBatchSize(row.rental_batch_size)
+        : DEFAULT_RENTAL_CONFIG.rental_batch_size,
       land_renters_only: row?.rental_land_renters_only ?? false,
     },
     buy: {
@@ -81,7 +83,7 @@ export async function getLandManagerConfig(): Promise<LandManagerConfig | null> 
       min_land_base_pp: row?.buy_min_land_base_pp ?? 0,
       min_foil: row?.buy_min_foil ?? 0,
       terrain_boost_only: row?.buy_terrain_boost_only ?? false,
-      buy_batch_size: row?.buy_batch_size ?? 10,
+      buy_batch_size: normalizeWorkerBatchSize(row?.buy_batch_size ?? 10),
     },
   };
 }
@@ -94,10 +96,7 @@ export async function saveBuyConfig(
     return { success: false, error: "Not authenticated" };
   }
 
-  const batchSize = Math.max(
-    BUY_BATCH_SIZE_MIN,
-    Math.min(BUY_BATCH_SIZE_MAX, Math.floor(buy.buy_batch_size || 0) || 1)
-  );
+  const batchSize = normalizeWorkerBatchSize(buy.buy_batch_size);
 
   const data = {
     buy_strategy: buy.strategy,
@@ -177,7 +176,7 @@ export async function saveRentalConfig(
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
         rental_terrain_boost_only: rental.terrain_boost_only,
-        rental_batch_size: rental.rental_batch_size ?? null,
+        rental_batch_size: normalizeWorkerBatchSize(rental.rental_batch_size),
         rental_land_renters_only: rental.land_renters_only,
       },
       create: {
@@ -189,7 +188,7 @@ export async function saveRentalConfig(
         rental_min_land_base_pp: rental.min_land_base_pp,
         rental_min_foil: rental.min_foil,
         rental_terrain_boost_only: rental.terrain_boost_only,
-        rental_batch_size: rental.rental_batch_size ?? null,
+        rental_batch_size: normalizeWorkerBatchSize(rental.rental_batch_size),
         rental_land_renters_only: rental.land_renters_only,
       },
     });

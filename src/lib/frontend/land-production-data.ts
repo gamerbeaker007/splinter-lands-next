@@ -3,6 +3,8 @@
 import { getLandManagerConfig } from "@/lib/backend/actions/land-manager/config-actions";
 import {
   buildPlotConfigureData,
+  buildPlotConfigureDataBatch,
+  type ConfigureAssetsInput,
   getProductionContext,
   type PlotConfigureData,
 } from "@/lib/backend/actions/land-manager/production-actions";
@@ -63,10 +65,12 @@ import {
   RentalConfig,
   RentalPlan,
   WorkerEligibilityResult,
+  WorkerPlanPlotCard,
 } from "@/types/landManager";
 import type { RawRegionDataResponse } from "@/types/RawRegionDataResponse";
 import type { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import type { StakedAssets } from "@/types/stakedAssets";
+import type { RegionTax } from "@/types/regionTax";
 import pLimit from "p-limit";
 
 /**
@@ -152,49 +156,80 @@ function withPerHourTaxProduction(
 const isTaxDeed = (deed: DeedComplete) =>
   deed.worksiteDetail?.token_symbol === "TAX";
 
+interface ProductionPageData {
+  deeds: DeedComplete[];
+  username: string | null;
+  regionTax: Record<number, RegionTax>;
+  error?: string;
+}
+
+// Long enough to survive a Harvest ↔ Production switch after the shell warmed
+// this page (see LandManagerProvider); actions and Refresh invalidate it.
+const PRODUCTION_PAGE_TTL_MS = 60_000;
+const productionPageCache = createBrowserCache<ProductionPageData>(
+  PRODUCTION_PAGE_TTL_MS
+);
+
 /**
  * The player's full deed data, each deed enriched with `productionInfo`
  * (rewards/hour produce value, consume cost, and netDEC). The Production page
  * renders rewards-per-hour and net DEC straight from this — no per-deed
- * staked-asset calls are needed for the table. Always fresh so the page
- * reflects the current on-chain state.
+ * staked-asset calls are needed for the table. Memoised so a warmed page opens
+ * instantly; `fresh` (the page's Refresh) reads the current on-chain state.
  */
-export async function getProductionPageData(): Promise<{
-  deeds: DeedComplete[];
-  username: string | null;
-  error?: string;
-}> {
+export async function getProductionPageData(
+  fresh = false
+): Promise<ProductionPageData> {
   const player = sessionPlayer();
-  if (!player) return { deeds: [], username: null, error: NOT_AUTHENTICATED };
+  if (!player)
+    return {
+      deeds: [],
+      username: null,
+      regionTax: {},
+      error: NOT_AUTHENTICATED,
+    };
 
   try {
-    const deeds = mapRegionDataToDeedComplete(
-      await loadPlayerDeeds(player, true)
+    return await memo(
+      productionPageCache,
+      `${player}:production-page|`,
+      fresh,
+      () => loadProductionPageData(player, fresh)
     );
-    const taxRegions = [
-      ...new Set(deeds.filter(isTaxDeed).map((d) => d.region_number)),
-    ];
-    const context = await getProductionContext(taxRegions);
-    // Tax plots are valued from the region tax context, so the generic
-    // enrichment (which would read each vault) only sees the others.
-    const enriched = await enrichWithProductionInfo(
-      deeds.filter((d) => !isTaxDeed(d)),
-      context.prices,
-      () => Promise.reject(new Error("tax plots are valued per hour"))
-    );
-    const byUid = new Map(enriched.map((d) => [d.deed_uid, d]));
-    return {
-      deeds: deeds.map((d) =>
-        isTaxDeed(d)
-          ? withPerHourTaxProduction(d, context)
-          : (byUid.get(d.deed_uid) ?? d)
-      ),
-      username: player,
-    };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Unknown error";
-    return { deeds: [], username: player, error: msg };
+    return { deeds: [], username: player, regionTax: {}, error: msg };
   }
+}
+
+async function loadProductionPageData(
+  player: string,
+  fresh: boolean
+): Promise<ProductionPageData> {
+  const deeds = mapRegionDataToDeedComplete(
+    await loadPlayerDeeds(player, fresh)
+  );
+  const taxRegions = [
+    ...new Set(deeds.filter(isTaxDeed).map((d) => d.region_number)),
+  ];
+  const context = await getProductionContext(taxRegions);
+  // Tax plots are valued from the region tax context, so the generic
+  // enrichment (which would read each vault) only sees the others.
+  const enriched = await enrichWithProductionInfo(
+    deeds.filter((d) => !isTaxDeed(d)),
+    context.prices,
+    () => Promise.reject(new Error("tax plots are valued per hour"))
+  );
+  const byUid = new Map(enriched.map((d) => [d.deed_uid, d]));
+  return {
+    deeds: deeds.map((d) =>
+      isTaxDeed(d)
+        ? withPerHourTaxProduction(d, context)
+        : (byUid.get(d.deed_uid) ?? d)
+    ),
+    username: player,
+    regionTax: context.regionTax,
+  };
 }
 
 // ── Staked assets ─────────────────────────────────────────────────────────
@@ -268,12 +303,39 @@ export async function getPlotConfigureData(
   return buildPlotConfigureData(deedUid, assets);
 }
 
+/** Only the stake fields the server needs — keeps the action payload small. */
+function toConfigureAssetsInput(assets: StakedAssets): ConfigureAssetsInput {
+  return {
+    cards: (assets.cards ?? []).map((c) => ({
+      uid: c.uid,
+      card_detail_id: c.card_detail_id,
+      card_set: c.card_set,
+      edition: c.edition,
+      foil: c.foil,
+      bcx: c.bcx,
+      slot: c.slot,
+      stake_type_uid: c.stake_type_uid,
+      base_pp_after_cap: c.base_pp_after_cap,
+      total_harvest_pp: c.total_harvest_pp,
+      terrain_boost: c.terrain_boost,
+    })),
+    items: (assets.items ?? []).map((i) => ({
+      uid: i.uid,
+      name: i.name,
+      stake_type_uid: i.stake_type_uid,
+      boost: i.boost,
+    })),
+  };
+}
+
 /** Empty worker slots of every plot that has picks to stake (1-based). */
-async function fetchEmptySlotsByDeed(
-  plan: RentalPlan | BuyPlan
-): Promise<Record<string, number[]>> {
+async function fetchEmptySlotsByDeed(plan: RentalPlan | BuyPlan): Promise<{
+  emptySlotsByDeed: Record<string, number[]>;
+  plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]>;
+}> {
   const plots = plan.items.filter((i) => i.picks.length > 0).map((i) => i.plot);
   const emptySlotsByDeed: Record<string, number[]> = {};
+  const assetsByDeed: Record<string, StakedAssets> = {};
   const limit = pLimit(STAKE_ASSETS_CONCURRENCY);
 
   await Promise.all(
@@ -281,6 +343,7 @@ async function fetchEmptySlotsByDeed(
       limit(async () => {
         try {
           const assets = await splBrowser.fetchStakedAssets(plot.deed_uid);
+          assetsByDeed[plot.deed_uid] = assets;
           const occupied = new Set((assets.cards ?? []).map((c) => c.slot));
           const all = Array.from({ length: plot.max_workers }, (_, i) => i + 1);
           emptySlotsByDeed[plot.deed_uid] = all.filter((s) => !occupied.has(s));
@@ -290,7 +353,25 @@ async function fetchEmptySlotsByDeed(
       })
     )
   );
-  return emptySlotsByDeed;
+
+  // Current workers only feed the result-card projection: a failure here
+  // must not block planning or executing.
+  const plotWorkersByDeed: Record<string, WorkerPlanPlotCard[]> = {};
+  try {
+    const configuredByDeed = await buildPlotConfigureDataBatch(
+      Object.entries(assetsByDeed).map(([deedUid, assets]) => ({
+        deedUid,
+        assets: toConfigureAssetsInput(assets),
+      }))
+    );
+    for (const [deedUid, configured] of Object.entries(configuredByDeed)) {
+      plotWorkersByDeed[deedUid] = configured.workers;
+    }
+  } catch (err) {
+    console.error("Failed to load current workers for projection", err);
+  }
+
+  return { emptySlotsByDeed, plotWorkersByDeed };
 }
 
 // ── Assignable assets (pickers) ───────────────────────────────────────────
@@ -574,7 +655,7 @@ export async function getRentalExecutionPlan(
       priceListing: priceRentalListing,
     }
   );
-  return { plan, emptySlotsByDeed: await fetchEmptySlotsByDeed(plan) };
+  return { plan, ...(await fetchEmptySlotsByDeed(plan)) };
 }
 
 /** Buy counterpart of {@link getRentalExecutionPlan} (same eligible plots). */
@@ -602,5 +683,5 @@ export async function getBuyExecutionPlan(
       priceListing: priceBuyListing,
     }
   );
-  return { plan, emptySlotsByDeed: await fetchEmptySlotsByDeed(plan) };
+  return { plan, ...(await fetchEmptySlotsByDeed(plan)) };
 }

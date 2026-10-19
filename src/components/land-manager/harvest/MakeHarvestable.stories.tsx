@@ -311,6 +311,7 @@ function MakeHarvestablePlayground() {
 
     const harvestableMap: Record<string, SplHarvestableResource[]> = {};
     const balancesMap: Record<string, Record<string, number>> = {};
+    const storedMap: Record<string, Record<string, number>> = {};
 
     for (const r of regions) {
       const uid = `uid-${r.id}`;
@@ -324,6 +325,7 @@ function MakeHarvestablePlayground() {
       }));
       // effectiveBalance is applied inside buildMakeHarvestableOps caller (BulkActionPanel),
       // so here we pre-apply it manually to match real usage
+      storedMap[uid] = { ...r.balance };
       balancesMap[uid] = {
         GRAIN: r.balance.GRAIN + r.ready.GRAIN,
         WOOD: r.balance.WOOD + r.ready.WOOD,
@@ -336,7 +338,7 @@ function MakeHarvestablePlayground() {
       splRegions,
       "story_user",
       harvestableMap,
-      balancesMap,
+      { effective: balancesMap, stored: storedMap },
       strategies,
       decBalance,
       DEFAULT_POOLS
