@@ -388,7 +388,7 @@ export default function WorkerPlotResultCard({
                     Estimated net:
                   </Typography>
                   <Typography variant="body2" fontWeight={700}>
-                    {formatFixed(projection.next.netDEC, 3)}
+                    {formatFixed(projection.next.netDEC * 24, 3)}
                   </Typography>
                   <Box
                     component="img"
@@ -396,7 +396,7 @@ export default function WorkerPlotResultCard({
                     alt="DEC"
                     sx={{ width: 17, height: 17, objectFit: "contain" }}
                   />
-                  <Typography variant="caption">/hr</Typography>
+                  <Typography variant="caption">/day</Typography>
                 </Stack>
                 <Typography variant="body2" fontWeight={700} sx={{ pt: 0.25 }}>
                   Plot total: {formatInt(projection.next.basePP)} PP ·{" "}

@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.43.3] - 2026-10-23
+
+### Updated
+
+- Find Worker flow changed to net dec /day iso /hr
+
+---
+
 ## [v1.43.2] - 2026-10-23
 
 ### Added
