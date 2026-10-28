@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.43.2] - 2026-10-23
+
+### Added
+
+- Land feast edition
+
+---
+
 ## [v1.43.1] - 2026-10-23
 
 ### Updated

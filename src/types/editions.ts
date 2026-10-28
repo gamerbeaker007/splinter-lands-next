@@ -172,6 +172,12 @@ export const editionMap: Record<number, EditionTypeDef> = {
     setName: "land",
     editionIcon: edition_verico_icon_url,
   },
+  23: {
+    displayName: "Feast",
+    urlName: "land",
+    setName: "land",
+    editionIcon: edition_land_card_icon_url,
+  },
 } as const;
 
 export const cardSetIconMap: Record<CardSetName, string> = {
