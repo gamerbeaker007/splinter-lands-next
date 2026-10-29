@@ -299,6 +299,18 @@ export function createSplReads(get: SplGet) {
     return "pending";
   }
 
+  /**
+   * The last Hive block SPL has processed (`/last_block`, a few bytes).
+   * SPL serves it from several backends that disagree by a few blocks.
+   */
+  async function fetchLastBlock(): Promise<number> {
+    const data = (await get("api", SPL_API.LAST_BLOCK)) as {
+      last_block?: unknown;
+    } | null;
+    if (!Number.isSafeInteger(data?.last_block)) throw new Error(INVALID);
+    return data!.last_block as number;
+  }
+
   // ── vapi: deeds ────────────────────────────────────────────────────────────
 
   async function fetchRegionDataPlayer(
@@ -701,6 +713,7 @@ export function createSplReads(get: SplGet) {
     fetchMarketListingsByCard,
     fetchTransactionLookup,
     confirmSplTrx,
+    fetchLastBlock,
     fetchRegionDataPlayer,
     fetchStakedAssets,
     fetchTaxes,

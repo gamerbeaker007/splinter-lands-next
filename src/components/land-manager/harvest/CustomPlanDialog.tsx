@@ -7,12 +7,14 @@ import {
 } from "@/components/land-manager/harvest/custom-plan/CustomPlanConfirmDialogs";
 import CustomPlanSelector from "@/components/land-manager/harvest/custom-plan/CustomPlanSelector";
 import CustomPlanStatusAlerts from "@/components/land-manager/harvest/custom-plan/CustomPlanStatusAlerts";
+import BroadcastStatusNotice from "@/components/land-manager/shared/BroadcastStatusNotice";
 import CustomPlanSummary from "@/components/land-manager/harvest/custom-plan/CustomPlanSummary";
 import CustomPlanEditor, {
   draftsToItems,
 } from "@/components/land-manager/harvest/CustomPlanEditor";
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { useCustomPlanAction } from "@/hooks/useCustomPlanAction";
+import { useSplProcessingLag } from "@/hooks/useSplProcessingLag";
 import { BroadcastResult } from "@/lib/frontend/splBroadcast";
 import {
   deleteCustomPlan,
@@ -348,6 +350,15 @@ export default function CustomPlanDialog({
 
   const effectiveCanExecute = canExecute && multiplierValid;
 
+  // One op per executable row — the same filter `execute` applies.
+  const executableOpCount = validationResult.rows.filter(
+    (r) => r.valid && !r.skipped && r.resolvedAmount > 0
+  ).length;
+  // Paused during a run: the sequencer reads SPL's position itself.
+  const splLag = useSplProcessingLag(
+    open && !action.busy && executableOpCount > 0
+  );
+
   const selectedPlan = savedPlans.find((p) => p.id === selectedPlanId) ?? null;
 
   const executeDisabledReason = !effectiveCanExecute
@@ -419,6 +430,13 @@ export default function CustomPlanDialog({
                 executing={action.busy}
                 onExecute={tryExecute}
               />
+
+              {(action.busy || executableOpCount > 0) && (
+                <BroadcastStatusNotice
+                  lag={splLag}
+                  opCount={executableOpCount}
+                />
+              )}
 
               <CustomPlanStatusAlerts
                 status={validationResult.status}

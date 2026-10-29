@@ -1,5 +1,6 @@
 import { parseTrxInfo } from "@/lib/shared/spl/trxLookupParser";
 import { broadcastKeepsThenCastles } from "@/lib/frontend/broadcastMythicHarvest";
+import { getBroadcastRun } from "@/lib/frontend/broadcastProgress";
 import { broadcastHarvest } from "@/lib/frontend/executeHarvestFlow";
 import {
   broadcastOperations,
@@ -55,6 +56,14 @@ vi.mock("@/lib/frontend/spl-browser-api", async () => {
     },
   };
 });
+
+// SPL is caught up: every lookup above is final.
+vi.mock("@/lib/backend/actions/land-manager/chain-status-actions", () => ({
+  getChainStatusAction: async () => ({
+    hiveHeadBlock: 1_000,
+    splLastBlock: 1_000,
+  }),
+}));
 
 // No real block waits in a unit test.
 vi.mock("@/types/landManager", async (importOriginal) => ({
@@ -281,6 +290,8 @@ describe("batched harvests — rewards at every op position", () => {
 
     expect(res.success).toBe(true);
     expect(res.txIds).toEqual(["ha-1", "ha-2"]);
+    // The run's progress is gone once the broadcast returns.
+    expect(getBroadcastRun()).toBeNull();
     expect(harvestRewardsFrom(res.results ?? []).map((r) => r.key)).toEqual([
       "card:C19-866-AAA",
       "card:G19-866-BBB",
@@ -298,6 +309,10 @@ describe("batched harvests — rewards at every op position", () => {
       "player",
       ["d0", "d1", "d2"].map((d) => buildTaxCollectionOp("player", "R", d))
     );
+    // The sequencer itself now stops on SPL's verdict, keeping what landed.
+    expect(res.success).toBe(false);
+    expect(res.error).toContain("Engine rejected the op");
+    expect(res.confirmedOpTxIds).toEqual([op0, op1]);
     await expect(waitForTransactions(res.txIds)).resolves.toHaveLength(1);
     await expect(waitForTransactions(res.opTxIds)).rejects.toThrow(
       "Engine rejected the op"

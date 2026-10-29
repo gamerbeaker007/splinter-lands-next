@@ -1,8 +1,12 @@
+import { beginBroadcastRun } from "@/lib/frontend/broadcastProgress";
 import { lookupTxOutcome } from "@/lib/frontend/settledTxOutcomes";
-import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
-import { splOpTxIds } from "@/lib/shared/splTrxIds";
+import { getChainStatusAction } from "@/lib/backend/actions/land-manager/chain-status-actions";
 import {
-  HIVE_BLOCK_MS,
+  describeSequenceResult,
+  runSequencedBroadcast,
+} from "@/lib/shared/hive/sequencedBroadcast";
+import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
+import {
   MAX_OPS_PER_BROADCAST,
   TRX_VERIFY_POLL_MS,
   TRX_VERIFY_TIMEOUT_MS,
@@ -10,7 +14,6 @@ import {
 import type { SplTrxResult } from "@/types/spl/trx";
 import { KeychainKeyTypes, KeychainSDK } from "keychain-sdk";
 import pLimit from "p-limit";
-import { formatError } from "./errorFormat";
 export { KeychainKeyTypes } from "keychain-sdk";
 
 // Max concurrent SPL lookup calls per poll cycle — prevents rate-limiting
@@ -26,6 +29,13 @@ export interface BroadcastResult {
    * results with these: a Hive tx id only resolves the batch's first op.
    */
   opTxIds: string[];
+  /** Ops SPL confirmed as successful, in op order (a prefix of the run plus, on failure, part of the failing batch). */
+  confirmedOpTxIds?: string[];
+  /**
+   * Broadcast ops whose outcome is unknown — they may still land. Never send
+   * them again before their outcome is known.
+   */
+  unconfirmedOpTxIds?: string[];
   error?: string;
 }
 
@@ -49,8 +59,11 @@ export async function waitForTransactions(
   const deadline = Date.now() + TRX_VERIFY_TIMEOUT_MS;
   const limit = pLimit(VERIFY_CONCURRENCY);
 
-  while (pending.size > 0 && Date.now() < deadline) {
-    await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
+  for (let first = true; pending.size > 0 && Date.now() < deadline;) {
+    // Look before the first wait: ops confirmed by broadcastOperations are
+    // already recorded (settledTxOutcomes), so they resolve instantly.
+    if (!first) await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
+    first = false;
     await Promise.all(
       [...pending].map((i) =>
         limit(async () => {
@@ -92,10 +105,20 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return chunks;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
 /**
- * Broadcast operations in one or more Keychain popups.
- * Operations are split into chunks of MAX_OPS_PER_BROADCAST.
- * Stops and returns failure on the first rejected chunk.
+ * Broadcast operations in one or more Keychain popups, one batch of
+ * MAX_OPS_PER_BROADCAST at a time (see `runSequencedBroadcast`): each batch
+ * is sent only after Splinterlands confirmed the previous one, so a later op
+ * never runs on top of a failed one and two batches never share a block.
+ *
+ * Never throws for a rejected batch: the result says where the run stopped
+ * and which ops already went through (`confirmedOpTxIds`) or may still land
+ * (`unconfirmedOpTxIds`). Progress is published to `broadcastProgress` for
+ * the dialogs.
  *
  * `keyType` selects which Hive key Keychain prompts for. Defaults to posting
  * for sm_land_operation flows; pass active for sm_token_transfer (SPS deposit).
@@ -106,43 +129,50 @@ export async function broadcastOperations(
   keyType: KeychainKeyTypes = KeychainKeyTypes.posting
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
-  const txIds: string[] = [];
-  const opTxIds: string[] = [];
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
+  const run = beginBroadcastRun(username, batches.length);
 
-  for (let i = 0; i < batches.length; i++) {
-    const result = await keychain.broadcast({
-      username,
-      operations: batches[i] as Parameters<
-        typeof keychain.broadcast
-      >[0]["operations"],
-      method: keyType,
-    });
+  try {
+    const res = await runSequencedBroadcast(
+      batches,
+      {
+        broadcast: async (ops) => {
+          // keychain-sdk rejects (not resolves) with the response on error.
+          const result = await keychain.broadcast({
+            username,
+            operations: ops as Parameters<
+              typeof keychain.broadcast
+            >[0]["operations"],
+            method: keyType,
+          });
+          if (!result?.success) throw result ?? "Keychain rejected";
+          const txId =
+            (result.result as unknown as { id?: string })?.id ??
+            (result.result as unknown as { tx_id?: string })?.tx_id;
+          if (!txId) {
+            throw new Error(
+              "Keychain did not return a transaction id — the network may still have accepted it"
+            );
+          }
+          return txId;
+        },
+        splLookup: lookupTxOutcome,
+        chainStatus: getChainStatusAction,
+        sleep,
+        now: Date.now,
+      },
+      { onProgress: run.update }
+    );
 
-    if (!result?.success) {
-      // Keychain may return either a string message or an object (e.g.
-      // `{ message: "user_cancel" }`); formatError handles both.
-      return {
-        success: false,
-        txIds,
-        opTxIds,
-        error: formatError(result ?? "Keychain rejected"),
-      };
-    }
-
-    const txId =
-      (result.result as unknown as { id?: string })?.id ??
-      (result.result as unknown as { tx_id?: string })?.tx_id;
-    if (txId) {
-      txIds.push(txId);
-      opTxIds.push(...splOpTxIds(txId, batches[i].length));
-    }
-
-    // Wait a full block before the next batch so all ops land in different blocks
-    if (i < batches.length - 1) {
-      await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
-    }
+    return {
+      success: res.outcome === "completed",
+      txIds: res.txIds,
+      opTxIds: res.opTxIds,
+      confirmedOpTxIds: res.confirmedOpTxIds,
+      unconfirmedOpTxIds: res.unconfirmedOpTxIds,
+      error: describeSequenceResult(res),
+    };
+  } finally {
+    run.end();
   }
-
-  return { success: true, txIds, opTxIds };
 }

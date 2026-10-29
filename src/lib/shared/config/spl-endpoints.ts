@@ -20,6 +20,7 @@ export const SPL_API = {
 
   // Global / shared data
   SETTINGS: "/settings",
+  LAST_BLOCK: "/last_block",
   CARD_DETAILS: "/cards/get_details",
   MARKET_FOR_SALE_GROUPED: "/market/for_sale_grouped",
   MARKET_FOR_RENT_GROUPED: "/market/for_rent_grouped",

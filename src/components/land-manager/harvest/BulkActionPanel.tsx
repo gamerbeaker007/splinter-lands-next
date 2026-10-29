@@ -1,6 +1,7 @@
 "use client";
 
 import ActionPlanDialog from "@/components/land-manager/harvest/ActionPlanDialog";
+import { useSplProcessingLag } from "@/hooks/useSplProcessingLag";
 import HarvestAllRow from "@/components/land-manager/harvest/HarvestAllRow";
 import HarvestMythicsRow from "@/components/land-manager/harvest/HarvestMythicsRow";
 import MakeHarvestableRow from "@/components/land-manager/harvest/MakeHarvestableRow";
@@ -103,6 +104,8 @@ export default function BulkActionPanel({
     () => Object.values(busyMap).some(Boolean),
     [busyMap]
   );
+  // Paused during a run: the sequencer reads SPL's position itself.
+  const splLag = useSplProcessingLag(pending !== null && !anyBusy);
 
   if (visibleRegions.length === 0) return null;
 
@@ -171,6 +174,7 @@ export default function BulkActionPanel({
         <ActionPlanDialog
           plan={pending.plan}
           busy={anyBusy}
+          splLag={splLag}
           onConfirm={async () => {
             await pending.confirm();
             // The row's own alerts report the outcome, so close either way.

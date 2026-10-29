@@ -19,6 +19,7 @@ The data type decides the path, never the call site. Pick the row for any new SP
 | Land pools `/land/liquidity/landpools` (action planning) | Browser (live) | `land-data.ts` `getLandPools` |
 | Deed history (projects / reward actions) | Browser | `loadDeedHistory` |
 | Tx lookup (polling after broadcast, Today panel, authority polling) | Browser, settled ids recorded per tab | `waitForTransactions` / `lookupTxOutcome` (`settledTxOutcomes.ts`) |
+| Chain status: Hive head + SPL `/last_block` (broadcast sequencing, lag warning) | Server cache (5 s, shared by every visitor) | `getChainStatusAction` (`chainStatusService`) |
 | SPL login `/players/v2/login` | Browser; server verifies once (`establishSessionAction`) | `splLoginInBrowser` |
 | Shared data: card details, settings, prices, grouped market, market landing, region/tract deed taxes | Server cache (NodeCache / `"use cache"` when it runs during prerender) | `cardService`, `settingsService`, `tokenService`, `marketService`, `regionService` |
 | DB data (region overview, metrics, leaderboards) | Server | `lib/backend/api/internal/*` |
@@ -56,3 +57,4 @@ Never call `setState` synchronously in an effect. Pick the replacement by what t
 - Run `npm run format:all` (Prettier → `eslint --fix` → `tsc --noEmit`) and `npm run test:node` after changes.
 - Import alias `@/` for internal imports.
 - Blockchain flows: batch ops (`MAX_OPS_PER_BROADCAST`), verify with SPL op ids (`BroadcastResult.opTxIds`, `<hiveTxId>-N`), never bare Hive ids.
+- Multi-batch broadcasts go through `runSequencedBroadcast` (`lib/shared/hive/sequencedBroadcast.ts`): batch k+1 is sent only after SPL confirmed batch k. Never a fixed delay: hived allows 5 custom ops per account per block, counted over the node's pending pool. A failure keeps what landed (`confirmedOpTxIds`); an unknown outcome (`unconfirmedOpTxIds`) is never re-sent automatically.

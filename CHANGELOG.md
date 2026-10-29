@@ -14,6 +14,23 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.44.0] - 2026-10-29
+
+### Fixed
+
+- Bulk actions: a batch is only sent after Splinterlands confirmed the previous
+  one, fixing "already submitted … custom json operation(s) this block" and
+  partial runs. A failure stops the run and reports what already went through
+  (Custom Plan also logs it).
+- Readable Keychain broadcast errors (no `${a}` / `<br/>`).
+
+### Added
+
+- Confirm dialogs show how far Splinterlands is behind Hive and the expected
+  wait; live batch progress during a run.
+
+---
+
 ## [v1.43.3] - 2026-10-23
 
 ### Updated
