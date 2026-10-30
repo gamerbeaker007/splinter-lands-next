@@ -1,7 +1,7 @@
 import { Client } from "@hiveio/dhive";
 import logger from "../../log/logger.server";
 
-// Keep in sync with lib/frontend/support-data.ts HIVE_NODES (browser reads).
+// Keep in sync with lib/frontend/hive-browser-api.ts HIVE_NODES (browser reads).
 const HIVE_NODES = [
   "https://api.hive.blog",
   "https://api.openhive.network",
@@ -11,6 +11,12 @@ const HIVE_NODES = [
 
 // dhive rotates to the next node on failure, so one shared client is enough.
 const client = new Client(HIVE_NODES);
+
+/** Current Hive head block number. */
+export async function fetchHiveHeadBlock(): Promise<number> {
+  const props = await client.database.getDynamicGlobalProperties();
+  return props.head_block_number;
+}
 
 export interface HiveTransfer {
   from: string;

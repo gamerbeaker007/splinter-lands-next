@@ -477,7 +477,7 @@ export async function buildWorkerPlan<Ctx>(
     batched.map((plot) => plot.biome_modifiers),
     caps
   );
-  console.log("candidates", candidates);
+
   const { tuples, cards: cardDetails, ctx } = candidates;
   const cardById = new Map(cardDetails.map((c) => [c.id, c]));
   if (tuples.length === 0 || ctx === null) {

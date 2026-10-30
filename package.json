@@ -1,6 +1,6 @@
 {
   "name": "splinter-lands-next",
-  "version": "1.43.3",
+  "version": "1.44.0",
   "private": true,
   "scripts": {
     "dev": "next dev --turbo",
@@ -13,6 +13,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json}\"",
     "format:all": "npm run format && npm run lint:fix && npx tsc --noEmit",
     "worker": "tsx --tsconfig src/scripts/tsconfig.scripts.json src/scripts/worker.ts",
+    "spl:catchup": "tsx src/scripts/measure-spl-catchup.ts",
     "data:query1": "tsx src/scripts/example_query1.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

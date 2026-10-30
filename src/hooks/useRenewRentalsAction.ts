@@ -6,7 +6,6 @@ import {
   getRenewRentalsEligibility,
 } from "@/lib/frontend/land-production-data";
 import { waitForTransactions } from "@/lib/frontend/splBroadcast";
-import { unconfirmedOpTxIds } from "@/lib/shared/splTrxIds";
 import { RenewRentalPlan } from "@/types/landManager";
 import { useCallback, useState } from "react";
 
@@ -121,14 +120,7 @@ export function useRenewRentalsAction({
           return;
         }
 
-        // The server may already have confirmed some ops (verify-on-throw);
-        // only poll the rest.
-        await waitForTransactions(
-          unconfirmedOpTxIds(
-            rentRes.opTxIds ?? rentRes.txIds,
-            rentRes.confirmedOpTxIds
-          )
-        );
+        await waitForTransactions(rentRes.opTxIds ?? rentRes.txIds);
 
         // Drop the memoised card collection so the Rental Overview shows
         // fresh rental_date / rental_days after the on-chain renewal.

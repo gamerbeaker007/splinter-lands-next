@@ -53,3 +53,6 @@ storybook-static
 
 #local mcp
 .mcp.json
+
+# spl:catchup measurements (npm run spl:catchup)
+spl-catchup-samples.json

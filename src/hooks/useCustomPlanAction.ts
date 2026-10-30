@@ -13,7 +13,6 @@ import { formatError } from "@/lib/frontend/errorFormat";
 import {
   BroadcastResult,
   broadcastOperations,
-  waitForTransactions,
 } from "@/lib/frontend/splBroadcast";
 import { validateCustomPlan } from "@/lib/shared/customPlanValidation";
 import {
@@ -372,12 +371,18 @@ export function useCustomPlanAction({
         const broadcastResult = await broadcastOperations(username, ops);
         setResult(broadcastResult);
 
-        if (broadcastResult.txIds.length > 0) {
-          await waitForTransactions(broadcastResult.opTxIds);
+        // broadcastOperations already waited for SPL's verdict on every op,
+        // so log exactly the ops it confirmed — a partial run included.
+        // opTxIds[i] belongs to ops[i] / actions[i].
+        const confirmed = new Set(broadcastResult.confirmedOpTxIds);
+        const done = broadcastResult.opTxIds
+          .map((opTxId, i) => ({ opTxId, action: actions[i] }))
+          .filter((d) => confirmed.has(d.opTxId));
+        if (done.length > 0) {
           await recordPostHarvestLog(
             username,
-            actions,
-            broadcastResult.opTxIds
+            done.map((d) => d.action),
+            done.map((d) => d.opTxId)
           );
         }
 

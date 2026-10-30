@@ -1,5 +1,6 @@
 "use client";
 
+import { hiveCall } from "@/lib/frontend/hive-browser-api";
 import { splBrowser } from "@/lib/frontend/spl-browser-api";
 import type { ValidatorVote } from "@/types/validator";
 
@@ -12,38 +13,7 @@ import type { ValidatorVote } from "@/types/validator";
  */
 
 const BROWSER_TIMEOUT_MS = 15_000;
-
-/** Same nodes the server uses (lib/backend/api/hive/hive-account-api.ts). */
-export const HIVE_NODES = [
-  "https://api.hive.blog",
-  "https://api.openhive.network",
-  "https://rpc.mahdiyari.info",
-  "https://api.deathwing.me",
-];
-
 const VALIDATOR_API = "https://validator.spl-stats.com";
-
-/** One Hive JSON-RPC call, failing over to the next node on any error. */
-async function hiveCall(method: string, params: unknown[]): Promise<unknown> {
-  let lastError: unknown;
-  for (const node of HIVE_NODES) {
-    try {
-      const res = await fetch(node, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
-        signal: AbortSignal.timeout(BROWSER_TIMEOUT_MS),
-      });
-      if (!res.ok) throw new Error(`${node} returned HTTP ${res.status}`);
-      const body = (await res.json()) as { result?: unknown; error?: unknown };
-      if (body.error) throw new Error(`${node}: ${JSON.stringify(body.error)}`);
-      return body.result;
-    } catch (err) {
-      lastError = err;
-    }
-  }
-  throw lastError instanceof Error ? lastError : new Error("Hive RPC failed");
-}
 
 /** "12.345 HIVE" → 12.345 */
 function assetAmount(asset: unknown): number {

@@ -14,6 +14,30 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.44.0] - 2026-10-29
+
+### Changed
+
+- **Faster and more reliable bulk actions:** Each batch is now sent as soon as the previous transaction is included in a Hive block, instead of relying on fixed delays or waiting for Splinterlands to catch up after every batch.
+- **Improved bulk action handling:** Splinterlands results are checked at the end of the run. Failed batches no longer stop subsequent batches, and the final result clearly shows which operations succeeded, failed, or may still be pending.
+- **Dynamic confirmation waits:** Actions performed on your behalf, such as rentals and purchases, now adjust their confirmation timeout based on how far Splinterlands is behind Hive.
+- **Improved runtime estimates:** Bulk action confirmation dialogs now show Splinterlands' current delay and the estimated execution time (e.g., "Splinterlands is 57 seconds behind Hive. Current estimated runtime is 1 minute 20 seconds").
+
+### Fixed
+
+- **Hive custom JSON transaction errors:** Improved transaction sequencing prevents multiple batches from being submitted within the same Hive block, addressing the "already submitted custom json operation(s) this block" error.
+- **Infinite waiting:** Fixed an issue where bulk actions could wait indefinitely if the initial blockchain status check failed and Splinterlands never recorded the transaction.
+- **Rentals and purchases by several players at once:** on-behalf transactions now take turns on the shared service account, one batch per block, so concurrent requests no longer hit the per-block limit. A transaction whose broadcast reported an error is now checked directly on the Hive chain instead of waiting for Splinterlands.
+- **Keychain error messages:** Blockchain errors are now displayed correctly without raw HTML or unresolved placeholders such as `${a}`.
+
+### Added
+
+- **Live batch progress:** Bulk actions now display execution progress, making it easier to follow longer operations.
+- **Detailed execution results:** Custom Plan and other bulk actions report successful, failed, and potentially pending operations, improving visibility into partial executions.
+- **Splinterlands catch-up monitoring:** Added `npm run spl:catchup` to measure how quickly Splinterlands processes Hive blocks and help calibrate runtime estimates.
+
+---
+
 ## [v1.43.3] - 2026-10-23
 
 ### Updated

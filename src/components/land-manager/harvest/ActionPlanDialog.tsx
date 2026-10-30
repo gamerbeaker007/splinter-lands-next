@@ -1,7 +1,9 @@
 "use client";
 
 import ActionPlanSummary from "@/components/land-manager/shared/ActionPlanSummary";
+import BroadcastStatusNotice from "@/components/land-manager/shared/BroadcastStatusNotice";
 import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
+import type { SplProcessingLag } from "@/lib/shared/hive/splCatchUp";
 import { ActionPlan } from "@/types/landManager";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -22,6 +24,8 @@ interface Props {
   plan: ActionPlan;
   /** True while the confirmed plan is being broadcast. */
   busy: boolean;
+  /** How far Splinterlands is behind (`useSplProcessingLag`), for the wait warning. */
+  splLag?: SplProcessingLag;
   /** Broadcast the plan shown here. */
   onConfirm: () => void;
   onClose: () => void;
@@ -42,6 +46,7 @@ interface Props {
 export default function ActionPlanDialog({
   plan,
   busy,
+  splLag,
   onConfirm,
   onClose,
 }: Props) {
@@ -52,12 +57,16 @@ export default function ActionPlanDialog({
     <Dialog open onClose={busy ? undefined : onClose} maxWidth="md" fullWidth>
       <DialogTitle>{plan.title}</DialogTitle>
       <DialogContent dividers>
-        <Alert severity="info" sx={{ mb: 1.5 }}>
-          <Typography variant="body2">
-            Nothing has been broadcast yet. Review the plan below, then press{" "}
-            <strong>Confirm &amp; Execute</strong> to run it.
-          </Typography>
-        </Alert>
+        {!busy && (
+          <Alert severity="info" sx={{ mb: 1.5 }}>
+            <Typography variant="body2">
+              Nothing has been broadcast yet. Review the plan below, then press{" "}
+              <strong>Confirm &amp; Execute</strong> to run it.
+            </Typography>
+          </Alert>
+        )}
+        <BroadcastStatusNotice lag={splLag} />
+
         {rows.length > 0 && (
           <Box sx={{ mb: 1.5 }}>
             <Typography variant="body2" gutterBottom fontSize="20">

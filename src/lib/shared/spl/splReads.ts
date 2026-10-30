@@ -286,17 +286,15 @@ export function createSplReads(get: SplGet) {
   }
 
   /**
-   * Tri-state confirmation of a tx by id, for broadcast verify-before-fail.
-   * "confirmed" once SPL has processed it, "failed" if rejected, "pending" while
-   * not yet indexed (or on a transient lookup error).
+   * The last Hive block SPL has processed (`/last_block`, a few bytes).
+   * SPL serves it from several backends that disagree by a few blocks.
    */
-  async function confirmSplTrx(
-    trxId: string
-  ): Promise<"confirmed" | "failed" | "pending"> {
-    const outcome = await fetchTransactionLookup(trxId);
-    if (outcome.status === "success") return "confirmed";
-    if (outcome.status === "failed") return "failed";
-    return "pending";
+  async function fetchLastBlock(): Promise<number> {
+    const data = (await get("api", SPL_API.LAST_BLOCK)) as {
+      last_block?: unknown;
+    } | null;
+    if (!Number.isSafeInteger(data?.last_block)) throw new Error(INVALID);
+    return data!.last_block as number;
   }
 
   // ── vapi: deeds ────────────────────────────────────────────────────────────
@@ -700,7 +698,7 @@ export function createSplReads(get: SplGet) {
     fetchPlayerAuthorities,
     fetchMarketListingsByCard,
     fetchTransactionLookup,
-    confirmSplTrx,
+    fetchLastBlock,
     fetchRegionDataPlayer,
     fetchStakedAssets,
     fetchTaxes,

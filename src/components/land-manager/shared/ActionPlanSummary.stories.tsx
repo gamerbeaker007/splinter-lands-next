@@ -150,3 +150,16 @@ export const Gallery_: StoryObj = {
   name: "Gallery",
   render: () => <Gallery />,
 };
+
+export const SplBehind: StoryObj = {
+  name: "SPL behind — 4 minutes",
+  render: () => (
+    <ActionPlanDialog
+      plan={PLANS[1]}
+      busy={false}
+      splLag={{ blocksBehind: 80, seconds: 240 }}
+      onConfirm={() => {}}
+      onClose={() => {}}
+    />
+  ),
+};

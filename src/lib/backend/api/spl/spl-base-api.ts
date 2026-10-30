@@ -20,7 +20,6 @@ export const fetchPlayerAuthorities = splServerReads.fetchPlayerAuthorities;
 export const fetchMarketListingsByCard =
   splServerReads.fetchMarketListingsByCard;
 export const fetchTransactionLookup = splServerReads.fetchTransactionLookup;
-export const confirmSplTrx = splServerReads.confirmSplTrx;
 
 type TokenVerifyResult = "valid" | "invalid" | "error";
 

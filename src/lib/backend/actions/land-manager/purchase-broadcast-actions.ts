@@ -1,6 +1,5 @@
 "use server";
 
-import { confirmSplTrx } from "@/lib/backend/api/spl/spl-base-api";
 import { requireFreshPlayer } from "@/lib/backend/auth/requireFreshPlayer";
 import { broadcastOpsAsService } from "@/lib/backend/services/hiveBroadcastService";
 import {
@@ -35,8 +34,6 @@ export interface PurchaseOnBehalfResult {
   txIds: string[];
   /** SPL id of every op that landed — see `ServerBroadcastResult.opTxIds`. */
   opTxIds?: string[];
-  /** Op ids the server already confirmed — skip them when polling. */
-  confirmedOpTxIds?: string[];
   error?: string;
 }
 
@@ -107,7 +104,7 @@ export async function purchaseOnBehalfOf(
   );
 
   const result = await withServiceBroadcastSlot(player, () =>
-    broadcastOpsAsService(operations, { verify: confirmSplTrx })
+    broadcastOpsAsService(operations)
   );
   return (
     result ?? {
