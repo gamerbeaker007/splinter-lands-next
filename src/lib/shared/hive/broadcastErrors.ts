@@ -70,7 +70,6 @@ function fillFormat(format: string, data: Record<string, unknown> = {}) {
 function cleanKeychainText(text: string): string {
   return text
     .replace(/<br\s*\/?>/gi, " ")
-    .replace(/<[^>]*>/g, "")
     .replace(/[<>]/g, "")
     .replace(/^Your transaction returned an error\s*/i, "")
     .replace(/^Error:\s*/i, "")
