@@ -4,6 +4,7 @@ import { useAsyncData } from "@/hooks/useAsyncData";
 import { useSplSession } from "@/hooks/useSplSession";
 import { invalidateRentalAuthorityCache } from "@/lib/backend/actions/land-manager/authority-actions";
 import { formatError } from "@/lib/frontend/errorFormat";
+import { invalidateAuthorityStatusCache } from "@/lib/frontend/land-data";
 import { splBrowser } from "@/lib/frontend/spl-browser-api";
 import {
   broadcastOperations,
@@ -140,6 +141,7 @@ export function useAuthorityStatusCore({
               accounts: newAccounts,
               authorized: newAuthorized,
             });
+            invalidateAuthorityStatusCache(status.player);
             void invalidateRentalAuthorityCache();
             return { success: true, txId, confirmed: true };
           }

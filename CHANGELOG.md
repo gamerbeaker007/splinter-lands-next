@@ -14,6 +14,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.44.1] - 2026-10-30
+
+### Fixed
+
+- **Authority status refresh:** Clear the browser-cached authority list after
+  Splinterlands confirms a grant or revoke, so Find Workers and Rental Overview
+  show the updated status when navigating between pages.
+
+---
+
 ## [v1.44.0] - 2026-10-29
 
 ### Changed

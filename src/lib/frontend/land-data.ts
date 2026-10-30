@@ -416,6 +416,11 @@ export interface AuthorityStatus {
 const authorityCache =
   createBrowserCache<PlayerAuthorityLists>(AUTHORITY_TTL_MS);
 
+/** Drop the shared in-tab authority list after a confirmed grant or revoke. */
+export function invalidateAuthorityStatusCache(player: string): void {
+  authorityCache.invalidate(`${player}:authorities|`);
+}
+
 /** `force` reads the live list (always do so right before building a grant/revoke op). */
 export async function getAuthorityStatus(
   kind: keyof PlayerAuthorityLists,
