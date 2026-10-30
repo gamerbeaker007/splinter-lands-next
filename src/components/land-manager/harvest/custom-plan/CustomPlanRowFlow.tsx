@@ -25,8 +25,6 @@ export function CustomPlanRowOutput({
     ? validation.poolSharesOut * 100
     : null;
 
-  console.log("validation", validation);
-
   return (
     <Stack direction="row" alignItems="center" gap={0.75} flexWrap="wrap">
       {renderResourceChip(

@@ -1,19 +1,23 @@
+import { getChainStatusAction } from "@/lib/backend/actions/land-manager/chain-status-actions";
+import { findHiveTransaction } from "@/lib/frontend/hive-browser-api";
+import { lookupTxOutcome } from "@/lib/frontend/settledTxOutcomes";
 import { describeBroadcastError } from "@/lib/shared/hive/broadcastErrors";
 import {
   HIVE_BLOCK_SECONDS,
   splConfirmSeconds,
+  splLagOf,
 } from "@/lib/shared/hive/splCatchUp";
 import {
-  type HiveTxStatus,
+  type Inclusion,
   waitForInclusion,
 } from "@/lib/shared/hive/waitForInclusion";
 import { splOpTxIds } from "@/lib/shared/splTrxIds";
-import type { TrxLookupOutcome } from "@/types/spl/trx";
 
 /**
  * Broadcasts batches one at a time, each only after the previous one is in a
  * Hive block, then waits once for Splinterlands' verdict on all of them.
- * Pure: the browser binds it to Keychain (splBroadcast.ts).
+ * Reads Hive (`findHiveTransaction`) and SPL (`lookupTxOutcome`, the chain
+ * status) itself; the caller supplies the Keychain call (splBroadcast.ts).
  *
  * Why inclusion and not a fixed delay: hived allows 5 custom ops per account
  * per block, counted over the node's *pending* pool
@@ -30,50 +34,25 @@ import type { TrxLookupOutcome } from "@/types/spl/trx";
  * re-sending them.
  */
 
-export { HIVE_BLOCK_SECONDS } from "@/lib/shared/hive/splCatchUp";
 /** Keychain signs with a 10 min expiration; past that a tx can't land anymore. */
 const TX_EXPIRY_BLOCKS = (10 * 60) / HIVE_BLOCK_SECONDS;
+/** Give up on a batch that isn't in a block after this long (it may still land). */
+const INCLUSION_TIMEOUT_MS = 2 * 60_000;
+/** Bounds for the SPL lookup interval; it stretches with SPL's lag. */
+const POLL_MIN_MS = 3_000;
+const POLL_MAX_MS = 15_000;
+/** Stop when SPL's processed block hasn't advanced for this long. */
+const STALL_MS = 3 * 60_000;
 
-/** Where the chain is and how far SPL has processed it. */
-export interface ChainStatus {
-  hiveHeadBlock: number;
-  splLastBlock: number;
-}
-
-/** How far SPL trails the Hive head. */
-export function splLagOf(status: ChainStatus) {
-  const blocksBehind = Math.max(0, status.hiveHeadBlock - status.splLastBlock);
-  return { blocksBehind, seconds: blocksBehind * HIVE_BLOCK_SECONDS };
-}
-
-export type SplProcessingLag = ReturnType<typeof splLagOf>;
-
-export interface SequencerDeps {
-  /** Signs and broadcasts one batch. Resolves to its Hive tx id; throws when rejected. */
-  broadcast: (ops: unknown[]) => Promise<string>;
-  /** Hive `transaction_status_api.find_transaction`. */
-  findTransaction: (trxId: string) => Promise<HiveTxStatus>;
-  splLookup: (opTxId: string) => Promise<TrxLookupOutcome>;
-  chainStatus: () => Promise<ChainStatus>;
+/** Time source; tests pass a fake one to run minutes of SPL lag instantly. */
+export interface SequencerClock {
   sleep: (ms: number) => Promise<void>;
   now: () => number;
 }
 
-export interface SequencerTiming {
-  /** Give up on a batch that isn't in a block after this long (it may still land). */
-  inclusionTimeoutMs: number;
-  /** Bounds for the SPL lookup interval; it stretches with SPL's lag. */
-  pollMinMs: number;
-  pollMaxMs: number;
-  /** Stop when SPL's processed block hasn't advanced for this long. */
-  stallMs: number;
-}
-
-export const DEFAULT_SEQUENCER_TIMING: SequencerTiming = {
-  inclusionTimeoutMs: 2 * 60_000,
-  pollMinMs: 3_000,
-  pollMaxMs: 15_000,
-  stallMs: 3 * 60_000,
+const realClock: SequencerClock = {
+  sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+  now: Date.now,
 };
 
 export interface SequencerProgress {
@@ -133,15 +112,16 @@ function isSplOp(op: unknown): boolean {
   return Array.isArray(op) && op[0] === "custom_json";
 }
 
+/**
+ * `broadcast` signs and broadcasts one batch: resolves to its Hive tx id,
+ * throws when rejected.
+ */
 export async function runSequencedBroadcast(
   batches: unknown[][],
-  deps: SequencerDeps,
-  options: {
-    onProgress?: (progress: SequencerProgress) => void;
-    timing?: Partial<SequencerTiming>;
-  } = {}
+  broadcast: (ops: unknown[]) => Promise<string>,
+  onProgress?: (progress: SequencerProgress) => void,
+  clock: SequencerClock = realClock
 ): Promise<SequenceResult> {
-  const timing = { ...DEFAULT_SEQUENCER_TIMING, ...options.timing };
   const totalBatches = batches.length;
   const result: SequenceResult = {
     outcome: "completed",
@@ -163,19 +143,19 @@ export async function runSequencedBroadcast(
   for (let b = 0; b < totalBatches && !stopped; b++) {
     const ops = batches[b];
     const progress = (phase: SequencerProgress["phase"]) =>
-      options.onProgress?.({ batch: b + 1, totalBatches, phase });
+      onProgress?.({ batch: b + 1, totalBatches, phase });
 
     let txId: string | undefined;
     for (let attempt = 0; txId === undefined && !stopped; attempt++) {
       progress(attempt === 0 ? "signing" : "retrying");
       try {
-        txId = await deps.broadcast(ops);
+        txId = await broadcast(ops);
       } catch (err) {
         const info = describeBroadcastError(err);
         if (info.kind === "custom_op_limit" && attempt === 0) {
           // Rejected before entering any pending pool: provably not executed.
           // Something else of this account is still pending; give it a block.
-          await deps.sleep(HIVE_BLOCK_SECONDS * 1000 + 500);
+          await clock.sleep(HIVE_BLOCK_SECONDS * 1000 + 500);
           continue;
         }
         // A node assertion is a definite rejection. Anything else (network
@@ -199,11 +179,15 @@ export async function runSequencedBroadcast(
 
     // The last batch needs no inclusion wait: nothing is sent after it, and
     // SPL's verdict covers it.
-    const inclusion =
-      b === totalBatches - 1
-        ? "included"
-        : (progress("including"),
-          await waitForInclusion(txId, deps, timing.inclusionTimeoutMs));
+    let inclusion: Inclusion = "included";
+    if (b < totalBatches - 1) {
+      progress("including");
+      inclusion = await waitForInclusion(
+        txId,
+        { findTransaction: findHiveTransaction, ...clock },
+        INCLUSION_TIMEOUT_MS
+      );
+    }
 
     if (inclusion === "expired") {
       // Accepted by the node but never in a block: it did not execute.
@@ -227,8 +211,8 @@ export async function runSequencedBroadcast(
   }
 
   // ── 2. wait once for SPL's verdict on every SPL op that was sent ──────────
-  const verdict = await waitForSpl(splOps, deps, timing, (p) =>
-    options.onProgress?.({
+  const verdict = await waitForSpl(splOps, clock, (p) =>
+    onProgress?.({
       batch: result.sentBatches,
       totalBatches,
       phase: "confirming",
@@ -269,8 +253,7 @@ export async function runSequencedBroadcast(
  */
 async function waitForSpl(
   opIds: string[],
-  deps: SequencerDeps,
-  timing: SequencerTiming,
+  clock: SequencerClock,
   progress: (p: Partial<SequencerProgress>) => void
 ): Promise<{
   errors: Map<string, string>;
@@ -280,12 +263,12 @@ async function waitForSpl(
   const errors = new Map<string, string>();
   const pending = [...opIds];
   // An unreadable status counts as "SPL didn't move"; the stall limit bounds it.
-  const chainStatus = () => deps.chainStatus().catch(() => undefined);
+  const chainStatus = () => getChainStatusAction().catch(() => undefined);
 
   /** Looks up pending ops in order; `untilPending` stops at the first unsettled one. */
   const sweep = async (untilPending: boolean) => {
     for (let i = 0; i < pending.length;) {
-      const outcome = await deps.splLookup(pending[i]);
+      const outcome = await lookupTxOutcome(pending[i]);
       if (outcome.status === "pending") {
         if (untilPending) return;
         i++;
@@ -301,7 +284,7 @@ async function waitForSpl(
   // without a missing tx ever ending the wait.
   let lastPossibleBlock: number | undefined;
   let splLast = -Infinity;
-  let lastAdvanceAt = deps.now();
+  let lastAdvanceAt = clock.now();
 
   while (pending.length > 0) {
     await sweep(true);
@@ -313,7 +296,7 @@ async function waitForSpl(
     }
     if (status && status.splLastBlock > splLast) {
       splLast = status.splLastBlock;
-      lastAdvanceAt = deps.now();
+      lastAdvanceAt = clock.now();
     }
     const behind = status ? splLagOf(status).blocksBehind : undefined;
     progress({
@@ -326,7 +309,7 @@ async function waitForSpl(
     if (lastPossibleBlock !== undefined && splLast > lastPossibleBlock) {
       reason =
         "Splinterlands has processed past the point where this transaction could still land, but has no record of it.";
-    } else if (deps.now() - lastAdvanceAt > timing.stallMs) {
+    } else if (clock.now() - lastAdvanceAt > STALL_MS) {
       reason =
         "Splinterlands has stopped processing blocks (or could not be reached).";
     }
@@ -338,9 +321,7 @@ async function waitForSpl(
 
     // About twice per expected wait, within bounds.
     const etaMs = splConfirmSeconds(behind ?? 0) * 1000;
-    await deps.sleep(
-      Math.min(timing.pollMaxMs, Math.max(timing.pollMinMs, etaMs / 2))
-    );
+    await clock.sleep(Math.min(POLL_MAX_MS, Math.max(POLL_MIN_MS, etaMs / 2)));
   }
   return { errors, unconfirmed: [] };
 }

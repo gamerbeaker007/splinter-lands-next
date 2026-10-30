@@ -24,7 +24,7 @@ The data type decides the path, never the call site. Pick the row for any new SP
 | SPL login `/players/v2/login` | Browser; server verifies once (`establishSessionAction`) | `splLoginInBrowser` |
 | Shared data: card details, settings, prices, grouped market, market landing, region/tract deed taxes | Server cache (NodeCache / `"use cache"` when it runs during prerender) | `cardService`, `settingsService`, `tokenService`, `marketService`, `regionService` |
 | DB data (region overview, metrics, leaderboards) | Server | `lib/backend/api/internal/*` |
-| On-behalf rent/purchase: authorities check, verify-on-throw `confirmSplTrx` | Server (must know the truth before/after signing with the service key) | `splAuthorityService`, `hiveBroadcastService` |
+| On-behalf rent/purchase: authorities check, verify-on-throw (Hive `find_transaction`) | Server (must know the truth before/after signing with the service key) | `splAuthorityService`, `hiveBroadcastService` |
 | Support page: DEC/SPS + HIVE/HBD balances, validator votes | Browser | `lib/frontend/support-data.ts` |
 | Donation recording (reads the amount off SPL / the Hive chain before a DB write), playground plot import | Server (one-off lookups; the server must verify itself) | `support-actions`, `plot-actions` |
 | Worker (`src/scripts`) | Raw server fetch | `spl-land-api` / `spl-base-api` |
@@ -58,6 +58,6 @@ Never call `setState` synchronously in an effect. Pick the replacement by what t
 - Run `npm run format:all` (Prettier → `eslint --fix` → `tsc --noEmit`) and `npm run test:node` after changes.
 - Import alias `@/` for internal imports.
 - Blockchain flows: batch ops (`MAX_OPS_PER_BROADCAST`), verify with SPL op ids (`BroadcastResult.opTxIds`, `<hiveTxId>-N`), never bare Hive ids.
-- Multi-batch broadcasts go through `runSequencedBroadcast` (`lib/shared/hive/sequencedBroadcast.ts`): batch k+1 is sent once batch k is in a Hive block plus one block (`waitForInclusion`, `transaction_status_api`), then SPL's verdict on all ops is awaited once. Never a fixed delay: hived allows 5 custom ops per account per block, counted over the node's pending pool. SPL processes blocks in order, so order holds without waiting for SPL in between; a batch SPL rejects doesn't stop later ones. The result lists every op (`confirmedOpTxIds` / `failedOpTxIds` / `unconfirmedOpTxIds`); an unknown outcome is never re-sent automatically.
-- On-behalf (service key) batches use the same `waitForInclusion` between batches (`hiveBroadcastService`).
+- Multi-batch broadcasts go through `runSequencedBroadcast` (`lib/frontend/sequencedBroadcast.ts`): batch k+1 is sent once batch k is in a Hive block plus one block (`waitForInclusion`, `transaction_status_api`), then SPL's verdict on all ops is awaited once. Never a fixed delay: hived allows 5 custom ops per account per block, counted over the node's pending pool. SPL processes blocks in order, so order holds without waiting for SPL in between; a batch SPL rejects doesn't stop later ones. The result lists the confirmed ops (`confirmedOpTxIds`) and `error` names what failed or may still land; an unknown outcome is never re-sent automatically.
+- On-behalf (service key) batches are sent one at a time across all requests (account lock in `hiveBroadcastService`), each waited on with the same `waitForInclusion`; a send that throws is resolved on the chain the same way, never via SPL.
 - SPL timing estimates (run time, confirmation timeouts, poll pacing) come from `lib/shared/hive/splCatchUp.ts`; recalibrate its constants with `npm run spl:catchup`.

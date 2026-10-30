@@ -1,7 +1,7 @@
 import { fetchHiveHeadBlock } from "@/lib/backend/api/hive/hive-account-api";
 import { splServerReads } from "@/lib/backend/api/spl/spl-clients";
 import { cache } from "@/lib/backend/cache/cache";
-import type { ChainStatus } from "@/lib/shared/hive/sequencedBroadcast";
+import type { ChainStatus } from "@/lib/shared/hive/splCatchUp";
 
 const CACHE_KEY = "chain-status";
 const CACHE_TTL_SECONDS = 5;

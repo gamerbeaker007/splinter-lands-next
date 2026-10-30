@@ -13,6 +13,20 @@ export const HIVE_BLOCK_SECONDS = 3;
 /** SPL's processing speed while behind (measured 0.75 on 2026-10-30, `npm run spl:catchup`). */
 export const SPL_CATCHUP_BLOCKS_PER_SECOND = 0.7;
 
+/** Where the chain is and how far SPL has processed it. */
+export interface ChainStatus {
+  hiveHeadBlock: number;
+  splLastBlock: number;
+}
+
+/** How far SPL trails the Hive head. */
+export function splLagOf(status: ChainStatus) {
+  const blocksBehind = Math.max(0, status.hiveHeadBlock - status.splLastBlock);
+  return { blocksBehind, seconds: blocksBehind * HIVE_BLOCK_SECONDS };
+}
+
+export type SplProcessingLag = ReturnType<typeof splLagOf>;
+
 /** Keychain popup + signing + broadcast, per batch. */
 const SIGN_SECONDS = 5;
 

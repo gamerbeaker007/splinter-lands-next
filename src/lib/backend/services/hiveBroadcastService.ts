@@ -1,8 +1,5 @@
 import logger from "@/lib/backend/log/logger.server";
-import { getChainStatus } from "@/lib/backend/services/chainStatusService";
 import { describeBroadcastError } from "@/lib/shared/hive/broadcastErrors";
-import { splLagOf } from "@/lib/shared/hive/sequencedBroadcast";
-import { splConfirmSeconds } from "@/lib/shared/hive/splCatchUp";
 import {
   type HiveTxStatus,
   waitForInclusion,
@@ -32,13 +29,6 @@ const DEFAULT_RPC_NODES = [
 // (BroadcastAPI.expireTime). See buildSignedTx for why we replicate it.
 const TX_EXPIRE_MS = 60_000;
 
-// On-chain verification window for a broadcast that threw — a flaky RPC proxy
-// can return an error after the node already accepted the tx, so poll SPL
-// before declaring failure. Spaced one block apart; the base window (~21 s:
-// a block + SPL indexing) is stretched by the time SPL needs to reach the head.
-const VERIFY_POLL_MS = HIVE_BLOCK_MS;
-const VERIFY_ATTEMPTS = 6;
-
 function resolveNodes(): string[] {
   const env = process.env.HIVE_RPC_NODES?.trim();
   if (!env) return DEFAULT_RPC_NODES;
@@ -62,21 +52,6 @@ function getSigningKey(): PrivateKey {
   return PrivateKey.fromString(raw);
 }
 
-/** Tri-state confirmation of a broadcast tx, supplied by the caller. */
-export type TrxConfirmState = "confirmed" | "failed" | "pending";
-
-export interface BroadcastOpts {
-  /**
-   * On-chain verifier used to recover from a phantom broadcast failure. When
-   * `client.broadcast.send` throws, the node may still have accepted the tx
-   * (e.g. an RPC proxy that returns an error *after* the tx is included). If a
-   * verifier is supplied, the deterministic tx id is polled with it before the
-   * broadcast is declared failed — so a buy/rent that actually landed is never
-   * abandoned. Without it, a throw is treated as a hard failure (legacy behavior).
-   */
-  verify?: (trxId: string) => Promise<TrxConfirmState>;
-}
-
 export interface ServerBroadcastResult {
   success: boolean;
   /** Hive transaction ids — one per broadcast batch. */
@@ -86,17 +61,10 @@ export interface ServerBroadcastResult {
    * resolves the batch's first op — see `splOpTxIds`.
    */
   opTxIds?: string[];
-  /**
-   * SPL op ids the server already confirmed on-chain (verify-on-throw looks up
-   * the Hive tx id, i.e. a recovered batch's first op). Callers can skip them
-   * when polling, instead of looking the same tx up a second time.
-   */
-  confirmedOpTxIds?: string[];
   error?: string;
   /**
-   * Tx ids that were signed and sent but whose broadcast call threw and could
-   * not be confirmed on-chain. They may still land later — surfaced so callers
-   * can warn the user / reconcile rather than silently dropping them.
+   * Tx ids that were sent but not seen in a block: they may still land —
+   * surfaced so callers can warn the user rather than silently dropping them.
    */
   attemptedTxIds?: string[];
 }
@@ -152,58 +120,123 @@ export async function buildSignedTx(
   return { signed, trxId };
 }
 
-/** Verify attempts for one tx: the base window plus SPL's current lag. */
-async function verifyAttempts(): Promise<number> {
-  try {
-    const { blocksBehind } = splLagOf(await getChainStatus());
-    return (
-      VERIFY_ATTEMPTS +
-      Math.ceil((splConfirmSeconds(blocksBehind) * 1000) / VERIFY_POLL_MS)
-    );
-  } catch {
-    return VERIFY_ATTEMPTS + 1;
-  }
+const sleep = (ms: number): Promise<void> =>
+  new Promise((r) => setTimeout(r, ms));
+
+/**
+ * Every player's on-behalf ops are signed by this one service account, which
+ * Hive allows 5 custom ops per block — counted over the node's pending pool.
+ * Concurrent requests (`withServiceBroadcastSlot` allows several) therefore
+ * take turns: one batch at a time, released once it is in a block.
+ */
+let accountQueue: Promise<unknown> = Promise.resolve();
+function withAccountLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = accountQueue.then(fn);
+  accountQueue = run.catch(() => undefined);
+  return run;
 }
 
-/** Poll the verifier until the tx confirms, fails, or the window expires. */
-async function confirmLanded(
-  trxId: string,
-  verify: (trxId: string) => Promise<TrxConfirmState>
-): Promise<boolean> {
-  const attempts = await verifyAttempts();
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    await new Promise((r) => setTimeout(r, VERIFY_POLL_MS));
-    let state: TrxConfirmState;
+type BatchOutcome =
+  | { landed: true; trxId: string }
+  /** `trxId` set: sent but not seen in a block — it may still land. */
+  | { landed: false; trxId?: string; error: string };
+
+/**
+ * Signs, sends and waits until one batch is in a block. A send that throws
+ * isn't trusted either way: a flaky RPC proxy can error after the node
+ * accepted the tx, so its deterministic id is looked up on the chain
+ * (`find_transaction` with the expiration is definitive within it). Only the
+ * per-block limit is a certain rejection: re-signed and sent once more a
+ * block later.
+ */
+async function sendBatch(
+  client: Client,
+  ops: Operation[],
+  key: PrivateKey
+): Promise<BatchOutcome> {
+  let signed: SignedTransaction;
+  let trxId: string;
+  let sendError: string | undefined;
+  for (let attempt = 0; ; attempt++) {
     try {
-      state = await verify(trxId);
-    } catch {
-      continue; // transient lookup error — keep polling
+      ({ signed, trxId } = await buildSignedTx(client, ops, key));
+    } catch (err) {
+      // Failed before the tx was sent — nothing reached the network.
+      return { landed: false, error: errorText(err) };
     }
-    if (state === "confirmed") return true;
-    if (state === "failed") return false;
+    try {
+      await client.broadcast.send(signed);
+      sendError = undefined;
+    } catch (err) {
+      sendError = errorText(err);
+      if (describeBroadcastError(err).kind === "custom_op_limit") {
+        if (attempt > 0) return { landed: false, error: sendError };
+        logger.warn(
+          "broadcastOpsAsService hit the per-block custom op limit, retrying after a block"
+        );
+        await sleep(HIVE_BLOCK_MS);
+        continue;
+      }
+      logger.error(
+        `broadcastOpsAsService send threw (tx ${trxId}), checking the chain: ${sendError}`
+      );
+    }
+    break;
   }
-  return false; // never confirmed within the window
+
+  const expiration = signed.expiration;
+  const inclusion = await waitForInclusion(
+    trxId,
+    {
+      findTransaction: async (id) =>
+        (await client.transaction.findTransaction(id, expiration))
+          .status as HiveTxStatus,
+      sleep,
+      now: Date.now,
+    },
+    TX_EXPIRE_MS + HIVE_BLOCK_MS
+  );
+  if (inclusion === "included") {
+    if (sendError) {
+      logger.warn(
+        `broadcastOpsAsService recovered: tx ${trxId} is on-chain despite the RPC error`
+      );
+    }
+    return { landed: true, trxId };
+  }
+  if (inclusion === "expired") {
+    return {
+      landed: false,
+      error:
+        sendError ??
+        "The transaction expired before it was included in a block.",
+    };
+  }
+  return {
+    landed: false,
+    trxId,
+    error:
+      sendError ?? "Hive did not confirm that the transaction is in a block.",
+  };
+}
+
+function errorText(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
 }
 
 /**
  * Signs and broadcasts a sequence of Hive operations from the configured
  * land-service account. Operations are batched (≤ MAX_OPS_PER_BROADCAST per
- * tx), and batch k+1 is only sent once batch k is in a block
- * (`waitForInclusion`): every player's on-behalf ops share this one account's
- * 5 custom ops per block. A batch the node still rejects with that limit is
- * provably not executed and is sent once more a block later.
+ * tx), and each batch is sent under the account lock and waited on until it
+ * is in a block (`sendBatch`), so no two batches — of this request or a
+ * concurrent one — share the account's per-block limit.
  *
- * A throwing broadcast does NOT immediately fail the run: the node may have
- * accepted the tx before the RPC layer errored (the dhive client deliberately
- * does not retry broadcasts to avoid double-spends). When `opts.verify` is
- * supplied, the deterministic tx id is confirmed on-chain before the batch is
- * treated as failed.
- *
- * Returns the broadcast tx ids — final confirmation/lookup is the caller's job.
+ * Stops at the first batch that didn't land; earlier batches stay in
+ * `txIds`/`opTxIds`. Returns the broadcast tx ids — SPL's verdict is the
+ * caller's job (the browser's `waitForTransactions`).
  */
 export async function broadcastOpsAsService(
-  operations: Operation[],
-  opts?: BroadcastOpts
+  operations: Operation[]
 ): Promise<ServerBroadcastResult> {
   if (operations.length === 0) return { success: true, txIds: [], opTxIds: [] };
   const client = getClient();
@@ -211,108 +244,31 @@ export async function broadcastOpsAsService(
   try {
     key = getSigningKey();
   } catch (err) {
-    return {
-      success: false,
-      txIds: [],
-      error: err instanceof Error ? err.message : String(err),
-    };
+    return { success: false, txIds: [], error: errorText(err) };
   }
 
   const txIds: string[] = [];
   const opTxIds: string[] = [];
-  const confirmedOpTxIds: string[] = [];
   const prefixed = applyDevPrefixToOps(
     operations as unknown as LooseOp[]
   ) as unknown as Operation[];
   const batches = chunk(prefixed, MAX_OPS_PER_BROADCAST);
   for (let i = 0; i < batches.length; i++) {
-    let signed: SignedTransaction;
-    let trxId: string;
-    try {
-      ({ signed, trxId } = await buildSignedTx(client, batches[i], key));
-    } catch (err) {
-      // Failed before the tx was sent — nothing reached the network.
-      const message = err instanceof Error ? err.message : String(err);
-      logger.error(
-        `broadcastOpsAsService batch ${i} prepare failed: ${message}`
-      );
-      return { success: false, txIds, opTxIds, error: message };
+    const outcome = await withAccountLock(() =>
+      sendBatch(client, batches[i], key)
+    );
+    if (!outcome.landed) {
+      logger.error(`broadcastOpsAsService batch ${i} failed: ${outcome.error}`);
+      return {
+        success: false,
+        txIds,
+        opTxIds,
+        error: outcome.error,
+        ...(outcome.trxId ? { attemptedTxIds: [outcome.trxId] } : {}),
+      };
     }
-
-    try {
-      try {
-        await client.broadcast.send(signed);
-      } catch (err) {
-        if (describeBroadcastError(err).kind !== "custom_op_limit") throw err;
-        // Rejected before entering the pending pool: not executed. Another
-        // on-behalf run holds this block's slots; re-sign against a new block.
-        logger.warn(
-          `broadcastOpsAsService batch ${i} hit the per-block custom op limit, retrying after a block`
-        );
-        await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
-        ({ signed, trxId } = await buildSignedTx(client, batches[i], key));
-        await client.broadcast.send(signed);
-      }
-      txIds.push(trxId);
-      opTxIds.push(...splOpTxIds(trxId, batches[i].length));
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      logger.error(
-        `broadcastOpsAsService batch ${i} broadcast threw (tx ${trxId}): ${message}`
-      );
-      // The send threw, but the node may have accepted the tx anyway. Verify
-      // on-chain before declaring failure so we don't abandon a tx that landed.
-      if (opts?.verify && (await confirmLanded(trxId, opts.verify))) {
-        logger.warn(
-          `broadcastOpsAsService batch ${i} recovered: tx ${trxId} confirmed on-chain despite RPC error`
-        );
-        txIds.push(trxId);
-        opTxIds.push(...splOpTxIds(trxId, batches[i].length));
-        confirmedOpTxIds.push(trxId);
-      } else {
-        return {
-          success: false,
-          txIds,
-          opTxIds,
-          confirmedOpTxIds,
-          attemptedTxIds: [trxId],
-          error: message,
-        };
-      }
-    }
-
-    if (i < batches.length - 1) {
-      // Bounded by the tx expiration: past it the node reports "expired".
-      const expiration = signed.expiration;
-      const inclusion = await waitForInclusion(
-        trxId,
-        {
-          findTransaction: async (id) =>
-            (await client.transaction.findTransaction(id, expiration))
-              .status as HiveTxStatus,
-          sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
-          now: Date.now,
-        },
-        TX_EXPIRE_MS + HIVE_BLOCK_MS
-      );
-      if (inclusion === "expired") {
-        // Accepted by the node but never included: it did not execute.
-        logger.error(`broadcastOpsAsService batch ${i} expired (tx ${trxId})`);
-        txIds.pop();
-        opTxIds.splice(opTxIds.length - batches[i].length);
-        return {
-          success: false,
-          txIds,
-          opTxIds,
-          confirmedOpTxIds,
-          error: "The transaction expired before it was included in a block.",
-        };
-      }
-      if (inclusion === "unknown") {
-        // The node can't tell: keep the old spacing rather than stop a run.
-        await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
-      }
-    }
+    txIds.push(outcome.trxId);
+    opTxIds.push(...splOpTxIds(outcome.trxId, batches[i].length));
   }
-  return { success: true, txIds, opTxIds, confirmedOpTxIds };
+  return { success: true, txIds, opTxIds };
 }

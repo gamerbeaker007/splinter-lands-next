@@ -2,18 +2,15 @@
 
 import { useAsyncData } from "@/hooks/useAsyncData";
 import { getChainStatusAction } from "@/lib/backend/actions/land-manager/chain-status-actions";
-import {
-  splLagOf,
-  type SplProcessingLag,
-} from "@/lib/shared/hive/sequencedBroadcast";
+import { splLagOf, type SplProcessingLag } from "@/lib/shared/hive/splCatchUp";
 import { useEffect } from "react";
 
 const REFRESH_MS = 15_000;
 
 /**
  * How far Splinterlands' block processing trails the Hive head, refreshed
- * every 15 s while `enabled`. Each broadcast batch waits for SPL to confirm
- * it, so this is roughly the extra wait per batch.
+ * every 15 s while `enabled`. A broadcast run waits for SPL once, after its
+ * last batch, so this is roughly the extra wait per run.
  */
 export function useSplProcessingLag(
   enabled: boolean

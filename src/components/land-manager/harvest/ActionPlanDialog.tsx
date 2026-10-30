@@ -3,7 +3,7 @@
 import ActionPlanSummary from "@/components/land-manager/shared/ActionPlanSummary";
 import BroadcastStatusNotice from "@/components/land-manager/shared/BroadcastStatusNotice";
 import PlanLogBox from "@/components/land-manager/shared/PlanLogBox";
-import type { SplProcessingLag } from "@/lib/shared/hive/sequencedBroadcast";
+import type { SplProcessingLag } from "@/lib/shared/hive/splCatchUp";
 import { ActionPlan } from "@/types/landManager";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {

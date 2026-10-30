@@ -18,7 +18,6 @@ import {
   buildStakeWorkersOp,
   StakeWorkerCard,
 } from "@/lib/shared/operations/opBuilders";
-import { unconfirmedOpTxIds } from "@/lib/shared/splTrxIds";
 import type {
   BuyExecutionPlan,
   RentalExecutionPlan,
@@ -115,16 +114,7 @@ function rentMode(rental: RentalConfig, filteredDeedUids?: string[]) {
     async broadcast(picks: WorkerPlanPick[]) {
       const marketIds = picks.map((p) => p.market_id);
       const res = await rentOnBehalfOf(marketIds);
-      // Rent results aren't read, so ops the server already confirmed
-      // (verify-on-throw) needn't be polled again.
-      return {
-        ...res,
-        verb: "Rent",
-        pollIds: unconfirmedOpTxIds(
-          res.opTxIds ?? res.txIds,
-          res.confirmedOpTxIds
-        ),
-      };
+      return { ...res, verb: "Rent", pollIds: res.opTxIds ?? res.txIds };
     },
     record: (
       player: string,

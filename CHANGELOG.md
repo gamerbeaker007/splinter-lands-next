@@ -27,6 +27,7 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 - **Hive custom JSON transaction errors:** Improved transaction sequencing prevents multiple batches from being submitted within the same Hive block, addressing the "already submitted custom json operation(s) this block" error.
 - **Infinite waiting:** Fixed an issue where bulk actions could wait indefinitely if the initial blockchain status check failed and Splinterlands never recorded the transaction.
+- **Rentals and purchases by several players at once:** on-behalf transactions now take turns on the shared service account, one batch per block, so concurrent requests no longer hit the per-block limit. A transaction whose broadcast reported an error is now checked directly on the Hive chain instead of waiting for Splinterlands.
 - **Keychain error messages:** Blockchain errors are now displayed correctly without raw HTML or unresolved placeholders such as `${a}`.
 
 ### Added

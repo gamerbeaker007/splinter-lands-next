@@ -1,13 +1,11 @@
 import { beginBroadcastRun } from "@/lib/frontend/broadcastProgress";
-import { findHiveTransaction } from "@/lib/frontend/hive-browser-api";
 import { lookupTxOutcome } from "@/lib/frontend/settledTxOutcomes";
 import { getChainStatusAction } from "@/lib/backend/actions/land-manager/chain-status-actions";
 import {
   describeSequenceResult,
   runSequencedBroadcast,
-  splLagOf,
-} from "@/lib/shared/hive/sequencedBroadcast";
-import { splConfirmSeconds } from "@/lib/shared/hive/splCatchUp";
+} from "@/lib/frontend/sequencedBroadcast";
+import { splConfirmSeconds, splLagOf } from "@/lib/shared/hive/splCatchUp";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import {
   MAX_OPS_PER_BROADCAST,
@@ -34,13 +32,6 @@ export interface BroadcastResult {
   opTxIds: string[];
   /** Ops SPL confirmed as successful, in op order. */
   confirmedOpTxIds?: string[];
-  /** Ops SPL rejected, in op order. Later batches still ran. */
-  failedOpTxIds?: string[];
-  /**
-   * Broadcast ops whose outcome is unknown — they may still land. Never send
-   * them again before their outcome is known.
-   */
-  unconfirmedOpTxIds?: string[];
   error?: string;
 }
 
@@ -129,10 +120,6 @@ function chunk<T>(arr: T[], size: number): T[][] {
   return chunks;
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
 /**
  * Broadcast operations in one or more Keychain popups, one batch of
  * MAX_OPS_PER_BROADCAST at a time (see `runSequencedBroadcast`): each batch
@@ -140,9 +127,9 @@ function sleep(ms: number): Promise<void> {
  * verdict on all ops is awaited once (no fixed timeout; it follows SPL's lag).
  *
  * Never throws for a rejected batch: the result lists which ops went through
- * (`confirmedOpTxIds`), failed (`failedOpTxIds`) or may still land
- * (`unconfirmedOpTxIds`). Progress is published to `broadcastProgress` for
- * the dialogs.
+ * (`confirmedOpTxIds`), and `error` says which failed or may still land
+ * (`describeSequenceResult`). Progress is published to `broadcastProgress`
+ * for the dialogs.
  *
  * `keyType` selects which Hive key Keychain prompts for. Defaults to posting
  * for sm_land_operation flows; pass active for sm_token_transfer (SPS deposit).
@@ -154,48 +141,35 @@ export async function broadcastOperations(
 ): Promise<BroadcastResult> {
   const keychain = getKeychain();
   const batches = chunk(applyDevPrefixToOps(operations), MAX_OPS_PER_BROADCAST);
-  const run = beginBroadcastRun(username, batches.length);
 
+  /** One Keychain popup; resolves to the Hive tx id. */
+  const signAndSend = async (ops: unknown[]): Promise<string> => {
+    // keychain-sdk rejects (not resolves) with the response on error.
+    const result = await keychain.broadcast({
+      username,
+      operations: ops as Parameters<typeof keychain.broadcast>[0]["operations"],
+      method: keyType,
+    });
+    if (!result?.success) throw result ?? "Keychain rejected";
+    const txId =
+      (result.result as unknown as { id?: string })?.id ??
+      (result.result as unknown as { tx_id?: string })?.tx_id;
+    if (!txId) {
+      throw new Error(
+        "Keychain did not return a transaction id — the network may still have accepted it"
+      );
+    }
+    return txId;
+  };
+
+  const run = beginBroadcastRun(batches.length);
   try {
-    const res = await runSequencedBroadcast(
-      batches,
-      {
-        broadcast: async (ops) => {
-          // keychain-sdk rejects (not resolves) with the response on error.
-          const result = await keychain.broadcast({
-            username,
-            operations: ops as Parameters<
-              typeof keychain.broadcast
-            >[0]["operations"],
-            method: keyType,
-          });
-          if (!result?.success) throw result ?? "Keychain rejected";
-          const txId =
-            (result.result as unknown as { id?: string })?.id ??
-            (result.result as unknown as { tx_id?: string })?.tx_id;
-          if (!txId) {
-            throw new Error(
-              "Keychain did not return a transaction id — the network may still have accepted it"
-            );
-          }
-          return txId;
-        },
-        findTransaction: findHiveTransaction,
-        splLookup: lookupTxOutcome,
-        chainStatus: getChainStatusAction,
-        sleep,
-        now: Date.now,
-      },
-      { onProgress: run.update }
-    );
-
+    const res = await runSequencedBroadcast(batches, signAndSend, run.update);
     return {
       success: res.outcome === "completed",
       txIds: res.txIds,
       opTxIds: res.opTxIds,
       confirmedOpTxIds: res.confirmedOpTxIds,
-      failedOpTxIds: res.failedOps.map((f) => f.opTxId),
-      unconfirmedOpTxIds: res.unconfirmedOpTxIds,
       error: describeSequenceResult(res),
     };
   } finally {

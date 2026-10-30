@@ -1,10 +1,10 @@
 "use client";
 
 import { useBroadcastProgress } from "@/hooks/useBroadcastProgress";
-import type { SplProcessingLag } from "@/lib/shared/hive/sequencedBroadcast";
 import {
   estimateRunSeconds,
   splConfirmSeconds,
+  type SplProcessingLag,
 } from "@/lib/shared/hive/splCatchUp";
 import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 import { Alert, LinearProgress, Typography } from "@mui/material";

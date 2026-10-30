@@ -1,6 +1,6 @@
 "use client";
 
-import type { SequencerProgress } from "@/lib/shared/hive/sequencedBroadcast";
+import type { SequencerProgress } from "@/lib/frontend/sequencedBroadcast";
 
 /**
  * Live state of the broadcast run in this tab, for any dialog to show
@@ -13,9 +13,7 @@ import type { SequencerProgress } from "@/lib/shared/hive/sequencedBroadcast";
  */
 
 export interface BroadcastRunState extends Partial<SequencerProgress> {
-  player: string;
   totalBatches: number;
-  startedAt: number;
 }
 
 let state: BroadcastRunState | null = null;
@@ -44,13 +42,13 @@ function hasWindowEvents(): boolean {
  * Marks a run as started. `update` publishes its progress and `end` clears it;
  * both are no-ops once a newer run has taken over.
  */
-export function beginBroadcastRun(
-  player: string,
-  totalBatches: number
-): { update: (progress: SequencerProgress) => void; end: () => void } {
+export function beginBroadcastRun(totalBatches: number): {
+  update: (progress: SequencerProgress) => void;
+  end: () => void;
+} {
   const run = Symbol("broadcast-run");
   activeRun = run;
-  state = { player, totalBatches, startedAt: Date.now() };
+  state = { totalBatches };
   if (hasWindowEvents()) {
     window.addEventListener("beforeunload", onBeforeUnload);
   }
