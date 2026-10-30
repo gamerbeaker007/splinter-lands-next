@@ -1,10 +1,13 @@
 import { beginBroadcastRun } from "@/lib/frontend/broadcastProgress";
+import { findHiveTransaction } from "@/lib/frontend/hive-browser-api";
 import { lookupTxOutcome } from "@/lib/frontend/settledTxOutcomes";
 import { getChainStatusAction } from "@/lib/backend/actions/land-manager/chain-status-actions";
 import {
   describeSequenceResult,
   runSequencedBroadcast,
+  splLagOf,
 } from "@/lib/shared/hive/sequencedBroadcast";
+import { splConfirmSeconds } from "@/lib/shared/hive/splCatchUp";
 import { applyDevPrefixToOps } from "@/lib/shared/operations/devPrefix";
 import {
   MAX_OPS_PER_BROADCAST,
@@ -29,8 +32,10 @@ export interface BroadcastResult {
    * results with these: a Hive tx id only resolves the batch's first op.
    */
   opTxIds: string[];
-  /** Ops SPL confirmed as successful, in op order (a prefix of the run plus, on failure, part of the failing batch). */
+  /** Ops SPL confirmed as successful, in op order. */
   confirmedOpTxIds?: string[];
+  /** Ops SPL rejected, in op order. Later batches still ran. */
+  failedOpTxIds?: string[];
   /**
    * Broadcast ops whose outcome is unknown — they may still land. Never send
    * them again before their outcome is known.
@@ -40,7 +45,11 @@ export interface BroadcastResult {
 }
 
 /**
- * Poll until all txIds resolve (success or failure) or the 30s timeout expires.
+ * Poll until all txIds resolve (success or failure) or the timeout expires:
+ * 30 s plus the time SPL needs to reach the head (`splConfirmSeconds`), read
+ * once from the chain status when the first lookup leaves ids pending. Ops a
+ * Keychain run already confirmed resolve on that first lookup, so this
+ * mainly paces on-behalf (server-broadcast) ops while SPL is behind.
  * - Stops immediately if any tx comes back as `failed` and throws with the error message.
  * - Returns the parsed result for each txId (in the same order), or null if not resolved before timeout.
  * - Throws with a user-visible message on timeout.
@@ -56,14 +65,19 @@ export async function waitForTransactions(
 ): Promise<(SplTrxResult | null)[]> {
   const results: (SplTrxResult | null)[] = txIds.map(() => null);
   const pending = new Set(txIds.map((_, i) => i));
-  const deadline = Date.now() + TRX_VERIFY_TIMEOUT_MS;
+  const start = Date.now();
+  let timeoutMs = TRX_VERIFY_TIMEOUT_MS;
   const limit = pLimit(VERIFY_CONCURRENCY);
 
-  for (let first = true; pending.size > 0 && Date.now() < deadline;) {
+  for (
+    let pass = 0;
+    pending.size > 0 && Date.now() < start + timeoutMs;
+    pass++
+  ) {
     // Look before the first wait: ops confirmed by broadcastOperations are
     // already recorded (settledTxOutcomes), so they resolve instantly.
-    if (!first) await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
-    first = false;
+    if (pass === 1) timeoutMs += await splCatchUpMs();
+    if (pass > 0) await new Promise((r) => setTimeout(r, TRX_VERIFY_POLL_MS));
     await Promise.all(
       [...pending].map((i) =>
         limit(async () => {
@@ -82,11 +96,21 @@ export async function waitForTransactions(
 
   if (pending.size > 0) {
     throw new Error(
-      `Transactions not confirmed within ${TRX_VERIFY_TIMEOUT_MS / 1000}s — check your wallet.`
+      `Transactions not confirmed within ${Math.round(timeoutMs / 1000)}s — check your wallet.`
     );
   }
 
   return results;
+}
+
+/** Time SPL needs to reach the head now; 0 when the status can't be read. */
+async function splCatchUpMs(): Promise<number> {
+  try {
+    const { blocksBehind } = splLagOf(await getChainStatusAction());
+    return splConfirmSeconds(blocksBehind) * 1000;
+  } catch {
+    return 0;
+  }
 }
 
 function getKeychain(): KeychainSDK {
@@ -112,11 +136,11 @@ function sleep(ms: number): Promise<void> {
 /**
  * Broadcast operations in one or more Keychain popups, one batch of
  * MAX_OPS_PER_BROADCAST at a time (see `runSequencedBroadcast`): each batch
- * is sent only after Splinterlands confirmed the previous one, so a later op
- * never runs on top of a failed one and two batches never share a block.
+ * is sent once the previous one is in a Hive block, then Splinterlands'
+ * verdict on all ops is awaited once (no fixed timeout; it follows SPL's lag).
  *
- * Never throws for a rejected batch: the result says where the run stopped
- * and which ops already went through (`confirmedOpTxIds`) or may still land
+ * Never throws for a rejected batch: the result lists which ops went through
+ * (`confirmedOpTxIds`), failed (`failedOpTxIds`) or may still land
  * (`unconfirmedOpTxIds`). Progress is published to `broadcastProgress` for
  * the dialogs.
  *
@@ -156,6 +180,7 @@ export async function broadcastOperations(
           }
           return txId;
         },
+        findTransaction: findHiveTransaction,
         splLookup: lookupTxOutcome,
         chainStatus: getChainStatusAction,
         sleep,
@@ -169,6 +194,7 @@ export async function broadcastOperations(
       txIds: res.txIds,
       opTxIds: res.opTxIds,
       confirmedOpTxIds: res.confirmedOpTxIds,
+      failedOpTxIds: res.failedOps.map((f) => f.opTxId),
       unconfirmedOpTxIds: res.unconfirmedOpTxIds,
       error: describeSequenceResult(res),
     };

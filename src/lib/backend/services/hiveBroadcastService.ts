@@ -1,4 +1,12 @@
 import logger from "@/lib/backend/log/logger.server";
+import { getChainStatus } from "@/lib/backend/services/chainStatusService";
+import { describeBroadcastError } from "@/lib/shared/hive/broadcastErrors";
+import { splLagOf } from "@/lib/shared/hive/sequencedBroadcast";
+import { splConfirmSeconds } from "@/lib/shared/hive/splCatchUp";
+import {
+  type HiveTxStatus,
+  waitForInclusion,
+} from "@/lib/shared/hive/waitForInclusion";
 import {
   applyDevPrefixToOps,
   LooseOp,
@@ -26,9 +34,10 @@ const TX_EXPIRE_MS = 60_000;
 
 // On-chain verification window for a broadcast that threw — a flaky RPC proxy
 // can return an error after the node already accepted the tx, so poll SPL
-// before declaring failure. Spaced one block apart.
+// before declaring failure. Spaced one block apart; the base window (~21 s:
+// a block + SPL indexing) is stretched by the time SPL needs to reach the head.
 const VERIFY_POLL_MS = HIVE_BLOCK_MS;
-const VERIFY_ATTEMPTS = 7; // ~21s, comfortably covers a block + SPL indexing
+const VERIFY_ATTEMPTS = 6;
 
 function resolveNodes(): string[] {
   const env = process.env.HIVE_RPC_NODES?.trim();
@@ -143,12 +152,26 @@ export async function buildSignedTx(
   return { signed, trxId };
 }
 
+/** Verify attempts for one tx: the base window plus SPL's current lag. */
+async function verifyAttempts(): Promise<number> {
+  try {
+    const { blocksBehind } = splLagOf(await getChainStatus());
+    return (
+      VERIFY_ATTEMPTS +
+      Math.ceil((splConfirmSeconds(blocksBehind) * 1000) / VERIFY_POLL_MS)
+    );
+  } catch {
+    return VERIFY_ATTEMPTS + 1;
+  }
+}
+
 /** Poll the verifier until the tx confirms, fails, or the window expires. */
 async function confirmLanded(
   trxId: string,
   verify: (trxId: string) => Promise<TrxConfirmState>
 ): Promise<boolean> {
-  for (let attempt = 0; attempt < VERIFY_ATTEMPTS; attempt++) {
+  const attempts = await verifyAttempts();
+  for (let attempt = 0; attempt < attempts; attempt++) {
     await new Promise((r) => setTimeout(r, VERIFY_POLL_MS));
     let state: TrxConfirmState;
     try {
@@ -164,8 +187,11 @@ async function confirmLanded(
 
 /**
  * Signs and broadcasts a sequence of Hive operations from the configured
- * land-service account. Operations are batched (≤ MAX_OPS_PER_TX per tx) and
- * tx batches are spaced one block apart so all txs land in distinct blocks.
+ * land-service account. Operations are batched (≤ MAX_OPS_PER_BROADCAST per
+ * tx), and batch k+1 is only sent once batch k is in a block
+ * (`waitForInclusion`): every player's on-behalf ops share this one account's
+ * 5 custom ops per block. A batch the node still rejects with that limit is
+ * provably not executed and is sent once more a block later.
  *
  * A throwing broadcast does NOT immediately fail the run: the node may have
  * accepted the tx before the RPC layer errored (the dhive client deliberately
@@ -214,7 +240,19 @@ export async function broadcastOpsAsService(
     }
 
     try {
-      await client.broadcast.send(signed);
+      try {
+        await client.broadcast.send(signed);
+      } catch (err) {
+        if (describeBroadcastError(err).kind !== "custom_op_limit") throw err;
+        // Rejected before entering the pending pool: not executed. Another
+        // on-behalf run holds this block's slots; re-sign against a new block.
+        logger.warn(
+          `broadcastOpsAsService batch ${i} hit the per-block custom op limit, retrying after a block`
+        );
+        await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
+        ({ signed, trxId } = await buildSignedTx(client, batches[i], key));
+        await client.broadcast.send(signed);
+      }
       txIds.push(trxId);
       opTxIds.push(...splOpTxIds(trxId, batches[i].length));
     } catch (err) {
@@ -244,7 +282,36 @@ export async function broadcastOpsAsService(
     }
 
     if (i < batches.length - 1) {
-      await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
+      // Bounded by the tx expiration: past it the node reports "expired".
+      const expiration = signed.expiration;
+      const inclusion = await waitForInclusion(
+        trxId,
+        {
+          findTransaction: async (id) =>
+            (await client.transaction.findTransaction(id, expiration))
+              .status as HiveTxStatus,
+          sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+          now: Date.now,
+        },
+        TX_EXPIRE_MS + HIVE_BLOCK_MS
+      );
+      if (inclusion === "expired") {
+        // Accepted by the node but never included: it did not execute.
+        logger.error(`broadcastOpsAsService batch ${i} expired (tx ${trxId})`);
+        txIds.pop();
+        opTxIds.splice(opTxIds.length - batches[i].length);
+        return {
+          success: false,
+          txIds,
+          opTxIds,
+          confirmedOpTxIds,
+          error: "The transaction expired before it was included in a block.",
+        };
+      }
+      if (inclusion === "unknown") {
+        // The node can't tell: keep the old spacing rather than stop a run.
+        await new Promise((r) => setTimeout(r, HIVE_BLOCK_MS));
+      }
     }
   }
   return { success: true, txIds, opTxIds, confirmedOpTxIds };

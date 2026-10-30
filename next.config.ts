@@ -15,8 +15,9 @@ const splConnectSrc =
     ? "https://api.mavs-sl.com https://vapi.mavs-sl.com"
     : "https://api.splinterlands.com https://vapi.splinterlands.com";
 
-// Support page reads (lib/frontend/support-data.ts): Hive nodes for HIVE/HBD
-// balances and the validator API for votes.
+// Browser Hive reads (lib/frontend/hive-browser-api.ts): HIVE/HBD balances on
+// the support page and tx inclusion between broadcast batches; plus the
+// validator API for votes.
 const supportConnectSrc = [
   "https://api.hive.blog",
   "https://api.openhive.network",

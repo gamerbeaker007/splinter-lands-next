@@ -65,11 +65,20 @@ vi.mock("@/lib/backend/actions/land-manager/chain-status-actions", () => ({
   }),
 }));
 
+// Every broadcast batch is in a block straight away.
+vi.mock("@/lib/frontend/hive-browser-api", () => ({
+  findHiveTransaction: async () => "within_irreversible_block",
+}));
+
 // No real block waits in a unit test.
 vi.mock("@/types/landManager", async (importOriginal) => ({
   ...(await importOriginal<object>()),
   HIVE_BLOCK_MS: 0,
   TRX_VERIFY_POLL_MS: 0,
+}));
+vi.mock("@/lib/shared/hive/splCatchUp", async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  HIVE_BLOCK_SECONDS: 0,
 }));
 
 beforeEach(() => {

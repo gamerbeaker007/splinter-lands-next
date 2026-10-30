@@ -1,7 +1,7 @@
 import { Client } from "@hiveio/dhive";
 import logger from "../../log/logger.server";
 
-// Keep in sync with lib/frontend/support-data.ts HIVE_NODES (browser reads).
+// Keep in sync with lib/frontend/hive-browser-api.ts HIVE_NODES (browser reads).
 const HIVE_NODES = [
   "https://api.hive.blog",
   "https://api.openhive.network",

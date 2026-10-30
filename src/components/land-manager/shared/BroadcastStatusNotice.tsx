@@ -1,28 +1,29 @@
 "use client";
 
 import { useBroadcastProgress } from "@/hooks/useBroadcastProgress";
+import type { SplProcessingLag } from "@/lib/shared/hive/sequencedBroadcast";
 import {
-  HIVE_BLOCK_SECONDS,
-  type SplProcessingLag,
-} from "@/lib/shared/hive/sequencedBroadcast";
+  estimateRunSeconds,
+  splConfirmSeconds,
+} from "@/lib/shared/hive/splCatchUp";
 import { MAX_OPS_PER_BROADCAST } from "@/types/landManager";
 import { Alert, LinearProgress, Typography } from "@mui/material";
 
 /** Above this, SPL is noticeably slower than usual (~20-30 s is normal). */
-const SPL_LAG_WARN_SECONDS = 60;
-/** Per batch on top of SPL's lag: inclusion in a block plus the next-block guard. */
-const BATCH_OVERHEAD_SECONDS = 6;
+const SPL_LAG_WARN_SECONDS = 120;
 
+const plural = (n: number, unit: string) => `${n} ${unit}${n === 1 ? "" : "s"}`;
+
+/** "57 seconds", "5 minutes 20 seconds" — past a minute rounded to 10 s. */
 export function formatDuration(totalSeconds: number): string {
   const s = Math.max(1, Math.round(totalSeconds));
-  if (s < 60) return `${s} s`;
-  const min = Math.floor(s / 60);
-  const rest = s % 60;
-  // Round to 10 s past a minute — these are estimates.
-  const restRounded = Math.round(rest / 10) * 10;
-  return restRounded > 0 && restRounded < 60
-    ? `${min} min ${restRounded} s`
-    : `${min + (restRounded === 60 ? 1 : 0)} min`;
+  if (s < 60) return plural(s, "second");
+  const rounded = Math.round(s / 10) * 10;
+  const min = Math.floor(rounded / 60);
+  const rest = rounded % 60;
+  return rest > 0
+    ? `${plural(min, "minute")} ${plural(rest, "second")}`
+    : plural(min, "minute");
 }
 
 interface Props {
@@ -47,7 +48,6 @@ export default function BroadcastStatusNotice({ lag, opCount }: Props) {
     opCount !== undefined
       ? Math.ceil(opCount / MAX_OPS_PER_BROADCAST)
       : undefined;
-  const perBatch = lag.seconds + BATCH_OVERHEAD_SECONDS;
 
   // Normal lag and a single batch: nothing worth interrupting the player for.
   if (!slow && (batches === undefined || batches <= 1)) return null;
@@ -55,12 +55,10 @@ export default function BroadcastStatusNotice({ lag, opCount }: Props) {
   return (
     <Alert severity={slow ? "warning" : "info"} sx={{ mb: 1.5 }}>
       <Typography variant="body2">
-        {slow
-          ? `Splinterlands is processing slowly: about ${formatDuration(lag.seconds)} (${lag.blocksBehind} blocks) behind Hive. `
-          : `Splinterlands is about ${formatDuration(lag.seconds)} behind Hive. `}
-        {batches !== undefined && batches > 1
-          ? `Each of the ${batches} batches is confirmed before the next is sent, so this takes about ${formatDuration(batches * perBatch)} plus signing.`
-          : `Each batch waits about ${formatDuration(perBatch)} for confirmation before the next is sent.`}
+        {`Splinterlands is ${formatDuration(lag.seconds)} behind Hive. `}
+        {batches !== undefined
+          ? `Current estimated runtime is ${formatDuration(estimateRunSeconds(batches, lag.blocksBehind))}${batches > 1 ? ` (${batches} batches)` : ""}.`
+          : `Confirming the result takes about ${formatDuration(splConfirmSeconds(lag.blocksBehind))}.`}
         {slow &&
           " You can switch tabs while it runs, but keep this tab open until it finishes."}
       </Typography>
@@ -75,13 +73,30 @@ function RunProgress() {
   const batch = run.batch ?? 1;
   const of = run.totalBatches > 1 ? ` ${batch} of ${run.totalBatches}` : "";
   const behind = run.splBlocksBehind ?? 0;
-  const text =
-    run.phase === "confirming"
-      ? `Batch${of} sent — waiting for Splinterlands to confirm it${behind > 0 ? ` (${behind} blocks behind, about ${formatDuration(behind * HIVE_BLOCK_SECONDS)})` : ""}.`
-      : run.phase === "retrying"
-        ? `Batch${of}: Hive's limit of 5 operations per block was reached — sign it once more.`
-        : `Batch${of} — waiting for your signature in Keychain.`;
-  const done = (batch - 1) / run.totalBatches;
+
+  let text: string;
+  let done: number;
+  if (run.phase === "confirming") {
+    const ops =
+      run.totalOps !== undefined && run.totalOps > 1
+        ? ` (${run.settledOps ?? 0} of ${run.totalOps} confirmed)`
+        : "";
+    text =
+      `All batches sent — waiting for Splinterlands to confirm them${ops}.` +
+      (behind > 0
+        ? ` It is ${behind} blocks behind, about ${formatDuration(splConfirmSeconds(behind))}.`
+        : "");
+    done = run.totalOps ? (run.settledOps ?? 0) / run.totalOps : 0;
+  } else {
+    text =
+      run.phase === "including"
+        ? `Batch${of} sent — waiting for it to be in a Hive block.`
+        : run.phase === "retrying"
+          ? `Batch${of}: Hive's limit of 5 operations per block was reached — sign it once more.`
+          : `Batch${of} — waiting for your signature in Keychain.`;
+    done = (batch - 1) / run.totalBatches;
+  }
+  const determinate = run.phase === "confirming" || run.totalBatches > 1;
 
   return (
     <Alert severity="info" sx={{ mb: 1.5 }}>
@@ -90,7 +105,7 @@ function RunProgress() {
         Keep this tab open until the run finishes; switching tabs is fine.
       </Typography>
       <LinearProgress
-        variant={run.totalBatches > 1 ? "determinate" : "indeterminate"}
+        variant={determinate ? "determinate" : "indeterminate"}
         value={done * 100}
         sx={{ mt: 1 }}
       />

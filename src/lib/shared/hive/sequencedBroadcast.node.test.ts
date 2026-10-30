@@ -5,6 +5,7 @@ import {
   type SequencerDeps,
   type SequencerProgress,
 } from "@/lib/shared/hive/sequencedBroadcast";
+import type { HiveTxStatus } from "@/lib/shared/hive/waitForInclusion";
 import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import type { TrxLookupOutcome } from "@/types/spl/trx";
 import { describe, expect, it } from "vitest";
@@ -30,6 +31,10 @@ interface SimOptions {
   broadcastErrors?: unknown[];
   /** The chain status can't be read at all. */
   noChainStatus?: boolean;
+  /** The first n chain status reads fail. */
+  chainStatusFailures?: number;
+  /** Forced `find_transaction` status per Hive tx id. */
+  hiveStatus?: Record<string, HiveTxStatus>;
 }
 
 function simulate(opts: SimOptions = {}) {
@@ -39,6 +44,7 @@ function simulate(opts: SimOptions = {}) {
   const broadcasts: { t: number; ops: unknown[] }[] = [];
   const progress: SequencerProgress[] = [];
   let calls = 0;
+  let statusReads = 0;
 
   const splLast = () => {
     const lag =
@@ -60,6 +66,13 @@ function simulate(opts: SimOptions = {}) {
       txBlock.set(id, head() + 1);
       return id;
     },
+    findTransaction: async (txId) => {
+      const forced = opts.hiveStatus?.[txId];
+      if (forced) return forced;
+      const block = txBlock.get(txId);
+      if (block === undefined) return "unknown";
+      return head() >= block ? "within_reversible_block" : "within_mempool";
+    },
     splLookup: async (opId): Promise<TrxLookupOutcome> => {
       if (opts.missingOps?.has(opId)) return { status: "pending" };
       const block = txBlock.get(opId.replace(/-\d+$/, ""));
@@ -72,6 +85,9 @@ function simulate(opts: SimOptions = {}) {
     },
     chainStatus: async () => {
       if (opts.noChainStatus) throw new Error("unreachable");
+      if (statusReads++ < (opts.chainStatusFailures ?? 0)) {
+        throw new Error("unreachable");
+      }
       return { hiveHeadBlock: head(), splLastBlock: splLast() };
     },
     sleep: async (ms) => {
@@ -138,39 +154,38 @@ describe("runSequencedBroadcast", () => {
     expect(res.opTxIds).toHaveLength(15);
   });
 
-  it("sends batch k+1 only after SPL confirmed all of batch k", async () => {
+  it("sends batch k+1 only after batch k is in a block, plus one block", async () => {
     const sim = simulate({ splLagBlocks: 8 });
-    const confirmedAt: number[] = [];
-    const lookup = sim.deps.splLookup;
-    sim.deps.splLookup = async (id) => {
-      const out = await lookup(id);
-      if (out.status === "success" && /^tx0(-3)?$/.test(id)) {
-        confirmedAt.push(sim.elapsed());
-      }
-      return out;
-    };
     await runSequencedBroadcast(batchesOf(8), sim.deps);
-    expect(sim.broadcasts[1].t).toBeGreaterThanOrEqual(
-      Math.max(...confirmedAt)
-    );
+    const includedAt = (sim.blockOf("tx0")! - GENESIS) * BLOCK_MS;
+    expect(sim.broadcasts[1].t).toBeGreaterThanOrEqual(includedAt + BLOCK_MS);
   });
 
-  it("stops at the first SPL failure and keeps what already went through", async () => {
+  it("doesn't wait for SPL between batches: a large lag is paid once", async () => {
+    const sim = simulate({ splLagBlocks: 40 }); // 2 min behind the head
+    const res = await runSequencedBroadcast(batchesOf(16), sim.deps);
+    expect(res.outcome).toBe("completed");
+    // 4 batches: sending takes seconds, then one ~2 min wait for SPL.
+    expect(sim.broadcasts[3].t).toBeLessThan(60_000);
+    expect(sim.elapsed()).toBeLessThan(2 * 2 * 60_000);
+  });
+
+  it("an SPL failure doesn't stop later batches; every op is reported", async () => {
     const failing = new Set(["tx1-2"]); // batch 2, op 3
     const sim = simulate({ failingOps: failing });
     const res = await runSequencedBroadcast(batchesOf(15), sim.deps);
 
     expect(res.outcome).toBe("failed");
-    expect(sim.broadcasts).toHaveLength(2); // batches 3 and 4 never sent
-    expect(res.confirmedBatches).toBe(1);
-    expect(res.confirmedOpTxIds).toEqual([
-      ...splOpTxIds("tx0", 4),
-      "tx1",
-      "tx1-1",
-      "tx1-3",
+    expect(sim.broadcasts).toHaveLength(4);
+    expect(res.failedOps).toEqual([
+      { opTxId: "tx1-2", error: "SPL rejected tx1-2" },
     ]);
+    expect(res.confirmedOpTxIds).toEqual(
+      res.opTxIds.filter((id) => id !== "tx1-2")
+    );
+    expect(res.unconfirmedOpTxIds).toEqual([]);
     expect(describeSequenceResult(res)).toBe(
-      "Stopped at batch 2 of 4 (7 earlier operations went through): SPL rejected tx1-2 The remaining batches were not sent."
+      "1 of 15 operations failed: SPL rejected tx1-2 14 operations went through."
     );
   });
 
@@ -209,19 +224,22 @@ describe("runSequencedBroadcast", () => {
     });
 
     expect(res.outcome).toBe("completed");
-    expect(sim.elapsed()).toBeGreaterThan(2 * 2 * 60_000); // two batches × ~2 min
+    expect(sim.elapsed()).toBeGreaterThan(2 * 60_000);
     expect(
       sim.progress.find((p) => p.phase === "confirming")?.splBlocksBehind
     ).toBe(40);
   });
 
-  it("reports unconfirmed when SPL stops processing, and sends nothing more", async () => {
+  it("reports unconfirmed when SPL stops processing", async () => {
     const sim = simulate({ splFrozenAt: GENESIS }); // never reaches our block
     const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
 
     expect(res.outcome).toBe("unconfirmed");
-    expect(sim.broadcasts).toHaveLength(1);
-    expect(res.unconfirmedOpTxIds).toEqual(splOpTxIds("tx0", 4));
+    expect(sim.broadcasts).toHaveLength(2);
+    expect(res.unconfirmedOpTxIds).toEqual([
+      ...splOpTxIds("tx0", 4),
+      ...splOpTxIds("tx1", 4),
+    ]);
     expect(res.error).toContain("stopped processing blocks");
     expect(describeSequenceResult(res)).toContain("may still land");
   });
@@ -231,7 +249,12 @@ describe("runSequencedBroadcast", () => {
     const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
 
     expect(res.outcome).toBe("unconfirmed");
-    expect(res.confirmedOpTxIds).toEqual(["tx0", "tx0-2", "tx0-3"]);
+    expect(res.confirmedOpTxIds).toEqual([
+      "tx0",
+      "tx0-2",
+      "tx0-3",
+      ...splOpTxIds("tx1", 4),
+    ]);
     expect(res.unconfirmedOpTxIds).toEqual(["tx0-1"]);
   });
 
@@ -245,7 +268,19 @@ describe("runSequencedBroadcast", () => {
     const sim = simulate({ noChainStatus: true, splFrozenAt: GENESIS });
     const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
     expect(res.outcome).toBe("unconfirmed");
-    expect(sim.broadcasts).toHaveLength(1);
+    expect(sim.broadcasts).toHaveLength(2);
+  });
+
+  it("bounds the wait by the tx expiry when the first status read failed", async () => {
+    const sim = simulate({
+      chainStatusFailures: 1,
+      missingOps: new Set(["tx0-1"]),
+    });
+    const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
+
+    expect(res.outcome).toBe("unconfirmed");
+    expect(res.unconfirmedOpTxIds).toEqual(["tx0-1"]);
+    expect(res.error).toContain("processed past the point");
   });
 
   it("a Keychain cancel stops the run as cancelled", async () => {
@@ -261,7 +296,28 @@ describe("runSequencedBroadcast", () => {
     });
     const res = await runSequencedBroadcast(batchesOf(12), sim.deps);
     expect(res.outcome).toBe("cancelled");
-    expect(res.confirmedBatches).toBe(1);
+    expect(res.sentBatches).toBe(1);
+    // What was sent before the cancel is still verified.
+    expect(res.confirmedOpTxIds).toEqual(splOpTxIds("tx0", 4));
+  });
+
+  it("a batch that expired before inclusion is failed and nothing more is sent", async () => {
+    const sim = simulate({ hiveStatus: { tx0: "expired_reversible" } });
+    const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
+    expect(res.outcome).toBe("failed");
+    expect(sim.broadcasts).toHaveLength(1);
+    expect(res.opTxIds).toEqual([]);
+    expect(res.error).toContain("expired");
+  });
+
+  it("a batch Hive can't place in a block stops the run as unconfirmed", async () => {
+    const sim = simulate({ hiveStatus: { tx0: "within_mempool" } });
+    const res = await runSequencedBroadcast(batchesOf(8), sim.deps);
+    expect(res.outcome).toBe("unconfirmed");
+    expect(sim.broadcasts).toHaveLength(1);
+    expect(describeSequenceResult(res)).toContain(
+      "The remaining batches were not sent."
+    );
   });
 
   it("an ambiguous broadcast error is unconfirmed, never failed", async () => {

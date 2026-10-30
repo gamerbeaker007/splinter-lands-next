@@ -371,9 +371,9 @@ export function useCustomPlanAction({
         const broadcastResult = await broadcastOperations(username, ops);
         setResult(broadcastResult);
 
-        // broadcastOperations already waited for SPL's verdict per batch and
-        // stops at the first failure, so log exactly the ops it confirmed —
-        // a partial run included. opTxIds[i] belongs to ops[i] / actions[i].
+        // broadcastOperations already waited for SPL's verdict on every op,
+        // so log exactly the ops it confirmed — a partial run included.
+        // opTxIds[i] belongs to ops[i] / actions[i].
         const confirmed = new Set(broadcastResult.confirmedOpTxIds);
         const done = broadcastResult.opTxIds
           .map((opTxId, i) => ({ opTxId, action: actions[i] }))

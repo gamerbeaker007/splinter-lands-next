@@ -1,25 +1,36 @@
 import { describeBroadcastError } from "@/lib/shared/hive/broadcastErrors";
+import {
+  HIVE_BLOCK_SECONDS,
+  splConfirmSeconds,
+} from "@/lib/shared/hive/splCatchUp";
+import {
+  type HiveTxStatus,
+  waitForInclusion,
+} from "@/lib/shared/hive/waitForInclusion";
 import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import type { TrxLookupOutcome } from "@/types/spl/trx";
 
 /**
- * Broadcasts batches one at a time, each only after Splinterlands confirmed
- * the previous one. Pure: the browser binds it to Keychain (splBroadcast.ts).
+ * Broadcasts batches one at a time, each only after the previous one is in a
+ * Hive block, then waits once for Splinterlands' verdict on all of them.
+ * Pure: the browser binds it to Keychain (splBroadcast.ts).
  *
- * Why not a fixed delay (or "wait for the next block"): hived allows 5 custom
- * ops per account per block, counted over the node's *pending* pool
- * (database::_push_transaction). A new head block doesn't prove our batch is
- * in it; SPL's verdict does (SPL only processes blocks). Waiting for it also
- * means batch k+1 never runs on top of a step that failed.
+ * Why inclusion and not a fixed delay: hived allows 5 custom ops per account
+ * per block, counted over the node's *pending* pool
+ * (database::_push_transaction), so the next batch may only go once the
+ * previous one left it. SPL processes blocks in order, so batch k+1 (a later
+ * block) always runs after batch k — without waiting for SPL in between,
+ * which would cost SPL's lag once per batch. Like before this sequencer, a
+ * batch SPL rejects doesn't stop later ones; the result lists every op.
  *
- * No total timeout: while SPL keeps working through blocks we keep waiting,
- * however far behind it is. We stop only when SPL stops moving, or when it has
- * passed the point where our tx must have expired — and then report the batch
- * as *unconfirmed*, never as failed, and never by re-sending it.
+ * No total timeout on the SPL wait: while SPL keeps working through blocks
+ * we keep waiting, however far behind it is. We stop only when SPL stops
+ * moving, or when it has passed the point where our txs must have expired —
+ * and then report those ops as *unconfirmed*, never as failed, and never by
+ * re-sending them.
  */
 
-/** Hive's block interval. */
-export const HIVE_BLOCK_SECONDS = 3;
+export { HIVE_BLOCK_SECONDS } from "@/lib/shared/hive/splCatchUp";
 /** Keychain signs with a 10 min expiration; past that a tx can't land anymore. */
 const TX_EXPIRY_BLOCKS = (10 * 60) / HIVE_BLOCK_SECONDS;
 
@@ -40,6 +51,8 @@ export type SplProcessingLag = ReturnType<typeof splLagOf>;
 export interface SequencerDeps {
   /** Signs and broadcasts one batch. Resolves to its Hive tx id; throws when rejected. */
   broadcast: (ops: unknown[]) => Promise<string>;
+  /** Hive `transaction_status_api.find_transaction`. */
+  findTransaction: (trxId: string) => Promise<HiveTxStatus>;
   splLookup: (opTxId: string) => Promise<TrxLookupOutcome>;
   chainStatus: () => Promise<ChainStatus>;
   sleep: (ms: number) => Promise<void>;
@@ -47,6 +60,8 @@ export interface SequencerDeps {
 }
 
 export interface SequencerTiming {
+  /** Give up on a batch that isn't in a block after this long (it may still land). */
+  inclusionTimeoutMs: number;
   /** Bounds for the SPL lookup interval; it stretches with SPL's lag. */
   pollMinMs: number;
   pollMaxMs: number;
@@ -55,6 +70,7 @@ export interface SequencerTiming {
 }
 
 export const DEFAULT_SEQUENCER_TIMING: SequencerTiming = {
+  inclusionTimeoutMs: 2 * 60_000,
   pollMinMs: 3_000,
   pollMaxMs: 15_000,
   stallMs: 3 * 60_000,
@@ -64,21 +80,27 @@ export interface SequencerProgress {
   /** 1-based. */
   batch: number;
   totalBatches: number;
-  /** Signing in Keychain, signing again after the per-block limit, or waiting for SPL. */
-  phase: "signing" | "retrying" | "confirming";
+  /**
+   * Signing in Keychain, signing again after the per-block limit, waiting for
+   * the batch to be in a block, or (all batches sent) waiting for SPL.
+   */
+  phase: "signing" | "retrying" | "including" | "confirming";
   /** Blocks SPL still has to process before it reaches the head. */
   splBlocksBehind?: number;
+  /** While confirming: SPL ops settled so far, of `totalOps`. */
+  settledOps?: number;
+  totalOps?: number;
 }
 
 export type SequenceOutcome =
   | "completed"
-  /** A batch was rejected (by the node or by SPL). Later batches were not sent. */
+  /** A batch was rejected (by the node or by SPL). */
   | "failed"
   /** The player cancelled in Keychain. Later batches were not sent. */
   | "cancelled"
   /**
-   * A batch's outcome is unknown (it may still land). Later batches were not
-   * sent, and the batch must not be sent again until its outcome is known.
+   * An op's outcome is unknown (it may still land). It must not be sent again
+   * until its outcome is known.
    */
   | "unconfirmed";
 
@@ -90,10 +112,12 @@ export interface SequenceResult {
   opTxIds: string[];
   /** Ops SPL reported as successful, in op order. */
   confirmedOpTxIds: string[];
+  /** Ops SPL rejected, in op order, with SPL's error. */
+  failedOps: { opTxId: string; error: string }[];
   /** Broadcast SPL ops whose outcome is not known. */
   unconfirmedOpTxIds: string[];
-  /** Batches fully confirmed. */
-  confirmedBatches: number;
+  /** Batches sent (and in a block). */
+  sentBatches: number;
   totalBatches: number;
   /** Set unless completed. */
   error?: string;
@@ -103,7 +127,7 @@ export interface SequenceResult {
  * Whether SPL processes this op. Every custom_json this app sends is an SPL
  * op (`sm_*`). A HIVE/HBD `transfer` only exists on the chain: it isn't
  * subject to the custom op limit, SPL never reports it, and its owner verifies
- * it (the donation, server-side) — so it is in neither result list.
+ * it (the donation, server-side) — so it is in none of the result lists.
  */
 function isSplOp(op: unknown): boolean {
   return Array.isArray(op) && op[0] === "custom_json";
@@ -124,26 +148,26 @@ export async function runSequencedBroadcast(
     txIds: [],
     opTxIds: [],
     confirmedOpTxIds: [],
+    failedOps: [],
     unconfirmedOpTxIds: [],
-    confirmedBatches: 0,
+    sentBatches: 0,
     totalBatches,
   };
-  const stop = (
-    outcome: Exclude<SequenceOutcome, "completed">,
-    error: string
-  ) => Object.assign(result, { outcome, error });
-  // An unreadable status counts as "SPL didn't move"; the stall limit bounds it.
-  const chainStatus = () => deps.chainStatus().catch(() => undefined);
+  /** Why sending stopped early, if it did. */
+  let stopped:
+    | { outcome: Exclude<SequenceOutcome, "completed">; error: string }
+    | undefined;
+  const splOps: string[] = [];
 
-  for (let b = 0; b < totalBatches; b++) {
+  // ── 1. per batch: sign + broadcast, then wait until it's in a block ───────
+  for (let b = 0; b < totalBatches && !stopped; b++) {
     const ops = batches[b];
-    const progress = (p: Omit<SequencerProgress, "batch" | "totalBatches">) =>
-      options.onProgress?.({ batch: b + 1, totalBatches, ...p });
+    const progress = (phase: SequencerProgress["phase"]) =>
+      options.onProgress?.({ batch: b + 1, totalBatches, phase });
 
-    // ── 1. sign + broadcast (one retry on the per-block limit) ──────────────
     let txId: string | undefined;
-    for (let attempt = 0; txId === undefined; attempt++) {
-      progress({ phase: attempt === 0 ? "signing" : "retrying" });
+    for (let attempt = 0; txId === undefined && !stopped; attempt++) {
+      progress(attempt === 0 ? "signing" : "retrying");
       try {
         txId = await deps.broadcast(ops);
       } catch (err) {
@@ -154,109 +178,210 @@ export async function runSequencedBroadcast(
           await deps.sleep(HIVE_BLOCK_SECONDS * 1000 + 500);
           continue;
         }
-        if (info.kind === "user_cancel") return stop("cancelled", info.message);
         // A node assertion is a definite rejection. Anything else (network
-        // error mid-broadcast) may still have reached the chain.
-        return stop(info.definite ? "failed" : "unconfirmed", info.message);
+        // error mid-broadcast) may still have reached the chain — but without
+        // a tx id there is nothing to look up.
+        stopped = {
+          outcome:
+            info.kind === "user_cancel"
+              ? "cancelled"
+              : info.definite
+                ? "failed"
+                : "unconfirmed",
+          error: info.message,
+        };
       }
     }
+    if (txId === undefined) break;
 
     const batchOpIds = splOpTxIds(txId, ops.length);
+    const batchSplOps = batchOpIds.filter((_, i) => isSplOp(ops[i]));
+
+    // The last batch needs no inclusion wait: nothing is sent after it, and
+    // SPL's verdict covers it.
+    const inclusion =
+      b === totalBatches - 1
+        ? "included"
+        : (progress("including"),
+          await waitForInclusion(txId, deps, timing.inclusionTimeoutMs));
+
+    if (inclusion === "expired") {
+      // Accepted by the node but never in a block: it did not execute.
+      stopped = {
+        outcome: "failed",
+        error: "The transaction expired before it was included in a block.",
+      };
+      break;
+    }
     result.txIds.push(txId);
     result.opTxIds.push(...batchOpIds);
-    const splOpIds = batchOpIds.filter((_, i) => isSplOp(ops[i]));
-    const pending = new Set(splOpIds);
-    const failed = new Set<string>();
-    // Ops SPL accepted did run, also those after a failed op in the batch.
-    const settleBatch = () => {
-      result.confirmedOpTxIds.push(
-        ...splOpIds.filter((op) => !pending.has(op) && !failed.has(op))
-      );
-      result.unconfirmedOpTxIds.push(...pending);
-    };
-
-    // ── 2. wait for SPL's verdict on every SPL op of the batch ──────────────
-    const lastPossibleBlock =
-      ((await chainStatus())?.hiveHeadBlock ?? Infinity) + TX_EXPIRY_BLOCKS;
-    let splLast = -Infinity;
-    let lastAdvanceAt = deps.now();
-
-    while (pending.size > 0) {
-      let failure: string | undefined;
-      for (const id of [...pending]) {
-        const outcome = await deps.splLookup(id);
-        if (outcome.status === "pending") continue;
-        pending.delete(id);
-        if (outcome.status === "failed") {
-          failure ??= outcome.error;
-          failed.add(id);
-        }
-      }
-      if (failure !== undefined) {
-        settleBatch();
-        return stop("failed", failure);
-      }
-      if (pending.size === 0) break;
-
-      const status = await chainStatus();
-      if (status && status.splLastBlock > splLast) {
-        splLast = status.splLastBlock;
-        lastAdvanceAt = deps.now();
-      }
-      const behind = status ? splLagOf(status).blocksBehind : undefined;
-      progress({ phase: "confirming", splBlocksBehind: behind });
-
-      if (splLast > lastPossibleBlock) {
-        settleBatch();
-        return stop(
-          "unconfirmed",
-          "Splinterlands has processed past the point where this transaction could still land, but has no record of it."
-        );
-      }
-      if (deps.now() - lastAdvanceAt > timing.stallMs) {
-        settleBatch();
-        return stop(
-          "unconfirmed",
-          "Splinterlands has stopped processing blocks (or could not be reached)."
-        );
-      }
-      // About twice per expected wait, within bounds.
-      const etaMs = ((behind ?? 0) + 1) * HIVE_BLOCK_SECONDS * 1000;
-      await deps.sleep(
-        Math.min(timing.pollMaxMs, Math.max(timing.pollMinMs, etaMs / 2))
-      );
+    splOps.push(...batchSplOps);
+    if (inclusion === "unknown") {
+      stopped = {
+        outcome: "unconfirmed",
+        error: "Hive did not confirm that this batch is in a block.",
+      };
+      break;
     }
-
-    settleBatch();
-    result.confirmedBatches++;
+    result.sentBatches++;
   }
 
+  // ── 2. wait once for SPL's verdict on every SPL op that was sent ──────────
+  const verdict = await waitForSpl(splOps, deps, timing, (p) =>
+    options.onProgress?.({
+      batch: result.sentBatches,
+      totalBatches,
+      phase: "confirming",
+      ...p,
+    })
+  );
+  const unconfirmed = new Set(verdict.unconfirmed);
+  for (const id of splOps) {
+    const error = verdict.errors.get(id);
+    if (error !== undefined) result.failedOps.push({ opTxId: id, error });
+    else if (unconfirmed.has(id)) result.unconfirmedOpTxIds.push(id);
+    else result.confirmedOpTxIds.push(id);
+  }
+
+  if (stopped) {
+    return Object.assign(result, stopped);
+  }
+  if (result.failedOps.length > 0) {
+    return Object.assign(result, {
+      outcome: "failed" as const,
+      error: result.failedOps[0].error,
+    });
+  }
+  if (result.unconfirmedOpTxIds.length > 0) {
+    return Object.assign(result, {
+      outcome: "unconfirmed" as const,
+      error: verdict.reason,
+    });
+  }
   return result;
 }
 
 /**
- * One line for the player: where the run stopped, what already went through,
- * and what to do about it.
+ * Polls SPL until every op has settled, SPL stops advancing, or SPL is past
+ * the point where the txs must have expired. SPL processes blocks in order,
+ * so each poll looks up ops in op order and stops at the first one still
+ * pending — about one lookup per poll while SPL catches up.
+ */
+async function waitForSpl(
+  opIds: string[],
+  deps: SequencerDeps,
+  timing: SequencerTiming,
+  progress: (p: Partial<SequencerProgress>) => void
+): Promise<{
+  errors: Map<string, string>;
+  unconfirmed: string[];
+  reason?: string;
+}> {
+  const errors = new Map<string, string>();
+  const pending = [...opIds];
+  // An unreadable status counts as "SPL didn't move"; the stall limit bounds it.
+  const chainStatus = () => deps.chainStatus().catch(() => undefined);
+
+  /** Looks up pending ops in order; `untilPending` stops at the first unsettled one. */
+  const sweep = async (untilPending: boolean) => {
+    for (let i = 0; i < pending.length;) {
+      const outcome = await deps.splLookup(pending[i]);
+      if (outcome.status === "pending") {
+        if (untilPending) return;
+        i++;
+        continue;
+      }
+      if (outcome.status === "failed") errors.set(pending[i], outcome.error);
+      pending.splice(i, 1);
+    }
+  };
+
+  // Set from the first status that can be read: a later head only makes the
+  // bound later (safe), while no bound at all would let SPL advance forever
+  // without a missing tx ever ending the wait.
+  let lastPossibleBlock: number | undefined;
+  let splLast = -Infinity;
+  let lastAdvanceAt = deps.now();
+
+  while (pending.length > 0) {
+    await sweep(true);
+    if (pending.length === 0) break;
+
+    const status = await chainStatus();
+    if (status && lastPossibleBlock === undefined) {
+      lastPossibleBlock = status.hiveHeadBlock + TX_EXPIRY_BLOCKS;
+    }
+    if (status && status.splLastBlock > splLast) {
+      splLast = status.splLastBlock;
+      lastAdvanceAt = deps.now();
+    }
+    const behind = status ? splLagOf(status).blocksBehind : undefined;
+    progress({
+      splBlocksBehind: behind,
+      settledOps: opIds.length - pending.length,
+      totalOps: opIds.length,
+    });
+
+    let reason: string | undefined;
+    if (lastPossibleBlock !== undefined && splLast > lastPossibleBlock) {
+      reason =
+        "Splinterlands has processed past the point where this transaction could still land, but has no record of it.";
+    } else if (deps.now() - lastAdvanceAt > timing.stallMs) {
+      reason =
+        "Splinterlands has stopped processing blocks (or could not be reached).";
+    }
+    if (reason) {
+      // Ops behind a missing one may have landed: look at each once more.
+      await sweep(false);
+      return { errors, unconfirmed: pending, reason };
+    }
+
+    // About twice per expected wait, within bounds.
+    const etaMs = splConfirmSeconds(behind ?? 0) * 1000;
+    await deps.sleep(
+      Math.min(timing.pollMaxMs, Math.max(timing.pollMinMs, etaMs / 2))
+    );
+  }
+  return { errors, unconfirmed: [] };
+}
+
+/**
+ * One line for the player: where the run stopped, what went through, and
+ * what to do about it.
  */
 export function describeSequenceResult(
   res: SequenceResult
 ): string | undefined {
   if (res.outcome === "completed") return undefined;
-  const failedBatch = res.confirmedBatches + 1;
-  const where =
-    res.totalBatches > 1
-      ? `Stopped at batch ${failedBatch} of ${res.totalBatches}`
-      : "Stopped";
-  const n = res.confirmedOpTxIds.length;
-  const done =
-    n > 0 ? ` (${n} earlier operation${n === 1 ? "" : "s"} went through)` : "";
-  const notSent =
-    res.totalBatches > failedBatch
-      ? " The remaining batches were not sent."
-      : "";
-  const unknown =
-    res.outcome === "unconfirmed"
-      ? " This batch may still land — check the result before running it again."
-      : "";
-  return `${where}${done}: ${res.error}${notSent}${unknown}`;
+  const total = res.opTxIds.length;
+  const ok = res.confirmedOpTxIds.length;
+  const parts: string[] = [];
+
+  if (res.sentBatches < res.totalBatches) {
+    const at = res.sentBatches + 1;
+    parts.push(
+      res.totalBatches > 1
+        ? `Stopped at batch ${at} of ${res.totalBatches}: ${res.error}`
+        : `Stopped: ${res.error}`
+    );
+    if (res.totalBatches > at)
+      parts.push("The remaining batches were not sent.");
+  }
+  if (res.failedOps.length > 0) {
+    const n = res.failedOps.length;
+    parts.push(
+      `${n} of ${total} operation${total === 1 ? "" : "s"} failed: ${res.failedOps[0].error}`
+    );
+  } else if (res.sentBatches === res.totalBatches && res.error) {
+    parts.push(res.error);
+  }
+  if (ok > 0 && ok < total) {
+    parts.push(`${ok} operation${ok === 1 ? "" : "s"} went through.`);
+  }
+  if (res.outcome === "unconfirmed" || res.unconfirmedOpTxIds.length > 0) {
+    parts.push(
+      "Some operations may still land — check the result before running them again."
+    );
+  }
+  return parts.join(" ");
 }
