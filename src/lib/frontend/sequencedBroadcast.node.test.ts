@@ -403,6 +403,16 @@ describe("describeBroadcastError", () => {
       }).message
     ).toBe("Bad op");
   });
+
+  it("removes angle brackets from incomplete markup", () => {
+    const info = describeBroadcastError({
+      success: false,
+      message: "Your transaction returned an error Error: Bad <scriptalert(1)",
+    });
+
+    expect(info.message).toBe("Bad scriptalert(1)");
+    expect(info.message).not.toMatch(/[<>]/);
+  });
 });
 
 describe("runSequencedBroadcast — ops SPL does not process", () => {
