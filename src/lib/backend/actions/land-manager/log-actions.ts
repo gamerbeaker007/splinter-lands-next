@@ -151,27 +151,39 @@ export interface DonationsPaidDayRow {
   contributors: string[]; // distinct players who paid that day, alphabetical
 }
 
+export interface DonationsPaidPage {
+  rows: DonationsPaidDayRow[];
+  allTimeTotals: Record<string, number>;
+  totalDays: number;
+}
+
 /**
- * Aggregate paid donations across all players by date. Returns most recent days
- * first, limited to `limit` rows.
+ * Aggregate paid donations across all players by date, with all-time totals and
+ * the requested page of most recent donation days.
  */
 export async function getDonationsPaidByDay(
-  limit = 30
-): Promise<DonationsPaidDayRow[]> {
+  page = 1,
+  pageSize = 10
+): Promise<DonationsPaidPage> {
+  const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+  const safePageSize =
+    Number.isFinite(pageSize) && pageSize > 0
+      ? Math.min(100, Math.floor(pageSize))
+      : 10;
+
   const [harvestRows, mythicRows] = await Promise.all([
     prisma.landHarvestLog.findMany({
       orderBy: { date: "desc" },
       select: { date: true, player: true, donations_json: true },
-      take: limit * 50,
     }),
     prisma.landMythicHarvestLog.findMany({
       orderBy: { date: "desc" },
       select: { date: true, player: true, donations_json: true },
-      take: limit * 50,
     }),
   ]);
 
   const allRows = [...harvestRows, ...mythicRows];
+  const allTimeTotals: Record<string, number> = {};
 
   const byDate = new Map<
     string,
@@ -187,8 +199,12 @@ export async function getDonationsPaidByDay(
       byDate.set(key, bucket);
     }
     let paidAnything = false;
-    for (const [sym, amount] of Object.entries(donations ?? {})) {
-      if (amount <= 0) continue;
+    for (const [sym, rawAmount] of Object.entries(donations ?? {})) {
+      const amount = Number(rawAmount);
+      if (!Number.isFinite(amount) || amount <= 0) continue;
+      allTimeTotals[sym] = Number.parseFloat(
+        ((allTimeTotals[sym] ?? 0) + amount).toFixed(3)
+      );
       bucket.totals[sym] = Number.parseFloat(
         ((bucket.totals[sym] ?? 0) + amount).toFixed(3)
       );
@@ -197,15 +213,21 @@ export async function getDonationsPaidByDay(
     if (paidAnything) bucket.contributors.add(row.player);
   }
 
-  return [...byDate.entries()]
+  const days = [...byDate.entries()]
     .filter(([, v]) => Object.keys(v.totals).length > 0)
     .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
-    .slice(0, limit)
     .map(([date, v]) => ({
       date,
       totals: v.totals,
       contributors: [...v.contributors].sort(),
     }));
+
+  const offset = (safePage - 1) * safePageSize;
+  return {
+    rows: days.slice(offset, offset + safePageSize),
+    allTimeTotals,
+    totalDays: days.length,
+  };
 }
 
 // ── Make-harvestable log ──────────────────────────────────────────────────────

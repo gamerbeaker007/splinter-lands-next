@@ -46,29 +46,27 @@ export default function DirectDonationsSectionClient({
 }) {
   const [data, setData] = useState<SupportDonationPage>(initialData);
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [sortBy, setSortBy] = useState<SupportDonationSortBy>("created_at");
   const [sortDirection, setSortDirection] =
     useState<SupportDonationSortDirection>("desc");
   const [isPending, startTransition] = useTransition();
+  const rowsPerPage = 10;
 
   const load = useCallback(
     (
       nextPage: number,
-      nextRowsPerPage: number,
       nextSortBy: SupportDonationSortBy,
       nextSortDirection: SupportDonationSortDirection
     ) => {
       startTransition(async () => {
         const result = await getSupportDonationsPage(
           nextPage + 1,
-          nextRowsPerPage,
+          rowsPerPage,
           nextSortBy,
           nextSortDirection
         );
         setData(result);
         setPage(nextPage);
-        setRowsPerPage(nextRowsPerPage);
         setSortBy(nextSortBy);
         setSortDirection(nextSortDirection);
       });
@@ -80,7 +78,7 @@ export default function DirectDonationsSectionClient({
     const isSame = sortBy === column;
     const nextDirection: SupportDonationSortDirection =
       isSame && sortDirection === "asc" ? "desc" : "asc";
-    load(0, rowsPerPage, column, nextDirection);
+    load(0, column, nextDirection);
   };
 
   return (
@@ -112,6 +110,30 @@ export default function DirectDonationsSectionClient({
             <Typography variant="caption" color="text.secondary">
               {data.total} donation{data.total !== 1 ? "s" : ""}
             </Typography>
+            <Stack direction="row" flexWrap="wrap" columnGap={2} rowGap={0.5}>
+              <Typography variant="subtitle2">All-time totals:</Typography>
+              {Object.entries(data.totalsByCurrency).map(
+                ([currency, totals]) => (
+                  <Typography
+                    key={currency}
+                    variant="body2"
+                    sx={{ fontFamily: "monospace" }}
+                  >
+                    {currency}{" "}
+                    {formatNumber(totals.amount, {
+                      maximumFractionDigits: 8,
+                      minimumFractionDigits: 3,
+                    })}{" "}
+                    (USD{" "}
+                    {formatNumber(totals.usdValue, {
+                      maximumFractionDigits: 4,
+                      minimumFractionDigits: 2,
+                    })}
+                    )
+                  </Typography>
+                )
+              )}
+            </Stack>
 
             <TableContainer component={Paper} variant="outlined">
               <Table size="small">
@@ -195,13 +217,9 @@ export default function DirectDonationsSectionClient({
               page={page}
               rowsPerPage={rowsPerPage}
               onPageChange={(_, nextPage) =>
-                load(nextPage, rowsPerPage, sortBy, sortDirection)
+                load(nextPage, sortBy, sortDirection)
               }
-              onRowsPerPageChange={(event) => {
-                const nextRowsPerPage = Number(event.target.value);
-                load(0, nextRowsPerPage, sortBy, sortDirection);
-              }}
-              rowsPerPageOptions={[10, 25, 50]}
+              rowsPerPageOptions={[10]}
               disabled={isPending}
             />
           </Stack>

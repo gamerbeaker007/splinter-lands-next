@@ -14,6 +14,21 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.45.0] - 2026-10-30
+
+### Added
+
+- **Admin donation totals:** The admin dashboard now shows all-time totals by
+  resource/currency for land-operation and direct support donations.
+
+### Changed
+
+- **Admin donation tables:** Donation records now use fixed 10-row pagination.
+- **Cache status:** Removed the obsolete cached-user list; cache counts describe
+  the current server process.
+
+---
+
 ## [v1.44.1] - 2026-10-30
 
 ### Fixed

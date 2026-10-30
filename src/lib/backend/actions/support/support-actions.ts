@@ -47,6 +47,7 @@ export interface SupportDonationPage {
   rows: SupportDonationRow[];
   total: number;
   pages: number;
+  totalsByCurrency: Record<string, { amount: number; usdValue: number }>;
 }
 
 const PENDING_MESSAGE =
@@ -68,7 +69,7 @@ export async function getSupportDonationsPage(
       ? Math.min(100, Math.floor(pageSize))
       : 10;
 
-  const [total, rows] = await Promise.all([
+  const [total, rows, currencyTotals] = await Promise.all([
     prisma.supportDonation.count(),
     prisma.supportDonation.findMany({
       orderBy: { [sortBy]: sortDirection },
@@ -84,6 +85,11 @@ export async function getSupportDonationsPage(
         tx: true,
       },
     }),
+    prisma.supportDonation.groupBy({
+      by: ["currency"],
+      _sum: { amount: true, usd_value: true },
+      orderBy: { currency: "asc" },
+    }),
   ]);
 
   return {
@@ -98,6 +104,15 @@ export async function getSupportDonationsPage(
     })),
     total,
     pages: Math.max(1, Math.ceil(total / safePageSize)),
+    totalsByCurrency: Object.fromEntries(
+      currencyTotals.map((row) => [
+        row.currency,
+        {
+          amount: Number(row._sum.amount ?? 0),
+          usdValue: Number(row._sum.usd_value ?? 0),
+        },
+      ])
+    ),
   };
 }
 

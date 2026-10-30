@@ -1,19 +1,13 @@
 "use client";
 
 import { clearCache } from "@/lib/backend/admin/adminActions";
-import FiberManualRecordIcon from "@mui/icons-material/FiberManualRecord";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import {
   Box,
   Button,
   Card,
   CardContent,
-  Divider,
   IconButton,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Stack,
   Tooltip,
   Typography,
@@ -23,7 +17,6 @@ import { useState } from "react";
 
 type Data = {
   cacheKeys: number;
-  users: string[];
   dailyCacheKeys: number;
 };
 
@@ -70,7 +63,7 @@ export default function CacheSectionClient({
         <Box mb={2}>
           <SectionLabel
             label="Cached Keys"
-            tooltip="Total keys currently stored in the in-memory cache."
+            tooltip="Keys currently stored in this server process's in-memory cache."
           />
           <Typography variant="body2">{initialData.cacheKeys}</Typography>
         </Box>
@@ -78,7 +71,7 @@ export default function CacheSectionClient({
         <Box mb={2}>
           <SectionLabel
             label="Daily Cached Keys"
-            tooltip="Number of keys stored for daily metrics or snapshots."
+            tooltip="Daily cache keys currently stored in this server process."
           />
           <Typography variant="body2">{initialData.dailyCacheKeys}</Typography>
         </Box>
@@ -92,27 +85,6 @@ export default function CacheSectionClient({
         >
           {loading ? "Clearing..." : "Clear Cache"}
         </Button>
-
-        <Divider sx={{ my: 2 }} />
-
-        <SectionLabel
-          label="Users"
-          tooltip="List of users currently represented in the cached data."
-        />
-
-        <List dense>
-          {initialData.users.map((user: string) => (
-            <ListItem key={user} disableGutters sx={{ py: 0.25 }}>
-              <ListItemIcon sx={{ minWidth: 24 }}>
-                <FiberManualRecordIcon
-                  fontSize="small"
-                  sx={{ color: "text.secondary" }}
-                />
-              </ListItemIcon>
-              <ListItemText primary={user} />
-            </ListItem>
-          ))}
-        </List>
       </CardContent>
     </Card>
   );

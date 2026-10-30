@@ -42,17 +42,8 @@ export async function getCacheStatus() {
   const keys = cache.keys();
   const dailyKeys = dailyCache.keys();
 
-  const users: string[] = [];
-  for (const key of keys) {
-    if (key.startsWith("region-data:")) {
-      const user = key.split(":").at(-1);
-      if (user) users.push(user);
-    }
-  }
-
   return {
     cacheKeys: keys.length,
-    users: users,
     dailyCacheKeys: dailyKeys.length,
   };
 }
