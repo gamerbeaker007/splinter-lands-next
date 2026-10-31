@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.45.1] - 2026-10-31
+
+### Fixed
+
+- **Tract Analysis selector:** Limited tract dropdown options to 1-10 (was
+  incorrectly showing up to 100).
+
+---
+
 ## [v1.45.0] - 2026-10-30
 
 ### Added

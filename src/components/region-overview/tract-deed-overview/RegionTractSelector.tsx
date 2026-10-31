@@ -73,7 +73,7 @@ export default function RegionTractSelector({
             label="Tract"
             onChange={(e) => onTractChange(e.target.value as number)}
           >
-            {Array.from({ length: 100 }, (_, i) => i + 1).map((tract) => (
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((tract) => (
               <MenuItem key={tract} value={tract}>
                 {tract}
               </MenuItem>
