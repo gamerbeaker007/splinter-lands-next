@@ -138,6 +138,7 @@ export const edition_eternal_icon_url = `${WEB_URL}website/icons/icon-edition-et
 export const edition_land_card_icon_url = `${WEB_URL}website/icons/icon-edition-land.svg`;
 export const edition_escalation_icon_url = `${WEB_URL}website/icons/icon-edition-mini-set.svg`;
 export const edition_verico_icon_url = `${WEB_URL}website/icons/icon-edition-verico.svg`;
+export const edition_starlight_icon_url = `${WEB_URL}website/icons/icon-edition-starlight.svg`;
 
 export const card_rarity_common_icon_url = `${WEB_URL}website/create_team/icon_rarity_common_new.svg`;
 export const card_rarity_rare_icon_url = `${WEB_URL}website/create_team/icon_rarity_rare_new.svg`;

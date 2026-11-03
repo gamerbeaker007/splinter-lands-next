@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.45.2] - 2026-11-03
+
+### Updated
+
+Udpate startlight to editions
+
+---
+
 ## [v1.45.1] - 2026-10-31
 
 ### Fixed

@@ -17,6 +17,7 @@ import {
   edition_soulbound_icon_url,
   edition_soulbound_rebellion_icon_url,
   edition_soulkeep_icon_url,
+  edition_starlight_icon_url,
   edition_untamed_icon_url,
   edition_verico_icon_url,
 } from "@/lib/shared/statics_icon_urls";
@@ -171,6 +172,12 @@ export const editionMap: Record<number, EditionTypeDef> = {
     urlName: "verico",
     setName: "land",
     editionIcon: edition_verico_icon_url,
+  },
+  22: {
+    displayName: "Starlight",
+    urlName: "starlight",
+    setName: "foundation",
+    editionIcon: edition_starlight_icon_url,
   },
   23: {
     displayName: "Feast",
