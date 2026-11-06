@@ -1,6 +1,7 @@
 "use client";
 
 import { usePlayerAlerts } from "@/hooks/usePlayerAlerts";
+import { countUnassigned } from "@/lib/shared/player/playerAlerts";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import {
   AssignmentInd,
@@ -9,8 +10,10 @@ import {
   Grass,
   KeyboardDoubleArrowUp,
   Landscape,
+  MilitaryTech,
   RemoveCircleOutline,
   Store,
+  Token,
   Warning,
 } from "@mui/icons-material";
 import BoltIcon from "@mui/icons-material/Bolt";
@@ -34,6 +37,7 @@ import { PowerCoreAlerts } from "./PowerCoreAlerts";
 import { RationingLiteAlerts } from "./RationingLiteAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
 import { TooMuchPPAlerts } from "./TooMuchPPAlerts";
+import { UnassignedStakeItemsAlert } from "./UnassignedStakeItemsAlert";
 
 type Props = {
   finishedFullAlerts: DeedAlertsInfo[];
@@ -46,12 +50,12 @@ export default function AlertSection({
   player,
   force,
 }: Props) {
-  const { cardAlerts, loading, error } = usePlayerAlerts(player, force);
+  const { playerAlerts, loading, error } = usePlayerAlerts(player, force);
   const [openDialog, setOpenDialog] = useState<string | null>(null);
 
   if (loading) return <AlertSectionSkeleton />;
   if (error) return <div>Error loading alerts: {error}</div>;
-  if (!cardAlerts) return <div>No alerts available.</div>;
+  if (!playerAlerts) return <div>No alerts available.</div>;
 
   // Button configs
   const buttons = [
@@ -66,46 +70,46 @@ export default function AlertSection({
     {
       key: "AssignedWorkersAlert",
       label: "Missing Workers",
-      alertsCount: cardAlerts?.assignedWorkersAlerts?.length ?? 0,
+      alertsCount: playerAlerts?.assignedWorkersAlerts?.length ?? 0,
       icon: <AssignmentInd fontSize="large" />,
       dialogTitle: "Assigned Workers Alert",
       dialogContent: (
         <AssignedWorkersAlerts
-          assignedWorkersAlerts={cardAlerts.assignedWorkersAlerts}
+          assignedWorkersAlerts={playerAlerts.assignedWorkersAlerts}
         />
       ),
     },
     {
       key: "NotAssignedWorkers",
       label: "No Workers",
-      alertsCount: cardAlerts?.noWorkersAlerts?.length ?? 0,
+      alertsCount: playerAlerts?.noWorkersAlerts?.length ?? 0,
       icon: <Warning fontSize="large" />,
       dialogTitle: "No Workers Assigned",
       dialogContent: (
-        <NoWorkersAlerts noWorkersAlerts={cardAlerts?.noWorkersAlerts} />
+        <NoWorkersAlerts noWorkersAlerts={playerAlerts?.noWorkersAlerts} />
       ),
     },
     {
       key: "NegativeTerrainBoost",
       label: "Negative Boost",
-      alertsCount: cardAlerts?.terrainBoostAlerts.negative?.length ?? 0,
+      alertsCount: playerAlerts?.terrainBoostAlerts.negative?.length ?? 0,
       icon: <Landscape fontSize="large" />,
       dialogTitle: "Cards assigned to terrain with negative boost",
       dialogContent: (
         <TerrainBoostsCard
-          terrainBoosts={cardAlerts.terrainBoostAlerts.negative}
+          terrainBoosts={playerAlerts.terrainBoostAlerts.negative}
         />
       ),
     },
     {
       key: "ZeroNonNeutralTerrainBoost",
       label: "Zero Boost",
-      alertsCount: cardAlerts?.terrainBoostAlerts.zeroNonNeutral?.length ?? 0,
+      alertsCount: playerAlerts?.terrainBoostAlerts.zeroNonNeutral?.length ?? 0,
       icon: <RemoveCircleOutline fontSize="large" />,
       dialogTitle: "Zero terrain boost (not neutral)",
       dialogContent: (
         <TerrainBoostsCard
-          terrainBoosts={cardAlerts.terrainBoostAlerts.zeroNonNeutral}
+          terrainBoosts={playerAlerts.terrainBoostAlerts.zeroNonNeutral}
         />
       ),
     },
@@ -113,12 +117,12 @@ export default function AlertSection({
       key: "NegativeDECAlertsNaturalResource",
       label: "Negative DEC",
       subLabel: "Natural Resource",
-      alertsCount: cardAlerts?.negativeDECNaturalResourceDeeds.length ?? 0,
+      alertsCount: playerAlerts?.negativeDECNaturalResourceDeeds.length ?? 0,
       icon: <Warning fontSize="large" />,
       dialogTitle: "Deeds with Negative DEC Production Natural resource",
       dialogContent: (
         <NegativeDECAlerts
-          negativeDECAlerts={cardAlerts.negativeDECNaturalResourceDeeds}
+          negativeDECAlerts={playerAlerts.negativeDECNaturalResourceDeeds}
         />
       ),
     },
@@ -126,93 +130,118 @@ export default function AlertSection({
       key: "NegativeDECAlertsOtherResource",
       label: "Negative DEC",
       subLabel: "Other Resource",
-      alertsCount: cardAlerts?.negativeDECOtherResourceDeeds.length ?? 0,
+      alertsCount: playerAlerts?.negativeDECOtherResourceDeeds.length ?? 0,
       icon: <Warning fontSize="large" />,
       dialogTitle: "Deeds with Negative DEC Production Non Natural resource",
       dialogContent: (
         <NegativeDECAlerts
-          negativeDECAlerts={cardAlerts.negativeDECOtherResourceDeeds}
+          negativeDECAlerts={playerAlerts.negativeDECOtherResourceDeeds}
         />
       ),
     },
     {
       key: "UnusedPowerSource",
       label: "Unused Power",
-      alertsCount: cardAlerts?.unusedPowerSource ?? 0,
+      alertsCount: playerAlerts.stakeItems.unusedPowerCores,
       icon: <BoltIcon fontSize="large" />,
       dialogTitle: "Unused Power Core",
       dialogContent: (
         <Typography variant="body1">
-          You have {cardAlerts?.unusedPowerSource} unused power source(s).
+          You have {playerAlerts.stakeItems.unusedPowerCores} unused power
+          source(s).
         </Typography>
       ),
     },
     {
       key: "noPowerSource",
       label: "No Power",
-      alertsCount: cardAlerts?.noPowerSource.length ?? 0,
+      alertsCount: playerAlerts?.noPowerSource.length ?? 0,
       icon: <BoltIcon fontSize="large" />,
       dialogTitle: "No Power Core",
       dialogContent: (
-        <PowerCoreAlerts powerCoreAlerts={cardAlerts?.noPowerSource} />
+        <PowerCoreAlerts powerCoreAlerts={playerAlerts?.noPowerSource} />
+      ),
+    },
+    {
+      key: "UnassignedTitles",
+      label: "Unassigned Titles",
+      alertsCount: countUnassigned(playerAlerts.stakeItems.unassignedTitles),
+      icon: <MilitaryTech fontSize="large" />,
+      dialogTitle: "Titles not assigned to a plot",
+      dialogContent: (
+        <UnassignedStakeItemsAlert
+          items={playerAlerts.stakeItems.unassignedTitles}
+        />
+      ),
+    },
+    {
+      key: "UnassignedTotems",
+      label: "Unassigned Totems",
+      alertsCount: countUnassigned(playerAlerts.stakeItems.unassignedTotems),
+      icon: <Token fontSize="large" />,
+      dialogTitle: "Totems not assigned to a plot",
+      dialogContent: (
+        <UnassignedStakeItemsAlert
+          items={playerAlerts.stakeItems.unassignedTotems}
+        />
       ),
     },
     {
       key: "DoublePower",
       label: "Double Power",
-      alertsCount: cardAlerts?.powerCoreWhileEnergized.length ?? 0,
+      alertsCount: playerAlerts?.powerCoreWhileEnergized.length ?? 0,
       icon: <BoltIcon fontSize="large" />,
       dialogTitle: "Double Power (Power Core while Energized)",
       dialogContent: (
         <PowerCoreAlerts
-          powerCoreAlerts={cardAlerts?.powerCoreWhileEnergized}
+          powerCoreAlerts={playerAlerts?.powerCoreWhileEnergized}
         />
       ),
     },
     {
       key: "MissingBloodlineBoost",
       label: "Missing Bloodline Boost",
-      alertsCount: cardAlerts?.missingBloodLineBoost.length ?? 0,
+      alertsCount: playerAlerts?.missingBloodLineBoost.length ?? 0,
       icon: <FormatColorReset fontSize="large" />,
       dialogTitle: "Deeds Missing Bloodline Boost",
       dialogContent: (
         <MissingBloodLineBoostAlerts
-          missingBloodLineBoostAlerts={cardAlerts?.missingBloodLineBoost}
+          missingBloodLineBoostAlerts={playerAlerts?.missingBloodLineBoost}
         />
       ),
     },
     {
       key: "TooMuchBasePP",
       label: "Too Much Base PP",
-      alertsCount: cardAlerts?.tooMuchBasePP.length ?? 0,
+      alertsCount: playerAlerts?.tooMuchBasePP.length ?? 0,
       icon: <KeyboardDoubleArrowUp fontSize="large" />,
       dialogTitle: "Deeds with Base PP > 100K ",
-      // <TooMuchBasePPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
+      // <TooMuchBasePPAlerts tooMuchBasePP={playerAlerts?.tooMuchBasePP} />
       dialogContent: (
-        <TooMuchPPAlerts tooMuchBasePP={cardAlerts?.tooMuchBasePP} />
+        <TooMuchPPAlerts tooMuchBasePP={playerAlerts?.tooMuchBasePP} />
       ),
     },
     {
       key: "RationingLiteAlert",
       label: "Rationing Lite Alert",
-      alertsCount: cardAlerts?.rationingLiteAlerts.length ?? 0,
+      alertsCount: playerAlerts?.rationingLiteAlerts.length ?? 0,
       icon: <Grass fontSize="large" />,
       dialogTitle: "Rationing Lite Alert While More Then 20K Base PP",
       dialogContent: (
         <RationingLiteAlerts
-          rationingLiteAlerts={cardAlerts.rationingLiteAlerts}
+          rationingLiteAlerts={playerAlerts.rationingLiteAlerts}
         />
       ),
     },
     {
       key: "ZeroNeutralTerrainBoost",
       label: "Zero Boost (Neutral)",
-      alertsCount: cardAlerts?.terrainBoostAlerts.zeroNeutral?.length ?? 0,
+      alertsCount: playerAlerts?.terrainBoostAlerts.zeroNeutral?.length ?? 0,
       icon: <Block fontSize="large" />,
       dialogTitle: "Zero terrain boost (neutral)",
       dialogContent: (
         <TerrainBoostsCard
-          terrainBoosts={cardAlerts.terrainBoostAlerts.zeroNeutral}
+          terrainBoosts={playerAlerts.terrainBoostAlerts.zeroNeutral}
         />
       ),
     },

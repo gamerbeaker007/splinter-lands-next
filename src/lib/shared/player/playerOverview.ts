@@ -73,10 +73,12 @@ export function buildPlayerOverview({
   const today = new Date();
   poolInfo.forEach((row) => enrichPoolData(row, today, landPools));
 
-  //DEC Income
+  // DEC Income: with taxes, without the transfer fee on resource deficits.
   const playerRegionInfo = processPlayerRegionInformation(
     deeds,
-    resourcePrices
+    resourcePrices,
+    true,
+    false
   );
   const total_dec = playerRegionInfo.totals.totalDEC;
 

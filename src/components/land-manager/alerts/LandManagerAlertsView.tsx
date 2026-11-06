@@ -175,7 +175,7 @@ export default function LandManagerAlertsView({
   );
   const { feedable, shortOnGrain } = input.worksiteAlerts.feedPlan;
   const feedGrain = feedable.reduce((sum, c) => sum + c.grainCost, 0);
-  const card = input.cardAlerts;
+  const dashboard = input.playerAlerts;
   const plural = (n: number, word: string) =>
     `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -240,6 +240,33 @@ export default function LandManagerAlertsView({
           ),
           details: <PlotChips labels={shortOnGrain.map((c) => c.plotLabel)} />,
         };
+      case "unassignedTitles":
+      case "unassignedTotems": {
+        const items =
+          (alert.key === "unassignedTitles"
+            ? dashboard?.stakeItems.unassignedTitles
+            : dashboard?.stakeItems.unassignedTotems) ?? [];
+        const word = alert.key === "unassignedTitles" ? "title" : "totem";
+        return {
+          description: (
+            <>
+              {plural(n, word)} owned but not staked on a plot — their boost is
+              unused.
+            </>
+          ),
+          action: (
+            <LinkAction
+              href="/land-manager/production"
+              label="Open production"
+            />
+          ),
+          details: (
+            <PlotChips
+              labels={items.map((i) => `${formatInt(i.count)}× ${i.name}`)}
+            />
+          ),
+        };
+      }
       case "noPower":
         return {
           description: (
@@ -251,8 +278,8 @@ export default function LandManagerAlertsView({
               label="Open production"
             />
           ),
-          details: card && (
-            <PowerCoreAlerts powerCoreAlerts={card.noPowerSource} />
+          details: dashboard && (
+            <PowerCoreAlerts powerCoreAlerts={dashboard.noPowerSource} />
           ),
         };
       case "feedWorkers":
@@ -382,8 +409,8 @@ export default function LandManagerAlertsView({
           action: (
             <LinkAction href="/land-manager/production" label="Find workers" />
           ),
-          details: card && (
-            <NoWorkersAlerts noWorkersAlerts={card.noWorkersAlerts} />
+          details: dashboard && (
+            <NoWorkersAlerts noWorkersAlerts={dashboard.noWorkersAlerts} />
           ),
         };
       case "missingWorkers":
@@ -392,9 +419,9 @@ export default function LandManagerAlertsView({
           action: (
             <LinkAction href="/land-manager/production" label="Find workers" />
           ),
-          details: card && (
+          details: dashboard && (
             <AssignedWorkersAlerts
-              assignedWorkersAlerts={card.assignedWorkersAlerts}
+              assignedWorkersAlerts={dashboard.assignedWorkersAlerts}
             />
           ),
         };
@@ -406,9 +433,9 @@ export default function LandManagerAlertsView({
               than they earn.
             </>
           ),
-          details: card && (
+          details: dashboard && (
             <NegativeDECAlerts
-              negativeDECAlerts={card.negativeDECNaturalResourceDeeds}
+              negativeDECAlerts={dashboard.negativeDECNaturalResourceDeeds}
             />
           ),
         };
@@ -420,9 +447,9 @@ export default function LandManagerAlertsView({
               than they earn.
             </>
           ),
-          details: card && (
+          details: dashboard && (
             <NegativeDECAlerts
-              negativeDECAlerts={card.negativeDECOtherResourceDeeds}
+              negativeDECAlerts={dashboard.negativeDECOtherResourceDeeds}
             />
           ),
         };
@@ -431,9 +458,9 @@ export default function LandManagerAlertsView({
           description: (
             <>{plural(n, "card")} staked on terrain that lowers their PP.</>
           ),
-          details: card && (
+          details: dashboard && (
             <TerrainBoostsCard
-              terrainBoosts={card.terrainBoostAlerts.negative}
+              terrainBoosts={dashboard.terrainBoostAlerts.negative}
             />
           ),
         };
@@ -445,8 +472,10 @@ export default function LandManagerAlertsView({
               energized — the core is wasted there.
             </>
           ),
-          details: card && (
-            <PowerCoreAlerts powerCoreAlerts={card.powerCoreWhileEnergized} />
+          details: dashboard && (
+            <PowerCoreAlerts
+              powerCoreAlerts={dashboard.powerCoreWhileEnergized}
+            />
           ),
         };
       case "missingBloodline":
@@ -457,9 +486,9 @@ export default function LandManagerAlertsView({
               that bloodline.
             </>
           ),
-          details: card && (
+          details: dashboard && (
             <MissingBloodLineBoostAlerts
-              missingBloodLineBoostAlerts={card.missingBloodLineBoost}
+              missingBloodLineBoostAlerts={dashboard.missingBloodLineBoost}
             />
           ),
         };
@@ -471,8 +500,8 @@ export default function LandManagerAlertsView({
               not counted.
             </>
           ),
-          details: card && (
-            <TooMuchPPAlerts tooMuchBasePP={card.tooMuchBasePP} />
+          details: dashboard && (
+            <TooMuchPPAlerts tooMuchBasePP={dashboard.tooMuchBasePP} />
           ),
         };
       case "rationingLite":
@@ -483,9 +512,9 @@ export default function LandManagerAlertsView({
               penalty.
             </>
           ),
-          details: card && (
+          details: dashboard && (
             <RationingLiteAlerts
-              rationingLiteAlerts={card.rationingLiteAlerts}
+              rationingLiteAlerts={dashboard.rationingLiteAlerts}
             />
           ),
         };
@@ -560,9 +589,9 @@ export default function LandManagerAlertsView({
               plot.
             </>
           ),
-          details: card && (
+          details: dashboard && (
             <TerrainBoostsCard
-              terrainBoosts={card.terrainBoostAlerts.zeroNonNeutral}
+              terrainBoosts={dashboard.terrainBoostAlerts.zeroNonNeutral}
             />
           ),
         };
@@ -571,9 +600,9 @@ export default function LandManagerAlertsView({
           description: (
             <>{plural(n, "neutral card")} get no terrain boost on their plot.</>
           ),
-          details: card && (
+          details: dashboard && (
             <TerrainBoostsCard
-              terrainBoosts={card.terrainBoostAlerts.zeroNeutral}
+              terrainBoosts={dashboard.terrainBoostAlerts.zeroNeutral}
             />
           ),
         };

@@ -18,7 +18,10 @@ import {
 } from "@/lib/shared/deedEnrichment";
 import { groupCards } from "@/lib/shared/player/groupedCards";
 import { toPlayerLandCards } from "@/lib/shared/player/landCards";
-import { buildCardAlerts } from "@/lib/shared/player/playerAlerts";
+import {
+  buildPlayerAlerts,
+  findUnassignedTitlesAndTotems,
+} from "@/lib/shared/player/playerAlerts";
 import { mapRegionDataToDeedComplete } from "@/lib/shared/deedMapping";
 import {
   buildPlayerOverview,
@@ -26,7 +29,7 @@ import {
 } from "@/lib/shared/player/playerOverview";
 import { processPlayerRegionInformation } from "@/lib/shared/player/playerRegion";
 import { buildPlaygroundData } from "@/lib/shared/player/playground";
-import { CardAlerts } from "@/types/cardAlerts";
+import { PlayerAlerts } from "@/types/playerAlerts";
 import { DeedComplete } from "@/types/deed";
 import { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import { SplDeedHarvestActionsResponse } from "@/types/deedHarvest";
@@ -43,6 +46,7 @@ import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 import { StakedAssets } from "@/types/stakedAssets";
 import { SplTaxes } from "@/types/splTaxes";
+import { SplInventory } from "@/types/spl/inventory";
 import pLimit from "p-limit";
 
 /**
@@ -66,6 +70,7 @@ const stakedAssetsCache = createBrowserCache<StakedAssets>(PLAYER_TTL_MS);
 const taxesCache = createBrowserCache<SplTaxes>(PLAYER_TTL_MS);
 const cardDetailsCache = createBrowserCache<SplCardDetails[]>(SHARED_TTL_MS);
 const pricesCache = createBrowserCache<Prices>(PLAYER_TTL_MS);
+const inventoryCache = createBrowserCache<SplInventory[]>(PLAYER_TTL_MS);
 
 /** Staked-asset reads in flight at once (per tab). */
 const STAKED_ASSETS_CONCURRENCY = 8;
@@ -137,6 +142,14 @@ export function loadCardDetails(): Promise<SplCardDetails[]> {
 /** Shared resource DEC prices (server cache; memoized per tab). */
 export function loadResourcePrices(): Promise<Prices> {
   return pricesCache("resource-prices", () => getSharedResourcePrices());
+}
+
+/** `/players/inventory` — items incl. titles / totems with their stake dates. */
+export function loadPlayerInventory(player: string): Promise<SplInventory[]> {
+  const p = normalize(player);
+  return inventoryCache(`${p}:inventory`, () =>
+    splBrowser.fetchPlayerInventory(p)
+  );
 }
 
 // ── Page loaders ─────────────────────────────────────────────────────────────
@@ -251,24 +264,31 @@ export function enrichDeedsWithStakedAssets(
 }
 
 /** Card alerts for the player dashboard / land manager. */
-export async function loadPlayerCardAlerts(
-  player: string
-): Promise<CardAlerts> {
+export async function loadPlayerAlerts(player: string): Promise<PlayerAlerts> {
   const p = normalize(player);
   if (!p) throw new Error("Player name is required");
-  const [collection, balances, deeds, prices, cardDetails] = await Promise.all([
-    loadCardCollection(p),
-    splBrowser.fetchPlayerBalances(p),
-    loadPlayerDeedList(p),
-    loadResourcePrices(),
-    loadCardDetails(),
-  ]);
+  const [collection, balances, deeds, prices, cardDetails, inventory] =
+    await Promise.all([
+      loadCardCollection(p),
+      splBrowser.fetchPlayerBalances(p),
+      loadPlayerDeedList(p),
+      loadResourcePrices(),
+      loadCardDetails(),
+      loadPlayerInventory(p),
+    ]);
   const enriched = await enrichWithProductionInfo(
     deeds,
     prices,
     deedTaxesFor(p)
   );
-  return buildCardAlerts(p, collection, balances, enriched, cardDetails);
+  return buildPlayerAlerts(
+    p,
+    collection,
+    balances,
+    enriched,
+    cardDetails,
+    findUnassignedTitlesAndTotems(inventory)
+  );
 }
 
 /** "Finished building / Full store" deed alerts. */

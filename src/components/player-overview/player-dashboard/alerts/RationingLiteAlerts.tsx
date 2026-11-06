@@ -3,7 +3,7 @@ import { Box, Stack, Tooltip, Typography } from "@mui/material";
 
 import { formatCompactNumber } from "@/lib/formatters";
 import { rationing_icon_url } from "@/lib/shared/statics_icon_urls";
-import { DeedInfo } from "@/types/cardAlerts";
+import { DeedInfo } from "@/types/playerAlerts";
 import Image from "next/image";
 import React from "react";
 import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotInfo";

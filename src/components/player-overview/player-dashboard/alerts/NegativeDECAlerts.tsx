@@ -1,5 +1,5 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
-import { NegativeDecAlert } from "@/types/cardAlerts";
+import { NegativeDecAlert } from "@/types/playerAlerts";
 import { Box, Stack, Typography } from "@mui/material";
 
 import { formatFixed } from "@/lib/formatters";

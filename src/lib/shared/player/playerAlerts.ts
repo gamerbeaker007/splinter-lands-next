@@ -1,13 +1,15 @@
 import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { determineCardMaxBCX, findCardRarity } from "@/lib/utils/cardUtil";
 import {
-  CardAlerts,
+  PlayerAlerts,
   CountAlert,
   DeedInfo,
   NegativeDecAlert,
   TerrainBoostAlerts,
+  StakeItemAlerts,
   TerrainCardInfo,
-} from "@/types/cardAlerts";
+  UnassignedStakeItem,
+} from "@/types/playerAlerts";
 import { DeedComplete } from "@/types/deed";
 import {
   bestTerrainBonusPct,
@@ -16,6 +18,7 @@ import {
   DeedType,
 } from "@/types/planner";
 import { SplBalance } from "@/types/spl/balance";
+import { SplInventory } from "@/types/spl/inventory";
 import { SplCardDetails } from "@/types/splCardDetails";
 import { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
 
@@ -48,17 +51,62 @@ function createDeedInfo(deed: DeedComplete): DeedInfo {
   };
 }
 
+/** Owned titles / totems that are not staked on any plot. */
+export type UnassignedTitlesAndTotems = Omit<
+  StakeItemAlerts,
+  "unusedPowerCores"
+>;
+
+/** A title or totem counts as on land while its stake has started and not ended. */
+function isStakedOnLand(item: SplInventory): boolean {
+  return item.stake_start_date != null && item.stake_end_date == null;
+}
+
+/**
+ * Titles (`type: "Title"`) and totems (`type: "Land"`, `sub_type: "Totem"`) in
+ * the player's inventory that are not staked on a plot, grouped by name.
+ * Items listed on the market are left out: they are not idle by accident.
+ */
+export function findUnassignedTitlesAndTotems(
+  inventory: SplInventory[]
+): UnassignedTitlesAndTotems {
+  const titles = new Map<string, number>();
+  const totems = new Map<string, number>();
+  for (const item of inventory) {
+    const target =
+      item.type === "Title"
+        ? titles
+        : item.type === "Land" && item.sub_type === "Totem"
+          ? totems
+          : null;
+    if (!target || item.listed || isStakedOnLand(item)) continue;
+    target.set(item.name, (target.get(item.name) ?? 0) + 1);
+  }
+  const toList = (m: Map<string, number>): UnassignedStakeItem[] =>
+    [...m].map(([name, count]) => ({ name, count }));
+  return {
+    unassignedTitles: toList(titles),
+    unassignedTotems: toList(totems),
+  };
+}
+
+/** Total number of titles / totems across the unassigned groups. */
+export function countUnassigned(items: UnassignedStakeItem[]): number {
+  return items.reduce((sum, i) => sum + i.count, 0);
+}
+
 /**
  * Analyzes the player's cards and deeds to identify potential issues.
  * `deeds` must already carry production info (`enrichWithProductionInfo`).
  */
-export function buildCardAlerts(
+export function buildPlayerAlerts(
   player: string,
   playerCardCollection: SplPlayerCardCollection[],
   playerBalances: SplBalance[],
   enrichedPlayerData: DeedComplete[],
-  cardDetails: SplCardDetails[]
-): CardAlerts {
+  cardDetails: SplCardDetails[],
+  unassigned: UnassignedTitlesAndTotems
+): PlayerAlerts {
   const ownedPowerCores = Number(
     playerBalances.find((b) => b.token === "POWER_CORE_PURCHASES")?.balance ?? 0
   );
@@ -93,11 +141,14 @@ export function buildCardAlerts(
     negativeDECNaturalResourceDeeds: negativeAlerts.negativeNaturalResource,
     negativeDECOtherResourceDeeds: negativeAlerts.negativeOtherResource,
     tooMuchBasePP: tooMuchBasePP,
-    unusedPowerSource: powerSourceAlerts.unusedPowerSource,
     noPowerSource: powerSourceAlerts.noPowerSource,
     powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
     missingBloodLineBoost: missingBloodLineBoost,
     rationingLiteAlerts: rationingLiteAlerts,
+    stakeItems: {
+      unusedPowerCores: powerSourceAlerts.unusedPowerSource,
+      ...unassigned,
+    },
   };
 }
 

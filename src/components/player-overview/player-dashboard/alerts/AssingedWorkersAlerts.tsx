@@ -1,5 +1,5 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
-import { CountAlert } from "@/types/cardAlerts";
+import { CountAlert } from "@/types/playerAlerts";
 import { Box, Typography } from "@mui/material";
 
 import React from "react";

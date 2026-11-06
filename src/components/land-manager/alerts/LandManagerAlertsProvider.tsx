@@ -7,7 +7,7 @@ import { useWorksiteAlerts } from "@/hooks/useWorksiteAlerts";
 import { invalidatePlayerBrowserCaches } from "@/lib/frontend/browser-cache";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import {
-  loadPlayerCardAlerts,
+  loadPlayerAlerts,
   loadPlayerDeedAlerts,
 } from "@/lib/frontend/player-data";
 import {
@@ -85,11 +85,11 @@ export function LandManagerAlertsProvider({
   // alerts load below shares its fresh deed read.
   const playerKey = username ? `${username}\u0000${refreshKey}` : null;
   const force = refreshKey > 0;
-  const cardAlerts = useAsyncData(
+  const playerAlerts = useAsyncData(
     playerKey,
     () => {
       if (force) invalidatePlayerBrowserCaches(username);
-      return loadPlayerCardAlerts(username);
+      return loadPlayerAlerts(username);
     },
     { errorMessage: "Failed to load player alerts" }
   );
@@ -109,7 +109,7 @@ export function LandManagerAlertsProvider({
       globalShortfall: regionData.globalShortfall,
       globalExcess: regionData.globalExcess,
       worksiteAlerts,
-      cardAlerts: cardAlerts.data ?? null,
+      playerAlerts: playerAlerts.data ?? null,
       deedAlerts: deedAlerts.data ?? null,
     }),
     [
@@ -121,7 +121,7 @@ export function LandManagerAlertsProvider({
       regionData.globalShortfall,
       regionData.globalExcess,
       worksiteAlerts,
-      cardAlerts.data,
+      playerAlerts.data,
       deedAlerts.data,
     ]
   );
@@ -133,20 +133,20 @@ export function LandManagerAlertsProvider({
         poolLoading ||
         regionData.loading ||
         worksiteLoading ||
-        cardAlerts.loading ||
+        playerAlerts.loading ||
         deedAlerts.loading,
       input,
       alerts,
       counts: countAlertsBySeverity(alerts),
-      playerAlertsError: cardAlerts.error ?? deedAlerts.error,
+      playerAlertsError: playerAlerts.error ?? deedAlerts.error,
     };
   }, [
     input,
     poolLoading,
     regionData.loading,
     worksiteLoading,
-    cardAlerts.loading,
-    cardAlerts.error,
+    playerAlerts.loading,
+    playerAlerts.error,
     deedAlerts.loading,
     deedAlerts.error,
   ]);

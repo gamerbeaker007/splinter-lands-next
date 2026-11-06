@@ -1,5 +1,5 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
-import { DeedInfo } from "@/types/cardAlerts";
+import { DeedInfo } from "@/types/playerAlerts";
 import { Box, Typography } from "@mui/material";
 
 import React from "react";

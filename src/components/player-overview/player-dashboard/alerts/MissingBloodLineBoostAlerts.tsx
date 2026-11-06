@@ -1,7 +1,7 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
 import { Box, Typography } from "@mui/material";
 
-import { DeedInfo } from "@/types/cardAlerts";
+import { DeedInfo } from "@/types/playerAlerts";
 import React from "react";
 import { PlotInfo } from "../../deed-overview/land-deed-card/info-sections/PlotInfo";
 import { ManageLink } from "../../deed-overview/land-deed-card/link-components/ManageLink";

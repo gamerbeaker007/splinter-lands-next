@@ -1,6 +1,6 @@
 "use client";
 
-import { splBrowser } from "@/lib/frontend/spl-browser-api";
+import { loadPlayerInventory } from "@/lib/frontend/player-data";
 import { SplInventory } from "@/types/spl/inventory";
 
 import { useAsyncData } from "./useAsyncData";
@@ -8,7 +8,7 @@ import { useAsyncData } from "./useAsyncData";
 export function usePlayerInventory(playerName: string | null) {
   const { data, loading } = useAsyncData<SplInventory[]>(
     playerName,
-    () => splBrowser.fetchPlayerInventory(playerName as string),
+    () => loadPlayerInventory(playerName as string),
     { errorMessage: "Failed to load inventory" }
   );
 

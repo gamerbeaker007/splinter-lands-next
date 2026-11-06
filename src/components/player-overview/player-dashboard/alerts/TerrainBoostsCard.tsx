@@ -1,5 +1,5 @@
 import { getDeedImg } from "@/lib/utils/deedUtil";
-import { TerrainCardInfo } from "@/types/cardAlerts";
+import { TerrainCardInfo } from "@/types/playerAlerts";
 import { Avatar, Box, Stack, Typography } from "@mui/material";
 
 import {

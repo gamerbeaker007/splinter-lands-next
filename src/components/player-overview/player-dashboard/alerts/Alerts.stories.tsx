@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 import { Meta, StoryObj } from "@storybook/react";
-import type { DeedInfo } from "@/types/cardAlerts";
+import type { DeedInfo } from "@/types/playerAlerts";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
 import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
@@ -9,6 +9,7 @@ import { PowerCoreAlerts } from "./PowerCoreAlerts";
 import { RationingLiteAlerts } from "./RationingLiteAlerts";
 import { TerrainBoostsCard } from "./TerrainBoostsCard";
 import { TooMuchPPAlerts } from "./TooMuchPPAlerts";
+import { UnassignedStakeItemsAlert } from "./UnassignedStakeItemsAlert";
 
 const meta: Meta = {
   title: "Components/PlayerOverview/PlayerDashboard/Alerts",
@@ -201,6 +202,16 @@ const terrainBoosts = {
   zeroNonNeutral: [],
 };
 
+const unassignedTitles = [
+  { name: "The Proven", count: 1 },
+  { name: "The Saga Seeker", count: 2 },
+];
+
+const unassignedTotems = [
+  { name: "Common Totem", count: 3 },
+  { name: "Rare Totem", count: 1 },
+];
+
 export const DeedAlertSection: StoryObj = {
   render: () => (
     <Box display={"flex"} flexDirection={"column"}>
@@ -245,6 +256,16 @@ export const DeedAlertSection: StoryObj = {
         Terrain Boosts Card
       </Typography>
       <TerrainBoostsCard terrainBoosts={terrainBoosts.negative} />
+
+      <Typography variant="body1" fontWeight={600}>
+        Unassigned Titles
+      </Typography>
+      <UnassignedStakeItemsAlert items={unassignedTitles} />
+
+      <Typography variant="body1" fontWeight={600}>
+        Unassigned Totems
+      </Typography>
+      <UnassignedStakeItemsAlert items={unassignedTotems} />
     </Box>
   ),
 };

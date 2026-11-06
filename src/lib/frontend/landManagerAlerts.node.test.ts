@@ -5,7 +5,7 @@ import {
   LandManagerAlertsInput,
 } from "@/lib/frontend/landManagerAlerts";
 import type { RegionDECInfo } from "@/lib/shared/decPower";
-import type { CardAlerts, DeedInfo } from "@/types/cardAlerts";
+import type { PlayerAlerts, DeedInfo } from "@/types/playerAlerts";
 import { describe, expect, it } from "vitest";
 
 function decRegion(n: number, needed: number, inUse: number): RegionDECInfo {
@@ -38,24 +38,28 @@ const HEALTHY: LandManagerAlertsInput = {
     undeveloped: [],
     hasPending: false,
   },
-  cardAlerts: null,
+  playerAlerts: null,
   deedAlerts: null,
 };
 
 const DEED = { plotNumber: 1 } as DeedInfo;
 
-const NO_CARD_ALERTS: CardAlerts = {
+const NO_PLAYER_ALERTS: PlayerAlerts = {
   assignedWorkersAlerts: [],
   noWorkersAlerts: [],
   terrainBoostAlerts: { negative: [], zeroNeutral: [], zeroNonNeutral: [] },
   negativeDECNaturalResourceDeeds: [],
   negativeDECOtherResourceDeeds: [],
   tooMuchBasePP: [],
-  unusedPowerSource: 0,
   noPowerSource: [],
   powerCoreWhileEnergized: [],
   missingBloodLineBoost: [],
   rationingLiteAlerts: [],
+  stakeItems: {
+    unusedPowerCores: 0,
+    unassignedTitles: [],
+    unassignedTotems: [],
+  },
 };
 
 describe("buildLandManagerAlerts", () => {
@@ -102,11 +106,11 @@ describe("buildLandManagerAlerts", () => {
   it("includes player dashboard alerts and counts alert types per severity", () => {
     const alerts = buildLandManagerAlerts({
       ...HEALTHY,
-      cardAlerts: {
-        ...NO_CARD_ALERTS,
+      playerAlerts: {
+        ...NO_PLAYER_ALERTS,
         noPowerSource: [DEED, DEED],
         noWorkersAlerts: [DEED],
-        unusedPowerSource: 3,
+        stakeItems: { ...NO_PLAYER_ALERTS.stakeItems, unusedPowerCores: 3 },
         terrainBoostAlerts: {
           negative: [],
           zeroNeutral: [],
@@ -127,10 +131,34 @@ describe("buildLandManagerAlerts", () => {
     });
   });
 
+  it("reports unassigned titles and totems as high alerts, counting items", () => {
+    const alerts = buildLandManagerAlerts({
+      ...HEALTHY,
+      playerAlerts: {
+        ...NO_PLAYER_ALERTS,
+        stakeItems: {
+          unusedPowerCores: 0,
+          unassignedTitles: [{ name: "The Veteran", count: 1 }],
+          unassignedTotems: [
+            { name: "Rare Totem", count: 2 },
+            { name: "Epic Totem", count: 1 },
+          ],
+        },
+      },
+    });
+    expect(alerts.map((a) => [a.key, a.severity, a.count])).toEqual([
+      ["unassignedTitles", "error", 1],
+      ["unassignedTotems", "error", 3],
+    ]);
+  });
+
   it("never reports a negative unused power core count", () => {
     const alerts = buildLandManagerAlerts({
       ...HEALTHY,
-      cardAlerts: { ...NO_CARD_ALERTS, unusedPowerSource: -2 },
+      playerAlerts: {
+        ...NO_PLAYER_ALERTS,
+        stakeItems: { ...NO_PLAYER_ALERTS.stakeItems, unusedPowerCores: -2 },
+      },
     });
     expect(alerts).toEqual([]);
   });

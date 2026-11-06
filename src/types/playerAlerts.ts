@@ -54,16 +54,33 @@ export type BoostCategory = "negative" | "zeroNeutral" | "zeroNonNeutral";
 
 export type TerrainBoostAlerts = Record<BoostCategory, TerrainCardInfo[]>;
 
-export type CardAlerts = {
+/** Owned titles / totems of one kind (e.g. "Common Totem") not staked on a plot. */
+export type UnassignedStakeItem = {
+  name: string;
+  count: number;
+};
+
+/**
+ * Alerts on the player's land stake items (inventory / balance), as opposed to
+ * the card and deed checks: owned but not working on any plot.
+ */
+export type StakeItemAlerts = {
+  unusedPowerCores: number;
+  unassignedTitles: UnassignedStakeItem[];
+  unassignedTotems: UnassignedStakeItem[];
+};
+
+/** Player dashboard checks: staked cards, deed state and stake items. */
+export type PlayerAlerts = {
   assignedWorkersAlerts: CountAlert[];
   noWorkersAlerts: DeedInfo[];
   terrainBoostAlerts: TerrainBoostAlerts;
   negativeDECNaturalResourceDeeds: NegativeDecAlert[];
   negativeDECOtherResourceDeeds: NegativeDecAlert[];
   tooMuchBasePP: DeedInfo[];
-  unusedPowerSource: number;
   noPowerSource: DeedInfo[];
   powerCoreWhileEnergized: DeedInfo[];
   missingBloodLineBoost: DeedInfo[];
   rationingLiteAlerts: DeedInfo[];
+  stakeItems: StakeItemAlerts;
 };

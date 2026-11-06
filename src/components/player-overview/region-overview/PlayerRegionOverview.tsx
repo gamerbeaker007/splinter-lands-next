@@ -24,7 +24,7 @@ export default function PlayerRegionOverview() {
   const { selectedPlayer } = usePlayer();
   const { filters } = useFilters();
   const [includeTaxes, setIncludeTaxes] = useState(true);
-  const [includeTransferFee, setIncludeTransferFee] = useState(true);
+  const [includeTransferFee, setIncludeTransferFee] = useState(false);
 
   // Use server action hook
   const { data, taxData, loadingText, refetch } = usePlayerRegionData(

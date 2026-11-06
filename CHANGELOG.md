@@ -14,6 +14,24 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.46.0] - 2026-11-06
+
+### Added
+
+- **Unassigned titles/totems alerts (high):** Land Manager Alerts and the player
+  dashboard flag titles and totems that are owned but not staked on a plot
+  (from the player inventory's stake dates; market listings ignored).
+
+### Changed
+
+- **Dashboard Est. DEC Income:** Net DEC no longer includes the transfer fee on
+  resource deficits.
+- **Player region overview:** "Include Transfer Fee" is now off by default.
+- **Player inventory:** Read once per tab (60 s memo, cleared after a broadcast),
+  shared by the alerts and the Playground.
+
+---
+
 ## [v1.45.2] - 2026-11-03
 
 ### Updated

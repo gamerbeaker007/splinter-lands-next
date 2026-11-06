@@ -8,7 +8,11 @@ import {
   countAlertsBySeverity,
   type LandManagerAlertsInput,
 } from "@/lib/frontend/landManagerAlerts";
-import type { CardAlerts, DeedInfo } from "@/types/cardAlerts";
+import type {
+  PlayerAlerts,
+  DeedInfo,
+  UnassignedStakeItem,
+} from "@/types/playerAlerts";
 import type { BiomeModifiers } from "@/lib/utils/cardUtil";
 import type { DeedComplete } from "@/types/deed";
 import type { WorkerEligiblePlot } from "@/types/landManager";
@@ -346,7 +350,7 @@ const BASE_INPUT: LandManagerAlertsInput = {
   globalShortfall: 0,
   globalExcess: 0,
   worksiteAlerts: NO_WORKSITE_ALERTS,
-  cardAlerts: null,
+  playerAlerts: null,
   deedAlerts: [],
 };
 
@@ -367,8 +371,18 @@ const DEED_INFO: DeedInfo = {
   rationingLite: -0.1,
 };
 
+const UNASSIGNED_TITLES: UnassignedStakeItem[] = [
+  { name: "The Proven", count: 1 },
+  { name: "The Saga Seeker", count: 2 },
+];
+
+const UNASSIGNED_TOTEMS: UnassignedStakeItem[] = [
+  { name: "Common Totem", count: 3 },
+  { name: "Rare Totem", count: 1 },
+];
+
 /** A few player dashboard checks firing, across all three severities. */
-const CARD_ALERTS: CardAlerts = {
+const PLAYER_ALERTS: PlayerAlerts = {
   assignedWorkersAlerts: [{ deedInfo: DEED_INFO, assignedCards: 3 }],
   noWorkersAlerts: [{ ...DEED_INFO, plotNumber: 83 }],
   terrainBoostAlerts: { negative: [], zeroNeutral: [], zeroNonNeutral: [] },
@@ -377,11 +391,34 @@ const CARD_ALERTS: CardAlerts = {
   ],
   negativeDECOtherResourceDeeds: [],
   tooMuchBasePP: [],
-  unusedPowerSource: 2,
   noPowerSource: [{ ...DEED_INFO, plotNumber: 84 }],
   powerCoreWhileEnergized: [],
   missingBloodLineBoost: [],
   rationingLiteAlerts: [],
+  stakeItems: {
+    unusedPowerCores: 2,
+    unassignedTitles: UNASSIGNED_TITLES,
+    unassignedTotems: UNASSIGNED_TOTEMS,
+  },
+};
+
+/** No player dashboard check firing. */
+const NO_PLAYER_ALERTS: PlayerAlerts = {
+  assignedWorkersAlerts: [],
+  noWorkersAlerts: [],
+  terrainBoostAlerts: { negative: [], zeroNeutral: [], zeroNonNeutral: [] },
+  negativeDECNaturalResourceDeeds: [],
+  negativeDECOtherResourceDeeds: [],
+  tooMuchBasePP: [],
+  noPowerSource: [],
+  powerCoreWhileEnergized: [],
+  missingBloodLineBoost: [],
+  rationingLiteAlerts: [],
+  stakeItems: {
+    unusedPowerCores: 0,
+    unassignedTitles: [],
+    unassignedTotems: [],
+  },
 };
 
 /** Derive alerts and counts exactly the way the provider does. */
@@ -463,7 +500,24 @@ export const WorkerSlots: Story = {
 
 /** Player dashboard checks included in the Land Manager alerts. */
 export const PlayerDashboardAlerts: Story = {
-  args: viewProps({ cardAlerts: CARD_ALERTS }),
+  args: viewProps({ playerAlerts: PLAYER_ALERTS }),
+};
+
+/**
+ * Titles and totems owned but not staked on a plot (high). Expand Details for
+ * the per-kind chips.
+ */
+export const UnassignedTitlesAndTotems: Story = {
+  args: viewProps({
+    playerAlerts: {
+      ...NO_PLAYER_ALERTS,
+      stakeItems: {
+        unusedPowerCores: 0,
+        unassignedTitles: UNASSIGNED_TITLES,
+        unassignedTotems: UNASSIGNED_TOTEMS,
+      },
+    },
+  }),
 };
 
 /** Everything at once — the worst-case layout. */
@@ -476,6 +530,6 @@ export const AllAlerts: Story = {
     totalRequired: 430000,
     globalShortfall: 60000,
     worksiteAlerts: WORKSITE_ALERTS,
-    cardAlerts: CARD_ALERTS,
+    playerAlerts: PLAYER_ALERTS,
   }),
 };

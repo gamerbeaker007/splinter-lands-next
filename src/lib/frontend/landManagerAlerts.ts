@@ -3,7 +3,8 @@
 import type { PoolBufferRow } from "@/hooks/usePoolBufferAlerts";
 import type { WorksiteAlertsData } from "@/hooks/useWorksiteAlerts";
 import type { RegionDECInfo } from "@/lib/shared/decPower";
-import type { CardAlerts } from "@/types/cardAlerts";
+import { countUnassigned } from "@/lib/shared/player/playerAlerts";
+import type { PlayerAlerts } from "@/types/playerAlerts";
 import type { DeedAlertsInfo } from "@/types/deedAlertsInfo";
 import type { WorkerEligibilityResult } from "@/types/landManager";
 
@@ -35,6 +36,8 @@ export type LandManagerAlertKey =
   | "undeveloped"
   // Player dashboard checks
   | "noPower"
+  | "unassignedTitles"
+  | "unassignedTotems"
   | "finishedFull"
   | "noWorkers"
   | "missingWorkers"
@@ -70,7 +73,7 @@ export interface LandManagerAlertsInput {
   /** Worksite states blocked on the player — see `useWorksiteAlerts`. */
   worksiteAlerts: WorksiteAlertsData;
   /** Player dashboard card/deed checks; null while loading or on error. */
-  cardAlerts: CardAlerts | null;
+  playerAlerts: PlayerAlerts | null;
   /** Player dashboard "Finished building / Full store"; null while loading. */
   deedAlerts: DeedAlertsInfo[] | null;
 }
@@ -157,7 +160,7 @@ export function buildLandManagerAlerts(
     (sum, p) => sum + p.empty_slots,
     0
   );
-  const card = input.cardAlerts;
+  const dashboard = input.playerAlerts;
 
   const candidates: LandManagerAlert[] = [
     // ── High ────────────────────────────────────────────────────────────────
@@ -177,7 +180,19 @@ export function buildLandManagerAlerts(
       key: "noPower",
       severity: "error",
       title: "Plots without power",
-      count: card?.noPowerSource.length ?? 0,
+      count: dashboard?.noPowerSource.length ?? 0,
+    },
+    {
+      key: "unassignedTitles",
+      severity: "error",
+      title: "Titles not assigned to a plot",
+      count: countUnassigned(dashboard?.stakeItems.unassignedTitles ?? []),
+    },
+    {
+      key: "unassignedTotems",
+      severity: "error",
+      title: "Totems not assigned to a plot",
+      count: countUnassigned(dashboard?.stakeItems.unassignedTotems ?? []),
     },
     // ── Medium ──────────────────────────────────────────────────────────────
     {
@@ -208,55 +223,55 @@ export function buildLandManagerAlerts(
       key: "noWorkers",
       severity: "warning",
       title: "Plots without workers",
-      count: card?.noWorkersAlerts.length ?? 0,
+      count: dashboard?.noWorkersAlerts.length ?? 0,
     },
     {
       key: "missingWorkers",
       severity: "warning",
       title: "Plots with missing workers",
-      count: card?.assignedWorkersAlerts.length ?? 0,
+      count: dashboard?.assignedWorkersAlerts.length ?? 0,
     },
     {
       key: "negativeDecNatural",
       severity: "warning",
       title: "Negative DEC production (natural resource)",
-      count: card?.negativeDECNaturalResourceDeeds.length ?? 0,
+      count: dashboard?.negativeDECNaturalResourceDeeds.length ?? 0,
     },
     {
       key: "negativeDecOther",
       severity: "warning",
       title: "Negative DEC production (other resource)",
-      count: card?.negativeDECOtherResourceDeeds.length ?? 0,
+      count: dashboard?.negativeDECOtherResourceDeeds.length ?? 0,
     },
     {
       key: "negativeTerrainBoost",
       severity: "warning",
       title: "Cards on terrain with a negative boost",
-      count: card?.terrainBoostAlerts.negative.length ?? 0,
+      count: dashboard?.terrainBoostAlerts.negative.length ?? 0,
     },
     {
       key: "doublePower",
       severity: "warning",
       title: "Power core on an energized plot",
-      count: card?.powerCoreWhileEnergized.length ?? 0,
+      count: dashboard?.powerCoreWhileEnergized.length ?? 0,
     },
     {
       key: "missingBloodline",
       severity: "warning",
       title: "Missing bloodline boost",
-      count: card?.missingBloodLineBoost.length ?? 0,
+      count: dashboard?.missingBloodLineBoost.length ?? 0,
     },
     {
       key: "tooMuchBasePP",
       severity: "warning",
       title: "Base PP above the 100K cap",
-      count: card?.tooMuchBasePP.length ?? 0,
+      count: dashboard?.tooMuchBasePP.length ?? 0,
     },
     {
       key: "rationingLite",
       severity: "warning",
       title: "Rationing Lite on plots above 20K base PP",
-      count: card?.rationingLiteAlerts.length ?? 0,
+      count: dashboard?.rationingLiteAlerts.length ?? 0,
     },
     // ── Low ─────────────────────────────────────────────────────────────────
     {
@@ -281,19 +296,19 @@ export function buildLandManagerAlerts(
       key: "zeroBoostNonNeutral",
       severity: "info",
       title: "Zero terrain boost (not neutral)",
-      count: card?.terrainBoostAlerts.zeroNonNeutral.length ?? 0,
+      count: dashboard?.terrainBoostAlerts.zeroNonNeutral.length ?? 0,
     },
     {
       key: "unusedPowerCore",
       severity: "info",
       title: "Unused power cores",
-      count: Math.max(0, card?.unusedPowerSource ?? 0),
+      count: Math.max(0, dashboard?.stakeItems.unusedPowerCores ?? 0),
     },
     {
       key: "zeroBoostNeutral",
       severity: "info",
       title: "Zero terrain boost (neutral)",
-      count: card?.terrainBoostAlerts.zeroNeutral.length ?? 0,
+      count: dashboard?.terrainBoostAlerts.zeroNeutral.length ?? 0,
     },
   ];
 
