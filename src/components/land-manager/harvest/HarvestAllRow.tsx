@@ -6,13 +6,15 @@ import ActionCard, {
 } from "@/components/land-manager/harvest/ActionCard";
 import { useHarvestAllAction } from "@/hooks/useHarvestAllAction";
 import HarvestRewardDialog from "@/components/land-manager/harvest/HarvestRewardDialog";
+import HarvestRewardReplay from "@/components/land-manager/harvest/HarvestRewardReplay";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
+import type { HarvestReward } from "@/lib/shared/harvestRewards";
 import { land_worksite_select_grain_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, DonationConfig } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { Agriculture as HarvestIcon } from "@mui/icons-material";
 import { Chip } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -22,6 +24,7 @@ interface Props {
   onBusyChange: (busy: boolean) => void;
   onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
   onSuccess: () => void;
+  todayRewards: HarvestReward[];
 }
 
 export default function HarvestAllRow({
@@ -32,8 +35,12 @@ export default function HarvestAllRow({
   onBusyChange,
   onPlan,
   onSuccess,
+  todayRewards,
 }: Props) {
   const { openConfigDialog } = useLandManagerContext();
+  const [replayRewards, setReplayRewards] = useState<HarvestReward[] | null>(
+    null
+  );
 
   const action = useHarvestAllAction({
     username,
@@ -76,6 +83,14 @@ export default function HarvestAllRow({
         onClick={run}
         onSettings={() => openConfigDialog("enabled_regions")}
         settingsLabel="Harvest All settings"
+        cornerAction={
+          todayRewards.length > 0 && (
+            <HarvestRewardReplay
+              label="Replay today's Harvest All rewards"
+              onClick={() => setReplayRewards(todayRewards)}
+            />
+          )
+        }
         strategy={
           <>
             <Chip
@@ -102,6 +117,12 @@ export default function HarvestAllRow({
         <HarvestRewardDialog
           rewards={action.rewards}
           onClose={action.clearRewards}
+        />
+      )}
+      {replayRewards && (
+        <HarvestRewardDialog
+          rewards={replayRewards}
+          onClose={() => setReplayRewards(null)}
         />
       )}
     </ActionCardColumn>

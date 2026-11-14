@@ -4,10 +4,14 @@ import {
   HARVEST_MYTHICS_PRODUCTION_OPS_PER_TX,
   HARVEST_MYTHICS_PRODUCTION_TX_IDS,
 } from "@/lib/shared/fixtures/harvestMythicsProductionBatch";
+import {
+  HARVEST_REVEAL_REPLAY_LOOKUPS,
+  HARVEST_REVEAL_REPLAY_TX_IDS,
+} from "@/lib/shared/fixtures/harvestRevealReplay";
 import { harvestRewardsFrom } from "@/lib/shared/harvestRewards";
 import { splOpTxIds } from "@/lib/shared/splTrxIds";
 import { totemFragmentLabel } from "@/lib/utils/totemFragmentUtil";
-import type { SplTrxResult } from "@/types/spl/trx";
+import type { SplTrxInfo, SplTrxResult } from "@/types/spl/trx";
 import { Alert, Button, Chip, Stack, Typography } from "@mui/material";
 import type { Meta, StoryObj } from "@storybook/react";
 import { useEffect, useMemo, useState } from "react";
@@ -26,19 +30,39 @@ import HarvestRewardReveal from "./HarvestRewardReveal";
 //                  only op 0 of each batch was ever seen.
 
 type LookupMode = "per-op" | "hive-tx-only";
+type ReplayBatchId = "production" | "provided";
 
-function replayProductionRun(mode: LookupMode) {
+const REPLAY_BATCHES: Record<
+  ReplayBatchId,
+  {
+    txIds: readonly string[];
+    opsPerTx: number;
+    lookups: Record<string, SplTrxInfo>;
+  }
+> = {
+  production: {
+    txIds: HARVEST_MYTHICS_PRODUCTION_TX_IDS,
+    opsPerTx: HARVEST_MYTHICS_PRODUCTION_OPS_PER_TX,
+    lookups: HARVEST_MYTHICS_PRODUCTION_LOOKUPS,
+  },
+  provided: {
+    txIds: HARVEST_REVEAL_REPLAY_TX_IDS,
+    opsPerTx: 4,
+    lookups: HARVEST_REVEAL_REPLAY_LOOKUPS,
+  },
+};
+
+function replayRun(batchId: ReplayBatchId, mode: LookupMode) {
+  const batch = REPLAY_BATCHES[batchId];
   const lookedUp =
     mode === "per-op"
-      ? HARVEST_MYTHICS_PRODUCTION_TX_IDS.flatMap((txId) =>
-          splOpTxIds(txId, HARVEST_MYTHICS_PRODUCTION_OPS_PER_TX)
-        )
-      : HARVEST_MYTHICS_PRODUCTION_TX_IDS;
+      ? batch.txIds.flatMap((txId) => splOpTxIds(txId, batch.opsPerTx))
+      : batch.txIds;
   const confirmed: (SplTrxResult | null)[] = lookedUp.map((id) => {
-    const outcome = parseTrxInfo(HARVEST_MYTHICS_PRODUCTION_LOOKUPS[id]);
+    const outcome = parseTrxInfo(batch.lookups[id]);
     return outcome.status === "success" ? outcome.result : null;
   });
-  return { lookedUp, rewards: harvestRewardsFrom(confirmed) };
+  return { lookedUp, rewards: harvestRewardsFrom(confirmed), batch };
 }
 
 /** The reveal the fix must produce: all 9, sorted common → epic. */
@@ -57,16 +81,18 @@ const EXPECTED_SEQUENCE = [
 // ── replay harness ────────────────────────────────────────────────────────────
 
 interface ReplayProps {
+  batch: ReplayBatchId;
   mode: LookupMode;
   /** Animation playback rate: 1 = live speed, 0.25 = four times slower. */
   speed: number;
 }
 
-function ProductionReplay({ mode, speed }: ReplayProps) {
-  const { lookedUp, rewards } = useMemo(
-    () => replayProductionRun(mode),
-    [mode]
-  );
+function ProductionReplay({ batch, mode, speed }: ReplayProps) {
+  const {
+    lookedUp,
+    rewards,
+    batch: replayBatch,
+  } = useMemo(() => replayRun(batch, mode), [batch, mode]);
   const [open, setOpen] = useState(false);
   // A new key remounts the reveal, which restarts every CSS animation.
   const [run, setRun] = useState(0);
@@ -94,11 +120,11 @@ function ProductionReplay({ mode, speed }: ReplayProps) {
       <Alert severity={mode === "per-op" ? "success" : "error"}>
         {mode === "per-op"
           ? "Fixed: every op is looked up by its SPL id."
-          : "Original bug: only the 11 Hive tx ids were looked up (op 0 of each batch)."}
+          : `Original bug: only the ${replayBatch.txIds.length} Hive tx ids were looked up (op 0 of each batch).`}
       </Alert>
       <Typography variant="body2">
-        {HARVEST_MYTHICS_PRODUCTION_TX_IDS.length} Hive transactions ·{" "}
-        {lookedUp.length} SPL lookups · {rewards.length} fragment rolls
+        {replayBatch.txIds.length} Hive transactions · {lookedUp.length} SPL
+        lookups · {rewards.length} fragment rolls
       </Typography>
       <Stack direction="row" gap={1} flexWrap="wrap">
         {[...counts].map(([label, n]) => (
@@ -148,8 +174,9 @@ function ProductionReplay({ mode, speed }: ReplayProps) {
 const meta: Meta<typeof ProductionReplay> = {
   title: "HarvestAnimation/ProductionRegression",
   component: ProductionReplay,
-  args: { speed: 1 },
+  args: { batch: "production", speed: 1 },
   argTypes: {
+    batch: { control: false },
     speed: {
       control: { type: "select" },
       options: [1, 0.5, 0.25, 0.1],
@@ -188,7 +215,7 @@ async function waitForRevealToFinish(dialog: HTMLElement) {
 
 /** What the user should have seen: all 9 fragment rolls (6 R, 2 E, 1 C). */
 export const ExpectedBehavior: Story = {
-  args: { mode: "per-op" },
+  args: { batch: "production", mode: "per-op" },
   play: async ({ canvasElement }) => {
     const dialog = await startAndGetDialog(canvasElement);
     const reveal = within(dialog);
@@ -216,7 +243,7 @@ export const ExpectedBehavior: Story = {
 
 /** What the user actually saw: only the 2 Rare fragments at op 0. */
 export const OriginalBugReproduction: Story = {
-  args: { mode: "hive-tx-only" },
+  args: { batch: "production", mode: "hive-tx-only" },
   play: async ({ canvasElement }) => {
     const dialog = await startAndGetDialog(canvasElement);
     const reveal = within(dialog);
@@ -226,6 +253,28 @@ export const OriginalBugReproduction: Story = {
     await expect(
       reveal.getAllByRole("img").map((img) => img.getAttribute("alt"))
     ).toEqual(["Rare Totem Fragment", "Rare Totem Fragment"]);
+    await waitForRevealToFinish(dialog);
+  },
+};
+
+/** Replays the 2026-11-14 operation IDs supplied for the reveal. */
+export const UserProvidedBatchReplay: Story = {
+  args: { batch: "provided", mode: "per-op" },
+  play: async ({ canvasElement }) => {
+    const dialog = await startAndGetDialog(canvasElement);
+    const reveal = within(dialog);
+    await expect(
+      reveal.getByText("12 totem fragments found!")
+    ).toBeInTheDocument();
+
+    const fragments = reveal
+      .getAllByRole("img")
+      .map((img) => img.getAttribute("alt"));
+    await expect(fragments).toEqual([
+      ...Array(6).fill("Common Totem Fragment"),
+      ...Array(5).fill("Rare Totem Fragment"),
+      "Epic Totem Fragment",
+    ]);
     await waitForRevealToFinish(dialog);
   },
 };

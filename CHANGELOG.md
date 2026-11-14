@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.47.0] - 2026-11-14
+
+### Added
+
+- **Harvest reward replay:** Replay today's confirmed special drops from the
+  Harvest All and Harvest Mythics action cards.
+
+---
+
 ## [v1.46.0] - 2026-11-06
 
 ### Added

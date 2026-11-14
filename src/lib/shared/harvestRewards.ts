@@ -72,6 +72,19 @@ export function harvestRewardsFrom(results: MaybeResult[]): HarvestReward[] {
   ];
 }
 
+/** Rewards from distinct confirmed operations, retaining repeat drops on one deed. */
+export function harvestRewardsByTransaction(
+  txIds: readonly string[],
+  txResults: ReadonlyMap<string, SplTrxResult>
+): HarvestReward[] {
+  return [...new Set(txIds)].flatMap((txId) =>
+    harvestRewardsFrom([txResults.get(txId)]).map((reward) => ({
+      ...reward,
+      key: `${txId}:${reward.key}`,
+    }))
+  );
+}
+
 const RARITY_ORDER = ["common", "rare", "epic", "legendary"];
 
 /**

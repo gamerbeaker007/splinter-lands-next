@@ -11,6 +11,10 @@ import {
   HARVEST_MYTHICS_PRODUCTION_OPS_PER_TX,
   HARVEST_MYTHICS_PRODUCTION_TX_IDS,
 } from "@/lib/shared/fixtures/harvestMythicsProductionBatch";
+import {
+  HARVEST_REVEAL_REPLAY_LOOKUPS,
+  HARVEST_REVEAL_REPLAY_TX_IDS,
+} from "@/lib/shared/fixtures/harvestRevealReplay";
 import { fragmentsIn, harvestRewardsFrom } from "@/lib/shared/harvestRewards";
 import { buildTaxCollectionOp } from "@/lib/shared/operations/opBuilders";
 import { hiveTxIdOf, hiveTxIdsOf, splOpTxIds } from "@/lib/shared/splTrxIds";
@@ -192,6 +196,29 @@ describe("Harvest Mythics — production batch of 2026-10-11", () => {
     const confirmed = await waitForTransactions(res.opTxIds);
     expect(countFragments(confirmed)).toEqual(EXPECTED);
     expect(hiveTxIdsOf(res.opTxIds)).toEqual(HARVEST_MYTHICS_PRODUCTION_TX_IDS);
+  });
+});
+
+describe("Harvest reveal replay — supplied operation IDs", () => {
+  it("parses all 44 ops and extracts 12 fragments", () => {
+    const outcomes = Object.values(HARVEST_REVEAL_REPLAY_LOOKUPS).map((info) =>
+      parseTrxInfo(info)
+    );
+    const confirmed = outcomes.map((outcome) =>
+      outcome.status === "success" ? outcome.result : null
+    );
+
+    expect(HARVEST_REVEAL_REPLAY_TX_IDS).toHaveLength(11);
+    expect(Object.keys(HARVEST_REVEAL_REPLAY_LOOKUPS)).toHaveLength(44);
+    expect(outcomes.every((outcome) => outcome.status === "success")).toBe(
+      true
+    );
+    expect(countFragments(confirmed)).toEqual({
+      TOTEMFR: 5,
+      TOTEMFE: 1,
+      TOTEMFC: 6,
+    });
+    expect(harvestRewardsFrom(confirmed)).toHaveLength(12);
   });
 });
 
