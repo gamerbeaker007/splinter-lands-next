@@ -166,6 +166,8 @@ interface Props {
   /** Opens the config section for this action; omitted when there is none. */
   onSettings?: () => void;
   settingsLabel?: string;
+  /** Optional action rendered outside the main card button. */
+  cornerAction?: ReactNode;
 }
 
 export default function ActionCard({
@@ -181,6 +183,7 @@ export default function ActionCard({
   onClick,
   onSettings,
   settingsLabel,
+  cornerAction,
 }: Props) {
   return (
     <Box
@@ -265,6 +268,12 @@ export default function ActionCard({
       </Tooltip>
 
       <ActionCardStatusIcons statuses={statuses} />
+
+      {cornerAction && (
+        <Box sx={{ position: "absolute", bottom: 4, right: 4, zIndex: 2 }}>
+          {cornerAction}
+        </Box>
+      )}
 
       {onSettings && (
         <Tooltip title={settingsLabel ?? `${title} settings`}>

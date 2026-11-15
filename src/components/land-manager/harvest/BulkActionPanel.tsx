@@ -7,6 +7,7 @@ import HarvestMythicsRow from "@/components/land-manager/harvest/HarvestMythicsR
 import MakeHarvestableRow from "@/components/land-manager/harvest/MakeHarvestableRow";
 import ProcessResourcesRow from "@/components/land-manager/harvest/ProcessResourcesRow";
 import TopUpPoolsRow from "@/components/land-manager/harvest/TopUpPoolsRow";
+import type { HarvestReward } from "@/lib/shared/harvestRewards";
 import {
   ActionPlan,
   DonationConfig,
@@ -33,6 +34,8 @@ interface Props {
   topUpPoolStrategies: TopUpPoolStrategy[];
   hasMythics: boolean;
   onSuccess?: () => void;
+  harvestRewards: HarvestReward[];
+  mythicRewards: HarvestReward[];
 }
 
 export default function BulkActionPanel({
@@ -49,6 +52,8 @@ export default function BulkActionPanel({
   topUpPoolStrategies,
   hasMythics,
   onSuccess,
+  harvestRewards,
+  mythicRewards,
 }: Props) {
   const router = useRouter();
   // Every action is plan-then-confirm: a row builds its plan and hands it here
@@ -130,6 +135,7 @@ export default function BulkActionPanel({
           onBusyChange={onHarvestBusy}
           onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
+          todayRewards={harvestRewards}
         />
 
         <HarvestMythicsRow
@@ -141,6 +147,7 @@ export default function BulkActionPanel({
           onBusyChange={onMythicHarvestBusy}
           onPlan={(plan, confirm) => setPending({ plan, confirm })}
           onSuccess={afterSuccess}
+          todayRewards={mythicRewards}
         />
 
         {/* Closes the rolling-buffer loop: Make Harvestable draws matured

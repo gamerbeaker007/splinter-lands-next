@@ -5,13 +5,15 @@ import ActionCard, {
   buildActionStatuses,
 } from "@/components/land-manager/harvest/ActionCard";
 import HarvestRewardDialog from "@/components/land-manager/harvest/HarvestRewardDialog";
+import HarvestRewardReplay from "@/components/land-manager/harvest/HarvestRewardReplay";
 import { useHarvestMythicsAction } from "@/hooks/useHarvestMythicsAction";
+import type { HarvestReward } from "@/lib/shared/harvestRewards";
 import { land_castle_icon_url } from "@/lib/shared/statics_icon_urls";
 import { ActionPlan, DonationConfig } from "@/types/landManager";
 import { SplProductionOverviewRegion } from "@/types/spl/landManager";
 import { AutoAwesome as MythicIcon } from "@mui/icons-material";
 import { Alert, Chip, CircularProgress } from "@mui/material";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Props {
   username: string;
@@ -22,6 +24,7 @@ interface Props {
   onBusyChange: (busy: boolean) => void;
   onPlan: (plan: ActionPlan, confirm: () => Promise<void>) => void;
   onSuccess: () => void;
+  todayRewards: HarvestReward[];
 }
 
 export default function HarvestMythicsRow({
@@ -33,7 +36,11 @@ export default function HarvestMythicsRow({
   onBusyChange,
   onPlan,
   onSuccess,
+  todayRewards,
 }: Props) {
+  const [replayRewards, setReplayRewards] = useState<HarvestReward[] | null>(
+    null
+  );
   const action = useHarvestMythicsAction({
     username,
     visibleRegions,
@@ -77,6 +84,14 @@ export default function HarvestMythicsRow({
           error: action.error,
         })}
         onClick={run}
+        cornerAction={
+          todayRewards.length > 0 && (
+            <HarvestRewardReplay
+              label="Replay today's Harvest Mythics rewards"
+              onClick={() => setReplayRewards(todayRewards)}
+            />
+          )
+        }
         strategy={
           <>
             <Chip
@@ -103,6 +118,12 @@ export default function HarvestMythicsRow({
         <HarvestRewardDialog
           rewards={action.rewards}
           onClose={action.clearRewards}
+        />
+      )}
+      {replayRewards && (
+        <HarvestRewardDialog
+          rewards={replayRewards}
+          onClose={() => setReplayRewards(null)}
         />
       )}
 

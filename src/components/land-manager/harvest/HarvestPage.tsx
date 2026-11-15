@@ -6,10 +6,12 @@ import RegionOverview from "@/components/land-manager/harvest/RegionOverview";
 import RegionResourceSummary from "@/components/land-manager/harvest/RegionResourceSummary";
 import TodayPanel from "@/components/land-manager/shared/TodayPanel";
 import { useAsyncData } from "@/hooks/useAsyncData";
+import { useTodayPanelData } from "@/hooks/useTodayPanelData";
 import { getPlayerMythicDeeds } from "@/lib/frontend/land-data";
 import { formatNumber } from "@/lib/formatters";
 import { useLandManagerContext } from "@/lib/frontend/context/LandManagerContext";
 import { NATURAL_RESOURCES, RESOURCE_ICON_MAP } from "@/lib/shared/statics";
+import { harvestRewardsByTransaction } from "@/lib/shared/harvestRewards";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import SettingsIcon from "@mui/icons-material/Settings";
 import {
@@ -50,6 +52,15 @@ export default function HarvestPage() {
   const donation = config.donation;
   const donationEnabled = donation.enabled && donation.pct > 0;
   const username = auth.username ?? "";
+  const today = useTodayPanelData(username, refreshKey);
+  const harvestRewards = harvestRewardsByTransaction(
+    today.data?.harvest?.harvest_transactions ?? [],
+    today.txResults
+  );
+  const mythicRewards = harvestRewardsByTransaction(
+    today.data?.mythicHarvest?.transactions ?? [],
+    today.txResults
+  );
 
   return (
     <>
@@ -158,6 +169,8 @@ export default function HarvestPage() {
               enabledMythicDeeds !== null && enabledMythicDeeds.length > 0
             }
             onSuccess={triggerRefresh}
+            harvestRewards={harvestRewards}
+            mythicRewards={mythicRewards}
           />
 
           {/* Both panes start closed. Their content stays mounted, so the data is
@@ -169,7 +182,7 @@ export default function HarvestPage() {
               </Typography>
             </AccordionSummary>
             <AccordionDetails>
-              <TodayPanel refreshKey={refreshKey} />
+              <TodayPanel today={today} />
             </AccordionDetails>
           </Accordion>
 

@@ -1,5 +1,6 @@
 import {
   fragmentsIn,
+  harvestRewardsByTransaction,
   harvestRewardsFrom,
   laborsLuckIn,
   revealOrder,
@@ -98,6 +99,29 @@ describe("harvestRewards", () => {
     expect(
       harvestRewardsFrom([harvestAll(null), taxCollection("a", false, null)])
     ).toEqual([]);
+  });
+
+  it("replays only logged confirmed operations, including repeat drops on one deed", () => {
+    const results = new Map<string, SplTrxResult>([
+      ["first", taxCollection("keep", true, "TOTEMFR")],
+      ["second", taxCollection("keep", true, "TOTEMFC")],
+      ["empty", taxCollection("other", false, null)],
+      ["other-day", harvestAll(CARD)],
+    ]);
+    const rewards = harvestRewardsByTransaction(
+      ["first", "second", "first", "empty", "pending"],
+      results
+    );
+    expect(rewards.map((r) => r.key)).toEqual([
+      "first:fragment:keep",
+      "second:fragment:keep",
+    ]);
+    expect(harvestRewardsByTransaction(["empty", "pending"], results)).toEqual(
+      []
+    );
+    expect(
+      harvestRewardsByTransaction(["other-day"], results)[0]
+    ).toMatchObject({ kind: "card", treasure: CARD });
   });
 
   it("reveals cards first, then fragments common → legendary", () => {
