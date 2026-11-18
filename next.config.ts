@@ -55,6 +55,7 @@ const contentSecurityPolicy = [
 const nextConfig: NextConfig = {
   output: "standalone",
   cacheComponents: true,
+  partialPrefetching: true,
   deploymentId,
   env: {
     NEXT_PUBLIC_APP_NAME: name,

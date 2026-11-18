@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.47.1] - 2026-11-18
+
+### Updated
+
+Update Dependencies (security)
+
+---
+
 ## [v1.47.0] - 2026-11-14
 
 ### Added
