@@ -14,6 +14,14 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.48.0] - 2026-11-20
+
+### Fixed
+
+- Fixed planning prerender errors and bloodline selector warnings while options load.
+
+---
+
 ## [v1.47.1] - 2026-11-18
 
 ### Updated

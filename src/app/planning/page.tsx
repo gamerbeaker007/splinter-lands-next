@@ -8,11 +8,11 @@ import {
   getActualResourcePrices,
   getTokenPrices,
 } from "@/lib/backend/actions/resources/prices-actions";
-import { headers } from "next/headers";
+import { connection } from "next/server";
 import { Suspense } from "react";
 
 async function PlanningTab() {
-  await headers(); // Ensure this is a server component
+  await connection();
   const [cardDetails, prices, spsRatio, tokenPriceData, regionTax, marketData] =
     await Promise.all([
       getCardDetails(),

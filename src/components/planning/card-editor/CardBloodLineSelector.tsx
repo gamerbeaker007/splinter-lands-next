@@ -1,6 +1,6 @@
 "use client";
 import { useCardBloodlineOptions } from "@/hooks/useCardBloodlineOptions";
-import { CardBloodline, CardElement } from "@/types/planner";
+import { CardBloodline } from "@/types/planner";
 import {
   Box,
   FormControl,
@@ -21,8 +21,8 @@ export type Props = {
 export function CardBloodLineSelector({ value, onChange }: Props) {
   const bloodlineOptions = useCardBloodlineOptions();
 
-  const handleChange = (e: SelectChangeEvent<CardElement>) => {
-    onChange(e.target.value as CardBloodline);
+  const handleChange = (e: SelectChangeEvent<CardBloodline>) => {
+    onChange(e.target.value);
   };
 
   const renderIcon = (bloodline: CardBloodline) => {
@@ -42,15 +42,14 @@ export function CardBloodLineSelector({ value, onChange }: Props) {
       <FormControl size="small" variant="outlined" fullWidth>
         <InputLabel sx={{ color: fontColor }}>Bloodline</InputLabel>
         <Tooltip title={value} placement={"top-start"}>
-          <Select<CardElement>
+          <Select<CardBloodline>
             value={value}
             onChange={handleChange}
             displayEmpty
             renderValue={(val) => {
-              const v = (val as CardBloodline) ?? value;
               return (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  {renderIcon(v)}
+                  {renderIcon(val)}
                 </Box>
               );
             }}
@@ -61,6 +60,9 @@ export function CardBloodLineSelector({ value, onChange }: Props) {
               ".MuiOutlinedInput-notchedOutline": { border: "none" },
             }}
           >
+            {value && !bloodlineOptions.includes(value) && (
+              <MenuItem value={value}>{value}</MenuItem>
+            )}
             {bloodlineOptions.map((bloodline) => (
               <MenuItem key={bloodline} value={bloodline}>
                 <ListItemIcon sx={{ minWidth: 32 }}>{bloodline}</ListItemIcon>
