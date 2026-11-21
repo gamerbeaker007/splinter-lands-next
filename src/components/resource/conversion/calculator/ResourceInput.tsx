@@ -18,12 +18,14 @@ export function ResourceInput({ resource, value, onChange }: Props) {
       minWidth={75}
       gap={1}
     >
-      <Image
-        src={RESOURCE_ICON_MAP[resource]}
-        alt={resource}
-        width={75}
-        height={75}
-      />
+      {RESOURCE_ICON_MAP[resource] && (
+        <Image
+          src={RESOURCE_ICON_MAP[resource]}
+          alt=""
+          width={75}
+          height={75}
+        />
+      )}
       <Typography variant="subtitle2">{resource}</Typography>
       <TextField
         type="text"
@@ -44,6 +46,7 @@ export function ResourceInput({ resource, value, onChange }: Props) {
           input: {
             inputMode: "decimal",
           },
+          htmlInput: { "aria-label": `${resource} amount` },
         }}
       />
     </Box>

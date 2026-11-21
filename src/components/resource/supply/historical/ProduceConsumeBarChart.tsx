@@ -1,5 +1,5 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box } from "@mui/material";
 import { Data } from "plotly.js";
@@ -30,7 +30,7 @@ const ProduceConsumeBarChart: React.FC<Props> = ({ data }) => {
       y: val.y,
       type: "bar",
       name: resource,
-      marker: { color: RESOURCE_COLOR_MAP[resource] || "black" },
+      marker: { color: resourceChartColor(resource) },
       barmode: "group",
     })
   );

@@ -3,6 +3,7 @@
 import AuraPriceBox from "@/components/resource/conversion/calculator/AuraPriceBox";
 import { ResourcePresets } from "@/components/resource/conversion/calculator/ResourcePresets";
 import { useResourceConversion } from "@/components/resource/conversion/calculator/userResourceConversion";
+import { ResourceIconToggleGroup } from "@/components/resource/ResourceIconToggleGroup";
 import { PresetName, RESOURCE_PRESETS } from "@/constants/conversion/presets";
 import {
   CALCULATOR_RESOURCES,
@@ -39,10 +40,14 @@ export function ResourceCalculator() {
 
   const [mode, setMode] = useState<Mode>("buy");
   const [decExtra, setDecExtra] = useState(0);
+  const [selectedResources, setSelectedResources] = useState<
+    CalculatorResource[]
+  >([]);
   const { prices, loading, error, fetchPrices } = usePrices();
   const { dec_total, sps_amount } = useResourceConversion(
     mode,
     resourcesInput,
+    selectedResources,
     decExtra,
     prices
   );
@@ -55,6 +60,9 @@ export function ResourceCalculator() {
   const applyPreset = (preset: PresetName) => {
     const { input, decExtra } = RESOURCE_PRESETS[preset];
     setResourcesInput(input);
+    setSelectedResources(
+      CALCULATOR_RESOURCES.filter((res) => input[res] !== 0)
+    );
     setDecExtra(decExtra);
   };
 
@@ -114,24 +122,46 @@ export function ResourceCalculator() {
           </Alert>
         )}
 
-        <Box display="flex" flexWrap="wrap" gap={1} alignItems="center">
-          {CALCULATOR_RESOURCES.map((res, i) => (
-            <Box key={res} display="flex" alignItems="center" gap={1}>
+        <Box>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Select resources
+          </Typography>
+          <ResourceIconToggleGroup
+            label="Calculator resources"
+            options={CALCULATOR_RESOURCES.map((resource) => ({
+              value: resource,
+              resource,
+              label: resource,
+            }))}
+            value={selectedResources}
+            onChange={(value) => {
+              setSelectedResources(value);
+              setDecExtra(0);
+            }}
+          />
+        </Box>
+        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+          {CALCULATOR_RESOURCES.filter((res) =>
+            selectedResources.includes(res)
+          ).map((res) => (
+            <Box key={res} display="flex" alignItems="center">
               <ResourceInput
                 resource={res}
                 value={resourcesInput[res]}
                 onChange={(val) => handleChange(res, val)}
               />
-              {i < CALCULATOR_RESOURCES.length - 1 && (
-                <Typography fontSize={24}>+</Typography>
-              )}
             </Box>
           ))}
-
-          <Typography fontSize={24} fontWeight="bold">
-            =
+        </Box>
+        {selectedResources.length === 0 && (
+          <Typography color="text.secondary">
+            Select a resource or choose a preset to enter amounts.
           </Typography>
-
+        )}
+        <Box>
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Total for selected resources
+          </Typography>
           <ResourceOutput
             dec={dec_total}
             sps={sps_amount}

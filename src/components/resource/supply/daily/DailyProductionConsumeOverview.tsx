@@ -1,29 +1,32 @@
 "use client";
 
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getLatestResourceSupply } from "@/lib/backend/actions/resources/supply-actions";
-import { Box } from "@mui/material";
+import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
+import { Box, Typography } from "@mui/material";
 import { ResourceCard } from "./ResrouceCard";
 
-export function DailyProduceConsumeOverview() {
-  const { data: latestResourcesSupply } = useAsyncData(
-    "latest-resource-supply",
-    () => getLatestResourceSupply(),
-    { errorMessage: "Failed to load resource supply" }
-  );
+export function DailyProduceConsumeOverview({
+  data,
+}: {
+  data: ResourceSupplyOverview | undefined;
+}) {
+  if (!data) return null;
+  if (Object.keys(data.resource).length === 0) {
+    return (
+      <Typography color="text.secondary">
+        No current data for the selected resources.
+      </Typography>
+    );
+  }
 
   return (
     <Box display="flex" flexWrap="wrap" gap={2}>
-      {latestResourcesSupply?.resource &&
-        Object.entries(latestResourcesSupply.resource).map(
-          ([resourceName, row]) => (
-            <ResourceCard
-              key={resourceName}
-              resourceName={resourceName}
-              row={row}
-            />
-          )
-        )}
+      {Object.entries(data.resource).map(([resourceName, row]) => (
+        <ResourceCard
+          key={resourceName}
+          resourceName={resourceName}
+          row={row}
+        />
+      ))}
     </Box>
   );
 }

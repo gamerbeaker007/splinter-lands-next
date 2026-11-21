@@ -1,7 +1,7 @@
 "use client";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { Box } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
 import React from "react";
@@ -36,7 +36,7 @@ export const ResourcePriceChart: React.FC<Props> = ({
       mode: "lines+markers",
       type: "scatter",
       name: symbol,
-      line: { color: RESOURCE_COLOR_MAP[symbol] ?? undefined },
+      line: { color: resourceChartColor(symbol) },
       marker: { size: 6 },
       hovertemplate: `<b>%{x}</b><br>${symbol}: %{y:.2f}<extra></extra>`,
     };

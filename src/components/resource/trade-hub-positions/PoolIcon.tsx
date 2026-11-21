@@ -17,15 +17,19 @@ export function PoolIcon({ resource, width, height }: Props) {
         width={width}
         height={height}
       />
-      <Typography ml={1} mr={1} fontSize={24}>
+      <Typography ml={1} mr={1} fontSize={Math.min(width, 24)}>
         -
       </Typography>
-      <Image
-        src={RESOURCE_ICON_MAP[resource]}
-        alt=""
-        width={width}
-        height={height}
-      />
+      {RESOURCE_ICON_MAP[resource] ? (
+        <Image
+          src={RESOURCE_ICON_MAP[resource]}
+          alt=""
+          width={width}
+          height={height}
+        />
+      ) : (
+        <Typography>{resource}</Typography>
+      )}
     </Box>
   );
 }

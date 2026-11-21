@@ -1,7 +1,7 @@
 "use client";
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { Box } from "@mui/material";
 import { Layout, ScatterData } from "plotly.js";
 import React from "react";
@@ -12,11 +12,15 @@ interface Props {
 
 export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
   const filteredData = data
-    .filter((d) => ["WOOD", "STONE", "IRON"].includes(d.token_symbol))
+    .filter(
+      (d) =>
+        ["WOOD", "STONE", "IRON"].includes(d.token_symbol) &&
+        typeof d.factor === "number" &&
+        Number.isFinite(d.factor)
+    )
     .map((d) => ({
       ...d,
       factor: parseFloat(d.factor.toFixed(2)),
-      grain_equivalent: parseFloat(d.grain_equivalent.toFixed(3)),
     }));
 
   const traces: Partial<ScatterData>[] = ["WOOD", "STONE", "IRON"].map(
@@ -28,7 +32,7 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
         mode: "lines+markers",
         type: "scatter",
         name: symbol,
-        line: { color: RESOURCE_COLOR_MAP[symbol] },
+        line: { color: resourceChartColor(symbol) },
         marker: { size: 6 },
         hovertemplate: `<b>%{x}</b><br>${symbol} factor: %{y}<extra></extra>`,
       };
@@ -75,7 +79,7 @@ export const ResourceFactorChart: React.FC<Props> = ({ data }) => {
           } as Partial<ScatterData>,
           {
             type: "scatter",
-            x: [filteredData[0]?.date, filteredData.at(-1)?.date],
+            x: [data[0]?.date, data.at(-1)?.date],
             y: [1, 1],
             mode: "lines",
             line: { dash: "dash", color: "gray" },

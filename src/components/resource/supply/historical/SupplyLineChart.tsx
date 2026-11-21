@@ -1,5 +1,5 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
@@ -50,7 +50,7 @@ const SupplyLineChart: React.FC<Props> = ({ data, type }) => {
       type: "scatter",
       mode: "lines+markers",
       name: resource,
-      line: { color: RESOURCE_COLOR_MAP[resource] || "black" },
+      line: { color: resourceChartColor(resource) },
     })
   );
 

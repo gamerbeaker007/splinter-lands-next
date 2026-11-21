@@ -1,6 +1,10 @@
 "use client";
 
 import { useAsyncData } from "@/hooks/useAsyncData";
+import {
+  ResourceChartFilter,
+  useResourceChartSelection,
+} from "@/components/resource/ResourceChartFilter";
 import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import {
@@ -25,6 +29,8 @@ export function TradeHubPage() {
     () => getAllTradeHubData(),
     { errorMessage: "Failed to load trade hub data" }
   );
+  const { symbols, selected, setSelection, filteredData } =
+    useResourceChartSelection(historicalTradeHubMetrics);
 
   return (
     <>
@@ -64,33 +70,56 @@ export function TradeHubPage() {
               <TradeHubCumulativeBurnChart data={historicalTradeHubMetrics} />
             </Box>
 
-            {/* Bottom section: Two side-by-side charts */}
-            <Box
-              display="flex"
-              flexDirection={isSmallScreen ? "column" : "row"}
-              gap={1}
-              mb={2}
-            >
-              <Box flex={1}>
-                <Typography variant="h6" gutterBottom>
-                  24-hour trade volume for each individual resource pool Total
-                </Typography>
-                <TradeHubVolumeChart data={historicalTradeHubMetrics} />
-              </Box>
-              <Box flex={1}>
-                <Typography variant="h6" gutterBottom>
-                  DEC burned per day across all pools
-                </Typography>
-                <TradeHubLineChart data={historicalTradeHubMetrics} />
-              </Box>
-            </Box>
-
-            <Box mt={3}>
-              <Typography variant="h6" gutterBottom>
-                Pool resource &amp; DEC quantities over time
+            <Typography variant="h6">Compare resource pools</Typography>
+            <Typography variant="body2" color="text.secondary">
+              Choose which pools to show below. Total DEC volume and the burn
+              summary above always include all pools.
+            </Typography>
+            {symbols.length > 0 && (
+              <ResourceChartFilter
+                symbols={symbols}
+                selected={selected}
+                onChange={setSelection}
+              />
+            )}
+            {selected.length === 0 && (
+              <Typography color="text.secondary">
+                Select resources to compare pools.
               </Typography>
-              <TradeHubQuantityHistoryChart data={historicalTradeHubMetrics} />
-            </Box>
+            )}
+            {selected.length > 0 && (
+              <>
+                <Box
+                  display="flex"
+                  flexDirection={isSmallScreen ? "column" : "row"}
+                  gap={1}
+                  mb={2}
+                >
+                  <Box flex={1}>
+                    <Typography variant="h6" gutterBottom>
+                      24-hour trade volume by resource and total DEC
+                    </Typography>
+                    <TradeHubVolumeChart
+                      data={historicalTradeHubMetrics}
+                      selectedSymbols={selected}
+                    />
+                  </Box>
+                  <Box flex={1}>
+                    <Typography variant="h6" gutterBottom>
+                      DEC burned per day by resource
+                    </Typography>
+                    <TradeHubLineChart data={filteredData ?? []} />
+                  </Box>
+                </Box>
+
+                <Box mt={3}>
+                  <Typography variant="h6" gutterBottom>
+                    Pool resource &amp; DEC quantities over time
+                  </Typography>
+                  <TradeHubQuantityHistoryChart data={filteredData ?? []} />
+                </Box>
+              </>
+            )}
           </Box>
         </>
       )}

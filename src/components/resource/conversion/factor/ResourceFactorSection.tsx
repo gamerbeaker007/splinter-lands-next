@@ -1,7 +1,12 @@
 "use client";
 
 import { useAsyncData } from "@/hooks/useAsyncData";
+import {
+  ResourceChartFilter,
+  useResourceChartSelection,
+} from "@/components/resource/ResourceChartFilter";
 import { getAllTradeHubData } from "@/lib/backend/api/internal/trade-hub-data";
+import { NATURAL_RESOURCES } from "@/lib/shared/statics";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import { ResourceFactorChart } from "./ResourceFactorChart";
 import { ResourcePriceChart } from "./ResourcePriceChart";
@@ -15,6 +20,8 @@ export function ResourceFactorSection() {
     () => getAllTradeHubData(),
     { errorMessage: "Failed to load trade hub data" }
   );
+  const { symbols, selected, setSelection, filteredData } =
+    useResourceChartSelection(tradeHubMetrics, NATURAL_RESOURCES);
 
   return (
     <Box minHeight={500} mt={4}>
@@ -43,6 +50,22 @@ export function ResourceFactorSection() {
         </Box>
       </Box>
 
+      {tradeHubMetrics && symbols.length > 0 && (
+        <>
+          <Typography variant="h6">Resources for price graphs</Typography>
+          <ResourceChartFilter
+            symbols={symbols}
+            selected={selected}
+            onChange={setSelection}
+            limitTags={4}
+          />
+        </>
+      )}
+      {tradeHubMetrics && selected.length === 0 && (
+        <Typography color="text.secondary">
+          Select resources to compare in the price graphs.
+        </Typography>
+      )}
       {/* Bottom section: Two side-by-side charts */}
       <Box
         display="flex"
@@ -57,8 +80,8 @@ export function ResourceFactorSection() {
             Shows how many resources you can acquire by spending 1000 DEC (~$1
             USD).
           </Typography>
-          {tradeHubMetrics ? (
-            <ResourcePriceChart data={tradeHubMetrics} mode="dec" logY={true} />
+          {filteredData && selected.length > 0 ? (
+            <ResourcePriceChart data={filteredData} mode="dec" logY={true} />
           ) : null}
         </Box>
 
@@ -69,9 +92,9 @@ export function ResourceFactorSection() {
           <Typography variant="body2">
             Shows the DEC cost to acquire 1000 units of each resource.
           </Typography>
-          {tradeHubMetrics ? (
+          {filteredData && selected.length > 0 ? (
             <ResourcePriceChart
-              data={tradeHubMetrics}
+              data={filteredData}
               mode="resource"
               logY={true}
             />

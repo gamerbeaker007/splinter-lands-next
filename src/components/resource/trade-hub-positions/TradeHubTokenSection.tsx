@@ -4,30 +4,26 @@ import { PlayerTradeHubPosition } from "@/generated/prisma/client";
 import { Box } from "@mui/material";
 import { TradeHubTokenShareChart } from "@/components/resource/trade-hub-positions/TradeHubTokenShareChart";
 import { TradeHubRankingList } from "@/components/resource/trade-hub-positions/TradeHubRankingList";
+import { playerPoolStanding } from "@/components/resource/trade-hub-positions/poolRankings";
 
 type Props = {
   token: string;
   playerTradeHubPositions: PlayerTradeHubPosition[];
+  rankedPositions: PlayerTradeHubPosition[];
   currentPlayer?: string;
 };
 
 export function TradeHubTokenSection({
   token,
   playerTradeHubPositions,
+  rankedPositions,
   currentPlayer,
 }: Props) {
-  const currentPlayerData = currentPlayer
-    ? playerTradeHubPositions.find((p) => p.player === currentPlayer)
-    : null;
-
-  const sorted = [...playerTradeHubPositions]
-    .filter((p) => typeof p.share_percentage === "number")
-    .sort((a, b) => b.share_percentage - a.share_percentage);
-
-  const top200 = sorted.slice(0, 200);
-
-  const currentPlayerRank =
-    sorted.findIndex((p) => p.player === (currentPlayerData?.player ?? "")) + 1;
+  const { position: currentPlayerData, rank } = playerPoolStanding(
+    playerTradeHubPositions,
+    rankedPositions,
+    currentPlayer ?? ""
+  );
 
   return (
     <Box display={"flex"} flexWrap={"wrap"} flexDirection={"column"} gap={2}>
@@ -49,8 +45,8 @@ export function TradeHubTokenSection({
       >
         <TradeHubRankingList
           tokePair={token}
-          listData={top200}
-          currentPlayerRank={currentPlayerRank}
+          listData={rankedPositions.slice(0, 200)}
+          currentPlayerRank={rank ?? 0}
           currentPlayerData={currentPlayerData}
         />
       </Box>

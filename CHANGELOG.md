@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.49.0] - 2026-11-21
+
+### Changed
+
+- Added resource filters to conversion, supply, and Trade Hub charts and calculators.
+- Added pool selection and player position summaries to Trade Hub Positions.
+
+---
+
 ## [v1.48.0] - 2026-11-20
 
 ### Fixed

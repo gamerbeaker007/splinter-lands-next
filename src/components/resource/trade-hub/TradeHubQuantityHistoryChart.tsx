@@ -1,6 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
@@ -28,7 +28,7 @@ const TradeHubQuantityHistoryChart: React.FC<Props> = ({ data }) => {
 
   const traces: Partial<ScatterData>[] = Object.entries(grouped).flatMap(
     ([symbol, val]) => {
-      const color = RESOURCE_COLOR_MAP[symbol] || "white";
+      const color = resourceChartColor(symbol);
       return [
         {
           x: val.x,

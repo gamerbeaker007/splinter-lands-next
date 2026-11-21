@@ -1,20 +1,30 @@
 "use client";
 
-import { useAsyncData } from "@/hooks/useAsyncData";
-import { getAllResourceSupply } from "@/lib/backend/actions/resources/supply-actions";
+import { ResourceSupplyOverview } from "@/types/resourceSupplyOverview";
 import { Box, Typography, useMediaQuery, useTheme } from "@mui/material";
 import ProduceConsumeBarChart from "./ProduceConsumeBarChart";
 import SupplyLineChart from "./SupplyLineChart";
 
-export function ProduceConsumeHistoricalOverview() {
+export function ProduceConsumeHistoricalOverview({
+  data: historicalResourcesSupply,
+}: {
+  data: ResourceSupplyOverview[] | undefined;
+}) {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down("md"));
 
-  const { data: historicalResourcesSupply } = useAsyncData(
-    "resource-supply",
-    () => getAllResourceSupply(),
-    { errorMessage: "Failed to load resource supply" }
-  );
+  if (
+    historicalResourcesSupply &&
+    !historicalResourcesSupply.some(
+      (entry) => Object.keys(entry.resource).length > 0
+    )
+  ) {
+    return (
+      <Typography color="text.secondary" mt={2}>
+        No historical data for the selected resources.
+      </Typography>
+    );
+  }
 
   return (
     <>

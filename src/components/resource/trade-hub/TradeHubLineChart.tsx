@@ -1,6 +1,6 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
@@ -32,7 +32,7 @@ const TradeHubLineChart: React.FC<Props> = ({ data }) => {
       type: "scatter",
       mode: "lines+markers",
       name: resource,
-      line: { color: RESOURCE_COLOR_MAP[resource] || "white" },
+      line: { color: resourceChartColor(resource) },
     })
   );
 

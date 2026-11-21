@@ -11,16 +11,18 @@ import { useMemo } from "react";
 export function useResourceConversion(
   mode: Mode,
   resourcesInput: Record<CalculatorResource, number>,
+  selectedResources: CalculatorResource[],
   decExtra: number,
   prices: Prices | null
 ) {
   const dec_total = useMemo(() => {
     if (!prices) return 0;
     return CALCULATOR_RESOURCES.reduce((sum, res) => {
+      if (!selectedResources.includes(res)) return sum;
       const amount = resourcesInput[res] || 0;
       return sum + calcDECPrice(mode, res, amount, prices);
     }, 0);
-  }, [resourcesInput, mode, prices]);
+  }, [resourcesInput, selectedResources, mode, prices]);
 
   const sps_amount = useMemo(() => {
     if (!prices) return 0;

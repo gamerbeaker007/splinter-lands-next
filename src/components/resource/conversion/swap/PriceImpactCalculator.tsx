@@ -16,15 +16,13 @@ import { SplLandPool } from "@/types/spl/landPools";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import {
   Box,
+  Autocomplete,
   Card,
   CardContent,
   Chip,
   Divider,
-  FormControl,
-  InputLabel,
-  MenuItem,
+  IconButton,
   Paper,
-  Select,
   Stack,
   Table,
   TableBody,
@@ -280,7 +278,7 @@ function HopTable({ hops }: { hops: HopDetail[] }) {
 
 export function PriceImpactCalculator({ data, timeStamp }: Props) {
   const resourceSymbols = data.map((p) => p.token_symbol);
-  const allSymbols = ["DEC", ...resourceSymbols];
+  const allSymbols = Array.from(new Set(["DEC", ...resourceSymbols]));
 
   const [fromSymbol, setFromSymbol] = useState(resourceSymbols[0] ?? "DEC");
   const [toSymbol, setToSymbol] = useState("DEC");
@@ -343,55 +341,55 @@ export function PriceImpactCalculator({ data, timeStamp }: Props) {
           <Stack spacing={3}>
             {/* From / To selectors */}
             <Stack direction="row" gap={2} alignItems="center" flexWrap="wrap">
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>From</InputLabel>
-                <Select
-                  value={fromSymbol}
-                  label="From"
-                  onChange={(e) => {
-                    setFromSymbol(e.target.value);
-                    setPayAmount("");
-                    setReceiveAmount("");
-                  }}
-                >
-                  {allSymbols.map((s) => (
-                    <MenuItem key={s} value={s}>
-                      <Stack direction="row" gap={1} alignItems="center">
-                        <ResourceIcon symbol={s} size={20} />
-                        <span>{s}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                size="small"
+                disableClearable
+                options={allSymbols}
+                value={fromSymbol}
+                sx={{ minWidth: 160, flex: 1 }}
+                onChange={(_, value) => {
+                  setFromSymbol(value);
+                  setPayAmount("");
+                  setReceiveAmount("");
+                }}
+                renderInput={(params) => <TextField {...params} label="From" />}
+                renderOption={(props, symbol) => (
+                  <Box component="li" {...props} key={symbol}>
+                    <Stack direction="row" gap={1} alignItems="center">
+                      <ResourceIcon symbol={symbol} size={20} />
+                      <span>{symbol}</span>
+                    </Stack>
+                  </Box>
+                )}
+              />
 
               <Tooltip title="Swap direction">
-                <Box sx={{ cursor: "pointer" }} onClick={swapFromTo}>
+                <IconButton aria-label="Swap direction" onClick={swapFromTo}>
                   <SwapHorizIcon />
-                </Box>
+                </IconButton>
               </Tooltip>
 
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <InputLabel>To</InputLabel>
-                <Select
-                  value={toSymbol}
-                  label="To"
-                  onChange={(e) => {
-                    setToSymbol(e.target.value);
-                    setPayAmount("");
-                    setReceiveAmount("");
-                  }}
-                >
-                  {allSymbols.map((s) => (
-                    <MenuItem key={s} value={s}>
-                      <Stack direction="row" gap={1} alignItems="center">
-                        <ResourceIcon symbol={s} size={20} />
-                        <span>{s}</span>
-                      </Stack>
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Autocomplete
+                size="small"
+                disableClearable
+                options={allSymbols}
+                value={toSymbol}
+                sx={{ minWidth: 160, flex: 1 }}
+                onChange={(_, value) => {
+                  setToSymbol(value);
+                  setPayAmount("");
+                  setReceiveAmount("");
+                }}
+                renderInput={(params) => <TextField {...params} label="To" />}
+                renderOption={(props, symbol) => (
+                  <Box component="li" {...props} key={symbol}>
+                    <Stack direction="row" gap={1} alignItems="center">
+                      <ResourceIcon symbol={symbol} size={20} />
+                      <span>{symbol}</span>
+                    </Stack>
+                  </Box>
+                )}
+              />
             </Stack>
 
             {/* Amount inputs */}

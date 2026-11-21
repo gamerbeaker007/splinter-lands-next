@@ -1,15 +1,16 @@
 import { FullscreenPlotWrapper } from "@/components/ui/graph/FullscreenPlotWrapper";
 import { ResourceHubMetrics } from "@/generated/prisma/client";
-import { RESOURCE_COLOR_MAP } from "@/lib/shared/statics";
+import { resourceChartColor } from "@/components/resource/resourceChartColor";
 import { Box } from "@mui/material";
 import { ScatterData } from "plotly.js";
 import React from "react";
 
 interface Props {
   data: ResourceHubMetrics[];
+  selectedSymbols: string[];
 }
 
-const TradeHubVolumeChart: React.FC<Props> = ({ data }) => {
+const TradeHubVolumeChart: React.FC<Props> = ({ data, selectedSymbols }) => {
   const resourceMap: Record<
     string,
     { x: string[]; resourceVolumeY: number[]; decVolumeY: number[] }
@@ -30,7 +31,7 @@ const TradeHubVolumeChart: React.FC<Props> = ({ data }) => {
     resourceMap[symbol].resourceVolumeY.push(resourceVolume);
     resourceMap[symbol].decVolumeY.push(decVolume);
 
-    if (!dailyDecMap[date]) {
+    if (dailyDecMap[date] === undefined) {
       dailyDecMap[date] = 0;
       dateList.push(date);
     }
@@ -41,32 +42,34 @@ const TradeHubVolumeChart: React.FC<Props> = ({ data }) => {
   const dailyTotalY: number[] = dateList.map((date) => dailyDecMap[date]);
 
   const traces: Partial<ScatterData>[] = [
-    ...Object.entries(resourceMap).flatMap(([symbol, val]) => {
-      const color = RESOURCE_COLOR_MAP[symbol] || "white";
-      return [
-        {
-          x: val.x,
-          y: val.resourceVolumeY,
-          type: "scatter" as const,
-          mode: "lines" as const,
-          name: symbol,
-          legendgroup: symbol,
-          yaxis: "y1",
-          line: { color },
-        },
-        {
-          x: val.x,
-          y: val.decVolumeY,
-          type: "scatter" as const,
-          mode: "lines" as const,
-          name: `${symbol} DEC vol`,
-          legendgroup: symbol,
-          yaxis: "y2",
-          line: { color, dash: "dash" as const },
-          showlegend: true,
-        },
-      ];
-    }),
+    ...Object.entries(resourceMap)
+      .filter(([symbol]) => selectedSymbols.includes(symbol))
+      .flatMap(([symbol, val]) => {
+        const color = resourceChartColor(symbol);
+        return [
+          {
+            x: val.x,
+            y: val.resourceVolumeY,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: symbol,
+            legendgroup: symbol,
+            yaxis: "y1",
+            line: { color },
+          },
+          {
+            x: val.x,
+            y: val.decVolumeY,
+            type: "scatter" as const,
+            mode: "lines" as const,
+            name: `${symbol} DEC vol`,
+            legendgroup: symbol,
+            yaxis: "y2",
+            line: { color, dash: "dash" as const },
+            showlegend: true,
+          },
+        ];
+      }),
     {
       x: dailyTotalX,
       y: dailyTotalY,
