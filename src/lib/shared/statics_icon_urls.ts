@@ -131,6 +131,9 @@ export const edition_soulbound_icon_url = edition_reward_icon_url;
 export const edition_rebellion_icon_url = `${WEB_URL}website/icons/icon-edition-rebellion.svg`;
 export const edition_soulbound_rebellion_icon_url = edition_reward_icon_url;
 export const edition_conclave_arcana_icon_url = `${WEB_URL}website/icons/icon-edition-conclave-arcana.svg`;
+export const edition_reckoning_icon_url = `${WEB_URL}website/icons/icon-edition-reckoning.svg`;
+
+
 export const edition_foundation_icon_url = `${WEB_URL}website/icons/icon-edition-foundations.svg`;
 export const edition_conclave_extra_icon_url = `${WEB_URL}website/icons/icon-edition-extra.svg`;
 export const edition_conclave_rewards_icon_url = edition_reward_icon_url;

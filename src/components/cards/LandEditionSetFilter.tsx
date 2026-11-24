@@ -30,7 +30,8 @@ interface LandSetDef {
 
 /**
  * Land-valid sets only (non-land sets/editions are intentionally excluded).
- * Escalation (20) and Conclave Rewards (18) live under Conclave.
+ * Escalation (20), Conclave Rewards (18), and Reckoning (24) live under
+ * Conclave.
  */
 const LAND_SET_DEFS: LandSetDef[] = [
   {
@@ -76,7 +77,7 @@ const LAND_SET_DEFS: LandSetDef[] = [
   {
     setName: "conclave",
     label: "Conclave",
-    nativeEditions: [14, 18, 20],
+    nativeEditions: [14, 18, 20, 24],
     hasPromo: true,
     hasReward: false,
     hasExtra: true,

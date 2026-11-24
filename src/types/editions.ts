@@ -12,6 +12,7 @@ import {
   edition_land_card_icon_url,
   edition_promo_icon_url,
   edition_rebellion_icon_url,
+  edition_reckoning_icon_url,
   edition_reward_icon_url,
   edition_rift_icon_url,
   edition_soulbound_icon_url,
@@ -184,6 +185,12 @@ export const editionMap: Record<number, EditionTypeDef> = {
     urlName: "land",
     setName: "land",
     editionIcon: edition_land_card_icon_url,
+  },
+  24: {
+    displayName: "Reckoning",
+    urlName: "reckoning",
+    setName: "conclave",
+    editionIcon: edition_reckoning_icon_url,
   },
 } as const;
 

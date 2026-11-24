@@ -14,6 +14,15 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.49.1] - 2026-11-24
+
+### Changed
+
+- Mapped edition 24 (Reckoning) to the Conclave set so it follows the same land
+  PP modifier and Conclave edition/set filtering behavior.
+
+---
+
 ## [v1.49.0] - 2026-11-21
 
 ### Changed
