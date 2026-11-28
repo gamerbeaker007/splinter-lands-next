@@ -8,10 +8,12 @@ import { ManageLink } from "../../deed-overview/land-deed-card/link-components/M
 
 interface Props {
   missingBloodLineBoostAlerts: DeedInfo[];
+  label?: string;
 }
 
 export const MissingBloodLineBoostAlerts: React.FC<Props> = ({
   missingBloodLineBoostAlerts,
+  label = "Missing Bloodline Boost",
 }) => {
   return (
     <Box mt={2}>
@@ -96,7 +98,7 @@ export const MissingBloodLineBoostAlerts: React.FC<Props> = ({
                     color="warning"
                     sx={{ mt: 1, ml: 1 }}
                   >
-                    Missing Bloodline Boost
+                    {label}
                   </Typography>
                 </Box>
               </Box>

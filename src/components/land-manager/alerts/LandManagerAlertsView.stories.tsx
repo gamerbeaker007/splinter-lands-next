@@ -394,6 +394,7 @@ const PLAYER_ALERTS: PlayerAlerts = {
   noPowerSource: [{ ...DEED_INFO, plotNumber: 84 }],
   powerCoreWhileEnergized: [],
   missingBloodLineBoost: [],
+  multipleBloodlineAbilities: [DEED_INFO],
   rationingLiteAlerts: [],
   stakeItems: {
     unusedPowerCores: 2,
@@ -413,6 +414,7 @@ const NO_PLAYER_ALERTS: PlayerAlerts = {
   noPowerSource: [],
   powerCoreWhileEnergized: [],
   missingBloodLineBoost: [],
+  multipleBloodlineAbilities: [],
   rationingLiteAlerts: [],
   stakeItems: {
     unusedPowerCores: 0,

@@ -54,6 +54,7 @@ const NO_PLAYER_ALERTS: PlayerAlerts = {
   noPowerSource: [],
   powerCoreWhileEnergized: [],
   missingBloodLineBoost: [],
+  multipleBloodlineAbilities: [],
   rationingLiteAlerts: [],
   stakeItems: {
     unusedPowerCores: 0,
@@ -160,7 +161,21 @@ describe("buildLandManagerAlerts", () => {
         stakeItems: { ...NO_PLAYER_ALERTS.stakeItems, unusedPowerCores: -2 },
       },
     });
+
     expect(alerts).toEqual([]);
+  });
+
+  it("reports plots with multiple Bloodline abilities as a low alert", () => {
+    const alerts = buildLandManagerAlerts({
+      ...HEALTHY,
+      playerAlerts: {
+        ...NO_PLAYER_ALERTS,
+        multipleBloodlineAbilities: [DEED, DEED],
+      },
+    });
+    expect(alerts.map((a) => [a.key, a.severity, a.count])).toEqual([
+      ["multipleBloodlineAbilities", "info", 2],
+    ]);
   });
 });
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { AssignedWorkersAlerts } from "@/components/player-overview/player-dashboard/alerts/AssingedWorkersAlerts";
+import { BloodlineReleaseNote } from "@/components/player-overview/player-dashboard/alerts/BloodlineReleaseNote";
 import { DeedAlertSection } from "@/components/player-overview/player-dashboard/alerts/DeedAlertSection";
 import { MissingBloodLineBoostAlerts } from "@/components/player-overview/player-dashboard/alerts/MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "@/components/player-overview/player-dashboard/alerts/NegativeDECAlerts";
@@ -492,6 +493,21 @@ export default function LandManagerAlertsView({
             />
           ),
         };
+      case "multipleBloodlineAbilities":
+        return {
+          description: (
+            <>
+              {plural(n, "plot")} have at least two workers with the Bloodline
+              ability at their current level. <BloodlineReleaseNote />
+            </>
+          ),
+          details: dashboard && (
+            <MissingBloodLineBoostAlerts
+              missingBloodLineBoostAlerts={dashboard.multipleBloodlineAbilities}
+              label="Multiple Bloodline Abilities"
+            />
+          ),
+        };
       case "tooMuchBasePP":
         return {
           description: (
@@ -642,7 +658,7 @@ export default function LandManagerAlertsView({
         <AlertTitle sx={{ mb: 0.25 }}>
           {alert.title} ({formatInt(alert.count)})
         </AlertTitle>
-        <Typography variant="body2">{body.description}</Typography>
+        <Box sx={{ typography: "body2" }}>{body.description}</Box>
         {body.details && (
           <Collapse in={open} unmountOnExit>
             <Box sx={{ mt: 1, overflowX: "auto" }}>{body.details}</Box>

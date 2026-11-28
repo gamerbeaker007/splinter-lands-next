@@ -144,12 +144,48 @@ export function buildPlayerAlerts(
     noPowerSource: powerSourceAlerts.noPowerSource,
     powerCoreWhileEnergized: powerSourceAlerts.powerCoreWhileEnergized,
     missingBloodLineBoost: missingBloodLineBoost,
+    multipleBloodlineAbilities: findMultipleBloodlineAbilities(
+      player,
+      playerCardCollection,
+      enrichedPlayerData,
+      cardDetails
+    ),
     rationingLiteAlerts: rationingLiteAlerts,
     stakeItems: {
       unusedPowerCores: powerSourceAlerts.unusedPowerSource,
       ...unassigned,
     },
   };
+}
+
+/** Plots with at least two active workers that have the Bloodline ability. */
+export function findMultipleBloodlineAbilities(
+  player: string,
+  cards: SplPlayerCardCollection[],
+  deeds: DeedComplete[],
+  cardDetails: SplCardDetails[]
+): DeedInfo[] {
+  const detailsById = new Map(cardDetails.map((detail) => [detail.id, detail]));
+  const counts = new Map<string, number>();
+  for (const card of cards) {
+    if (
+      !card.stake_ref_uid ||
+      card.stake_end_date != null ||
+      (card.delegated_to && card.delegated_to !== player) ||
+      card.card_set !== "land" ||
+      !Number.isInteger(card.level) ||
+      card.level < 1
+    )
+      continue;
+
+    const abilities = detailsById.get(card.card_detail_id)?.stats
+      ?.land_abilities?.[card.level - 1];
+    if (!abilities?.some((ability) => ability[0] === "BLOODLINE")) continue;
+    counts.set(card.stake_ref_uid, (counts.get(card.stake_ref_uid) ?? 0) + 1);
+  }
+  return deeds
+    .filter((deed) => (counts.get(deed.deed_uid) ?? 0) >= 2)
+    .map(createDeedInfo);
 }
 
 /**

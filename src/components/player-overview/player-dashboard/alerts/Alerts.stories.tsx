@@ -2,6 +2,7 @@ import { Box, Typography } from "@mui/material";
 import { Meta, StoryObj } from "@storybook/react";
 import type { DeedInfo } from "@/types/playerAlerts";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
+import { BloodlineReleaseNote } from "./BloodlineReleaseNote";
 import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
 import { NoWorkersAlerts } from "./NoWorkersAlerts";
@@ -235,6 +236,14 @@ export const DeedAlertSection: StoryObj = {
       </Typography>
       <MissingBloodLineBoostAlerts
         missingBloodLineBoostAlerts={missingBloodLineBoostAlerts}
+      />
+      <Typography variant="body1" fontWeight={600}>
+        Multiple Bloodline Abilities
+      </Typography>
+      <BloodlineReleaseNote />
+      <MissingBloodLineBoostAlerts
+        missingBloodLineBoostAlerts={missingBloodLineBoostAlerts}
+        label="Multiple Bloodline Abilities"
       />
 
       <Typography variant="body1" fontWeight={600}>

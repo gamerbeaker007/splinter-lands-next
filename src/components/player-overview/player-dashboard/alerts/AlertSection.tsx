@@ -8,6 +8,7 @@ import {
   Block,
   FormatColorReset,
   Grass,
+  InfoOutlined,
   KeyboardDoubleArrowUp,
   Landscape,
   MilitaryTech,
@@ -24,11 +25,13 @@ import {
   DialogContent,
   DialogTitle,
   Stack,
+  Tooltip,
   Typography,
 } from "@mui/material";
 import { useState } from "react";
 import { AlertSectionSkeleton } from "./AlertSectionSkeleton";
 import { AssignedWorkersAlerts } from "./AssingedWorkersAlerts";
+import { BloodlineReleaseNote } from "./BloodlineReleaseNote";
 import { DeedAlertSection } from "./DeedAlertSection";
 import { MissingBloodLineBoostAlerts } from "./MissingBloodLineBoostAlerts";
 import { NegativeDECAlerts } from "./NegativeDECAlerts";
@@ -208,6 +211,33 @@ export default function AlertSection({
         <MissingBloodLineBoostAlerts
           missingBloodLineBoostAlerts={playerAlerts?.missingBloodLineBoost}
         />
+      ),
+    },
+    {
+      key: "MultipleBloodlineAbilities",
+      label: "Multiple Bloodline Abilities",
+      subLabel: "Low - Land 1.99 preparation",
+      alertsCount: playerAlerts.multipleBloodlineAbilities.length,
+      icon: (
+        <Tooltip title="Preparation only: relevant when Land 1.99 is released.">
+          <InfoOutlined fontSize="large" />
+        </Tooltip>
+      ),
+      dialogTitle: "Plots with Multiple Bloodline Abilities",
+      dialogContent: (
+        <>
+          <BloodlineReleaseNote />
+          <Typography variant="body2">
+            These plots have at least two workers with the Bloodline ability at
+            their current level.
+          </Typography>
+          <MissingBloodLineBoostAlerts
+            missingBloodLineBoostAlerts={
+              playerAlerts.multipleBloodlineAbilities
+            }
+            label="Multiple Bloodline Abilities"
+          />
+        </>
       ),
     },
     {

@@ -81,6 +81,7 @@ export type PlayerAlerts = {
   noPowerSource: DeedInfo[];
   powerCoreWhileEnergized: DeedInfo[];
   missingBloodLineBoost: DeedInfo[];
+  multipleBloodlineAbilities: DeedInfo[];
   rationingLiteAlerts: DeedInfo[];
   stakeItems: StakeItemAlerts;
 };

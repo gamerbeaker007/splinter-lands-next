@@ -14,6 +14,16 @@ Format: `## [vX.Y.Z] - YYYY-MM-DD` followed by categorized entries.
 
 ---
 
+## [v1.50.0] - 2026-11-28
+
+### Added
+
+- **Multiple Bloodline abilities alert (low):** The player dashboard and Land
+  Manager flag plots with at least two workers with the Bloodline ability.
+  This is preparation for Land 1.99, not a current issue.
+
+---
+
 ## [v1.49.1] - 2026-11-24
 
 ### Changed

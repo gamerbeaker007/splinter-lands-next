@@ -46,6 +46,7 @@ export type LandManagerAlertKey =
   | "negativeTerrainBoost"
   | "doublePower"
   | "missingBloodline"
+  | "multipleBloodlineAbilities"
   | "tooMuchBasePP"
   | "rationingLite"
   | "zeroBoostNonNeutral"
@@ -274,6 +275,12 @@ export function buildLandManagerAlerts(
       count: dashboard?.rationingLiteAlerts.length ?? 0,
     },
     // ── Low ─────────────────────────────────────────────────────────────────
+    {
+      key: "multipleBloodlineAbilities",
+      severity: "info",
+      title: "Multiple Bloodline abilities",
+      count: dashboard?.multipleBloodlineAbilities.length ?? 0,
+    },
     {
       key: "decOverStaked",
       severity: "info",

@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
+import type { DeedComplete } from "@/types/deed";
 import type { SplInventory } from "@/types/spl/inventory";
-import { countUnassigned, findUnassignedTitlesAndTotems } from "./playerAlerts";
+import type { SplCardDetails } from "@/types/splCardDetails";
+import type { SplPlayerCardCollection } from "@/types/splPlayerCardDetails";
+import {
+  countUnassigned,
+  findMultipleBloodlineAbilities,
+  findUnassignedTitlesAndTotems,
+} from "./playerAlerts";
 
 function item(overrides: Partial<SplInventory>): SplInventory {
   return {
@@ -64,5 +71,90 @@ describe("countUnassigned", () => {
       ])
     ).toBe(3);
     expect(countUnassigned([])).toBe(0);
+  });
+});
+
+describe("findMultipleBloodlineAbilities", () => {
+  const deeds = [
+    { deed_uid: "deed-1", plot_id: 1 },
+    { deed_uid: "deed-2", plot_id: 2 },
+    { deed_uid: "deed-3", plot_id: 3 },
+  ] as DeedComplete[];
+  const baseDetail: Omit<SplCardDetails, "id" | "stats"> = {
+    name: "Worker",
+    color: "Red",
+    type: "Monster",
+    sub_type: "",
+    rarity: 1,
+    is_starter: false,
+    editions: "",
+    is_promo: false,
+    no_pp: false,
+  };
+  const details: SplCardDetails[] = [
+    {
+      ...baseDetail,
+      id: 1,
+      stats: {
+        land_abilities: [[], [["BLOODLINE", 0.1, "Elf"]]],
+      },
+    },
+    {
+      ...baseDetail,
+      id: 2,
+      stats: {
+        land_abilities: [[["BLOODLINE", 0.1, "Goblin"]]],
+      },
+    },
+  ];
+  const card = (
+    overrides: Partial<SplPlayerCardCollection> = {}
+  ): SplPlayerCardCollection =>
+    ({
+      uid: "worker",
+      card_detail_id: 1,
+      card_set: "land",
+      level: 2,
+      stake_ref_uid: "deed-1",
+      ...overrides,
+    }) as SplPlayerCardCollection;
+
+  it("reports each plot with two or more abilities, even of different bloodlines", () => {
+    const result = findMultipleBloodlineAbilities(
+      "player",
+      [
+        card(),
+        card({ uid: "worker-2", card_detail_id: 2, level: 1 }),
+        card({ uid: "worker-3" }),
+        card({ uid: "worker-4", stake_ref_uid: "deed-2" }),
+        card({ uid: "worker-5", stake_ref_uid: "other-deed" }),
+        card({ uid: "worker-6", stake_ref_uid: "other-deed" }),
+      ],
+      deeds,
+      details
+    );
+    expect(result.map((deed) => deed.plotId)).toEqual([1]);
+  });
+
+  it("uses the current level and excludes unstaked or delegated-away cards", () => {
+    const result = findMultipleBloodlineAbilities(
+      "player",
+      [
+        card(),
+        card({ level: 1 }),
+        card({ level: 0 }),
+        card({ level: 11 }),
+        card({ card_detail_id: 999 }),
+        card({ card_set: "chaos" }),
+        card({ stake_end_date: "2099-01-01T00:00:00.000Z" }),
+        card({ delegated_to: "someone-else" }),
+        card({ stake_ref_uid: "" }),
+        card({ stake_ref_uid: "deed-2", delegated_to: "player" }),
+        card({ stake_ref_uid: "deed-2" }),
+      ],
+      deeds,
+      details
+    );
+    expect(result.map((deed) => deed.plotId)).toEqual([2]);
   });
 });
